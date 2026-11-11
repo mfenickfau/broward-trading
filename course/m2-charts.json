@@ -1,0 +1,423 @@
+{
+  "id": "m2-charts",
+  "title": "Reading Charts & Candlesticks",
+  "level": "beginner",
+  "minutes": 52,
+  "summary": "Candlesticks, timeframes, trends, support and resistance, trend lines, volume and the classic candlestick and chart patterns, read on live chart panes and practised on the dashboard.",
+  "lessons": [
+    {
+      "id": "m2-l1",
+      "title": "Anatomy of a Candlestick and Choosing a Timeframe",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Four prices in one picture\n\nA price chart is just a record of trades, and a candlestick is a compact way to show what happened during one slice of time. Every candle carries four numbers, usually abbreviated **OHLC**: the **open** (first trade of the period), the **high** (highest trade), the **low** (lowest trade) and the **close** (last trade). The thick part of the candle is the **body**, drawn between the open and the close. The thin lines above and below are the **wicks** (also called shadows or tails), reaching to the high and the low.\n\nTake a daily candle for a stock that opened at $250.00, traded as high as $254.10, as low as $248.60, and closed at $253.20. The body runs from 250.00 to 253.20, so it is $3.20 tall. The upper wick runs from 253.20 up to 254.10 ($0.90), and the lower wick runs from 250.00 down to 248.60 ($1.40). The full **range** of the day, high minus low, is $5.50. Nothing about the candle tells you *when* during the day those prices happened, only that they did.\n\nThe colour is decided by the close relative to the open. If the close is above the open the candle is green (or white, or blue, depending on the chart) and we call it a **bullish** candle. If the close is below the open it is red (or black) and **bearish**. On this dashboard the up colour and down colour come from the theme, so they stay readable in light and dark mode.\n\nOne candle is a tiny story: where buyers and sellers started, how far each side pushed, and who had the upper hand when time ran out. Everything else in technical analysis is built out of sequences of these stories."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Colour compares close to open, not to yesterday.** Suppose a stock closed at $100 on Monday, opened Tuesday at $104 after good news, then faded all day to close at $102. Tuesday's candle is *red* (102 is below the 104 open) even though the stock finished the day up 2%. A red candle that sits entirely above the previous candle is a very different message from a red candle that broke below it."
+        },
+        {
+          "type": "text",
+          "md": "### What body and wick sizes tell you\n\nOnce you can locate the four prices, start reading proportions. A **long body** means price travelled a long way from open to close in one direction: one side was clearly in control. A long green body that closes near the high is about as one-sided as a candle gets. A **small body** means the open and close were close together, whatever happened in between: a draw.\n\nWicks record rejection. A **long lower wick** says sellers pushed price down, but by the close buyers had taken most of it back. A **long upper wick** is the opposite: buyers tried to extend higher and were pushed back. When the body is tiny compared with the range, say a $0.10 body on a $3.00 range, the candle is a **doji**, and it means neither side could hold an advantage. The dashboard's pattern detector marks a doji when the body is 10% or less of the full range.\n\nSize only means something in context. A $3 range on a $50 stock (6%) is a wild day; a $3 range on a $500 stock (0.6%) is quiet. Traders normalise this with the stock's recent **average true range (ATR)**, which you will meet in the indicators module. For now, compare each candle to its neighbours: is this body bigger than the last ten? Is this wick unusually long?\n\nA useful habit is to describe a candle in one sentence before you look at any indicator. \"Opened near the low, closed near the high, range twice the recent average\" is a complete piece of analysis. \"Green\" is not."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["volume"],
+          "caption": "Daily candles with volume underneath. Pick any candle and name its open, high, low and close from the shape alone; then hover to check. Notice how the longest bodies tend to sit on the tallest volume bars. (Demo prices are simulated unless you add an API key on the dashboard.)"
+        },
+        {
+          "type": "text",
+          "md": "### Timeframes: the same market at different zoom levels\n\nThe **interval** or **timeframe** of a chart is how much time each candle covers. This dashboard offers `5min`, `15min`, `1h` and `1day` bars (the strategy lab adds `1min`). A regular US session runs 9:30 to 16:00 Eastern, which is 6.5 hours, so one trading day contains 78 five-minute candles, 26 fifteen-minute candles or roughly 7 hourly candles. One daily candle summarises all of them: its open is the first 5-minute open, its close the last 5-minute close, and its high and low are the extremes across the whole day. The demo data in this app is built so that the first intraday open and last intraday close equal the daily open and close; the intraday high and low come close to the daily extremes but will not match to the cent.\n\nShorter timeframes show more detail and more **noise**: random back-and-forth that means nothing. Longer timeframes smooth that noise away but react later. A move that looks like a dramatic crash on a 1-minute chart may be an invisible wiggle inside one daily candle.\n\nWhich timeframe you watch depends on how long you intend to hold. Someone trading in and out within a day (a **day trader**) lives on 1- to 15-minute charts. A **swing trader** holding for days to weeks works mostly from daily charts. A long-term investor may look at weekly candles and check in monthly. There is no \"correct\" timeframe, but there is a wrong one: a timeframe that does not match your holding period. Judging a multi-month position by a 5-minute chart is a reliable way to panic for no reason.\n\nWhen you look at a chart, always say the timeframe out loud. \"AAPL is in an uptrend\" is incomplete; \"AAPL is in an uptrend on the daily chart\" is a claim you can check."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Multi-timeframe habit.** A common rule of thumb: pick the timeframe you trade on, look one step *higher* to decide the direction of the larger trend, and one step *lower* to fine-tune your entry. A swing trader might read the weekly for direction, the daily for the setup and the hourly for the entry. This is a convention, not a law; its value is that it stops you fighting the bigger trend without noticing."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "5min",
+          "overlays": ["vwap", "volume"],
+          "caption": "The same stock on 5-minute candles with the intraday VWAP line (volume-weighted average price, which resets each session). Everything on this chart fits inside two or three candles of the daily chart above."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard on AAPL with the daily chart. Then:\n\n- Find the candle with the **largest body** in the visible window. Hover over it and write down its open, high, low and close, then compute the body size and the two wick sizes.\n- Switch to the **5min** interval and find today's (or the last session's) candles. Count roughly how many there are in one session, check that the first bar's open and last bar's close match the daily candle, and note how close the intraday high gets to the daily high.\n- Switch between `1h` and `1day` and write one sentence describing the trend on each. Do they agree?\n\nKeep these notes; you will compare them with the pattern detector later in this module.",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=", "label": "Open AAPL on the dashboard" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A daily candle has open $250.00, high $254.10, low $248.60 and close $253.20. How tall is the body?",
+              "choices": ["$5.50", "$3.20", "$0.90", "$1.40"],
+              "answer": 1,
+              "explain": "The body runs from the open to the close: 253.20 − 250.00 = $3.20. The full range (high − low) is $5.50; the upper wick is $0.90 and the lower wick is $1.40."
+            },
+            {
+              "q": "A stock closed yesterday at $100, opened today at $104 and closed today at $102. What colour is today's candle?",
+              "choices": ["Green, because the stock is up 2% on the day", "Red, because the close is below the open", "Green, because the close is above yesterday's close", "It depends on the volume"],
+              "answer": 1,
+              "explain": "Candle colour compares the close with the open of the same candle. 102 is below 104, so the candle is red even though the stock gained versus yesterday's close."
+            },
+            {
+              "q": "Which candle shape best describes 'sellers pushed price down hard but buyers took it all back by the close'?",
+              "choices": ["A long red body with no wicks", "A tiny body with a long upper wick", "A small body near the top with a long lower wick", "A doji with equal wicks"],
+              "answer": 2,
+              "explain": "A long lower wick means price traded well below the body and then recovered. A small body near the top of the range shows the recovery held into the close."
+            },
+            {
+              "q": "How many 5-minute candles fit in one regular US trading session (9:30 to 16:00 Eastern)?",
+              "choices": ["48", "60", "78", "96"],
+              "answer": 2,
+              "explain": "The regular session is 6.5 hours = 390 minutes. 390 ÷ 5 = 78 candles."
+            },
+            {
+              "q": "Which timeframe is the most sensible main chart for someone who expects to hold a position for a few weeks?",
+              "choices": ["1-minute", "5-minute", "Daily", "Whichever shows the most trades"],
+              "answer": 2,
+              "explain": "The timeframe should match the holding period. Daily candles show a multi-week position's progress without the noise of intraday swings; a 1- or 5-minute chart would prompt reactions to movements that are irrelevant at that horizon."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l2",
+      "title": "Trend, Support and Resistance",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Defining a trend without a ruler\n\nPrices do not move in straight lines; they move in **swings**. A stock rallies, pulls back, rallies again. The turning points are called **swing highs** (a peak with lower highs on both sides) and **swing lows** (a trough with higher lows on both sides). A trend is defined by the sequence of these turning points, an idea that goes back to Charles Dow's writing in the early 1900s and is still the cleanest definition we have.\n\nAn **uptrend** is a series of higher highs *and* higher lows. Imagine a stock that goes 100 → 110 → 105 → 118 → 112 → 125. The swing highs are 110, 118 and 125 (each higher), and the swing lows are 105 and 112 (each higher). Buyers are willing to pay more on each rally and step in sooner on each dip. A **downtrend** is the mirror image: lower highs and lower lows, for example 125 → 112 → 118 → 105 → 110 → 100.\n\nWhen the highs and lows stop making progress, the market is in a **range** (also called sideways, consolidation or a trading range). Roughly a third to a half of the time most stocks are doing exactly this, depending on how you measure it, which is why trend-following strategies tend to lose small amounts repeatedly and then make it back in the trending stretches.\n\nThe practical test for a trend change is simple. An uptrend is in doubt when price fails to make a higher high, and it is over when price breaks below the most recent swing low. In the example above, if the stock dropped from 125 back under 112, the uptrend would have failed by this definition. You will often be early or wrong with this rule, but it gives you an objective line instead of a feeling."
+        },
+        {
+          "type": "text",
+          "md": "### Support and resistance\n\n**Support** is a price area where falling prices have repeatedly stopped falling and turned up. **Resistance** is an area where rising prices have repeatedly stalled and turned down. They form for ordinary human reasons. People who bought near $150 and watched the stock drop are relieved to sell when it gets back to $150 (\"I'll just get out even\"), creating resistance. People who missed buying at $120 last time wait for it to come back there, creating support. Round numbers like $100 or $500 attract limit orders simply because humans like round numbers.\n\nThe most important thing to understand is that these are **zones, not lines**. If a stock bounced at $148.20, $149.60 and $150.10 on three separate occasions, the support is \"around $148 to $150\", not exactly $149.30. Expecting price to respect a level to the penny guarantees you will be shaken out by noise.\n\nLevels gain credibility from **touches** (how many times price reacted there), **recency** (a level from last month matters more than one from three years ago, though very old levels can matter when price finally returns) and **volume** (a lot of shares changed hands near that price, so a lot of people have a memory of it).\n\nThe dashboard's `S/R` overlay finds levels automatically: it looks back about 120 bars, finds swing highs and lows, clusters the ones that are close together and keeps the three strongest supports and three strongest resistances. It is a decent starting point, but it cannot see earnings dates, round-number psychology or what happened five years ago. Use it as a first draft and refine with your eyes."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Role reversal (polarity).** When price breaks decisively through resistance, that old resistance often becomes new support, and vice versa. If a stock fought with $200 for two months and then rallied to $215, a pullback to $200 is where the people who missed the breakout get their second chance, and where the breakout buyers defend their entry. A clean bounce off $200 from above confirms the breakout; a fall back through it is a warning the breakout failed."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sr", "sma50"],
+          "caption": "Automatic support (green dashed) and resistance (red dashed) levels from the last 120 daily bars, plus the 50-day simple moving average. Check whether the levels line up with obvious swing highs and lows, and where price sits relative to the 50-day line."
+        },
+        {
+          "type": "text",
+          "md": "### Moving averages as moving support\n\nA **moving average** is the average closing price over the last *n* bars, recomputed every bar so it glides along under or over the price. The 20-day, 50-day and 200-day simple moving averages are the ones most widely watched, and the 9- and 21-period exponential moving averages are popular with shorter-term traders. The full mechanics are covered in the indicators module; here we care about one use: moving averages act as **dynamic support and resistance**.\n\nIn a healthy uptrend, price tends to pull back to a rising moving average and bounce, because the average roughly tracks what the typical recent buyer paid. A stock trading above a rising 50-day average with pullbacks that stop near it is behaving well. When price drops below the average and the average flattens or turns down, the trend is weakening.\n\nTwo cautions. First, moving averages **lag**: by construction, a 50-day average reflects where price was over the last ten weeks, so it will always confirm a trend after it has started and signal an end after it has ended. Second, there is a great deal of folklore around specific crossovers, such as the 50-day crossing above the 200-day (the \"golden cross\"). These events do get attention and can move prices in the short run, but the evidence that they predict returns reliably is mixed and depends heavily on the market and period studied. Treat a crossover as one more piece of context, not a trigger.\n\nUse the `SMA 20` and `SMA 50` toggles on the dashboard and simply watch how often pullbacks in a trend respect them. You will notice it is often, but not always, which is the honest summary of most technical tools."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Everyone sees the same level.** Because obvious support and resistance are visible to everyone, two things happen there: a crowd of orders, and a crowd of stop-losses just beyond them. Price often pokes a little past a level, triggers those stops, then reverses: a **false break** or \"stop run\". If you place a protective stop, put it far enough beyond the zone that normal noise will not hit it, and size your position so that wider stop still risks an amount you can accept (the risk module covers how)."
+        },
+        {
+          "type": "text",
+          "md": "### Working the levels in practice\n\nHere is a routine you can repeat on any chart in a few minutes.\n\n- **Zoom out first.** Look at 6 to 12 months of daily candles and mark the two or three price areas where the stock turned repeatedly. These are your major levels.\n- **Note the trend** using swing highs and lows. Are the recent swings higher, lower or flat?\n- **Find where price is now relative to the levels.** A stock sitting 1% above major support in an uptrend is a very different setup from one sitting 1% below major resistance in a downtrend. Express the distance as a percentage: on a $300 stock, $6 is 2%.\n- **Ask what would prove you wrong.** If you think support at $148 to $150 holds, a daily close at $145 says it did not. Write that number down before you trade, not after.\n\nA concrete example: suppose MSFT has turned up three times between $495 and $502 over the last four months and is now at $506. Support is the $495 to $502 zone, about 0.8% to 2.2% below. If the stock also made a higher high last week, you have an uptrend sitting just above tested support: a textbook place for trend followers to look for a long entry, with a stop somewhere below $495.\n\nNone of this predicts the future. What it does is organise your decisions around places where many other participants will also be making decisions, so that when you are wrong, you find out quickly and cheaply."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard on MSFT with the `S/R`, `SMA 20` and `SMA 50` overlays on, daily interval. For MSFT and then two more symbols of your choice (try JPM and NVDA):\n\n- Write down the automatic support and resistance levels and decide whether you agree with each one. Would you move any of them?\n- Classify the trend as up, down or sideways using swing highs and lows only.\n- Compute how far the current price is from the nearest support and the nearest resistance, in percent.\n- Write one sentence: \"I would be wrong about this trend if price closed below/above ____.\"",
+          "action": { "page": "index.html", "hash": "symbol=MSFT&interval=1day&ov=sma20,sma50,sr", "label": "Open MSFT with S/R levels" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock's swing points, in order, are 100, 110, 105, 118, 112, 125. What trend does this describe?",
+              "choices": ["Downtrend: the pullbacks are getting bigger", "Uptrend: higher highs (110, 118, 125) and higher lows (105, 112)", "Sideways range between 100 and 125", "Not enough information"],
+              "answer": 1,
+              "explain": "Each swing high (110 → 118 → 125) is higher than the last and each swing low (105 → 112) is higher than the last. That is the definition of an uptrend."
+            },
+            {
+              "q": "By the swing-point definition, when is an uptrend considered broken?",
+              "choices": ["When a single red candle appears", "When price closes below the most recent swing low", "When the stock falls 1% from its high", "When volume declines for three days"],
+              "answer": 1,
+              "explain": "An uptrend is a series of higher lows. A break below the most recent swing low means that sequence has failed. Red candles and small declines happen inside every uptrend."
+            },
+            {
+              "q": "A stock has bounced at $148.20, $149.60 and $150.10 on three occasions. What is the best description of its support?",
+              "choices": ["Exactly $149.30, the average of the three", "A zone roughly from $148 to $150", "$150.10, the most recent bounce", "There is no support because the prices differ"],
+              "answer": 1,
+              "explain": "Support and resistance are zones, not precise lines. Three bounces within about two dollars define an area; demanding precision to the penny leads to being stopped out by noise."
+            },
+            {
+              "q": "A stock struggled at $200 resistance for two months, then rallied to $215. According to the polarity principle, what is $200 likely to act as now?",
+              "choices": ["Resistance, as before", "Support", "Nothing; old levels stop mattering after a breakout", "A guaranteed buy point"],
+              "answer": 1,
+              "explain": "Broken resistance often becomes support because breakout buyers defend their entries and latecomers buy the retest. It is likely, not guaranteed: a fall back through $200 would signal a failed breakout."
+            },
+            {
+              "q": "Why do moving averages confirm trends late?",
+              "choices": ["They are computed from future prices", "They average past closes, so they reflect where price has been rather than where it is going", "They only update once a week", "They ignore the open and close"],
+              "answer": 1,
+              "explain": "A 50-day moving average is the average of the last 50 closes. It cannot turn until enough recent closes have moved, so it lags price by design. That smoothing is also what makes it useful as a trend filter."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l3",
+      "title": "Trend Lines, Channels and Volume",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Drawing a trend line that means something\n\nA **trend line** is a straight line drawn along the swing lows of an uptrend (below price) or along the swing highs of a downtrend (above price). It turns the vague idea \"the stock is going up\" into a specific, sloped line that price should stay on the right side of. Two points define the line; a third touch that holds is what gives it credibility. One touch is a coincidence, two is a line, three is a trend line.\n\nSuppose a stock makes a swing low at $100 on day 1 and another at $106 on day 11. The line rises $6 over 10 days, or $0.60 per day. Extend it and it predicts the line will be at $112 on day 21 and $118 on day 31. If price pulls back to $112.40 on day 21 and bounces, that is your third touch and the line is now worth watching. If instead price closes at $109 on day 21, below the line, the trend has at least paused.\n\nSteepness matters. A line rising at 3% a day cannot last; it will be broken soon, and that break usually means the pace is slowing, not that the trend has reversed. Gently sloped lines that have held for months are the ones whose breaks carry weight. A common sequence in a long uptrend is a steep line breaking, then a shallower line being drawn from the new low, then that one breaking too, as the trend matures.\n\nTrend line breaks, like level breaks, should be judged on **closes**, ideally with some follow-through, rather than on a single intraday poke. The next lesson's warnings about false breaks apply here in full."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Trend lines are subjective.** Give the same chart to five analysts and you will get five slightly different lines: some connect wicks, some connect closes, some use a logarithmic price scale (where equal percentage moves look equal) and some use a linear one. There is no settled answer, so do not argue with the chart over a few cents. Treat your line as the centre of a zone and look for price to react *near* it."
+        },
+        {
+          "type": "text",
+          "md": "### Channels\n\nIf you draw a trend line under the swing lows of an uptrend and then a second line, parallel to the first, across the swing highs, you have a **channel**. Price tends to oscillate between the two rails for as long as the trend lasts. Channels can slope up, slope down or run flat (a flat channel is just a trading range with its support and resistance drawn in).\n\nChannels are useful for two things. First, they tell you where you are in the swing. Buying at the bottom rail of a rising channel means you are buying a pullback in an uptrend; buying at the top rail means you are chasing. Second, they give a **measured move** when they break. The usual rule of thumb is that a breakout from a channel travels roughly the channel's width beyond the broken rail. If a channel is $10 wide (lower rail at $100, upper rail at $110 at the time of the break) and price breaks above $110, the first target is around $120.\n\nThat measured-move rule is a heuristic, not a measurement of anything physical. Researchers who have tried to quantify how often patterns reach their \"textbook\" targets, most famously Thomas Bulkowski in his *Encyclopedia of Chart Patterns*, report success rates that vary a lot by pattern, market and period, and the figures are debated. Use targets to plan where to take partial profits, not as promises.\n\nA warning sign inside a channel: when price fails to reach the upper rail on a rally and turns down early, buyers are losing enthusiasm and the lower rail is more likely to break on the next test. The opposite, a rally that pierces the top rail (an \"overthrow\"), often marks a short-term climax."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["ema21", "fib"],
+          "caption": "The 21-day EMA as a trend guide, with Fibonacci retracement levels drawn across the highest high and lowest low of the last 120 bars. The 38.2%, 50% and 61.8% lines are where trend traders commonly look for pullbacks to end. There is no evidence these ratios have special power in markets; they are popular reference points, which is itself a reason prices sometimes react near them."
+        },
+        {
+          "type": "text",
+          "md": "### Volume: how many shares voted\n\n**Volume** is the number of shares traded during a candle. It is the second most important data series on a chart after price, and the only one that is not derived from price. Price tells you what the market decided; volume tells you how many participants took part in the decision.\n\nThe core idea is **confirmation**. A breakout above resistance on heavy volume says many buyers were willing to pay the new, higher price; the same breakout on thin volume says only a few were, and the move is easier to reverse. Likewise, a pullback in an uptrend on *light* volume is normal and healthy: few people are selling, they are just not buying for a moment. A pullback on *heavy* volume is distribution: lots of people are getting out.\n\nAlways compare to the stock's normal. A stock's **average daily volume (ADV)** might be 50 million shares. A breakout day with 140 million shares is 2.8 times normal, which is genuinely notable. A day with 55 million shares is noise. Many traders use 1.5x to 2x average volume as a rough threshold for \"heavy\", but there is nothing magic about those numbers.\n\nTwo more things to watch. A **volume climax**, an extreme spike after a long move, often marks exhaustion: the last impatient buyers (or panicked sellers) have acted, and there is nobody left to continue the move. And a **divergence**, where price grinds to a new high but each rally has less volume than the last, suggests the trend is running on fewer participants. Neither is a timing signal on its own; both are reasons to tighten stops or reduce size."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**\"Volume precedes price\" is a saying, not a law.** Volume spikes have many causes that have nothing to do with trend: earnings releases, index rebalancing days, the quarterly \"triple witching\" expiration of options and futures, block trades by a single fund. Before reading meaning into a volume bar, check the calendar. A 3x volume day on an earnings date is expected; the same bar on a random Tuesday is interesting."
+        },
+        {
+          "type": "text",
+          "md": "### VWAP: the intraday fair price\n\nFor intraday traders, the most useful volume tool is **VWAP**, the volume-weighted average price. It is computed from the first trade of the session: multiply each candle's typical price (usually the average of high, low and close) by its volume, add those up, and divide by the total volume so far. The result is the average price at which shares actually changed hands today, weighted by how many shares traded at each level. It resets at the start of each session.\n\nA simple example with three 5-minute candles: 10,000 shares at an average of $100.00, 30,000 at $100.50 and 20,000 at $100.20. The total value is 1,000,000 + 3,015,000 + 2,004,000 = $6,019,000 over 60,000 shares, so VWAP is $100.32. The simple average of the three prices would be $100.23; VWAP is higher because more shares traded at $100.50.\n\nInstitutions use VWAP as a benchmark: a fund buying a large position wants its average fill at or below VWAP, so their algorithms tend to buy more aggressively when price dips below it and ease off above it. That behaviour is why price often reacts around the VWAP line. Traders read price **above VWAP** as buyers being willing to pay up (intraday bullish) and **below VWAP** as sellers accepting lower prices (intraday bearish), and many use a reclaim of VWAP as an entry trigger.\n\nVWAP is only meaningful intraday. On the daily chart the dashboard shows a cumulative version for completeness, but the real tool is the one you see on 1-, 5- and 15-minute charts."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "5min",
+          "overlays": ["vwap", "volume"],
+          "caption": "A high-volume stock on 5-minute candles with VWAP. Watch how the heaviest volume bars cluster near the open and the close, and whether price spends the session above or below the VWAP line."
+        },
+        {
+          "type": "exercise",
+          "md": "Trend lines and channels are hard to test by eye, but a **breakout** rule can be tested exactly. In the strategy lab, run the `20-bar breakout` strategy on AAPL daily: it buys when price closes above the highest high of the last 20 bars and sells when it closes below the lowest low.\n\n- Note the total return, number of trades and win rate, and compare with buy & hold.\n- Change `n` from 20 to 50 and run again. Fewer trades? Better or worse?\n- Look at the trade markers on the chart. Can you find a breakout that failed (bought and sold quickly at a loss)? What did volume look like on that breakout day?\n\nThis is what \"breakouts work\" looks like when you actually measure it: some do, many do not, and the strategy survives (or not) on the size of the winners.",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=breakout&n=20&run=1", "label": "Run the breakout backtest" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock makes swing lows at $100 on day 1 and $106 on day 11. If the trend line holds, roughly where will it be on day 21?",
+              "choices": ["$106", "$109", "$112", "$118"],
+              "answer": 2,
+              "explain": "The line rises $6 over 10 days, or $0.60 per day. Ten more days adds another $6: 106 + 6 = $112."
+            },
+            {
+              "q": "How many touches are usually required before a trend line is considered confirmed?",
+              "choices": ["One", "Two", "Three", "Ten"],
+              "answer": 2,
+              "explain": "Two points are needed to draw any line; a third touch that holds is what shows the market is actually respecting it. One or two touches could easily be coincidence."
+            },
+            {
+              "q": "A rising channel is $10 wide and price breaks above the upper rail at $110. What is the common measured-move target?",
+              "choices": ["$100", "$115", "$120", "$130"],
+              "answer": 2,
+              "explain": "The measured-move rule of thumb adds the channel width to the breakout point: 110 + 10 = $120. It is a heuristic for planning, not a guarantee."
+            },
+            {
+              "q": "A stock averages 50 million shares a day and breaks out above resistance on 52 million shares. How should you read the volume?",
+              "choices": ["Strong confirmation: volume was above average", "Weak confirmation: volume was essentially normal", "Bearish: breakouts should happen on low volume", "Volume is irrelevant for breakouts"],
+              "answer": 1,
+              "explain": "52 million is only 4% above average, which is noise. Convincing breakouts usually come with volume well above normal (many traders look for 1.5x to 2x or more), showing broad participation."
+            },
+            {
+              "q": "Three 5-minute candles trade 10,000 shares at $100.00, 30,000 at $100.50 and 20,000 at $100.20. What is the VWAP?",
+              "choices": ["$100.23", "$100.32", "$100.50", "$100.70"],
+              "answer": 1,
+              "explain": "Total dollars = 1,000,000 + 3,015,000 + 2,004,000 = 6,019,000; total shares = 60,000; 6,019,000 ÷ 60,000 = $100.32. The unweighted average ($100.23) is lower because it ignores that most shares traded at $100.50."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l4",
+      "title": "Classic Candlestick Patterns",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Patterns are context plus shape\n\nCandlestick patterns are named shapes made by one, two or three consecutive candles. They come from Japanese rice traders, were popularised in the West by Steve Nison's 1991 book, and have poetic names: hammer, morning star, three black crows. The names are memorable; the ideas behind them are simple stories about who won the fight in the last few sessions.\n\nThe single most important rule: **a reversal pattern needs something to reverse.** A hammer is a bullish bottoming pattern *only* when it appears after a decline. The very same candle shape in the middle of a sideways range is just a candle with a long lower wick. The dashboard's detector enforces this: it will not label a hammer unless the bars leading into it were falling, nor a shooting star unless they were rising. If you look for patterns yourself, apply the same discipline.\n\nThe second rule is **location**. A hammer at a support level that has held three times before is worth attention. A hammer in the middle of nowhere is not. Patterns do not create support and resistance; they show you how price behaved when it got there.\n\nStart with the simplest: the **doji**. A doji has an open and close that are almost equal, so its body is a thin line with wicks above and below. Our detector calls a candle a doji when the body is 10% or less of the high-to-low range: for a candle with a $4.00 range, that is a body of $0.40 or less. A doji by itself means indecision. After a strong run it is a yellow light, suggesting the trend may be tiring, but it says nothing about direction until the *next* candle shows which way the indecision resolved."
+        },
+        {
+          "type": "text",
+          "md": "### Hammer and shooting star\n\nThe **hammer** is a single candle with a small body near the top of its range and a long lower wick, at least twice the body, with little or no upper wick. The story: sellers drove price down hard during the session, then buyers stepped in and took back everything by the close. For it to count, the market must have been falling into it.\n\nNumbers make it concrete. After a week of declines a stock opens at $97.80, drops to a low of $94.10, and closes at $98.00. The body is $0.20 (from 97.80 to 98.00), the lower wick is $3.70 and the upper wick is $0.00 if the high was 98.00. The lower wick is more than 18 times the body. Buyers absorbed a $3.70 drop and pushed the close above the open. The colour of the body matters little; a hammer can be green or red. What matters is the rejection of lower prices.\n\nThe **shooting star** is the mirror image at the top of a rally: a small body near the *bottom* of the range with a long *upper* wick. Buyers pushed to new highs and were rejected. After a run from $180 to $205, a candle that opens at $204.50, spikes to $209.80 and closes at $204.20 shows buyers failing to hold any of a $5 push: a warning.\n\nYou will also hear of the **inverted hammer** (shooting-star shape after a decline) and the **hanging man** (hammer shape after a rally). They are the same shapes in the opposite context and are weaker signals that lean on confirmation even more. Our detector keeps things simple and labels only hammer and shooting star, each in its proper context.\n\nIn every case the pattern is **confirmed** only when the next candle closes in the expected direction: above the hammer's high, or below the shooting star's low. Acting before confirmation is a bet that the story is finished; waiting is a bet that you can afford to miss the first few percent."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**The statistics are genuinely unsettled.** Authors who have backtested candlestick patterns over large samples report widely varying results, and several academic studies find that many single-candle patterns, taken alone and without confirmation, predict the next few days about as well as a coin flip. Others find modest edges in specific markets and periods. We will not quote a success rate for any pattern here, because any single number would be false precision. The honest position: patterns are a useful language for describing what just happened, they are most informative at important levels, and they should never be the only reason for a trade."
+        },
+        {
+          "type": "text",
+          "md": "### Engulfing patterns\n\nAn **engulfing** pattern is two candles in which the second body completely covers the first, in the opposite colour. A **bullish engulfing** after a decline: a red candle, then a green candle that opens at or below the red close and closes at or above the red open. For example, the first day runs from $100.00 down to $98.00 (red body of $2.00); the next day opens at $97.50 and closes at $101.00 (green body of $3.50, which covers the whole red body). Yesterday's sellers were overwhelmed; everyone who sold yesterday is now underwater.\n\nA **bearish engulfing** after a rally is the reverse: a green candle, then a red candle that opens at or above the green close and closes at or below the green open. The dashboard's detector requires the second body to be strictly larger than the first and the first body to be non-trivial, which filters out tiny candles being \"engulfed\" by ordinary ones.\n\nTwo related patterns with slightly looser rules are the **piercing line** (a green candle that closes more than halfway up the previous red body, without fully engulfing it) and the **dark cloud cover** (its bearish mirror). They tell a similar story with less force.\n\nEngulfing patterns are among the more intuitive signals because the size comparison is so direct. They are strongest when the engulfing candle also has above-average volume, when it occurs at a support or resistance zone, and when the engulfed candle was itself a meaningful one rather than a doji. A bullish engulfing on 2.5x average volume at a level that has held twice before is a complete setup worth writing down; a bullish engulfing on normal volume in the middle of a range is a curiosity."
+        },
+        {
+          "type": "text",
+          "md": "### Three-candle patterns\n\nThe **morning star** is a three-candle bottom. Candle one is a long red candle in a decline. Candle two is a small-bodied candle (any colour, ideally a doji) that opens with a gap below the first close: the sellers' last push, with no conviction. Candle three is a strong green candle that closes at least halfway up the first candle's body. In numbers: day one $110 → $104, day two a tiny body around $103.20 to $103.60, day three $103.80 → $108.50, which is well above the first candle's midpoint of $107. The sequence reads: heavy selling, exhaustion, then buyers in control.\n\nThe **evening star** is the mirror-image top: long green candle, small gap-up candle, long red candle closing below the first candle's midpoint. The dashboard's detector requires the middle body to be no more than 30% of the first body and the third candle to be at least half the first body's size, so it only flags well-formed examples.\n\n**Three white soldiers** are three consecutive strong green candles, each opening inside the previous body and closing at a new high. They often appear as a decline ends and signal steady, unhurried buying. **Three black crows** are the opposite: three strong red candles stair-stepping down, each opening inside the prior body and closing lower, signalling persistent selling after a top. These are continuation-flavoured patterns: by the time the third candle closes, the move is already underway, and the question is whether to join it or wait for a pullback.\n\nThe detector only looks for \"solid\" candles here, meaning the body is at least half of the range, because three green candles with huge wicks and tiny bodies are a very different, far less confident picture."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["patterns", "sma20"],
+          "caption": "The last few candlestick patterns the detector found, marked with arrows (up for bullish, down for bearish, a dot for a neutral doji). Patterns are deliberately rare: a hammer needs a decline before it, an engulfing bar must swallow the previous body. For each marker, check what price did over the following five candles."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**A pattern checklist, before you act.**\n\n- Was there a trend into the pattern that it could reverse?\n- Is the pattern at a support or resistance zone, trend line or moving average?\n- Was volume above normal on the signal candle?\n- Has the next candle confirmed it (closed beyond the pattern's extreme)?\n- Where is your stop (usually just beyond the pattern's wick), and is the distance to a sensible target at least twice that?\n\nIf you cannot tick at least four, you are not looking at a trade; you are looking at a candle."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard with the `Patterns` overlay and `S/R` levels on. The pattern panel below the chart lists every pattern found in the last 150 bars with a description.\n\n- For each of the last five patterns, record: the pattern name, its bias, whether it sat near an automatic support/resistance level, and what price did over the following five candles (up, down or flat, in percent).\n- Count how many of the five moved in the direction of the pattern's bias. With such a small sample the answer is noise, and that is the lesson: you would need hundreds of examples to say anything, which is what the backtester is for.\n- Try two other symbols and the `1h` interval. Do you find more patterns or fewer?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma20,pat,sr", "label": "Open the pattern detector" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A candle has a range of $4.00 from low to high. At most how large can its body be for the dashboard to classify it as a doji?",
+              "choices": ["$0.04", "$0.40", "$1.00", "$2.00"],
+              "answer": 1,
+              "explain": "The detector calls a candle a doji when the body is 10% or less of the range: 10% of $4.00 is $0.40."
+            },
+            {
+              "q": "After a week of declines a stock opens at $97.80, falls to $94.10 and closes at $98.00 (the high). What pattern is this?",
+              "choices": ["Shooting star", "Bearish engulfing", "Hammer", "Doji"],
+              "answer": 2,
+              "explain": "A small body ($0.20) at the top of the range with a long lower wick ($3.70) after a decline is a hammer: sellers pushed down hard and buyers took it all back."
+            },
+            {
+              "q": "Why is a hammer-shaped candle in the middle of a sideways range NOT considered a hammer signal?",
+              "choices": ["Hammers only occur on weekly charts", "A reversal pattern needs a prior trend to reverse", "Sideways ranges have no wicks", "The body must be green in a range"],
+              "answer": 1,
+              "explain": "The hammer's story is that a decline was rejected. Without a decline leading into it, the same shape is just a candle with a long lower wick; the dashboard's detector will not label it."
+            },
+            {
+              "q": "Day one: a red candle from $100.00 to $98.00. Day two: a green candle from $97.50 to $101.00. What is this?",
+              "choices": ["Morning star", "Piercing line", "Bullish engulfing", "Three white soldiers"],
+              "answer": 2,
+              "explain": "The green body (97.50 to 101.00) opens below the red close and closes above the red open, completely covering the previous body in the opposite colour: a bullish engulfing pattern."
+            },
+            {
+              "q": "What does it mean for a shooting star to be 'confirmed'?",
+              "choices": ["The same shape appears again the next day", "Volume was below average", "The next candle closes below the shooting star's low", "The RSI is above 70"],
+              "answer": 2,
+              "explain": "Confirmation means the following candle resolves the indecision in the pattern's direction. For a bearish shooting star that is a close below its low; for a bullish hammer, a close above its high."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l5",
+      "title": "Chart Patterns: Reversals and Continuations",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### From candles to structures\n\nCandlestick patterns are about one to three bars. **Chart patterns** are bigger: shapes that form over weeks or months out of swing highs, swing lows, support and resistance. They are not a separate kind of analysis; they are the same ideas from earlier lessons arranged in recognisable ways and given names so traders can talk about them.\n\nPatterns fall into two families. **Reversal patterns** form at the end of a trend and suggest it is about to change direction: head and shoulders, double tops and bottoms, rounding tops. **Continuation patterns** form as a pause within a trend and suggest the trend will resume: flags, pennants, most triangles. The distinction is about where the pattern appears, since several shapes (triangles especially) can be either.\n\nAlmost every chart pattern shares three parts. There is a **boundary** that defines it: a neckline, a channel rail, a converging trend line. There is a **breakout**, when price closes beyond that boundary, which is the moment the pattern is complete. And there is a **measured-move target**, typically the height of the pattern projected from the breakout point. For a pattern 15 points tall that breaks out at $100, the textbook target is $85 for a top or $115 for a bottom.\n\nThe discipline that separates useful pattern reading from wishful thinking is simple: **a pattern is not a pattern until it breaks out.** Before the breakout it is a possibility you are watching. Most \"head and shoulders tops\" that people point at on live charts never complete; they turn into ranges or resolve upward. The confirmation rules in the lesson exist to stop you trading possibilities."
+        },
+        {
+          "type": "text",
+          "md": "### Head and shoulders\n\nThe **head and shoulders top** is the best-known reversal pattern. After an uptrend, price makes a peak (the **left shoulder**), pulls back, rallies to a higher peak (the **head**), pulls back to roughly the same area as before, and then rallies to a lower peak (the **right shoulder**). A line drawn across the two pullback lows is the **neckline**. The pattern completes when price closes below the neckline.\n\nThe story is a trend running out of buyers. The left shoulder and head are normal uptrend behaviour: higher high. The right shoulder is the failure: the market could not make a new high. Breaking the neckline then breaks the most recent swing low, so the swing-point definition of an uptrend from Lesson 2 has officially failed too. Head and shoulders is just that failure with a name.\n\nVolume usually tells the same story. It tends to be heaviest on the left shoulder, lighter on the head (fewer people chasing the final high) and lighter still on the right shoulder, then expands on the neckline break. A neckline break on quiet volume is suspect.\n\nFor the target, measure from the top of the head to the neckline and project that distance down from the break. If the head peaked at $120 and the neckline is at $100, the height is $20 and the target is $80. Price frequently returns to the neckline after breaking it (a **pullback** or **retest**), which is the polarity rule from Lesson 2 in action: old support becomes resistance. That retest is the lower-risk entry many traders wait for.\n\nThe **inverse head and shoulders** is the same structure upside down at the end of a downtrend: a low, a lower low, a higher low, then a break above the neckline. Necklines are often sloped rather than flat; a slightly rising neckline on a top or slightly falling one on a bottom is normal."
+        },
+        {
+          "type": "text",
+          "md": "### Double tops and bottoms\n\nA **double top** looks like the letter M. Price rallies to a peak, pulls back, rallies again to roughly the same level and fails, then drops. The two peaks need not be identical; most practitioners accept peaks within a few percent of each other, and the exact tolerance is a matter of taste. The trough between them is the confirmation level: the pattern completes when price closes below it.\n\nTake a stock that peaks at $150.00, falls to $138.00, rallies to $149.20 and turns down. The two peaks are within 0.5% of each other. The pattern is only a *potential* double top until price closes below $138. If it does, the measured target is the height ($150 − $138 = $12) projected down from the break: $126. If instead price holds above $138 and goes on to break $150, there was no double top; there was a range that resolved upward.\n\nThe **double bottom** is the W-shaped mirror image at the end of a decline: two lows near the same price, a peak between them, and completion on a close above that peak. A **triple top or bottom** is the same idea with three tests; the more times a level is tested without breaking, the more significant the eventual break tends to be, but also the more likely the pattern is really just a range.\n\nTiming matters. Two peaks a week apart are more likely to be a single topping process than a pattern; peaks separated by several weeks or months, with a meaningful trough between them, make for a more credible double top. There is no fixed minimum, but many chartists want to see at least a few weeks and a trough of several percent before giving the shape a name."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Confirmation rules, and why they differ.** Because false breaks are common, traders add filters before accepting a breakout: a *close* beyond the level rather than an intraday touch; a close a certain percentage beyond (1% to 3% is common); two consecutive closes beyond; or a break accompanied by volume well above average. Different books prescribe different filters and none is provably best. The point of any filter is a trade-off: a stricter rule means fewer false signals but a later, worse entry. Pick one, write it down, and apply it consistently so your results can be compared."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["sr", "sma50", "volume"],
+          "caption": "Automatic support and resistance with the 50-day SMA and volume. Look for repeated tests of the same resistance (a potential double or triple top) or support (a potential double bottom), and notice whether the level has already been broken or is still being tested. Try to describe the structure before you decide what it is."
+        },
+        {
+          "type": "text",
+          "md": "### Flags and pennants\n\nA **flag** is a short pause after a sharp move. The sharp move is the **pole**: a near-vertical run, often on heavy volume, that leaves little in the way of pullbacks. The **flag** itself is a small, tidy consolidation that drifts gently *against* the direction of the pole, between two roughly parallel lines, on declining volume. Then price breaks out in the direction of the pole and the trend resumes. A **pennant** is the same thing but the consolidation converges into a small triangle rather than a parallel channel.\n\nThe psychology: a sharp move attracts profit-takers (which produces the gentle counter-drift) but not enough fresh sellers to reverse it (which is why the drift is gentle and volume dries up). When the profit-taking is done, the original buyers, plus those who missed the pole, push through.\n\nIn numbers: a stock runs from $20.00 to $25.00 in four sessions (a $5 pole), then spends six sessions drifting from $25.00 down to about $23.50 on half its usual volume. It then closes at $25.20, above the flag's upper boundary. The measured-move target adds the pole height to the breakout: $25.20 + $5.00 = $30.20. Flags on daily charts typically last one to four weeks; a \"flag\" that drags on for two months is probably something else.\n\nFlags are continuation patterns and work in both directions: a **bear flag** is a sharp drop, a gentle upward drift, then a break lower. A flag that breaks the *wrong* way (against the pole) is a failed pattern, and failed patterns often produce sharp moves of their own, because everyone who positioned for the continuation has to get out at once."
+        },
+        {
+          "type": "text",
+          "md": "### Triangles and wedges\n\nA **triangle** forms when the swings get smaller and smaller, so the trend lines drawn across the highs and across the lows converge. There are three kinds, named for which line is flat.\n\nAn **ascending triangle** has a flat top (repeated highs at about the same price) and rising lows. Buyers are stepping in earlier each time while sellers hold a line; the usual expectation is an upside break, especially inside an uptrend. A **descending triangle** has a flat bottom and falling highs: sellers growing more aggressive against a defended floor, with a downside lean. A **symmetrical triangle** has falling highs *and* rising lows, converging toward a point, and is considered neutral: the direction of the breakout decides.\n\nThe target is the height of the triangle at its widest point, projected from the breakout. If a symmetrical triangle began with a high of $60 and a low of $50 and breaks upward at $56, the target is roughly $66. A widely repeated rule of thumb says breakouts are most reliable when they happen between about two-thirds and three-quarters of the way from the triangle's start to its apex; patterns that drift all the way into the apex tend to fizzle. This is a convention from the classic texts rather than a measured fact, but it captures something real: a compression that resolves with energy is different from one that just runs out of room.\n\n**Wedges** look like triangles in which both lines slope the same way. A **rising wedge** (both lines rising, converging) usually resolves downward; a **falling wedge** usually resolves upward. The logic is that the move inside the wedge is losing momentum: each push covers less ground.\n\nTriangles can be reversal or continuation patterns depending on where they form, and that is precisely why the breakout, not the shape, decides your trade."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Hindsight is a liar.** Every chart pattern looks obvious *after* it completes; textbooks are full of perfect examples selected because they worked. At the right edge of a live chart you are looking at an ambiguous squiggle that could become three different patterns. Practice by covering the right side of a chart, naming what you see, writing down your breakout level and target, then uncovering. Do this fifty times and you will learn more about your own biases than any book can teach, and you will do it with paper money."
+        },
+        {
+          "type": "exercise",
+          "md": "Plan and place a pattern trade in your paper account. First, on the dashboard, find a stock that is testing a resistance level for the second or third time (a potential breakout) or has just completed a flag. Write down three numbers: the **breakout level**, a **stop** below the pattern, and a **measured-move target**.\n\nThen in the portfolio page:\n\n- Place a **stop** or **stop-limit** buy order at the breakout level, so you only enter if the breakout actually happens (not before).\n- Size the position so that the distance from entry to stop times the number of shares is no more than 1% of your paper account. On a $100,000 account with a $2 stop distance, that is at most 500 shares.\n- Record the plan in the trade's notes: pattern name, entry, stop, target.\n\nCome back in a week. Did the breakout trigger? Did it reach the target, hit the stop, or do neither? The outcome of one trade proves nothing; the habit of writing the plan first is the whole point.",
+          "action": { "page": "portfolio.html", "hash": "positions", "label": "Open your paper portfolio" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "In a head and shoulders top the head peaks at $120 and the neckline is at $100. What is the measured-move target after a neckline break?",
+              "choices": ["$110", "$100", "$80", "$60"],
+              "answer": 2,
+              "explain": "The pattern height is 120 − 100 = $20. Project that distance down from the neckline break: 100 − 20 = $80. Targets are planning tools, not guarantees."
+            },
+            {
+              "q": "A stock peaks at $150, drops to $138, rallies to $149.20 and turns down. When does this become a confirmed double top?",
+              "choices": ["As soon as the second peak fails below $150", "When price closes below the $138 trough", "When volume declines", "When the RSI crosses 50"],
+              "answer": 1,
+              "explain": "Two peaks alone are only a potential pattern. The double top completes when price closes below the trough between the peaks ($138). Until then the stock may simply be in a range that resolves upward."
+            },
+            {
+              "q": "Which of these is a continuation pattern?",
+              "choices": ["Head and shoulders top", "Double bottom", "Bull flag", "Triple top"],
+              "answer": 2,
+              "explain": "A flag is a brief pause after a sharp move, after which the prior trend is expected to resume. Head and shoulders, double bottoms and triple tops are reversal patterns."
+            },
+            {
+              "q": "A stock rallies from $20 to $25, consolidates in a flag down to $23.50, then breaks out at $25.20. What is the measured-move target?",
+              "choices": ["$26.70", "$28.50", "$30.20", "$35.00"],
+              "answer": 2,
+              "explain": "The pole is 25 − 20 = $5. Adding the pole height to the breakout point gives 25.20 + 5.00 = $30.20."
+            },
+            {
+              "q": "A triangle has a flat top with repeated highs near $60 and rising lows. What is it called, and which way does it usually lean?",
+              "choices": ["Descending triangle, bearish lean", "Ascending triangle, bullish lean", "Symmetrical triangle, neutral", "Rising wedge, bearish lean"],
+              "answer": 1,
+              "explain": "A flat top with rising lows is an ascending triangle: buyers step in earlier each time while sellers hold a fixed line, so the expected (not guaranteed) resolution is upward."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

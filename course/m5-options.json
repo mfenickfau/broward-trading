@@ -1,0 +1,582 @@
+{
+  "id": "m5-options",
+  "title": "Options Basics",
+  "level": "advanced",
+  "minutes": 58,
+  "summary": "Calls and puts, intrinsic and extrinsic value, expiration and exercise, how to read an option chain, the Greeks in plain language, implied volatility, and the defined-risk strategies in the Options Lab: covered calls, protective puts, vertical spreads, straddles, strangles and the iron condor, plus the assignment risks that catch beginners.",
+  "lessons": [
+    {
+      "id": "m5-l1",
+      "title": "Calls, puts and what a premium is made of",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### An option is a contract, not a share\n\nWhen you buy a share of stock you own a slice of a company. When you buy an **option** you own a contract that gives you a *right* about that stock for a limited time. Nothing more. The contract has four parts, and every option you will ever see on a chain is defined by them:\n\n- The **underlying**: the stock the contract is about (Apple, Tesla, an index fund like SPY).\n- The **type**: a **call** gives you the right to *buy* the stock; a **put** gives you the right to *sell* it.\n- The **strike price**: the fixed price at which that buying or selling happens.\n- The **expiration date**: the last day the right exists. After that the contract is gone.\n\nThe price you pay for the contract is called the **premium**. Premiums are quoted per share, but one standard US equity option covers **100 shares**, so a premium of $3.60 costs $360 for one contract. This multiplier is the first thing that trips up new traders. The Options Lab in your paper account shows both numbers so you get used to seeing them together.\n\nA quick example. Apple is trading at $100 (we use round numbers in this module so the arithmetic is easy; the Lab will show real-looking prices). You buy one **Apple $105 call expiring in 30 days** for $1.65. You have paid $165 for the right, any time in the next 30 days, to buy 100 shares of Apple at $105 each, no matter where the stock is trading. If Apple runs to $115 you can buy at $105 and sell at $115, a $10 per share gain less the $1.65 you paid. If Apple sits at $100 you simply let the right expire and lose the $165. That is the whole appeal: a known, limited cost for a claim on a much larger move.\n\nThe person on the other side, who **sold** (or \"wrote\") that call, received the $165 and took on the *obligation* to deliver 100 Apple shares at $105 if you ask. Buyers have rights; sellers have obligations. Keep that sentence in mind for the whole module, because most of the risk in options lives on the obligation side."
+        },
+        {
+          "type": "text",
+          "md": "### Puts, and the four basic positions\n\nA **put** is the mirror image. Buying an Apple $95 put for $1.35 gives you the right to *sell* 100 Apple shares at $95 for the next 30 days. If Apple falls to $80, you can buy shares in the market at $80 and sell them at $95 through your put, a $15 gain per share less the $1.35 premium. If Apple stays above $95 the put expires worthless and you lose $135.\n\nPuts are how options traders bet on a decline without borrowing shares to short them, and, more importantly, how long-term investors buy insurance on a stock they already own. We will come back to that second use in Lesson 4.\n\nWith two contract types and two sides, there are exactly four basic positions:\n\n- **Long call**: you bought a call. Bullish. Max loss is the premium. Profit is unlimited in theory.\n- **Long put**: you bought a put. Bearish. Max loss is the premium. Max profit is the strike minus the premium (the stock can only fall to zero).\n- **Short call**: you sold a call. Neutral-to-bearish. Max profit is the premium. Loss is unlimited if the stock keeps rising and you do not own the shares.\n- **Short put**: you sold a put. Neutral-to-bullish. Max profit is the premium. Max loss is the strike minus the premium, if the stock goes to zero.\n\nNotice the asymmetry. Buyers risk a small, known amount for a large, uncertain payoff. Sellers collect a small, known amount and accept a large, uncertain risk. Neither is \"better\": the premium is the market's price for carrying that risk, and over many trades the two sides roughly balance after costs. Beginners should start as buyers of single options in the paper account, where the worst case is already written on the ticket, and only move to selling once they understand assignment (Lesson 5)."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Rights versus obligations.** Buying an option (a call or a put) gives you a right you can use or ignore. Selling an option gives someone else that right over you. The buyer's maximum loss is the premium paid. The seller's maximum gain is the premium received, and the seller's loss can be far larger. Every strategy in this module is some combination of these four building blocks."
+        },
+        {
+          "type": "text",
+          "md": "### Intrinsic value and extrinsic value\n\nEvery premium can be split into two pieces, and learning to do the split in your head is the single most useful habit in options.\n\n**Intrinsic value** is what the option would be worth if it were exercised this second. For a call it is the stock price minus the strike, if positive, otherwise zero. For a put it is the strike minus the stock price, if positive, otherwise zero.\n\n- Stock at $100, $95 call: intrinsic value = 100 − 95 = **$5.00**.\n- Stock at $100, $105 call: intrinsic value = **$0** (you would not pay $105 for something selling at $100).\n- Stock at $100, $105 put: intrinsic value = 105 − 100 = **$5.00**.\n- Stock at $100, $95 put: intrinsic value = **$0**.\n\n**Extrinsic value** (also called *time value*) is everything else: premium minus intrinsic value. It is what you pay for the *possibility* that the option becomes worth more before it expires. With Apple at $100, a 30-day $95 call might trade around $6.65. Its intrinsic value is $5.00, so its extrinsic value is $1.65. A 30-day $105 call at $1.65 is *all* extrinsic value; it has no intrinsic value at all.\n\nThree words describe where a strike sits relative to the stock, and they are used constantly:\n\n- **In the money (ITM)**: the option has intrinsic value. Calls with strikes below the stock, puts with strikes above it.\n- **At the money (ATM)**: the strike is at (or nearest to) the current price.\n- **Out of the money (OTM)**: no intrinsic value. Calls above the stock, puts below it.\n\nExtrinsic value is always highest for at-the-money options and shrinks as you move deep in or out of the money. In our example the $100 call (ATM) carries about $3.60 of pure extrinsic value, the $95 call (ITM) about $1.65, and the $110 call (far OTM) only about $0.65. Extrinsic value also shrinks every day as expiration approaches, which is the subject of the Greeks lesson. At expiration, extrinsic value is exactly zero and an option is worth only its intrinsic value."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "bb"
+          ],
+          "caption": "Apple, daily, with SMA 20, SMA 50 and Bollinger Bands. Pick any candle and imagine you had bought a call struck 5% above that day's close, expiring 30 bars later. Scroll forward 30 bars: did price finish above the strike? Count how often it did over a dozen tries. Then notice that the band width changes over time; wide bands mean more volatility, and in Lesson 3 you will see that more volatility means more expensive options. The data on the demo feed is simulated, so use it for the shapes, not the dates."
+        },
+        {
+          "type": "text",
+          "md": "### Expiration, exercise and assignment\n\nAn option's life ends at **expiration**. Standard monthly US equity options expire on the **third Friday** of the month; most liquid stocks and ETFs also list **weekly** expirations every Friday, and the biggest index products list several expirations per week. The Options Lab offers a handful of expirations measured in days so you can compare them side by side.\n\nTo **exercise** an option is to use the right: a call holder exercises to buy shares at the strike, a put holder to sell them. The seller who is chosen to fulfil that right is **assigned**. US-listed equity options are **American style**, meaning the holder can exercise on any trading day up to and including expiration. Most broad index options, such as those on the S&P 500 index itself, are **European style** (exercise only at expiration) and **cash-settled** (money changes hands instead of shares). Everything in this module assumes American-style stock options unless we say otherwise.\n\nHere is the part beginners often miss: **you almost never need to exercise**. An option that is in the money has intrinsic value plus some extrinsic value, and you can simply *sell the contract* back into the market for that total. Exercising early throws away the extrinsic value. Traders close positions by trading the option itself; exercise is mainly for people who actually want the shares.\n\nAt expiration, the clearing house (the Options Clearing Corporation, OCC) **automatically exercises** any equity option that finishes in the money by $0.01 or more, unless the holder instructs otherwise. If you hold a $105 call and the stock closes at $105.40 on expiration Friday, you will wake up Monday owning 100 shares bought at $105, which costs $10,500 of cash or margin you may not have planned for. If you sold that call, you will wake up having delivered 100 shares, possibly shares you did not own, which makes you short. This is why the standing advice is: **close or roll positions before expiration unless you specifically want the stock to move**. Lesson 5 covers the assignment risks in detail."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Options are a wasting asset.** A share of stock can be held for twenty years. An option expires, and its extrinsic value is guaranteed to reach zero on a known date. If the stock does nothing, a long call or put loses money even though you were not \"wrong\" about direction. Paper trade several single options to expiration in the Options Lab and watch this happen before you ever consider real money."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the Options Lab on Apple (the link does this; the Lab is the third tab on your portfolio page).\n\n- Read the spot price at the top. Pick the expiration closest to **30 days**.\n- Find the **at-the-money strike** (the one nearest the spot) and write down bid and ask for the call and for the put and compute each mid as (bid + ask) ÷ 2. Both are almost entirely extrinsic value. Which is higher, and by how much?\n- Move two strikes **below** the spot. For the call there, compute intrinsic value (spot − strike) and extrinsic value (mid − intrinsic) by hand. Do the same for the put at that strike (its intrinsic value should be zero).\n- Move two strikes **above** the spot and repeat. Which of the four options you looked at has the most extrinsic value? It should be the one closest to the money.\n- Now change the expiration to the **shortest** one available and look at the same ATM call. How much extrinsic value disappeared, and what fraction of the 30-day premium does that represent?\n- Finally, paper-buy **one** ATM call at the ask (click the **+** in the chain, then use the paper-trade panel). Note the total cost in dollars, not per share. You will check on it in later lessons.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/AAPL"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock trades at $52. You buy one $50 call for a premium of $3.10. How much cash leaves your account, and what is the option's intrinsic value?",
+              "choices": [
+                "$3.10 leaves; intrinsic value is $2.00",
+                "$310 leaves; intrinsic value is $2.00 per share",
+                "$310 leaves; intrinsic value is $3.10 per share",
+                "$5,000 leaves; intrinsic value is zero"
+              ],
+              "answer": 1,
+              "explain": "One standard contract covers 100 shares, so a $3.10 premium costs $310. Intrinsic value for a call is stock price minus strike when positive: 52 − 50 = $2.00 per share. The other $1.10 of the premium is extrinsic (time) value."
+            },
+            {
+              "q": "Which position has an obligation rather than a right?",
+              "choices": [
+                "Long call",
+                "Long put",
+                "Short put",
+                "None of them; all options are rights"
+              ],
+              "answer": 2,
+              "explain": "Buying a call or a put gives you a right. Selling (writing) an option gives the buyer a right over you, so the short put carries the obligation to buy 100 shares at the strike if assigned."
+            },
+            {
+              "q": "A stock is at $80. Which option is in the money?",
+              "choices": [
+                "The $85 call",
+                "The $75 put",
+                "The $85 put",
+                "The $80 call"
+              ],
+              "answer": 2,
+              "explain": "A put is in the money when its strike is above the stock price: the $85 put has 85 − 80 = $5 of intrinsic value. The $85 call and $75 put are out of the money, and the $80 call is at the money with zero intrinsic value."
+            },
+            {
+              "q": "You own a call that is $4 in the money with 20 days left and a market price of $5.20. Which is the best way to take your profit?",
+              "choices": [
+                "Exercise it now to lock in the $4",
+                "Sell the call in the market for $5.20",
+                "Wait for automatic exercise at expiration",
+                "Buy a put at the same strike"
+              ],
+              "answer": 1,
+              "explain": "Exercising captures only the $4 of intrinsic value and throws away $1.20 of extrinsic value. Selling the contract captures the full $5.20. Waiting exposes you to 20 more days of price risk and time decay."
+            },
+            {
+              "q": "What happens at expiration to an equity option that finishes $0.30 in the money if the holder gives no instructions?",
+              "choices": [
+                "It expires worthless because the amount is too small",
+                "The clearing house automatically exercises it",
+                "It is converted to cash equal to the premium paid",
+                "It rolls to the next expiration automatically"
+              ],
+              "answer": 1,
+              "explain": "The OCC automatically exercises equity options that finish in the money by $0.01 or more unless the holder opts out. The holder ends up long (call) or short (put) 100 shares per contract, which is why traders close positions before expiration if they do not want the shares."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l2",
+      "title": "Reading an option chain",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### The layout of a chain\n\nAn **option chain** is the table that lists every contract on one underlying for one expiration. Almost every broker uses the same layout, and the Options Lab copies it: **calls on the left, strikes down the middle, puts on the right**, with one row per strike. Above the table you choose the expiration date; changing it reloads the whole table.\n\nThe strike column is the spine. Strikes are spaced by fixed increments that depend on the stock's price: typically $0.50 or $1 for low-priced stocks, $2.50 for mid-priced ones, $5 for stocks in the hundreds and $10 for very expensive ones. Exchanges can list finer increments on popular names, so a real chain on a heavily traded stock may show $1 strikes even at $400. The Lab uses $2.50, $5 and $10 increments based on price so the table stays readable.\n\nThe rows are shaded to show **moneyness** at a glance. In the Lab, in-the-money cells are shaded: calls below the spot and puts above it. The unshaded boundary between them is the at-the-money strike. Most of the trading volume on any chain clusters within a few strikes of that boundary, because that is where extrinsic value, and therefore the interesting action, is greatest.\n\nFor each contract the chain shows a set of columns. The exact set varies by broker. The Lab shows bid, ask, IV and the four Greeks for every strike; compute the mid yourself as (bid + ask) ÷ 2. Real broker chains add Last, Volume and Open interest, which a synthetic chain cannot have. The columns you will meet almost everywhere:\n\n- **Bid** and **Ask**: the best price someone will pay for the contract and the best price someone will sell it at.\n- **Mid** (sometimes \"mark\"): halfway between bid and ask; the fairest single estimate of the option's value. The Lab does not print it as a column, so compute it from bid and ask.\n- **Last** (brokers only): the price of the most recent trade, which can be stale for illiquid strikes.\n- **Volume** (brokers only): contracts traded today.\n- **Open interest (OI)** (brokers only): contracts currently outstanding, updated overnight.\n- **IV**: implied volatility, the market's estimate of future volatility baked into that price (Lesson 3).\n- **Delta, Gamma, Theta, Vega**: the Greeks (Lesson 3).\n\nReading a chain well means ignoring most of this most of the time. For a first pass you need the strike, the bid and ask, and the implied volatility. The rest is for refining a trade you have already decided on."
+        },
+        {
+          "type": "text",
+          "md": "### The spread is your first cost\n\nIn the stock market a liquid share might have a bid of $100.00 and an ask of $100.01. In the options market even a popular contract can show a bid of $3.50 and an ask of $3.70, and an illiquid one might show $3.00 and $4.20. That gap is the **bid-ask spread**, and it is the first and most reliable cost of every options trade.\n\nIf you buy at the ask ($3.70) and immediately sell at the bid ($3.50) you lose $0.20 per share, $20 per contract, with the stock having done nothing. On a $3.60 mid that is a 5.6% round-trip cost. Compare it to a $20 spread on a $0.40 option: you would need the option to gain 50% just to get back to even. This is why the Lab's chain says \"**+** buys at the ask, **−** sells at the bid\": it forces you to feel the spread rather than pretend you can trade at the mid.\n\nA few practical rules that most experienced traders agree on:\n\n- Prefer strikes and expirations with **high open interest and volume**; they have tighter spreads.\n- Avoid options priced under about $0.20–$0.30 unless you understand that the spread may be a large fraction of the price.\n- Use **limit orders** near the mid rather than market orders. Options market orders can fill at ugly prices on thin strikes.\n- Spread cost is paid **twice** for a round trip and once per leg for multi-leg trades, so a four-leg iron condor crosses four spreads to open and four to close.\n\nOpen interest deserves one more comment. It is often misread as a prediction (\"lots of open calls at $110, so the market expects $110\"). It mostly reflects where trading has already happened, including hedges and spreads whose owners have no directional view. Treat it as a **liquidity** indicator, not a forecast."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Price an option in your head before you look.** For an at-the-money option, a decent approximation is: premium ≈ 0.4 × stock price × implied volatility × square root of (days to expiry ÷ 365). With a $100 stock, 30% IV and 30 days: 0.4 × 100 × 0.30 × 0.287 ≈ $3.44. The exact Black-Scholes value with interest rates included is about $3.60. If the chain shows an ATM call at $7, either IV is far higher than you assumed or something is wrong with your inputs. Checking the rough number first catches a lot of mistakes."
+        },
+        {
+          "type": "text",
+          "md": "### The contract symbol\n\nEvery listed option has a standard identifier set by the OCC, and you will see it on statements, in order confirmations and in the Lab's positions table. It packs the four contract terms into one string:\n\n`AAPL260117C00200000`\n\n- `AAPL`: the underlying root symbol (padded with spaces to six characters in the official format; most software drops the spaces).\n- `260117`: the expiration as **YYMMDD**, here 17 January 2026.\n- `C`: the type, **C** for call or **P** for put.\n- `00200000`: the strike price × 1000 as eight digits, so 00200000 = $200.000.\n\nSo `AAPL260117C00200000` is the Apple $200 call expiring on 17 January 2026, and `TSLA250620P00250000` would be a Tesla $250 put expiring 20 June 2025. Once you can read these you can check any position without a lookup table. The Lab stores paper option positions under these ids and shows the human-readable version beside them.\n\nTwo oddities worth knowing. First, after a stock split or a special dividend, existing contracts are **adjusted** and get a new root symbol (for example `AAPL1`) with a non-standard deliverable, such as 200 shares plus cash. Adjusted contracts are usually illiquid and confusing; most traders avoid them. Second, some brokers display expiration as the Saturday following the third Friday for historical reasons. Trading stops on the Friday either way."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi"
+          ],
+          "caption": "Tesla, daily, with Bollinger Bands and the RSI pane. Tesla is one of the most actively traded option names in the US market, and its chain is wide: dozens of strikes per expiration, several expirations a week. Watch how the Bollinger Bands expand during fast moves and contract during quiet stretches. Option premiums on the Lab's Tesla chain are much higher as a percentage of the stock price than on a slow utility stock, and this chart is the reason: the market expects larger moves. Simulated bars on the demo feed."
+        },
+        {
+          "type": "text",
+          "md": "### Choosing a strike and an expiration\n\nA chain offers hundreds of contracts. Picking one is a trade-off between **probability** and **payoff**, and the chain shows both sides of it if you know where to look.\n\nTake the delta column (we will define it properly next lesson). For now, read a call's delta as a rough estimate of the chance it finishes in the money. A $105 call on a $100 stock with 30 days left might show a delta near 0.31 and cost about $1.65; the $110 call shows a delta near 0.15 and costs about $0.65; the $95 call shows about 0.75 and costs about $6.65. Cheaper strikes are cheaper *because* they are less likely to pay off. There is no strike that is both cheap and likely.\n\nA useful way to compare them is the **breakeven at expiration**: for a long call it is strike + premium; for a long put it is strike − premium.\n\n- $95 call at $6.65: breakeven $101.65 (stock needs to rise 1.65%).\n- $100 call at $3.60: breakeven $103.60 (3.6%).\n- $105 call at $1.65: breakeven $106.65 (6.65%).\n- $110 call at $0.65: breakeven $110.65 (10.65%).\n\nThe far out-of-the-money call has the biggest percentage payoff if the stock jumps 15%, and loses everything if the stock rises \"only\" 8%. The in-the-money call behaves much more like the stock itself.\n\nFor expiration, the trade-off is cost versus time decay. A 60-day ATM call costs more than a 30-day one (about $5.15 versus $3.60 in our example), but not twice as much, because extrinsic value grows roughly with the square root of time. Longer-dated options give your idea room to work and decay more slowly per day; shorter ones are cheaper and decay fast. A widely used rule of thumb for *buyers* is to give the trade more time than you think it needs and to exit before the last two or three weeks, when decay accelerates. It is a rule of thumb, not a law, and traders who specialise in short-dated options would argue with it."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Cheap is not the same as good value.** A $0.30 far-out-of-the-money call looks like a bargain next to a $6 in-the-money one, but most such options expire worthless. Position size in dollars and probability, not in number of contracts. Buying ten lottery tickets for $300 is a $300 bet with a low chance of winning, not a diversified position."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the Options Lab on Tesla (the link does this) and pick the expiration closest to 30 days.\n\n- For the at-the-money call, write down bid and ask and compute the mid as (bid + ask) ÷ 2. Compute the spread as a percentage of the mid. Do the same for a call three strikes out of the money. Which contract is more expensive to trade as a *percentage*?\n- Use the rule-of-thumb formula from this lesson (0.4 × spot × IV × √(days ÷ 365)) with the Lab's IV value to estimate the ATM call premium. How close is it to the chain's mid?\n- Write out the OCC contract symbol for the ATM call by hand (root, YYMMDD, C, strike × 1000 as eight digits). Then buy one contract at the ask and compare your symbol with the one shown in your positions table.\n- Compute the breakeven at expiration for the ATM call and for the call three strikes above it. By what percentage does Tesla need to rise for each to break even?\n- Open the **1day** Tesla chart on the dashboard and count how many 30-bar stretches in the last year rose by more than the larger of those two percentages. That is a rough, backward-looking sense of how often the cheaper call would have paid.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/TSLA"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "On an option chain in the standard layout, where are the puts?",
+              "choices": [
+                "Above the calls, sorted by expiration",
+                "To the right of the strike column, with calls on the left",
+                "In a separate table you must open",
+                "Mixed with calls, sorted by price"
+              ],
+              "answer": 1,
+              "explain": "The conventional chain puts calls on the left, strikes in the centre column and puts on the right, one row per strike. The Options Lab uses the same layout."
+            },
+            {
+              "q": "A call shows bid $1.80 and ask $2.20. You buy at the ask and the stock does not move. If you sold back immediately, roughly what would you lose per contract?",
+              "choices": [
+                "$0.40",
+                "$4",
+                "$40",
+                "$200"
+              ],
+              "answer": 2,
+              "explain": "Buying at $2.20 and selling at the $1.80 bid loses $0.40 per share, and a contract covers 100 shares, so $40. The bid-ask spread is the first cost of every options trade."
+            },
+            {
+              "q": "What does the contract symbol MSFT250919P00400000 describe?",
+              "choices": [
+                "A Microsoft $400 call expiring 19 September 2025",
+                "A Microsoft $400 put expiring 19 September 2025",
+                "A Microsoft $40 put expiring 25 September 2019",
+                "A Microsoft $4,000 put expiring 19 September 2025"
+              ],
+              "answer": 1,
+              "explain": "The format is root, YYMMDD, C or P, then strike × 1000 as eight digits. 250919 is 19 September 2025, P means put, and 00400000 ÷ 1000 = $400."
+            },
+            {
+              "q": "A stock is at $60. You buy the $65 call for $1.20. What is the breakeven price at expiration?",
+              "choices": [
+                "$61.20",
+                "$63.80",
+                "$65.00",
+                "$66.20"
+              ],
+              "answer": 3,
+              "explain": "For a long call, breakeven at expiration is strike plus premium: 65 + 1.20 = $66.20. The stock must rise more than 10% for the position to make money if held to expiration."
+            },
+            {
+              "q": "Which statement about open interest is most accurate?",
+              "choices": [
+                "High open interest at a strike means the stock will be pinned there",
+                "Open interest is the number of contracts traded today",
+                "Open interest is a liquidity indicator showing how many contracts are outstanding",
+                "Open interest only counts contracts bought by retail traders"
+              ],
+              "answer": 2,
+              "explain": "Open interest counts contracts currently outstanding and is updated overnight. It is useful as a liquidity signal (tighter spreads where OI is high). Volume is today's traded count. Treating OI as a price forecast is a common mistake."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l3",
+      "title": "The Greeks, intuitively, and implied volatility",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Why option prices need Greeks\n\nA share of stock has one source of risk: its price. An option has several at once. Its value changes when the stock moves, when time passes, when the market's expectation of future volatility changes, and (slightly) when interest rates change. The **Greeks** are simply the sensitivities of an option's price to each of those inputs, computed from a pricing model. The Options Lab uses the **Black-Scholes-Merton** model, the standard textbook model, to compute them for every contract in its synthetic chain, and real brokers show the same numbers on real chains.\n\nYou do not need the formulas. You need to be able to look at a position and answer four questions: *What happens if the stock moves $1? What happens tomorrow if nothing moves? What happens if the market gets more or less nervous? And how fast do those answers change?* That is delta, theta, vega and gamma.\n\nAll of the example numbers in this lesson use the same reference option: a **$100 stock, 30% implied volatility, 4% interest rate, 30 days to expiration**. The at-the-money $100 call is worth about **$3.59** in that setting and the $100 put about **$3.26**. (The put is a little cheaper than the call because of interest rates; at zero rates they would be equal.) You can reproduce them in the Lab by setting IV to 30% and picking the 30-day expiration on any stock trading near $100; the Lab scales strikes to the actual spot."
+        },
+        {
+          "type": "text",
+          "md": "### Delta and gamma\n\n**Delta** is how much the option's price changes for a $1 move in the stock. Calls have positive delta between 0 and 1; puts have negative delta between 0 and −1. The reference $100 call has a delta of about **0.53**: if the stock rises from $100 to $101, the call rises from roughly $3.59 to roughly $4.12. The $100 put has a delta of about **−0.47**: the same $1 rise knocks it down to roughly $2.79.\n\nDelta tells you three things at once:\n\n- **Directional exposure.** A 0.53-delta call behaves like owning 53 shares, for as long as delta stays near 0.53. One contract = 100 shares × delta, so ten of these calls move about like 530 shares.\n- **Moneyness.** Deep in-the-money options approach a delta of 1 (calls) or −1 (puts): they move almost dollar for dollar with the stock. Far out-of-the-money options approach 0. The $90 call in our example has a delta near 0.90; the $110 call, near 0.15.\n- **A rough probability.** Many traders read a 0.31-delta call as having \"about a 31% chance of expiring in the money\". This is an approximation that the model happens to make reasonable, not a definition, and it gets less accurate for longer expirations and higher volatility. It is good enough for thinking about strike selection, which is how we used it last lesson.\n\n**Gamma** is how much delta itself changes per $1 move. It is the acceleration. The reference ATM call has a gamma of about **0.046**, so after a $1 rise its delta becomes roughly 0.53 + 0.046 = 0.58. Gamma is highest for at-the-money options and highest when expiration is close: the 7-day ATM call has a gamma near 0.096, twice the 30-day figure, and a 1-day ATM option has a gamma above 0.25. That is why short-dated at-the-money options feel wild: a small move in the stock flips them from \"coin toss\" to \"almost certainly in\" or \"almost certainly out\".\n\nFor a buyer, gamma is the good news: your position gets longer as the stock rises and shorter as it falls, automatically. For a seller, gamma is the bad news in the same sentence. Long options are long gamma; short options are short gamma."
+        },
+        {
+          "type": "text",
+          "md": "### Theta: time decay\n\n**Theta** is how much the option loses per day with everything else unchanged. It is almost always negative for a long option. The reference 30-day ATM call has a theta of about **−$0.06** per day, meaning about **$6 per contract per day**. Hold it a week with the stock flat and you have lost roughly $40 of a $359 premium, about 11%.\n\nTheta is not constant. Because extrinsic value grows with the *square root* of time, it decays slowly when expiration is far away and quickly when it is near. Compare the same ATM call at different expirations (same stock, same 30% IV):\n\n- 120 days: price ≈ $7.48, theta ≈ −$0.034/day.\n- 60 days: price ≈ $5.17, theta ≈ −$0.046/day.\n- 30 days: price ≈ $3.59, theta ≈ −$0.062/day.\n- 7 days: price ≈ $1.70, theta ≈ −$0.124/day.\n- 1 day: price ≈ $0.63, theta ≈ −$0.32/day.\n\nThe 7-day option is less than half the price of the 30-day one but is bleeding twice as fast per day. Expressed as a percentage of its own value, the 1-day option loses half its worth in a single day of no movement. This acceleration in the final weeks is the reason behind the buyer's rule of thumb from last lesson (exit before the last two or three weeks) and behind the mirror-image seller's rule (sell options with roughly 30–60 days to go, where the decay you collect is fast but gamma is still manageable). Both are conventions that practitioners debate, not laws.\n\nTheta is also largest for at-the-money options, because they have the most extrinsic value to lose. Deep in-the-money and far out-of-the-money options have less time value and therefore smaller theta in dollars. One more nuance: the model's theta assumes calendar days, so a Friday option \"loses\" Saturday and Sunday too. In practice market makers price weekends in ahead of time, so Friday afternoon decay often looks larger than Monday's."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Delta** is direction (shares-equivalent). **Gamma** is how fast delta changes. **Theta** is the daily cost of waiting, paid by buyers and collected by sellers. **Vega** is exposure to the market's fear level. Long options: positive gamma, positive vega, negative theta. Short options: the reverse. Every multi-leg strategy in Lessons 4 and 5 is a way of choosing which of these you want to own and which you want to sell."
+        },
+        {
+          "type": "text",
+          "md": "### Vega and implied volatility\n\n**Volatility** is how much a stock's price tends to move, usually quoted as an annualised standard deviation. A 30% volatility means that over one year, roughly two thirds of the time the stock stays within ±30% of where it started (under the model's assumptions). **Historical volatility** is measured from past prices. **Implied volatility (IV)** is different: it is the volatility you would have to plug into the pricing model to get the option's current market price. It is the market's *forecast*, expressed as a number, and the Options Lab lets you set it directly with a slider so you can watch what it does to the chain.\n\n**Vega** is how much the option's price changes for a one-percentage-point change in IV. The reference 30-day ATM call has a vega of about **0.114**, so if IV moves from 30% to 31% the call rises from $3.59 to about $3.70; if IV jumps to 40%, the call is worth about $4.73 with the stock unchanged. Vega is largest for at-the-money options and for longer-dated ones (the 120-day call's vega is about 0.226, double the 30-day figure).\n\nThe next block covers the three practical reasons IV matters more than any other input once you have chosen a direction."
+        },
+        {
+          "type": "text",
+          "md": "### Three ways implied volatility bites\n\nIV matters for three practical reasons:\n\n- **Expected move.** A one-standard-deviation expected move over the life of an option is roughly stock price × IV × √(days ÷ 365). For our $100 stock at 30% IV over 30 days: 100 × 0.30 × 0.287 ≈ **$8.60**. Traders use this to judge whether a strike is \"far\" or \"close\" in a way that accounts for the stock's personality. On a 60% IV stock the same 30-day move is $17.20.\n- **IV crush.** Before a scheduled event such as an earnings report, IV on near-dated options rises because the market expects a jump. After the announcement the uncertainty is gone and IV collapses, often in minutes. A trader who bought a call before earnings can be *right* about the direction and still lose money because vega gave back more than delta earned. The Lab lets you simulate this: price a position at 60% IV, then drag the slider to 30% and watch the value fall.\n- **Relative value.** Comparing today's IV with its own past range (traders call this IV rank or IV percentile) tells you whether options on this stock are expensive or cheap *for this stock*. High IV favours strategies that sell premium; low IV favours strategies that buy it. This is a tendency, not a guarantee: IV can stay high for good reasons.\n\nFinally, IV is not one number per stock. On a real chain, out-of-the-money puts usually carry higher IV than at-the-money options, and far out-of-the-money calls often do too. Plotted against strike, this makes a curve called the **volatility smile** or **skew**. It exists because crashes are faster than rallies and investors pay up for downside protection. The Lab's synthetic chain reproduces a modest smile so the numbers look and behave like a real chain."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi",
+            "macd"
+          ],
+          "caption": "Nvidia, daily, with Bollinger Bands (a 20-day, two-standard-deviation envelope, which is a rough picture of recent realised volatility), plus RSI and MACD panes. Find the quietest stretch, where the bands are narrowest, and the wildest, where they are widest. Options on Nvidia during the quiet stretch would have been priced with a much lower implied volatility than during the wild one, and a trader who bought options in the quiet stretch and held into the expansion would have been helped by rising vega even before any directional gain. The data is simulated."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**The model is a map, not the territory.** Black-Scholes assumes constant volatility, no jumps, continuous trading and lognormal returns. Real stocks gap on news, and real volatility clusters and changes. The Greeks are still the most useful dashboard a trader has, but they describe how the *model* thinks the option will behave, and the first casualty of a surprise is usually the model."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the Options Lab on Nvidia (the link does this). You will use the IV slider and two expirations.\n\n- Set implied volatility to **30%** and pick the expiration closest to 30 days. Write down the ATM call's mid, delta, theta and vega. Multiply theta by 100: that is the dollars one contract is expected to lose tomorrow if the stock does not move.\n- Now pick the **shortest** expiration. Write down the same four numbers for the ATM call. The price should be much lower and theta (per day) much larger in proportion. Compute theta ÷ price for both expirations: what percentage of its own value does each option lose per day?\n- Go back to the 30-day expiration and drag IV from **30% to 60%**. How much did the ATM call's mid change? Divide the change by 30 (the number of IV points) and compare with the vega the chain showed at 30%. Vega itself changes as IV changes, so expect the numbers to be close but not identical.\n- Use the expected-move formula (spot × IV × √(30 ÷ 365)) at 30% and at 60%. Which strikes on the chain sit about one expected move above and below the spot? Note the delta of the call at the upper strike and the put at the lower one. Roughly, they should be in the mid-teens to low twenties.\n- Simulate an **IV crush**: load the *Long Straddle* preset at 60% IV and note the position's value in the strategy panel. Drag IV to 30%. How much did the straddle lose with the stock unchanged? That is what happens to a straddle buyer the morning after earnings if the stock does not move enough.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/NVDA"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A call has a delta of 0.40 and costs $2.00. The stock rises $1. Ignoring other effects, roughly what is the call now worth?",
+              "choices": [
+                "$2.04",
+                "$2.40",
+                "$3.00",
+                "$4.00"
+              ],
+              "answer": 1,
+              "explain": "Delta is the price change per $1 move in the stock: 0.40 × $1 = $0.40, so the call goes to about $2.40. Gamma would then raise the delta slightly for the next dollar."
+            },
+            {
+              "q": "Which option has the highest gamma?",
+              "choices": [
+                "A deep in-the-money call with 120 days to expiration",
+                "A far out-of-the-money put with 120 days to expiration",
+                "An at-the-money call with 5 days to expiration",
+                "An at-the-money call with 120 days to expiration"
+              ],
+              "answer": 2,
+              "explain": "Gamma peaks at the money and rises sharply as expiration approaches. Short-dated at-the-money options have the highest gamma, which is why their deltas swing so violently on small moves."
+            },
+            {
+              "q": "Theta on a long option is −0.08. What does that mean?",
+              "choices": [
+                "The option gains $0.08 per day as expiration nears",
+                "The option loses about $0.08 per share, or $8 per contract, per day if nothing else changes",
+                "The option loses 8% of its value every day",
+                "The option will be worth $0.08 at expiration"
+              ],
+              "answer": 1,
+              "explain": "Theta is the model's estimate of daily decay in extrinsic value per share, all else equal. Multiply by 100 for the per-contract dollar amount. It is a dollar figure, not a percentage, and it grows as expiration approaches for at-the-money options."
+            },
+            {
+              "q": "A trader buys a call the day before earnings at 70% implied volatility. The stock rises 3% after the report, but IV drops to 35%. What most likely happened to the call's value?",
+              "choices": [
+                "It rose by exactly the delta times the move",
+                "It may have fallen, because the loss from vega can exceed the gain from delta",
+                "It doubled, because IV always boosts calls",
+                "Nothing, because IV only affects puts"
+              ],
+              "answer": 1,
+              "explain": "This is IV crush. The option's price included a large volatility premium that disappeared after the event. A near-dated call can lose more from the IV collapse (vega) than it gains from a modest move in the stock (delta), so the trader can be right on direction and still lose."
+            },
+            {
+              "q": "A $50 stock has 40% implied volatility. Roughly what is the one-standard-deviation expected move over 30 days?",
+              "choices": [
+                "About $1.60",
+                "About $5.70",
+                "About $20.00",
+                "About $0.40"
+              ],
+              "answer": 1,
+              "explain": "Expected move ≈ price × IV × √(days ÷ 365) = 50 × 0.40 × √(30 ÷ 365) ≈ 50 × 0.40 × 0.287 ≈ $5.73. The $20 answer is the full-year move (50 × 0.40) and ignores the time scaling."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l4",
+      "title": "Covered calls, protective puts and vertical spreads",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Reading a payoff diagram\n\nFrom here on, every strategy is explained with a **payoff diagram**, the chart the Options Lab draws in its strategy panel. The horizontal axis is the stock price at expiration. The vertical axis is your profit or loss in dollars. The line shows what the whole position (stock plus options) is worth at every possible stock price on expiration day, after subtracting what you paid or adding what you collected.\n\nA few features to look for on any payoff line:\n\n- Where it crosses zero: the **breakeven** price(s).\n- Its highest flat section: **maximum profit**, if the line flattens out at the top.\n- Its lowest flat section: **maximum loss**, if it flattens at the bottom.\n- Where it keeps sloping without flattening: **unlimited** profit or loss in that direction.\n- The kinks: each kink is a strike price. Legs change behaviour at their strikes.\n\nThe Lab's `analyze` panel prints max profit, max loss and breakevens for whatever legs you load, and it draws a dashed line at the current spot so you can see where you are relative to the kinks. The diagram shows expiration only; before expiration the position's value is a smooth curve above or below the kinked line, because extrinsic value is still alive. The gap between the curve and the line is exactly the time value that theta is eating.\n\nFor the examples in this lesson we keep using a $100 stock, 30% IV and about 30 days to expiration, so the premiums are the ones you have already seen: the $100 call about $3.60, the $105 call about $1.65, the $110 call about $0.65, the $95 put about $1.35, the $90 put about $0.40, the $95 call about $6.65 and the $105 put about $6.30."
+        },
+        {
+          "type": "text",
+          "md": "### The covered call\n\nA **covered call** is 100 shares of stock plus one short call against them. It is the most common first options strategy for investors because the obligation (deliver 100 shares at the strike) is already *covered* by the shares you own; there is no unlimited-loss scenario.\n\nExample. You own 100 shares bought at $100. You sell one 30-day $105 call for $1.65, collecting $165. Three outcomes at expiration:\n\n- **Stock at $110.** The call is assigned. You deliver your shares at $105. Profit: ($105 − $100) × 100 + $165 = **$665**. You missed the extra $5 above $105; that is the price of the income.\n- **Stock at $100.** The call expires worthless. You keep the shares and the $165. Your effective cost basis is now $98.35.\n- **Stock at $85.** The call expires worthless, you keep $165, but your shares have lost $1,500. Net −$1,335. The call *cushioned* the loss by $1.65 per share; it did not protect you.\n\nSo the covered call gives up upside above the strike in exchange for a premium that slightly lowers your breakeven. Its payoff diagram slopes up with the stock, then goes flat at the strike. Max profit is (strike − purchase price + premium) × 100 = $665. Max loss is the full stock price minus the premium, if the stock goes to zero. Breakeven is purchase price − premium = $98.35.\n\nWhen it helps: on stock you already own and would be happy to sell at the strike, in a flat or gently rising market, when IV is high enough that premiums are meaningful. When it hurts: when the stock rallies hard (you watch gains you did not get) or collapses (the premium is a rounding error). The most common mistake is writing calls on a stock you are not actually willing to sell, then buying the call back at a loss to avoid assignment when the stock rallies. Decide before you sell."
+        },
+        {
+          "type": "text",
+          "md": "### The protective put and the collar\n\nA **protective put** is 100 shares plus one long put. It is insurance: for a known premium you set a floor under the position for the life of the put.\n\nExample. You own 100 shares at $100 and buy one 30-day $95 put for $1.35 ($135). Outcomes at expiration:\n\n- **Stock at $70.** You exercise (or sell the put, now worth $25). Your shares lost $3,000 but the put gained $2,500 less the $135 cost. Net loss **−$635**, instead of −$3,000.\n- **Stock at $100.** Put expires worthless. You lose the $135 premium. That is the insurance cost.\n- **Stock at $120.** Put expires worthless, shares gained $2,000, net +$1,865. Your upside is intact less the premium.\n\nMax loss is (purchase price − strike + premium) × 100 = $635. Max profit is unlimited. Breakeven is purchase price + premium = $101.35. The payoff line looks like a long call, which is not a coincidence: stock plus put behaves like a call, a relationship called **put-call parity**.\n\nInsurance is expensive if you buy it constantly. Rolling a 30-day $95 put every month costs roughly 1.3% a month in this example, about 16% a year, which is more than most stocks return. Protective puts make the most sense for a defined period of risk (an earnings date, a period you cannot watch the market) or when IV is unusually low.\n\nA **collar** fixes the cost problem by combining both ideas: own the stock, buy the $95 put for $1.35 and sell the $105 call for $1.65. The call premium pays for the put with $0.30 to spare. The position is now boxed in: you cannot lose more than about $470 or gain more than about $530 over the 30 days. That is a tiny range, which is the point; collars are used to lock in a gain or sit through an event, not to make money. The Lab lists the collar as a preset so you can see the box shape."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**A test for any covered call or collar:** write down the price at which you will be assigned and ask, honestly, whether you would be content to sell at that price. If the answer is no, you have chosen the wrong strike or the wrong strategy. The premium is compensation for giving up the upside above the strike, and you cannot collect it without actually giving that up."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "ema21",
+            "fib"
+          ],
+          "caption": "Microsoft, daily, with the 50-day SMA, the 21-day EMA and Fibonacci retracement levels drawn from the recent swing. Covered-call writers like stocks that trend gently above their 50-day average: steady enough that assignment is not a shock, with enough volatility to make premiums worth selling. Imagine writing a call each month at a strike just above the nearest Fibonacci or recent swing level; count how many months in the last year the stock would have finished above it. Simulated data on the demo feed."
+        },
+        {
+          "type": "text",
+          "md": "### Vertical spreads: defining your risk\n\nA **vertical spread** buys one option and sells another of the same type and expiration at a different strike. Selling the second leg gives back some of the premium you paid, in exchange for capping your profit. The result is a trade with a known maximum loss, a known maximum gain and a lower cost than the single option.\n\n**Bull call spread** (debit). Buy the $100 call for $3.60, sell the $105 call for $1.65. Net cost: $1.95, or **$195** per spread. At expiration:\n\n- Stock at or below $100: both calls worthless. Loss **$195** (the max).\n- Stock at $105 or above: the $100 call is worth $5, the $105 call you sold costs you everything above $105. Net value $5.00, profit $5.00 − $1.95 = **$305** (the max).\n- Breakeven: lower strike + net debit = $101.95.\n\nYou gave up all gains above $105 and in return paid $195 instead of $360 for a position that still profits from a moderate rise. Max profit ÷ max loss is 305 ÷ 195 ≈ 1.56 to 1, and the stock only needs to rise about 2% to break even versus 3.6% for the naked $100 call.\n\n**Bear put spread** (debit) is the mirror: buy the $100 put for about $3.25, sell the $95 put for $1.35. Net cost $1.90. Max profit $5.00 − $1.90 = $3.10 ($310) if the stock is at or below $95; max loss $190 if at or above $100; breakeven $98.10.\n\n**Credit spreads** reverse the legs. A **bull put spread** sells the $95 put for $1.35 and buys the $90 put for $0.40, collecting $0.95 ($95). You keep all of it if the stock stays above $95; your max loss is the $5 strike width minus the credit = $4.05 ($405), if the stock is at or below $90. A **bear call spread** does the same with calls above the market. Credit spreads profit from time passing and the stock *not* reaching a level; they win more often than debit spreads with the same strikes but lose more when they lose. The two framings (debit vs credit) are the same payoff viewed from opposite sides, which again is put-call parity at work.\n\nFor all verticals: **max loss + max profit = strike width × 100**. That identity is a quick sanity check on any spread quote."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**For every vertical spread: max profit + max loss = (difference between strikes) × 100.** A $5-wide spread always has $500 of total payoff to split between the two sides. If you pay $195, your max profit is $305. If you collect $95, your max loss is $405. Memorise this and you can price-check any spread in your head."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the Options Lab on Microsoft (the link does this) with the expiration nearest 30 days and build three positions, reading the strategy panel each time.\n\n- Load the **Covered Call** preset. Write down the max profit, max loss and breakeven the panel prints. Check the breakeven by hand: stock price − call premium received. Then ask yourself whether you would be happy to sell Microsoft at the call's strike.\n- Load the **Protective Put** preset. Note the max loss and compare it to the premium × 100. Compute the annualised cost of rolling this put every month (premium ÷ stock price × 12). Is that more or less than you would expect the stock to return?\n- Load the **Bull Call Spread** preset. Check the identity: max profit + max loss should equal the strike width × 100. Then, in the chain, change the short leg to one strike further out (sell a higher call). The spread costs more, its max profit rises and its breakeven moves up. Write the new three numbers down.\n- Paper-trade **one** bull call spread (both legs). On the Positions tab, note that it appears as two option positions. Come back in a few days and mark them to market: has theta helped or hurt the spread overall? (Hint: a debit spread with the stock near the lower strike loses time value; one with the stock near the upper strike gains it.)",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/MSFT"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "You own 100 shares bought at $48 and sell a $50 call for $1.20. The stock closes at $56 at expiration. What is your profit?",
+              "choices": [
+                "$120",
+                "$320",
+                "$800",
+                "$920"
+              ],
+              "answer": 1,
+              "explain": "You are assigned and sell at $50: ($50 − $48) × 100 = $200, plus the $120 premium = $320. You gave up the move above $50 in exchange for the premium; that is the covered-call trade-off."
+            },
+            {
+              "q": "You own 100 shares at $70 and buy a $65 put for $2.00. What is the maximum loss on the combined position at expiration?",
+              "choices": [
+                "$200",
+                "$500",
+                "$700",
+                "$7,000"
+              ],
+              "answer": 2,
+              "explain": "The put lets you sell at $65 no matter how far the stock falls, so the stock loss is capped at $5 per share. Add the $2 premium: ($70 − $65 + $2) × 100 = $700."
+            },
+            {
+              "q": "A bull call spread buys the $40 call for $3.00 and sells the $45 call for $1.20. What are the max loss and max profit?",
+              "choices": [
+                "Max loss $180; max profit $320",
+                "Max loss $300; max profit $500",
+                "Max loss $120; max profit $380",
+                "Max loss $180; max profit unlimited"
+              ],
+              "answer": 0,
+              "explain": "Net debit is $3.00 − $1.20 = $1.80, so max loss is $180. The strike width is $5 ($500 total payoff), so max profit is $500 − $180 = $320. Max loss plus max profit always equals the width times 100."
+            },
+            {
+              "q": "Which strategy profits if the stock stays above a chosen level and loses a limited amount if it falls below a lower level?",
+              "choices": [
+                "Long put",
+                "Bull put spread (credit)",
+                "Protective put",
+                "Long straddle"
+              ],
+              "answer": 1,
+              "explain": "A bull put spread sells a put and buys a lower-strike put for protection. It keeps the full credit if the stock finishes above the short strike and loses at most the strike width minus the credit."
+            },
+            {
+              "q": "A collar on 100 shares consists of which legs?",
+              "choices": [
+                "Long stock, long call, short put",
+                "Long stock, long put, short call",
+                "Short stock, long call, long put",
+                "Long call and long put at the same strike"
+              ],
+              "answer": 1,
+              "explain": "A collar protects owned stock with a long put and pays for it (fully or partly) by selling a call above the market. The result is a boxed-in position with a known floor and ceiling."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l5",
+      "title": "Straddles, strangles, iron condors and assignment risk",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Betting on movement, not direction\n\nEverything so far has needed an opinion about direction. Some strategies only need an opinion about **how much** the stock will move. These are the volatility trades, and they are where the Greeks lesson pays off.\n\nA **long straddle** buys a call and a put at the same strike and expiration, usually at the money. With our $100 stock, 30% IV, 30 days: buy the $100 call for $3.59 and the $100 put for $3.26, total **$6.85** ($685). At expiration one leg is worthless and the other is worth the distance from $100. You profit if the stock finishes more than $6.85 away from $100 in *either* direction: breakevens **$93.15 and $106.85**. Max loss is the $685 paid, which happens only if the stock closes exactly at $100. Max profit is unlimited on the upside and up to $93.15 on the downside.\n\nNotice that $6.85 is a bit less than the $8.60 one-standard-deviation expected move from Lesson 3. That is not an accident: an ATM straddle's price is roughly 0.8 × the expected move, so the market's own forecast is baked into the price you pay. A straddle is only a good buy if you believe the stock will move *more* than the options market already expects, which is a high bar, especially before earnings when IV has already risen.\n\nA **long strangle** is the cheaper cousin: buy an out-of-the-money call and an out-of-the-money put. Buy the $105 call for $1.66 and the $95 put for $1.33, total **$2.99** ($299). Breakevens are $95 − $2.99 = **$92.01** and $105 + $2.99 = **$107.99**. It costs less than half the straddle but needs a bigger move to pay, and the whole $299 is lost anywhere between $95 and $105.\n\nBoth positions have positive vega and large negative theta. Our straddle loses about $0.11 per share per day, roughly **$11 a day**, with the stock flat, and that accelerates into expiration. They are also exposed to IV crush: as you saw in the Lesson 3 exercise, a straddle bought at 60% IV and repriced at 30% loses roughly half its value before the stock has moved at all. Straddle buyers win when a stock moves much more than expected; the rest of the time, theta and vega grind them down."
+        },
+        {
+          "type": "text",
+          "md": "### The iron condor\n\nSelling a straddle or strangle collects that theta instead of paying it, but with unlimited risk on both sides. An **iron condor** is the defined-risk version: a bear call spread above the market plus a bull put spread below it, all in the same expiration. Four legs, four strikes.\n\nExample with our $100 stock, 30 days, 30% IV:\n\n- Sell the $105 call for $1.66, buy the $110 call for $0.66 (bear call spread, credit $1.00).\n- Sell the $95 put for $1.33, buy the $90 put for $0.40 (bull put spread, credit $0.93).\n- Total credit: **$1.93**, or **$193** per condor.\n\nAt expiration:\n\n- Stock anywhere between $95 and $105: all four options expire worthless. You keep **$193**. This is the max profit.\n- Stock at or above $110, or at or below $90: one spread is at its full $5 loss, the other is worthless. Loss = $500 − $193 = **$307**. This is the max loss, and it is the same on either side because both wings are $5 wide.\n- Breakevens: $105 + $1.93 = **$106.93** and $95 − $1.93 = **$93.07**.\n\nThe payoff diagram is a flat-topped shape: a plateau of profit in the middle, sloping down through the short strikes, flattening again at the long strikes. The Lab's **Iron Condor** preset draws it and prints these numbers."
+        },
+        {
+          "type": "text",
+          "md": "### Is selling condors a good business?\n\nThe trade-off is stark. You risk $307 to make $193, so you need to win well over 60% of the time just to break even before costs. The deltas of the short strikes (about 0.31 for the $105 call and −0.25 for the $95 put) imply roughly a 31% chance of finishing above $105 and a 25% chance below $95, so only about a 44% chance of finishing inside the short strikes in this example, well short of the 61% needed to break even; most condor traders therefore sell wider, lower-delta strikes (0.15–0.20) for a smaller credit and a higher win rate, and manage the trade before expiration rather than hold to the end. Whether that is a good business is genuinely debated: condors collect small, frequent profits and take occasional large losses, and a single sharp move can erase many months of credits. In the paper account they are an excellent way to *feel* that trade-off with no money at stake.\n\nIron condors are short vega and long theta. They do best when IV is high at entry (bigger credits) and then falls, and when the stock does not trend. They do worst when a quiet stock suddenly breaks out of its range."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Straddles and strangles buy movement and pay theta. Iron condors sell movement and collect theta.** Each is the other side of the same bet. Before entering either, compare the straddle's price (what the market expects) with your own view of the likely move. If you have no view, the market's price is probably as good as any, and the only thing you know for sure is that you will pay the bid-ask spread on every leg."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi"
+          ],
+          "caption": "Amazon, daily, with Bollinger Bands and the RSI pane. The bands are a rough picture of a one-month, two-standard-deviation range, which is close to the width an iron condor seller is trying to fence off. Find a long stretch where price stayed inside the bands with low band width: a condor sold there would probably have expired fully profitable. Then find the first large candle that pierced a band after such a stretch: that is the move that hands a condor seller its max loss. Count how many of each you can see in a year. Simulated data on the demo feed."
+        },
+        {
+          "type": "text",
+          "md": "### Assignment risk: what actually goes wrong\n\nMost options losses are ordinary: the stock went the wrong way, or sat still while theta ran. But a specific class of surprises comes from **assignment**, and they catch people who only ever think about the payoff diagram.\n\n**Early assignment.** Because US equity options are American style, a short option can be assigned on any day, not just at expiration. It is uncommon, because exercising early throws away extrinsic value, but it happens in two predictable situations. First, a short **call** on a stock about to pay a **dividend**: if the call is in the money and its remaining extrinsic value is less than the dividend, the holder gains by exercising the day before the ex-dividend date to collect the dividend. Covered-call writers lose their shares and the dividend. Second, a **deep in-the-money put** late in its life: with little extrinsic value left, the holder may exercise to free up cash. If you are short the put, you receive 100 shares and the bill for them.\n\n**Expiration assignment on spreads.** An iron condor or vertical spread is only \"defined risk\" if both legs are handled together. Suppose the stock closes at $104.90 on expiration Friday with your $105/$110 call spread: both legs expire worthless, fine. But if it closes at $105.50, your short $105 call is assigned (you are now short 100 shares at $105) while your long $110 call expires worthless. Over the weekend you have a naked short stock position. If the stock gaps up Monday, the loss can exceed the spread's \"maximum\". The fix is simple: **close spreads before expiration** when the stock is anywhere near the short strike.\n\n**Pin risk** is the extreme version: the stock closes within pennies of your short strike and you do not know until Saturday whether you were assigned. After-hours moves can even push an option into the money after the close; holders have until a cut-off time (typically an hour or so after the close, broker-dependent) to submit exercise instructions. A holder can therefore exercise an option that finished a few cents *out* of the money at 4:00 pm because the stock jumped at 4:30 pm, and the seller finds out only the next morning. Short strikes near the closing price on expiration day are the one place in options where you can do everything right on paper and still be surprised."
+        },
+        {
+          "type": "text",
+          "md": "### Cash, margin and the limits of the simulator\n\n**Cash and margin.** Being assigned on a short put means buying 100 shares. If you sold a $95 put, that is $9,500. If you do not have the cash, your broker may use margin or liquidate. Selling puts only with the cash to buy the shares is called a **cash-secured put**, and it is the only way a beginner should sell puts. The Lab's paper account checks cash the same way.\n\n**Margin calls on short options.** Naked short calls and short strangles have theoretically unlimited loss, and brokers require (and raise) collateral as positions go against you. A forced close at the worst moment is how \"unlimited\" becomes real. The Lab lets you simulate the P&L but cannot simulate a margin call, so remember that the real world adds one more way to lose.\n\nA concrete illustration. A trader with a $20,000 account sells five $95 puts for $1.33 each, collecting $665, and feels safe because the stock is at $100. If the stock gaps to $80 on bad news, the puts are worth $15 each: a $7,500 loss on a position that \"only\" paid $665, and an assignment bill of $47,500 for 500 shares the account cannot pay for. One contract, cash-secured, would have been a $9,500 commitment and a $1,500 loss: painful, survivable, and exactly the scenario the paper account lets you rehearse first."
+        },
+        {
+          "type": "text",
+          "md": "### A checklist before any options trade\n\nOptions reward people who are disciplined about process, because the number of ways to be surprised is larger than with stock. Here is a short checklist that fits on an index card. Run through it in the paper account until it is automatic.\n\n- **What is my view?** Direction (up, down, sideways) and magnitude (big move, small move, no view). Pick the strategy that matches it, not the one with the most exciting payoff.\n- **What is IV doing?** High relative to its history favours selling premium (covered calls, credit spreads, condors); low favours buying it (long options, debit spreads). Check for a scheduled event (earnings, product launch, Fed meeting) inside the expiration.\n- **What is the max loss, in dollars, and can I afford it?** Size the position so that max loss is a small percentage of the account, the same rule you used for stock trades in Module 4. For undefined-risk positions, size as if the stock could gap 20%.\n- **Where are the breakevens relative to the expected move?** Use price × IV × √(days ÷ 365). A breakeven beyond one expected move is a low-probability bet.\n- **What is my exit?** A profit target (many spread sellers close at 50% of max profit), a loss limit, and a date before expiration by which you will close regardless. Write all three down before entering.\n- **What is the spread cost?** Add up the bid-ask spread on every leg, round trip. If it is more than about 10% of the position's expected gain, choose more liquid strikes or a simpler structure.\n- **What happens if I am assigned?** Do I have the cash or shares? Is there a dividend before expiration? Will I still have the protective leg?\n\nNone of these items tells you whether the trade will work. They tell you whether you understand what you are doing, which is the only part you control. Options are a tool for shaping risk, and in the paper account you can shape it badly as many times as you need to before any of it costs you a dollar."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Defined risk is only defined until expiration day.** A spread's maximum loss assumes both legs are open or closed together. Let the short leg get assigned while the long leg expires, and the \"maximum\" is gone. Close or roll any spread whose short strike is within a few percent of the stock price before the final afternoon. In the paper account, practise doing this on purpose until it feels routine."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the Options Lab on SPY (the link does this), pick the expiration nearest 30 days, and build the volatility trades.\n\n- Load the **Long Straddle** preset. Write down the total debit and the two breakevens. Compute the expected move (spot × IV × √(30 ÷ 365)) and compare it with the straddle's cost. Is the straddle price close to 0.8 × expected move?\n- Load the **Long Strangle** preset. Note how much cheaper it is and how much wider the breakevens are. Which would you rather own going into an earnings date, and why?\n- Load the **Iron Condor** preset. Write down max profit, max loss and both breakevens. Check that max profit + max loss = (one wing's strike width) × 100. Then move both short strikes one step further from the spot (sell a higher call and a lower put). Record the new credit and max loss. The credit fell and the win zone widened; that is the whole condor trade-off in two numbers.\n- Paper-trade the iron condor (all four legs). On the Positions tab, confirm that four option positions appear with the right contract symbols, two long and two short.\n- Open the **dashboard** on SPY with the Bollinger Bands overlay and look at the last 30 bars. Has price stayed inside a range as wide as your condor's short strikes? If SPY had closed just above the short call strike on expiration day, write one sentence describing exactly what position you would have woken up with on Monday.\n- Finally, write your own index-card checklist from this lesson and pin it to the top of your trading journal.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/SPY"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A long straddle buys the $50 call for $2.40 and the $50 put for $2.10. What are the breakevens at expiration?",
+              "choices": [
+                "$47.60 and $52.40",
+                "$45.50 and $54.50",
+                "$47.90 and $52.10",
+                "$50.00 only"
+              ],
+              "answer": 1,
+              "explain": "Total premium is $2.40 + $2.10 = $4.50. The stock must move more than $4.50 from the $50 strike in either direction: $45.50 or $54.50. Maximum loss ($450) occurs if the stock closes exactly at $50."
+            },
+            {
+              "q": "An iron condor is built with $5-wide wings and collects a $1.40 credit. What is the maximum loss?",
+              "choices": [
+                "$140",
+                "$360",
+                "$500",
+                "$640"
+              ],
+              "answer": 1,
+              "explain": "Only one wing can be in the money at expiration, and its worst case is the $5 width ($500). Subtract the $140 credit collected on the whole position: $500 − $140 = $360."
+            },
+            {
+              "q": "Which situation makes early assignment of a short call most likely?",
+              "choices": [
+                "The call is far out of the money with 60 days left",
+                "The call is in the money, the stock goes ex-dividend tomorrow, and the call's remaining extrinsic value is less than the dividend",
+                "Implied volatility rises sharply",
+                "The stock is halted for news"
+              ],
+              "answer": 1,
+              "explain": "A call holder captures a dividend only by owning the shares before the ex-dividend date. If the call's extrinsic value is smaller than the dividend, exercising early is rational, so in-the-money short calls are commonly assigned the day before ex-dividend."
+            },
+            {
+              "q": "You hold a $105/$110 bear call spread into expiration. The stock closes at $106.20. Which description is correct?",
+              "choices": [
+                "Both options expire worthless and you keep the credit",
+                "You are assigned on the short $105 call and the long $110 call expires worthless, leaving you short 100 shares over the weekend",
+                "Both options are automatically exercised against each other, so your risk is unchanged",
+                "The broker converts the spread to cash at the credit received"
+              ],
+              "answer": 1,
+              "explain": "The short $105 call finishes $1.20 in the money and is auto-exercised against you; the long $110 call is out of the money and expires. Your \"defined risk\" protection is gone and you carry a naked short stock position until you can trade on Monday. Close spreads near the short strike before expiration."
+            },
+            {
+              "q": "What makes a short put \"cash-secured\"?",
+              "choices": [
+                "The put is bought back the same day",
+                "The seller holds enough cash to buy 100 shares at the strike if assigned",
+                "The seller also owns a call at the same strike",
+                "The put is far out of the money"
+              ],
+              "answer": 1,
+              "explain": "A cash-secured put is a short put backed by enough cash to take delivery of the shares at the strike price (strike × 100 per contract). It removes the margin and forced-liquidation risk of a naked short put and is the only way a beginner should sell puts."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

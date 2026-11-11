@@ -1,0 +1,409 @@
+{
+  "id": "m1-foundations",
+  "title": "Market Foundations",
+  "level": "beginner",
+  "minutes": 52,
+  "summary": "What markets are, how orders work, what moves prices, and why paper trading is the right place to start.",
+  "lessons": [
+    {
+      "id": "m1-l1",
+      "title": "What a stock actually is",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### A share is a slice of a business\n\nWhen you buy one share of a company, you own a tiny fraction of that company. Not a product, not a promise from a broker: a legal claim on a piece of the business itself. If a company has issued 1,000,000 shares and you own 100 of them, you own 0.01% of it. You are entitled to 0.01% of any dividends it pays and to a 0.01% vote at the annual shareholder meeting.\n\nThe price of that slice is set by other people. If the most anyone will pay for one share right now is $50, the stock is worth $50, whatever the company's accountants say it is worth. Multiply the price by the number of shares and you get the **market capitalization**, the market's running estimate of what the whole business is worth. A company with 1,000,000 shares trading at $50 has a market cap of $50,000,000.\n\nTwo things can make your slice worth more. First, the company can grow: more sales, more profit, so each share is a claim on more. Second, other investors can simply decide they want the shares more than they did yesterday and bid the price up. In the short run (days and weeks) the second force dominates. Over years, the first tends to win. Technical analysis, which this course spends a lot of time on, is mostly about the second force: how crowds of buyers and sellers behave and leave traces on a chart."
+        },
+        {
+          "type": "text",
+          "md": "### Why companies sell shares, and who you are really trading with\n\nA company sells shares to raise money it does not have to pay back. The first time it does this publicly is the **initial public offering (IPO)**. That is the *primary market*: cash goes from investors to the company. It happens once per share.\n\nEverything after that is the *secondary market*, and it is where you will spend all of your time. When you buy 10 shares of a company on the dashboard, the company receives nothing. You are buying from another investor who decided to sell, through an exchange that matched you up. The company only cares in the sense that a higher price makes it easier to raise money later and keeps its executives (who usually own shares) happy.\n\nThis matters for how you think. Every trade has two sides. If you are buying because you think the price is going up, the person selling to you either disagrees or has a different reason (they need the cash, they are rebalancing, they are a fund that has to sell). Neither of you knows the future. A trader's edge is not being certain; it is being right slightly more often than wrong, or making more when right than you lose when wrong. Lesson 2 of the risk module is built entirely around that second idea.\n\nShares also come in a few flavours you will see on quote pages. **Common stock** is what we have described. **Preferred stock** usually pays a fixed dividend and has no vote. Some companies have two share classes with different voting rights (Alphabet's GOOGL and GOOG are the classic example). For charting and paper trading, common stock is what you will use."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The price is a negotiation, not a fact.** A quote of $187.42 means the last trade happened at that price. The next trade can happen higher or lower, and nobody is obliged to deal with you at $187.42. Everything in this module builds on that one idea."
+        },
+        {
+          "type": "text",
+          "md": "### How you make (or lose) money on a share\n\nThere are exactly two ways a stock pays you.\n\n**Price appreciation.** You buy at $100 and later sell at $120. Your profit is $20 per share, or 20%. Buy 50 shares and the profit is $1,000 before commissions and taxes. The reverse is equally true: buy at $100, sell at $80, and you have lost $20 per share. Until you sell, the gain or loss is *unrealized*; the portfolio page shows both numbers separately because they feel very different and are taxed differently.\n\n**Dividends.** Some companies pay part of their profit to shareholders in cash, usually every three months. If a $100 stock pays $0.75 per quarter, its *dividend yield* is $3.00 / $100 = 3% per year. Many fast-growing companies pay nothing because they reinvest every dollar. The dashboard's demo data does not simulate dividends, so your paper account will only ever reflect price changes.\n\nIt is also possible to profit when a price falls. **Short selling** means borrowing shares, selling them, and buying them back later, hopefully cheaper. Sell short at $100, buy back at $80, keep $20. The risk is reversed and unlimited: if the stock goes to $300 you owe $200 per share. The paper engine allows shorts (a negative quantity in your positions table), and the risk module covers when, if ever, a beginner should use them.\n\nOne honest number to anchor expectations: broad US stock indexes have risen over most multi-decade periods, but they have also fallen by more than half within a couple of years (2007 to 2009 is the most recent example). Individual stocks can and do go to zero. Anyone who promises you steady returns without that downside is selling something."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma50"],
+          "caption": "Apple, daily bars with a 50-day simple moving average. Each candle is one trading day. The orange line is the average closing price over the previous 50 days; price wandering above and below it is the short-run crowd behaviour this course studies. If the pill says *demo*, these are simulated prices: the shape is realistic but the levels are not Apple's real history."
+        },
+        {
+          "type": "text",
+          "md": "### Indexes and ETFs: owning the whole market in one line\n\nYou will constantly hear that \"the market was up 1% today\". That refers to an **index**, a basket of stocks weighted by a rule. The S&P 500 tracks about 500 of the largest US companies, weighted by market cap, so Apple and Microsoft move it far more than the 500th company does. The Dow Jones Industrial Average is 30 large companies weighted by *price*, a historical quirk that makes it a worse benchmark but a famous one. The Nasdaq Composite covers everything listed on the Nasdaq exchange and is heavy in technology.\n\nYou cannot buy an index directly, but you can buy an **exchange-traded fund (ETF)** that holds the same basket and trades like a single stock. SPY, VOO and IVV track the S&P 500; QQQ tracks the Nasdaq-100. An ETF gives you *diversification*: if one company collapses, it is one five-hundredth of your holding rather than all of it.\n\nWhy does a trading course start here? Because the index is your yardstick. If your strategy made 8% in a year while an S&P 500 ETF made 15%, you worked hard to underperform a thing you could have bought in one click. The strategy lab on the backtest page shows a *buy and hold* return next to every strategy for exactly this reason. Beating it consistently is hard; most professional fund managers do not, over long periods. That is not a reason to give up on active trading, but it is the standard you should hold yourself to.\n\nThe demo universe in this app is individual large US stocks. When real data is connected, you can type an ETF ticker like SPY into the search box as well."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Nothing here is investment advice.** Broward Trading is a free educational simulator. Tickers appear because they are well known and useful for teaching, not because anyone is recommending them. No real orders are ever sent, and demo prices are simulated."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard with Apple loaded on the daily chart.\n\n- Read the **last price** and the market status badge in the header. Is the market open right now?\n- Hover over any candle. Write down its open, high, low and close.\n- Imagine you owned 100 shares bought at that candle's open. Using its close, compute your unrealized gain or loss in dollars and as a percentage.\n- Hover a candle about 50 bars to the left and compute the same thing. Which force (business growth or crowd mood) do you think explains most of the difference over 50 trading days?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma50", "label": "Open AAPL on the dashboard" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A company has 2,000,000 shares outstanding and its stock last traded at $25. What is its market capitalization?",
+              "choices": ["$25", "$2,000,000", "$50,000,000", "It cannot be computed without the company's profit"],
+              "answer": 2,
+              "explain": "Market cap is price times shares outstanding: $25 x 2,000,000 = $50,000,000. Profit is not part of the formula; the market's opinion of future profit is already inside the price."
+            },
+            {
+              "q": "You buy 10 shares of a company on an exchange. Who receives your money?",
+              "choices": ["The company, which uses it to grow", "The exchange, which holds it in trust", "Another investor who sold their shares", "Your broker, as a deposit"],
+              "answer": 2,
+              "explain": "After the IPO, shares trade on the secondary market between investors. The company only receives money when it issues new shares."
+            },
+            {
+              "q": "A $40 stock pays a dividend of $0.30 every quarter. What is its annual dividend yield?",
+              "choices": ["0.75%", "3%", "7.5%", "12%"],
+              "answer": 1,
+              "explain": "Four quarterly payments of $0.30 total $1.20 per year. $1.20 / $40 = 0.03, or 3%."
+            },
+            {
+              "q": "Why does the backtest page show a buy-and-hold return next to each strategy?",
+              "choices": ["Because buy and hold is always the best strategy", "To give you a benchmark; a strategy that underperforms simply holding the stock has not added value", "Because it is required by securities regulations", "To estimate dividends, which the simulator otherwise ignores"],
+              "answer": 1,
+              "explain": "A strategy has to beat the lazy alternative to be worth its effort and risk. Buy and hold is the yardstick, not a recommendation."
+            },
+            {
+              "q": "Which statement about short selling is correct?",
+              "choices": ["Your maximum loss is the amount you sold the shares for", "You profit if the price falls and your potential loss is unlimited if it rises", "It is impossible in a paper-trading account", "It pays you the dividend instead of the owner"],
+              "answer": 1,
+              "explain": "Selling borrowed shares at $100 and buying back at $80 earns $20, but if the stock rises to $300 you owe $200 per share, and there is no ceiling. Short sellers also owe any dividends to the lender."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l2",
+      "title": "Exchanges and market hours",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Where trades actually happen\n\nAn exchange is a matching engine with rules. Buyers post the prices they are willing to pay, sellers post the prices they will accept, and when two of them agree a trade prints. In the United States the two big names are the **New York Stock Exchange (NYSE)** and the **Nasdaq**. The NYSE still has a trading floor in Manhattan for television, but the matching is done by computers, as it is everywhere else.\n\nA stock is *listed* on one exchange (Apple and Microsoft on Nasdaq, Coca-Cola and JPMorgan on the NYSE) but it can *trade* almost anywhere. Your broker is required by regulation to route your order to wherever the best available price is, which could be the listing exchange, a competing exchange like Cboe, or an off-exchange venue run by a wholesaler. For a beginner the practical takeaway is simple: there is one national price at any moment, and the exchange name next to a ticker is mostly a label. The search box on the dashboard shows that label with each result.\n\nTicker symbols are short codes: one to four letters for US stocks (F, GE, AAPL, MSFT), sometimes with a suffix for share class (BRK.B). The same company can have different symbols in different countries. When you type a symbol into the dashboard you are asking the data provider for that exact code, so **BRK.B** and **BRKB** are not interchangeable; the provider chooses the convention."
+        },
+        {
+          "type": "text",
+          "md": "### The trading day, in Eastern time\n\nThe US stock market keeps the clock of New York, which is Broward County's time zone too, so you never have to convert.\n\n- **Regular session: 9:30 am to 4:00 pm Eastern, Monday to Friday.** This is when volume is deepest and quotes are most reliable. Everything a beginner needs to learn can be learned in these six and a half hours.\n- **Pre-market: roughly 4:00 am to 9:30 am.** Brokers allow trading, but far fewer participants are present. Prices can lurch on thin volume.\n- **After-hours: 4:00 pm to roughly 8:00 pm.** Same story. Companies deliberately release earnings reports just after 4:00 pm so that the first reaction happens here.\n- **Closed** on weekends and on nine or ten US holidays a year (New Year's Day, Martin Luther King Jr. Day, Presidents' Day, Good Friday, Memorial Day, Juneteenth, Independence Day, Labor Day, Thanksgiving, Christmas). The market also closes early at 1:00 pm on a few days, usually the day after Thanksgiving and Christmas Eve.\n\nThe open and the close are the two busiest moments. At 9:30 an **opening auction** sets the first price by matching all the orders that piled up overnight; at 4:00 a **closing auction** does the same, which is why the day's final print is often on enormous volume. The lunch hour tends to be quieter. Treat these as widely observed tendencies rather than laws: any single day can break the pattern.\n\nThe market status badge in the dashboard header is computed from this calendar and shows the phase (pre, open, after, closed) with the current New York time."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Before you trust a price, check the clock.** A quote shown at 7 pm is an after-hours print and may be a few dollars away from where the stock opens tomorrow. The dashboard's market status badge is the fastest way to know which session you are looking at."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "15min",
+          "overlays": ["vwap"],
+          "caption": "Microsoft on 15-minute bars. Each regular session is 26 bars (9:30 to 4:00). The pink VWAP line is the volume-weighted average price and resets at each day's open; look for the breaks between one day's close and the next day's open, where price often jumps. On simulated data the sessions still follow the real NYSE calendar."
+        },
+        {
+          "type": "text",
+          "md": "### Gaps: what happens while the market is closed\n\nThe world does not stop at 4:00 pm. A company can announce a takeover at 6:00 pm, a government report can land at 8:30 am, a war can start on a Saturday. All of that information has nowhere to go until the next open, so it shows up as a **gap**: the first price of the new session is well above or below the last price of the previous one, with no trades in between.\n\nSuppose a stock closes at $100.00 on Tuesday. After the bell the company reports a poor quarter. Wednesday's opening auction matches buyers and sellers at $88.50. If you held shares, you lost $11.50 each with no opportunity to sell at $99, $95 or $90. A **stop order** at $95 (covered in lesson 4) would not have saved you: it would have triggered at the open and sold near $88.50.\n\nGaps are why many traders avoid holding a position through an earnings date unless they are deliberately betting on it, and why position size (how many shares you own relative to your account) matters more than any indicator. A 12% overnight gap on a position that is 5% of your account costs you 0.6%. The same gap on a position that is your entire account costs you 12%.\n\nOn the chart, a daily candle hides the gap inside its range: you see a bar whose open is far from the previous bar's close. On intraday charts the gap is visible as empty space between the last bar of one day and the first bar of the next. Switch the dashboard to 5-minute bars after an earnings season and you will find them easily."
+        },
+        {
+          "type": "text",
+          "md": "### Liquidity changes through the day\n\n**Liquidity** means how much you can buy or sell without moving the price. Apple trades tens of millions of shares a day; a small regional bank might trade 20,000. In the first and last half hour of the regular session, liquidity in large stocks is at its deepest, bid-ask spreads (lesson 3) are tight, and your orders fill close to the quoted price. In the middle of the day, and especially in extended hours, it thins out.\n\nFor a beginner this leads to a few sensible habits, none of them controversial:\n\n- Trade liquid stocks. The 60-odd names in the demo universe were chosen partly because all of them trade heavily.\n- Prefer the regular session. Extended-hours trading is a tool for people who know exactly why they need it.\n- Be careful in the first minutes after the open. The price discovery after the opening auction can be violent, and many day traders deliberately wait until 9:45 or 10:00 before placing anything.\n- Know the calendar. Half-days and the sessions around holidays are often thin.\n\nThe paper-trading engine in this app fills market orders at the current price with no slippage and lets you place orders at any time of day; if the market is closed, a market order simply fills at the last known price. That is kinder than reality. The backtest page lets you add a *slippage* setting in basis points to make results more honest; the strategy module explains how to choose it."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Extended hours are not a shortcut.** Earnings reactions in the after-hours session are often partly or fully reversed the next morning once the full market weighs in. Watching them is educational; trading them with real money is for later, if ever."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard on Microsoft with 5-minute bars.\n\n- Note the market status badge and the New York time it shows.\n- Scroll left until you find the boundary between two trading days. Hover the last bar of the earlier day and the first bar of the later day. Record the close of one and the open of the other, and compute the gap in dollars and percent.\n- Count how many 5-minute bars make up one regular session (there should be 78). If the data is live and your provider includes extended hours, you will see more.\n- Switch to the 1-hour interval and find the same gap. Notice how much harder it is to see.",
+          "action": { "page": "index.html", "hash": "symbol=MSFT&interval=5min&ov=vwap", "label": "Open MSFT on 5-minute bars" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What are the regular trading hours of the US stock market?",
+              "choices": ["8:00 am to 5:00 pm Eastern", "9:30 am to 4:00 pm Eastern, Monday to Friday", "9:00 am to 4:30 pm Pacific", "24 hours a day on weekdays"],
+              "answer": 1,
+              "explain": "The regular session runs 9:30 am to 4:00 pm Eastern. Pre-market and after-hours sessions exist but have far less volume."
+            },
+            {
+              "q": "A stock closes at $60.00. That evening the company announces a large recall and the next morning the first trade is at $52.00. What is this called?",
+              "choices": ["A spread", "A gap", "A dividend", "A halt"],
+              "answer": 1,
+              "explain": "A gap is a jump between one session's close and the next session's open with no trades in between. News released while the market is closed is the usual cause."
+            },
+            {
+              "q": "Which of these is generally the most liquid period of the trading day for large US stocks?",
+              "choices": ["The pre-market session at 6 am", "The hour after the open and the last half hour before the close", "Lunchtime, when institutions are away", "The after-hours session after an earnings release"],
+              "answer": 1,
+              "explain": "The open and the close concentrate the most volume, which is why the opening and closing auctions exist. This is a widely observed tendency, not a guarantee for any single day."
+            },
+            {
+              "q": "Why do companies usually release earnings reports just after 4:00 pm Eastern?",
+              "choices": ["Regulations require it", "So the first reaction happens in the thin after-hours session and investors have overnight to digest the report before the regular session", "Because exchanges are closed for maintenance until then", "To avoid paying dividends that day"],
+              "answer": 1,
+              "explain": "Releasing outside regular hours gives analysts and investors time to read the report. The after-hours reaction is real but can be partly reversed at the next open."
+            },
+            {
+              "q": "How does the paper-trading engine in this app fill a market order when the market is closed?",
+              "choices": ["It rejects the order", "It queues it for the opening auction with realistic slippage", "It fills at the last known price immediately", "It fills at the previous day's low"],
+              "answer": 2,
+              "explain": "The simulator fills market orders immediately at the last known price with no slippage, which is more forgiving than a real broker. The backtest page lets you add slippage to make results more honest."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l3",
+      "title": "Reading a quote: bid, ask and the spread",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Three prices, not one\n\nOpen any real brokerage app and you will see that a stock does not have a price; it has three.\n\n- **Last**: the price of the most recent trade. This is the number headlines and the dashboard's big price readout show. It is history, even if it is only a second old.\n- **Bid**: the highest price someone is currently willing to *pay*. If you want to sell right now, this is roughly what you will get.\n- **Ask** (or *offer*): the lowest price someone is currently willing to *sell* for. If you want to buy right now, this is roughly what you will pay.\n\nNext to the bid and ask is a **size**, the number of shares available at that price, often quoted in round lots of 100. A quote of `187.40 x 300 / 187.42 x 500` means buyers want 300 shares at $187.40 and sellers offer 500 shares at $187.42. Behind those best prices sit more orders at worse prices; the whole stack is the **order book**, and lesson 4 explains how your own orders join it.\n\nThe ask is always at or above the bid. If someone were willing to buy at $187.45 while someone else was willing to sell at $187.42, the exchange would match them instantly and both orders would disappear. The gap that remains is the **spread**. A trade happens when a buyer agrees to pay the ask (the trade prints *on the ask*, a sign of eager buying) or a seller accepts the bid (prints *on the bid*, eager selling). Watching which side prints is a very old form of reading market mood."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**You buy at the ask and sell at the bid.** The spread is a cost you pay every time you go in and out, before the price has moved at all. On a liquid large-cap stock it is a cent or two. On a thin stock it can be a few percent, which is more than many traders expect to make on the whole trade."
+        },
+        {
+          "type": "text",
+          "md": "### The spread is a tax on impatience\n\nTake the quote above: bid $187.40, ask $187.42. Buy 100 shares at the ask ($18,742) and sell them immediately at the bid ($18,740): you have lost $2, about 0.01%. Trivial. Now take a thinly traded stock quoted at bid $4.80, ask $5.00. Buy 1,000 shares at $5.00 ($5,000), sell at $4.80 ($4,800): you have lost $200, or 4%, in zero seconds. The stock would have to rise 4.2% just for you to break even.\n\nThe relative spread is what matters: spread divided by price. Here are the two examples side by side.\n\n- Large cap: $0.02 / $187.41 = 0.011%\n- Thin stock: $0.20 / $4.90 = 4.1%\n\nThe second trade is roughly 380 times more expensive to enter and exit than the first. Any strategy that trades frequently must clear this hurdle on every single round trip, which is why high-frequency strategies on illiquid stocks are a losing game for retail traders, and why the demo universe is built from very liquid names.\n\nSpreads also widen when markets are nervous. During a sharp sell-off the market makers who normally stand ready to buy and sell step back, the bid drops, the ask rises, and the quoted cost of trading can multiply in minutes. Pre-market and after-hours spreads behave the same way for the same reason: fewer participants.\n\nThe simulator does not model a spread. Every paper fill happens at the last price. When you move to a real broker later, expect your results to be a little worse than the simulator suggested, and treat that difference as the spread (plus slippage) that the simulator hid from you."
+        },
+        {
+          "type": "text",
+          "md": "### The rest of the quote page\n\nBelow the three prices a quote page shows a block of numbers. Here is what each one tells you, using a made-up quote for a $150 stock.\n\n- **Open 148.20, High 151.10, Low 147.90, Close/Last 150.00**: today's OHLC, the same four numbers that draw one candle. Day range = high minus low = $3.20, or about 2.1% of the price. A stock that routinely moves 2% a day is twice as volatile as one that moves 1%.\n- **Previous close 149.00, Change +1.00 (+0.67%)**: today's move measured from yesterday's close, not from today's open. If the stock gapped up at the open, most of the change may have happened before the first trade.\n- **Volume 12.4M, Average volume 9.8M**: shares traded today versus the typical day. Above-average volume means more people are involved, which gives a move more weight. The dashboard shows volume as bars under the price chart.\n- **52-week range 112.00 to 158.00**: the lowest and highest prices of the past year. A stock near its 52-week high is in a strong uptrend by definition; whether that is a reason to buy or to wait is one of the oldest debates in trading.\n- **Market cap 2.3T**: price times shares, from lesson 1.\n- **P/E 28.5**: price divided by the last twelve months of earnings per share. It tells you how many dollars investors pay for one dollar of annual profit. High P/E usually means high expected growth; low P/E means low expectations or trouble. It is a valuation tool, not a timing tool, and technical traders mostly ignore it.\n- **Dividend yield 0.5%**: annual dividend divided by price.\n\nYou do not need to memorize these. You need to be able to look at a quote page and not be intimidated by it."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "bb"],
+          "caption": "Nvidia, daily, with Bollinger Bands (20-day average plus and minus two standard deviations). The width of the bands is a quick visual read of volatility: a stock whose bands are wide has a big typical day range, which usually goes with wider spreads and larger gaps. Hover any candle to read its open, high, low, close and volume."
+        },
+        {
+          "type": "text",
+          "md": "### Volume: how many people agree with the price\n\nThe price tells you where buyers and sellers met. Volume tells you how many shares changed hands to get there. A move on heavy volume reflects a lot of people acting; a move on light volume can be a handful of orders pushing around an empty order book.\n\nSome ways traders use it, all of them tendencies rather than rules:\n\n- A breakout to a new high on volume well above average is taken more seriously than one on a quiet day.\n- A rally on steadily shrinking volume suggests fewer buyers are chasing it.\n- The heaviest-volume day in weeks often marks a moment of decision: a panic low or a euphoric high.\n\nVolume also drives a tool you have already seen on the chart: **VWAP**, the volume-weighted average price. It is the average price of every share traded today, weighted by how many shares traded at each price. Institutions that need to buy a large block over a day are often judged on whether they beat VWAP, so it acts as a magnet during the session. The indicator module covers it in detail.\n\nIn the demo data, volume is simulated to look plausible but carries no information. With a live API key connected, it is real, and the comparison between the two is itself instructive."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**A quick liquidity test** before you trade any stock with real money: average daily volume above a million shares and a quoted spread below 0.1% of the price. Most of the names in the demo universe pass easily. Many small-caps and nearly all penny stocks fail."
+        },
+        {
+          "type": "exercise",
+          "md": "Open Nvidia on the daily chart with Bollinger Bands.\n\n- Hover the most recent candle and record its open, high, low, close and volume.\n- Compute the day range as a percentage: (high minus low) divided by close.\n- Hover a candle where the Bollinger Bands look narrow and another where they look wide. Compute the day range percentage for each. Does the wider band go with the bigger range?\n- Pretend the quoted spread is $0.05. Compute what that is as a percentage of the close, and then compute how much the spread would cost you on a round trip of 200 shares.",
+          "action": { "page": "index.html", "hash": "symbol=NVDA&interval=1day&ov=sma20,bb", "label": "Open NVDA with Bollinger Bands" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock is quoted bid $42.10, ask $42.14. You place an order to buy immediately. About what price will you pay?",
+              "choices": ["$42.10", "$42.12", "$42.14", "The previous close"],
+              "answer": 2,
+              "explain": "Buyers who want to trade immediately pay the ask, the lowest price a seller is offering. Sellers who want immediacy receive the bid."
+            },
+            {
+              "q": "Stock A is quoted $250.00 / $250.04. Stock B is quoted $3.00 / $3.09. Which has the larger relative spread, and roughly by how much?",
+              "choices": ["A, because its spread is $0.04 versus $0.09", "B, roughly 3% versus 0.016%, so about 190 times larger", "They are the same in percentage terms", "It cannot be determined without volume"],
+              "answer": 1,
+              "explain": "Relative spread is spread divided by price. A: 0.04 / 250 = 0.016%. B: 0.09 / 3.045 = about 3%. The thin stock costs far more to trade in and out of."
+            },
+            {
+              "q": "A quote page shows Previous close 80.00, Open 83.00, Last 83.50. Which statement is correct?",
+              "choices": ["The stock is up $0.50 on the day", "The stock gapped up $3.00 at the open and has gained another $0.50 since", "The stock is down because it opened above the last price", "The day range is $3.50"],
+              "answer": 1,
+              "explain": "Change is measured from the previous close: +$3.50 total. Most of it ($3.00) happened in the gap between yesterday's close and today's open."
+            },
+            {
+              "q": "What does a price move on volume well above the stock's average suggest?",
+              "choices": ["The move is probably a data error", "More participants are involved, so the move carries more weight", "The spread must have widened", "The company paid a dividend"],
+              "answer": 1,
+              "explain": "Heavy volume means many shares changed hands at those prices. Traders give such moves more credibility than moves on thin volume, though it is a tendency, not a guarantee."
+            },
+            {
+              "q": "How does the paper-trading simulator in this app treat the bid-ask spread?",
+              "choices": ["It fills buys at the ask and sells at the bid using live quotes", "It adds a fixed 1% spread to every order", "It ignores the spread and fills everything at the last price, so real results will be slightly worse", "It only models the spread for options"],
+              "answer": 2,
+              "explain": "Paper fills happen at the last price with no spread. Expect real trading to cost a little more on every round trip."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l4",
+      "title": "Order types: market, limit and stop",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Market orders: speed over price\n\nA **market order** says *fill me now at whatever the best available price is*. If you buy, you take the ask; if you sell, you hit the bid. In a liquid stock during regular hours, the fill arrives in a fraction of a second within a cent or two of what you saw. It is the right tool when getting in or out matters more than the exact price: closing a position that is moving against you, for example.\n\nIts weakness is that you have given up control of price. Suppose you place a market order to buy 2,000 shares of a stock quoted $50.00 / $50.02 with only 300 shares offered at $50.02. You take those 300, then the next 500 at $50.05, then 1,200 at $50.10. Your average price is about $50.08, not $50.02. That difference is **slippage**, and it grows with order size and shrinks with liquidity. In a fast market or a thin stock, a market order can fill shockingly far from the last quote you saw. Many experienced traders never use market orders in pre-market or after-hours for exactly this reason.\n\nIn the paper engine, `placeOrder({type:'market'})` fills instantly at the current price with no slippage. That makes it a clean way to learn, and an optimistic one. The portfolio page's settings tab lets you set a per-trade commission; the backtest page adds a slippage setting. Use both once you are past the basics."
+        },
+        {
+          "type": "text",
+          "md": "### Limit orders: price over speed\n\nA **limit order** says *fill me at this price or better, and not otherwise*. A buy limit at $49.50 will only execute at $49.50 or lower. A sell limit at $52.00 will only execute at $52.00 or higher. If the market never gets there, the order sits unfilled and eventually expires.\n\nExample: a stock is trading at $50.20. You think it is worth buying but not chasing. You place a buy limit for 100 shares at $49.75. Three things can happen. The stock dips to $49.75 and you are filled, paying $25 less in total than a market order would have. Or it dips to $49.80 and bounces to $55 without touching your price; you were right about the stock and made nothing. Or it falls straight through $49.75 to $45; you are filled, and now you own a stock that is down 9.5%. The limit protected your entry price. It never promised that the entry was a good idea.\n\nLimit orders are how most professionals enter positions, because the spread (lesson 3) and slippage work against market orders every single time. Resting a buy order at the bid instead of paying the ask saves the spread when it fills; the cost is that it sometimes does not.\n\nA limit order you have placed but that has not filled is **open** (or *working*). It appears in the order book you read about in lesson 3, adding to the size at its price. You can cancel it any time before it fills. On the portfolio page, open orders are listed with a cancel button, and the engine checks each one against every new bar: a buy limit fills if the bar's low is at or below your limit; a sell limit fills if the bar's high is at or above it."
+        },
+        {
+          "type": "text",
+          "md": "### Stop orders: automatic exits (and entries)\n\nA **stop order** is a sleeping market order. It does nothing until the price touches the **stop price**; then it wakes up and becomes a market order. The classic use is the **stop-loss**: you buy at $50 and place a sell stop at $46. If the stock falls to $46, the stop triggers and you are sold out at the market, limiting the damage to roughly 8%. You do not have to be watching. For a student with classes to attend, that is the whole appeal.\n\nStops work the other way too. A **buy stop** at $52 on a stock trading at $50 triggers if price rises to $52, which traders use to enter a breakout only once it has actually happened. In the paper engine, a buy stop triggers when a bar's high reaches the stop price, and a sell stop when a bar's low reaches it.\n\nBecause a triggered stop is a *market* order, its fill price is not guaranteed. Return to the gap example from lesson 2: your stop at $46, the stock closes at $47 and opens the next day at $40. The stop triggers at the open and sells at about $40, not $46. Stops limit losses in a normally moving market. They do not protect against gaps.\n\nThe **stop-limit order** addresses that by combining the two: when the stop price is touched, it becomes a *limit* order instead of a market order. Sell stop $46, limit $45.50 means: once price hits $46, sell, but not below $45.50. In the gap-to-$40 case you would not be filled at all, which protects you from a terrible fill and leaves you holding a stock at $40. There is no free lunch: the stop-limit trades a bad fill for the risk of no fill.\n\nWhere to put a stop is a question the risk module spends a whole lesson on. The short version most traders agree on: below a recent swing low for a long position, at a distance that keeps the dollar loss to a small fixed fraction of your account, and not at an obvious round number where everyone else's stops are sitting."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**A stop is not a guarantee.** It becomes a market order when triggered and fills at the next available price, which after a gap can be far worse than the stop price. A stop-limit avoids the bad fill but may leave you in the position. Position size is the only protection that always works."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "Tesla, daily, with 20- and 50-day moving averages. A common way to think about orders on a chart like this: a buy limit a little below current price to enter on a dip, a sell stop below the most recent swing low to exit if the dip turns into a slide, and a sell limit at a resistance level above to take profit. The three orders together define the trade before it starts."
+        },
+        {
+          "type": "text",
+          "md": "### Time in force, and how the simulator fills\n\nEvery order carries a **time in force (TIF)** that says how long it lives.\n\n- **Day**: cancelled automatically at the 4:00 pm close if unfilled. The default at most brokers.\n- **GTC (good 'til cancelled)**: stays open across days until it fills or you cancel it. Most brokers quietly expire GTC orders after 60 to 90 days.\n- Some brokers offer **IOC** (immediate or cancel: fill what you can right now, cancel the rest) and **FOK** (fill or kill: all of it right now or nothing). Beginners rarely need either.\n\nThe paper engine supports `day` and `gtc`. Day orders are cancelled at the start of the next session.\n\nHere is the fill logic in one place, because knowing it will save you confusion on the portfolio page:\n\n- **Market**: fills immediately at the current price. Buys need enough cash (shares times price plus commission); otherwise the order is rejected with a reason.\n- **Limit buy**: fills at your limit price when a bar's low is at or below it. **Limit sell**: fills when a bar's high is at or above it.\n- **Stop buy**: triggers when a bar's high reaches the stop. **Stop sell**: triggers when a bar's low reaches the stop. The fill is at the stop price, unless the bar *opened* past your stop (a gap), in which case you get the open, which is worse. The engine tells you in the order's note when that happened: gaps hurt you here just as they do at a real broker.\n- **Stop-limit**: triggers like a stop, then fills only if the limit price is still reachable within that bar; otherwise it keeps working as a plain limit order.\n\nThe fills are checked once per new bar on the symbols you hold or have orders on. On the daily interval that means once a day; on 1-minute bars it is close to real time. This is coarser than a real exchange, where fills happen trade by trade, but it is the same logic the backtest engine uses, so a strategy that works in the lab will behave the same way in your paper account."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**One sentence per order type.**\n\n- Market: *fill me now, whatever the price.*\n- Limit: *fill me only at this price or better.*\n- Stop: *once price reaches this level, fill me at market.*\n- Stop-limit: *once price reaches this level, fill me only at my limit or better.*\n\nBeginners most often get into trouble by using a market order where a limit belonged, and by not having a stop at all."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard trade ticket and place a small bracket of orders on any stock from the watchlist (10 shares is plenty). You can check fills and open orders afterwards on the portfolio page.\n\n- Buy 10 shares with a **market** order and note the fill price in the trade history.\n- Place a **sell stop** 5% below your fill price, time in force GTC.\n- Place a **sell limit** 10% above your fill price, GTC.\n- Place a **buy limit** 3% below the current price for another 10 shares, day only.\n\nCome back after the next trading day. Which orders filled, which are still open, and which was cancelled? Check the reasoning against the fill rules in this lesson. Then cancel anything still working so it does not surprise you later.",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day", "label": "Open the dashboard trade ticket" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock is trading at $30.00. You want to buy only if it dips to $29.00 or lower. Which order do you place?",
+              "choices": ["Market buy", "Buy limit at $29.00", "Buy stop at $29.00", "Sell stop at $29.00"],
+              "answer": 1,
+              "explain": "A buy limit executes only at the limit price or better (lower). A buy stop at $29 makes no sense because stops trigger when price moves toward them from the other side; a buy stop belongs above the current price."
+            },
+            {
+              "q": "You own shares bought at $80 and place a sell stop at $74. The stock closes at $75 and opens the next day at $66 after bad news. What most likely happens?",
+              "choices": ["You are sold at $74 as the stop promised", "The stop triggers at the open and you are sold near $66", "The stop is cancelled because the price skipped it", "The stop converts to a limit order at $74"],
+              "answer": 1,
+              "explain": "A stop becomes a market order once price reaches or passes the stop level. After a gap it fills at the next available price, here around $66. Stops do not protect against gaps."
+            },
+            {
+              "q": "What is the main trade-off of a stop-limit order compared with a plain stop?",
+              "choices": ["It costs a higher commission", "It avoids a bad fill after a gap but may not fill at all, leaving you in the position", "It fills faster", "It can only be used to buy"],
+              "answer": 1,
+              "explain": "When triggered, a stop-limit becomes a limit order, so it will not sell below your limit. If the price gaps through the limit you simply remain unfilled."
+            },
+            {
+              "q": "In the paper-trading engine, when does an open sell limit at $120 fill?",
+              "choices": ["When any bar's high is at or above $120", "When any bar's low is at or below $120", "Only when the close is exactly $120", "Immediately, at the current price"],
+              "answer": 0,
+              "explain": "A sell limit asks for $120 or better. The engine fills it when a bar's range reaches that price from below, that is, when the high touches or exceeds $120."
+            },
+            {
+              "q": "What does a time in force of 'day' mean?",
+              "choices": ["The order can only be placed during daylight hours", "The order fills at the day's closing price", "The order is cancelled at the end of the trading session if it has not filled", "The order remains open for 24 hours"],
+              "answer": 2,
+              "explain": "Day orders expire at the close. GTC (good 'til cancelled) orders stay open across sessions until filled or cancelled."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l5",
+      "title": "Brokers, paper trading and what moves prices",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What a broker does for you\n\nIndividuals cannot send orders to an exchange directly. A **broker** holds your cash and shares, routes your orders, reports your trades for tax purposes, and gives you the app you look at. Most US brokers today charge **zero commission** on stock trades. They earn money instead on the interest from your uninvested cash, on margin loans, on fees for options, and in many cases on **payment for order flow**: wholesalers pay the broker to execute its customers' orders. Regulators require the broker to still seek the best available price, and whether this arrangement costs retail traders anything meaningful is debated; it is worth knowing the business model of any company that gives you something free.\n\nA few things to look for when you eventually choose one:\n\n- **SIPC membership**, which insures your account up to $500,000 against the broker itself failing (not against your investments losing value).\n- A **cash account** versus a **margin account**. Margin lets you borrow against your holdings to buy more; it also lets a bad week cost you more than you deposited. Beginners should start with cash.\n- A free **paper-trading mode**. Many brokers offer one, and the skills transfer.\n- Fractional shares, so you can buy $50 of a $900 stock.\n- The **pattern day trader** rule: in a US margin account under $25,000, making four or more day trades (buying and selling the same stock the same day) in five business days gets your account restricted. It is a reason many students swing trade over days instead of day trading.\n\nThis app is not a broker. It never connects to one and never sends a real order. The portfolio you see lives in your browser's local storage, and clearing your browser data erases it."
+        },
+        {
+          "type": "text",
+          "md": "### Paper trading: what it teaches and what it cannot\n\n**Paper trading** means trading with simulated money on real (or realistic) prices. You start here with $100,000 of pretend cash, you place orders, the engine fills them, and your equity curve on the portfolio page shows how you are doing. The point is to make your beginner mistakes where they cost nothing.\n\nWhat it teaches well:\n\n- The mechanics: order types, fills, position sizes, reading a P&L. Getting these wrong with real money is expensive and completely avoidable.\n- Process: writing down why you entered, where your stop is, and what would make you exit, then checking whether you followed your own rules. The trade history on the portfolio page is your journal's raw material.\n- Strategy testing in real time. A backtest tells you how a rule did on past data; paper trading tells you whether you can actually execute it day after day.\n\nWhat it cannot teach, and you should be honest about:\n\n- **Emotion.** Losing $2,000 of pretend money feels like nothing. Losing $2,000 of rent money makes people abandon their plans at exactly the wrong moment. Most traders find their paper results are better than their first live results for this reason alone.\n- **Fills.** As the earlier lessons said, the simulator ignores spread and slippage, and it checks fills once per bar rather than trade by trade. Real fills are slightly worse, always.\n- **Size.** Pretend $100,000 behaves differently from a real $2,000. When you do go live, start with an amount whose total loss would be annoying but not harmful, and scale up only after months of records.\n\nA useful habit: treat the paper account as if it were real, including a rule that you will not reset it after a bad streak. The reset button exists for a fresh start after you have learned something, not for erasing evidence."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The simulator is for building habits, not for proving you are a genius.** Anyone can make 30% on paper in a good month. The skill that transfers to real money is following written rules through a losing month without changing them."
+        },
+        {
+          "type": "text",
+          "md": "### What actually moves a price\n\nAt the smallest scale the answer is trivial: a price rises when buyers are more eager than sellers and falls when sellers are more eager than buyers. The interesting question is what makes a crowd eager.\n\n**Company news.** Earnings reports every quarter are the big one: revenue, profit, and above all **guidance**, the company's forecast for next quarter. Product launches, executive changes, lawsuits, recalls, acquisitions, and dividend changes all count. Earnings dates are published in advance; a position held through one is a bet on the report whether you intend it or not.\n\n**Industry and sector news.** A rival's strong results can lift a whole sector; a new regulation can sink it. When Nvidia reports, AMD and Broadcom often move too.\n\n**Macroeconomic news.** Interest-rate decisions by the Federal Reserve (eight scheduled meetings a year), inflation reports (CPI, monthly), the jobs report (first Friday of most months), and GDP. Higher interest rates make bonds more attractive relative to stocks and make future profits worth less today, so stocks, especially fast-growing ones, tend to fall when rates are expected to rise. These releases hit at fixed times, usually 8:30 am or 2:00 pm Eastern, and the whole market can swing in seconds.\n\n**Flows and positioning.** Index funds buying a stock that was just added to the S&P 500, a big fund rebalancing at quarter end, options dealers hedging into a Friday expiration. None of this is about the company; it moves prices anyway.\n\n**Sentiment.** Fear and greed, fashions and panics. This is the force technical analysis tries to measure, on the theory that crowd behaviour repeats in recognizable patterns."
+        },
+        {
+          "type": "text",
+          "md": "### Expectations, not news: why good reports can sink a stock\n\nThe single most confusing experience for new traders is this: a company reports record profits and the stock drops 8%. Or it reports a loss and the stock jumps. The explanation is that **prices move on the difference between what happened and what was expected**, not on what happened.\n\nWalk through an example. A stock trades at $100. Analysts expect earnings of $2.00 per share. Over the two weeks before the report, optimistic traders buy and push the price to $108, so by report day the market is quietly expecting something better than $2.00, say $2.10. The company reports $2.05: a record, above the published estimate, and a disappointment relative to the price. Some of the traders who bought at $104 and $106 sell, and the stock drops to $101. Headlines say *shares fall despite record earnings*. Nothing strange happened; the result was simply already **priced in**, and then some.\n\nThe same logic runs the other way. A company everyone expects to lose $1.00 per share loses $0.60, and the stock rallies 15% because it was priced for disaster.\n\nThis has three practical consequences for you. First, you cannot trade news you read in a headline; by the time it is a headline, it is in the price. Second, the reaction to news tells you more than the news: a stock that shrugs off bad news is being bought by someone with conviction. Third, when the chart and the story disagree, the chart is showing you what people actually did with their money. That is the strongest argument for learning technical analysis, and the next module starts there.\n\nWhether markets price information in so well that nobody can beat them consistently is the **efficient-market debate**, and it is genuinely unresolved among academics and practitioners. The sensible beginner's position is humility: assume the price knows more than you do, and look for the limited situations where it might not."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["ema9", "ema21", "rsi"],
+          "caption": "Amazon, daily, with 9- and 21-day exponential moving averages and an RSI pane below. The large single-day candles on a chart like this usually line up with earnings dates or major macro releases. Notice how often a big move is followed by several days of drift as the market works out whether the first reaction was right. The indicator module explains how to read the RSI pane."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Start a trading journal today**, even if it is a notes app. For every paper trade: date, symbol, why you entered, where your stop and target were, how it ended, and one sentence on what you would do differently. In three months the journal will teach you more than any indicator."
+        },
+        {
+          "type": "exercise",
+          "md": "Make your first deliberate paper trade.\n\n- Open your paper portfolio and reset it to $100,000 so you start clean (settings tab).\n- Pick one stock from the watchlist. On the dashboard, look at its daily chart and write one sentence about why you would own it for the next two weeks.\n- Buy a position worth no more than 5% of the account (about $5,000) with a market order. Place a sell stop below a recent swing low.\n- Record the trade in your journal with the entry price, stop price and your reason.\n- Over the next week, check the market status badge once a day, note any news about the company, and watch whether the price reaction matches the news. Do not touch the trade unless your stop is hit or your reason stops being true.",
+          "action": { "page": "portfolio.html", "hash": "settings", "label": "Open portfolio settings" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Most US brokers charge no commission on stock trades. Which of these is a real way they earn money instead?",
+              "choices": ["A share of each company's profits", "Interest on customers' uninvested cash, margin loans, and payment for order flow", "Fees paid by the exchanges for listing stocks", "Government subsidies"],
+              "answer": 1,
+              "explain": "Zero-commission brokers earn interest on cash balances, charge interest on margin, and often receive payment for order flow from wholesalers who execute customer orders."
+            },
+            {
+              "q": "Which of these does paper trading NOT realistically teach?",
+              "choices": ["How order types fill", "How to read a profit-and-loss statement", "The emotional pressure of losing real money", "How to keep a trading journal"],
+              "answer": 2,
+              "explain": "Simulated losses do not hurt, so paper trading cannot reproduce the fear and impatience that cause most real-money mistakes. The mechanics and process skills do transfer."
+            },
+            {
+              "q": "A company reports quarterly earnings of $3.10 per share, a record, against a published estimate of $3.00. The stock falls 7%. What is the most likely explanation?",
+              "choices": ["The data provider made an error", "Record earnings are always bad for a stock", "Traders had bid the price up in anticipation of an even better result, so the report disappointed relative to what was priced in", "The company must have cut its dividend"],
+              "answer": 2,
+              "explain": "Prices move on the gap between results and expectations. If the run-up before the report implied something better than $3.10, a record quarter can still be a letdown."
+            },
+            {
+              "q": "Interest rates are expected to rise. Which effect on stocks is most commonly described?",
+              "choices": ["Stocks, especially fast-growing ones, tend to fall because future profits are worth less today and bonds become more competitive", "Stocks always rise because banks earn more", "There is no connection between rates and stocks", "Only dividend stocks are affected"],
+              "answer": 0,
+              "explain": "Higher rates raise the discount applied to future earnings and make safer bonds relatively more attractive. Growth stocks, whose value lies far in the future, are usually most sensitive. It is a tendency, not a law."
+            },
+            {
+              "q": "Under the US pattern day trader rule, what happens if you make four or more day trades in five business days in a margin account below $25,000?",
+              "choices": ["You owe a tax penalty", "Your account is flagged and restricted from further day trading until you add funds", "Your broker must pay you payment for order flow", "Nothing; the rule only applies to options"],
+              "answer": 1,
+              "explain": "The rule flags frequent day trading in small margin accounts and restricts it. It is one reason many students prefer holding trades for several days (swing trading) while learning."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

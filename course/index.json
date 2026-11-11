@@ -1,0 +1,91 @@
+{
+  "version": "0.2.0",
+  "title": "Broward Trading Course",
+  "summary": "Six modules that take you from 'what is a stock?' to building and backtesting your own rule-based strategy, with the paper-trading dashboard as your lab.",
+  "modules": [
+    {
+      "id": "m1-foundations",
+      "title": "Market Foundations",
+      "level": "beginner",
+      "minutes": 52,
+      "summary": "What markets are, how orders work, what moves prices, and why paper trading is the right place to start.",
+      "lessons": [
+        { "id": "m1-l1", "title": "What a stock actually is", "minutes": 10 },
+        { "id": "m1-l2", "title": "Exchanges and market hours", "minutes": 10 },
+        { "id": "m1-l3", "title": "Reading a quote: bid, ask and the spread", "minutes": 10 },
+        { "id": "m1-l4", "title": "Order types: market, limit and stop", "minutes": 12 },
+        { "id": "m1-l5", "title": "Brokers, paper trading and what moves prices", "minutes": 10 }
+      ]
+    },
+    {
+      "id": "m2-charts",
+      "title": "Reading Charts & Candlesticks",
+      "level": "beginner",
+      "minutes": 52,
+      "summary": "Candlesticks, timeframes, trends, support and resistance, and the classic reversal patterns, read on real chart panes.",
+      "lessons": [
+        { "id": "m2-l1", "title": "Anatomy of a Candlestick and Choosing a Timeframe", "minutes": 10 },
+        { "id": "m2-l2", "title": "Trend, Support and Resistance", "minutes": 10 },
+        { "id": "m2-l3", "title": "Trend Lines, Channels and Volume", "minutes": 10 },
+        { "id": "m2-l4", "title": "Classic Candlestick Patterns", "minutes": 10 },
+        { "id": "m2-l5", "title": "Chart Patterns: Reversals and Continuations", "minutes": 12 }
+      ]
+    },
+    {
+      "id": "m3-indicators",
+      "title": "Technical Indicators",
+      "level": "intermediate",
+      "minutes": 58,
+      "summary": "Moving averages, RSI, MACD, Bollinger Bands, volume tools and how the dashboard combines them into a composite signal.",
+      "lessons": [
+        { "id": "m3-l1", "title": "Moving averages and crossovers", "minutes": 12 },
+        { "id": "m3-l2", "title": "Momentum oscillators: RSI and stochastic", "minutes": 11 },
+        { "id": "m3-l3", "title": "MACD, Bollinger Bands and ATR", "minutes": 12 },
+        { "id": "m3-l4", "title": "Trend strength and context: ADX, VWAP and Ichimoku", "minutes": 11 },
+        { "id": "m3-l5", "title": "Combining indicators and the composite signal", "minutes": 12 }
+      ]
+    },
+    {
+      "id": "m4-risk",
+      "title": "Risk Management & Paper Trading",
+      "level": "intermediate",
+      "minutes": 56,
+      "summary": "Position sizing, stops, expectancy, drawdowns and the trading journal, practised on your paper account.",
+      "lessons": [
+        { "id": "m4-l1", "title": "Position Sizing and the 1% Rule", "minutes": 11 },
+        { "id": "m4-l2", "title": "Stop Losses, Risk/Reward and Expectancy", "minutes": 12 },
+        { "id": "m4-l3", "title": "Drawdowns, Streaks and Trading Psychology", "minutes": 11 },
+        { "id": "m4-l4", "title": "Short Selling, Margin and Leverage", "minutes": 10 },
+        { "id": "m4-l5", "title": "Your Trading Plan, Journal and Using the Paper Account Well", "minutes": 12 }
+      ]
+    },
+    {
+      "id": "m5-options",
+      "title": "Options Basics",
+      "level": "advanced",
+      "minutes": 58,
+      "summary": "Calls, puts, premium, the Greeks, payoff diagrams and the defined-risk strategies in the options lab.",
+      "lessons": [
+        { "id": "m5-l1", "title": "Calls, puts and what a premium is made of", "minutes": 12 },
+        { "id": "m5-l2", "title": "Reading an option chain", "minutes": 11 },
+        { "id": "m5-l3", "title": "The Greeks, intuitively, and implied volatility", "minutes": 13 },
+        { "id": "m5-l4", "title": "Covered calls, protective puts and vertical spreads", "minutes": 11 },
+        { "id": "m5-l5", "title": "Straddles, strangles, iron condors and assignment risk", "minutes": 11 }
+      ]
+    },
+    {
+      "id": "m6-strategy",
+      "title": "Strategy & Backtesting",
+      "level": "advanced",
+      "minutes": 57,
+      "summary": "Turning rules into a strategy, backtesting it honestly, avoiding overfitting and writing a trading plan you can follow.",
+      "lessons": [
+        { "id": "m6-l1", "title": "What a Strategy Is: Entry and Exit Rules", "minutes": 11 },
+        { "id": "m6-l2", "title": "Backtesting Basics and the Metrics That Matter", "minutes": 13 },
+        { "id": "m6-l3", "title": "Why Backtests Lie: Look-Ahead, Survivorship and Overfitting", "minutes": 12 },
+        { "id": "m6-l4", "title": "Transaction Costs and the Road to Paper Trading", "minutes": 11 },
+        { "id": "m6-l5", "title": "Capstone: Build, Test and Paper Trade Your Own Strategy", "minutes": 10 }
+      ]
+    }
+  ]
+}

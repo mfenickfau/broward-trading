@@ -1,0 +1,576 @@
+{
+  "id": "m3-indicators",
+  "title": "Technical Indicators",
+  "level": "intermediate",
+  "minutes": 58,
+  "summary": "Moving averages, RSI, MACD, Bollinger Bands, ATR, ADX, VWAP and Ichimoku: what each one measures, the arithmetic behind it, how to combine them without redundancy, and exactly how the dashboard scores its composite BUY / SELL / HOLD signal.",
+  "lessons": [
+    {
+      "id": "m3-l1",
+      "title": "Moving averages and crossovers",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What an indicator is, and what it is not\n\nAn indicator is arithmetic done on price (and sometimes volume) and drawn on the chart. That is the whole definition. A moving average is an average. RSI is a ratio of recent gains to recent losses. Bollinger Bands are a standard deviation. None of them know anything the candles do not already contain; they just make one feature of the candles easier to see.\n\nThat sounds deflating, but it is the right frame. Indicators do two useful jobs. They **summarize**: a 50-day average tells you in one line whether the last ten weeks have been up or down, which is hard to judge from 50 individual candles. And they **standardize**: \"RSI is 28\" means the same thing on Apple as on a small biotech, so you can build rules that work across many stocks.\n\nWhat indicators cannot do is predict. Every one of them is computed from past bars, so every one of them lags. The faster you make an indicator respond, the more false alarms it gives; the slower you make it, the later it tells you. There is no setting that escapes this trade-off, only settings that choose a different point on it.\n\nThis module teaches the indicators the Broward Trading dashboard draws, in roughly the order a trader learns them: moving averages first, because every other tool borrows from them; then momentum oscillators (RSI, stochastic, MACD); then volatility (Bollinger Bands, ATR); then trend-strength and context tools (ADX, VWAP, Ichimoku). The final lesson explains how the dashboard combines six of them into the composite BUY / SELL / HOLD score on the right-hand rail, so that by the end you can read that score, disagree with it, and know why."
+        },
+        {
+          "type": "text",
+          "md": "### The simple moving average\n\nThe **simple moving average (SMA)** of length n is the plain average of the last n closing prices. A 20-day SMA on a daily chart adds up the last 20 closes and divides by 20. Tomorrow, the oldest close drops out, the newest one drops in, and you divide by 20 again. The line \"moves\" because the window moves.\n\nA worked example with a 5-day SMA. Closes over five days: $100, $102, $101, $104, $108. Sum is $515, divided by 5 gives an SMA of **$103.00**. The next day the stock closes at $110. Drop the $100, add the $110: $525 / 5 = **$105.00**. Notice that the newest close ($110) was $10 above the close it replaced ($100), yet the average moved only $2: one fifth of that difference, because each close carries one fifth of the weight. That damping is the point. It is also the lag.\n\nThe three lengths you will see everywhere are **20** (about one trading month), **50** (about one quarter) and **200** (about one trading year, since there are roughly 252 trading days). The dashboard draws SMA 20 in amber and SMA 50 in blue, and the composite signal uses both.\n\nReading an SMA is simple:\n\n- Price above a rising average: uptrend on that horizon.\n- Price below a falling average: downtrend.\n- Price chopping back and forth across a flat average: no trend, and most trend tools will misbehave.\n\nThe slope of the average matters as much as which side price is on. A stock just above a steeply falling 50-day average is in a downtrend that has paused, not in an uptrend."
+        },
+        {
+          "type": "text",
+          "md": "### The exponential moving average\n\nThe **exponential moving average (EMA)** weights recent closes more heavily, so it turns faster than an SMA of the same length. Each day it moves a fixed fraction of the way from yesterday's EMA toward today's close:\n\nEMA today = close × k + EMA yesterday × (1 − k), where k = 2 / (n + 1).\n\nFor a 9-period EMA, k = 2 / 10 = **0.20**: each new close gets 20% of the weight and the whole history before it shares the other 80%. For a 21-period EMA, k = 2 / 22 ≈ **0.091**. For a 20-period EMA, k ≈ 0.095.\n\nExample with the 9 EMA. Yesterday's EMA was $100.00 and today's close is $105.00. New EMA = 105 × 0.20 + 100 × 0.80 = 21 + 80 = **$101.00**. A 9-day SMA facing the same $5 jump would rise by about $5 / 9 ≈ $0.56. The EMA moved almost twice as far, which is exactly why short-term traders prefer it.\n\nThe first EMA value needs a starting point. Broward Trading seeds it with the SMA of the first n closes, which is the common convention; other platforms seed with the first close alone, so the first few dozen values can differ slightly between tools. After that the two converge.\n\nThe dashboard offers **EMA 9** (purple) and **EMA 21** (teal), a popular short-term pair for swing traders on daily charts and for intraday traders on 5- and 15-minute bars. The **weighted moving average (WMA)**, also in the indicator library, weights the last n closes linearly (n, n−1, …, 1); it behaves between SMA and EMA and is rarely needed once you understand those two."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Lag is the price of smoothing.** An n-period SMA effectively tells you about the market as it was n/2 bars ago. A 50-day SMA is centred about 25 trading days in the past. When a moving average \"confirms\" a trend, the trend is already five weeks old. That is fine for a trend follower and useless for someone trying to buy the exact bottom."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Apple, daily, with SMA 20 (amber) and SMA 50 (blue). Find a stretch where the amber line is above the blue line and both are rising: that is bullish alignment, and the composite signal gives it a point. Find a place where the amber line cuts down through the blue one, then hover the bars around it to see how far price had already fallen before the cross printed. On simulated data the shapes are realistic but the dates are not Apple's history."
+        },
+        {
+          "type": "text",
+          "md": "### Crossovers: golden, death, and the whipsaw problem\n\nA **crossover** happens when a fast average crosses a slow one. Fast crossing above slow is bullish: recent prices have risen enough to lift the short-term average past the long-term one. Fast crossing below slow is bearish.\n\nThe famous version is the **golden cross** (50-day SMA crossing above the 200-day) and its mirror the **death cross**. Financial news loves them. Broward Trading uses a faster pair, **SMA 20 crossing SMA 50**, and awards ±2 points on the single bar where the cross happens, plus ±1 for the alignment afterwards. Faster pairs cross more often, which gives more trades and more false signals. Which pair is \"right\" is genuinely debated and depends on how long you intend to hold.\n\nHere is the honest problem. Consider a stock that trades in a range between $48 and $52 for three months. Every time it rises to $52 the fast average climbs above the slow one (buy), and every time it falls to $48 the fast average drops back below (sell). You buy near the top of the range and sell near the bottom, over and over, losing a dollar or two each cycle plus costs. That is a **whipsaw**, and it is the characteristic way a crossover system loses money. Crossovers earn their keep only in markets that actually trend, which is why Lesson 4 spends time on ADX.\n\nTwo sanity checks make crossovers more useful:\n\n- **Slope filter.** Only take a bullish cross if the slow average is itself flat or rising. A fast line poking above a steeply falling slow line is usually a bounce, not a reversal.\n- **Distance filter.** Ignore crosses where the two averages are within a small fraction of a percent of each other; wait for separation. Broward Trading's scorer does not do this, which you can verify in the backtester by counting how many composite trades last only a few bars.\n\nIn the exercise you will backtest the 20/50 crossover and compare it with 50/200 on the same stock. Expect the faster system to make more trades and, often, to lose more to whipsaws."
+        },
+        {
+          "type": "text",
+          "md": "### Using moving averages well\n\nExperienced traders rarely use a moving average as a trigger on its own. The common roles are:\n\n**Trend filter.** Only take long trades when price is above the 50- or 200-day average; only take shorts below. This single rule removes a large share of counter-trend losses from almost any strategy, at the cost of missing the first part of every reversal. The composite signal's first component (price vs SMA 50) is exactly this.\n\n**Dynamic support and resistance.** In a steady uptrend, pullbacks often stall near the 20- or 50-day average because enough traders watch those lines to make them self-fulfilling. Nothing magical happens there; it is simply a visible place where buyers who missed the move decide to act. Treat it as a zone, not a precise price.\n\n**Ribbons.** Plotting several EMAs together (for example 8, 13, 21, 34, 55) shows trend quality at a glance. Fanned out and all sloping the same way means a strong, orderly trend. Tangled together means chop.\n\nA concrete example of a filtered trade. A stock is at $71, its 50-day SMA is $65 and rising, and its 20-day SMA is $69. Price pulls back for a week to $68.50, touching the 20-day line, then prints a bullish candle. A trend trader buys at $69.20 with a stop just under the 50-day line at $64.50 (risk $4.70 per share) and a target at the old high of $78 (reward $8.80), a reward-to-risk of about 1.9 to 1. The averages did not predict anything; they organized where to enter, where to admit error and where to take profit. That is the realistic job of a moving average."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**No setting is \"best\".** Every forum has a thread claiming the 8/21 EMA or the 10/30 SMA is the secret. Any pair can be made to look brilliant on one stock over one period. In Module 6 you will see how quickly those results evaporate on different data. Pick settings that match your holding period and keep them."
+        },
+        {
+          "type": "exercise",
+          "md": "Two tasks, one on the dashboard and one in the Strategy Lab.\n\n**Dashboard.** Open Apple on the daily chart with SMA 20, SMA 50 and the Signals arrows turned on.\n\n- Scroll back and find at least two places where the amber SMA 20 crosses the blue SMA 50. For each, hover the candle where the cross printed and the candle where the move actually started (the swing low or high). How many bars late was the cross, and how many dollars had price already moved?\n- Find a stretch where the two averages braid around each other. Count how many crosses happen in that stretch. Those are whipsaws.\n\n**Strategy Lab.** The link below opens the backtester with the SMA crossover strategy on Apple, 20/50, and runs it.\n\n- Write down the number of trades, win rate, total return and the buy-and-hold return.\n- Change the parameters to fast 50, slow 200 and run again. Compare the trade count and return.\n- Open the trade list. How many trades lasted fewer than 10 bars? Those are the whipsaws from the chart, priced in dollars.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "The last five daily closes are $40, $42, $41, $44 and $43. What is the 5-day simple moving average?",
+              "choices": [
+                "$41.00",
+                "$42.00",
+                "$43.00",
+                "$44.00"
+              ],
+              "answer": 1,
+              "explain": "Add the five closes (40 + 42 + 41 + 44 + 43 = 210) and divide by 5: $42.00. Every close gets equal weight in a simple moving average."
+            },
+            {
+              "q": "What is the smoothing constant k for a 9-period exponential moving average?",
+              "choices": [
+                "1 / 9 ≈ 0.111",
+                "2 / 9 ≈ 0.222",
+                "2 / 10 = 0.200",
+                "9 / 10 = 0.900"
+              ],
+              "answer": 2,
+              "explain": "k = 2 / (n + 1) = 2 / 10 = 0.20. Each new close gets 20% of the weight; the previous EMA carries the other 80%."
+            },
+            {
+              "q": "Yesterday's 9-period EMA was $50.00 and today's close is $55.00. What is today's EMA?",
+              "choices": [
+                "$50.50",
+                "$51.00",
+                "$52.50",
+                "$55.00"
+              ],
+              "answer": 1,
+              "explain": "EMA = 55 × 0.20 + 50 × 0.80 = 11 + 40 = $51.00. The EMA moved $1 on a $5 jump, faster than a 9-day SMA would have (about $0.56)."
+            },
+            {
+              "q": "In which kind of market does a moving-average crossover system typically lose money through repeated small losses?",
+              "choices": [
+                "A strong uptrend",
+                "A strong downtrend",
+                "A sideways, range-bound market",
+                "A market with high volume"
+              ],
+              "answer": 2,
+              "explain": "In a range the fast average crosses the slow one back and forth, generating buys near the top and sells near the bottom: the whipsaw. Crossovers need a trend to pay off."
+            },
+            {
+              "q": "Which pair of averages does the Broward Trading composite signal use for its crossover component?",
+              "choices": [
+                "SMA 50 and SMA 200",
+                "EMA 9 and EMA 21",
+                "SMA 20 and SMA 50",
+                "SMA 10 and SMA 30"
+              ],
+              "answer": 2,
+              "explain": "The dashboard scores a golden or death cross of SMA 20 over SMA 50 at ±2 points on the bar it occurs, and ±1 for alignment afterwards. The classic news-headline golden cross is 50 over 200."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l2",
+      "title": "Momentum oscillators: RSI and stochastic",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Momentum: how fast, not which way\n\nMoving averages describe direction. **Momentum** describes speed. A stock can be in an uptrend and still be losing momentum: each new high a little smaller than the last, each pullback a little deeper. Momentum tools try to catch that change of speed before the direction changes, which is why they are called **leading** indicators, a flattering label that should be read as \"earlier but noisier\".\n\nMost momentum indicators are **oscillators**: they are rescaled to swing inside a fixed band, usually 0 to 100, so that \"high\" and \"low\" mean the same thing on any stock at any price. An oscillator near the top of its range says the recent move has been unusually strong to the upside; traders call this **overbought**. Near the bottom is **oversold**. These words are misleading. They do not mean the price is too high or too low; they mean the recent *rate* of change has been extreme. Strong trends are overbought for weeks. Treat the terms as \"stretched\" and you will avoid the most common beginner mistake, which is shorting a stock simply because an oscillator is high.\n\nThe two classic oscillators are the **Relative Strength Index (RSI)**, published by J. Welles Wilder in 1978, and the **stochastic oscillator**, popularized by George Lane in the 1950s. They measure momentum differently and complement each other less than people assume, because both ultimately react to the same closes. The dashboard draws RSI in a pane below the price chart and scores it in the composite signal; the stochastic is available as a pane on the dashboard (the Stoch button) and in the indicator library for the backtester."
+        },
+        {
+          "type": "text",
+          "md": "### How RSI is computed\n\nRSI looks at the last n bars (14 by default), separates the up-days from the down-days, and compares the average gain to the average loss:\n\nRS = average gain / average loss, and RSI = 100 − 100 / (1 + RS).\n\nExample. Over 14 days a stock's up-days averaged a gain of $1.20 and its down-days averaged a loss of $0.60 (counting zero on days that moved the other way). RS = 1.20 / 0.60 = 2.0, so RSI = 100 − 100 / 3 = **66.7**. If the gains and losses were equal, RS = 1 and RSI = 50. If there were no down-days at all, RSI = 100.\n\nWilder did not use plain averages. After the first 14 bars he smoothed them: today's average gain = (yesterday's average gain × 13 + today's gain) / 14, and likewise for losses. That makes RSI respond gradually, like an EMA, and it is the reason two platforms with the same settings can show RSI values a point or two apart if they started their calculation on different dates. Broward Trading follows Wilder's method exactly; the test file in the repository checks the textbook example.\n\nRules of thumb that come with RSI:\n\n- Above **70**: overbought (stretched up). Below **30**: oversold (stretched down).\n- Some traders use 80/20 for volatile stocks or short timeframes to cut false signals.\n- In a strong uptrend RSI tends to range between about 40 and 80; in a strong downtrend between about 20 and 60. Analyst Constance Brown made this \"range shift\" observation popular, and it is a useful corrective to the 70/30 rule: an RSI of 40 in a bull market is often a buy zone, not a neutral reading.\n\nThe composite signal awards **+2 when RSI is below 30 and −2 when it is above 70**, the largest weight of any single component, and 0 otherwise."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Overbought is not a sell signal.** During the strongest rallies RSI sits above 70 for weeks while price keeps rising. Selling on the first 70 reading is a reliable way to miss the best part of a move. Wait for RSI to turn back down through 70, or for price confirmation, before acting on it."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": [
+            "ema9",
+            "ema21",
+            "rsi"
+          ],
+          "caption": "Amazon, daily, with EMA 9 (purple) and EMA 21 (teal) above and the 14-day RSI below with its 70 and 30 lines. Look for stretches where price makes a new high but the RSI peak is lower than its previous peak: that is bearish divergence, momentum fading while price still climbs. Then look for RSI readings in the 30s that happened while the EMAs were still rising: those are the pullback buys a range-shift trader looks for."
+        },
+        {
+          "type": "text",
+          "md": "### Divergence and failure swings\n\nThe most respected RSI signal is **divergence**. Price makes a higher high but RSI makes a lower high: buyers pushed price to a new peak with less force than before. That is bearish divergence. The mirror, price making a lower low while RSI makes a higher low, is bullish divergence.\n\nA numeric example. In March a stock peaks at $120 with RSI at 78. It pulls back to $108, then in April rallies to $126 (a higher high) but RSI only reaches 68 (a lower high). The second rally covered more ground with less momentum, which often means the trend is tiring. Divergence does not say *when* the turn will come; it says the odds of a turn have risen. Trend traders use it to tighten stops rather than to reverse position.\n\nWilder's own favourite was the **failure swing**. RSI rises above 70, falls back, bounces but fails to get back above 70, then breaks below its own prior low. That is a sell signal that comes entirely from the RSI line and does not need price to confirm, which is both its appeal and its risk.\n\n### The stochastic oscillator\n\nThe stochastic asks a different question: *where did today's close land inside the recent range?*\n\n%K = 100 × (close − lowest low of the last k bars) / (highest high − lowest low), with k = 14 by default. %D is a 3-bar SMA of %K, drawn as a signal line.\n\nExample: over the last 14 bars the highest high was $110 and the lowest low $100. Today's close is $108, so %K = 100 × 8 / 10 = **80**. A close at $101 would give 10. Closing near the top of the range day after day is what a strong uptrend looks like, so stochastic, like RSI, lives above 80 in strong trends. Readings above **80** are called overbought and below **20** oversold. The common trigger is %K crossing %D while in one of those zones. Because it uses highs and lows, not just closes, the stochastic is twitchier than RSI, and most traders smooth it (the \"slow stochastic\") before using it."
+        },
+        {
+          "type": "text",
+          "md": "### RSI as a strategy: mean reversion and its catch\n\nThe simplest RSI strategy, which the Strategy Lab calls **RSI reversion**, buys when RSI drops below 30 and sells when it rises above 70. It is a **mean-reversion** strategy: it bets that stretched moves snap back. On stocks that oscillate in a range it works beautifully. On a stock that is trending down hard it is a disaster, because RSI goes below 30, you buy, and the stock keeps falling while RSI stays pinned at 20 for a month.\n\nNumbers make this vivid. Suppose a stock drops from $60 to $52 over two weeks and RSI prints 27. You buy at $52. It bounces to $55 (win, +5.8%). Next month it slides from $55 to $44 and RSI prints 24. You buy at $44. It keeps going to $36 before RSI even gets back above 30. A single trending leg has erased three winning bounces.\n\nThat is why the composite signal pairs RSI with the two trend components. An oversold RSI *above a rising SMA 50* (a pullback in an uptrend) collects +2 for RSI plus +1 for trend plus +1 for alignment, a BUY at +4. The same RSI reading *below a falling SMA 50* nets +2 −1 −1 = 0, a HOLD. The trend filter does not make RSI a better oscillator; it stops you from using it in the wrong market.\n\nIn the exercise you will run RSI reversion in the backtester, then look specifically at its worst trade. Nearly always it will be a buy taken into a downtrend. The lesson is not that RSI fails; it is that no oscillator can be read without knowing the trend it sits inside, which is where ADX (Lesson 4) and the combination rules of Lesson 5 come in."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Read the RSI pane as a story, not a number.** Ask three questions in order: What range has RSI lived in for the last few months (40–80 says bull, 20–60 says bear)? Is it diverging from price? Only then, is it at an extreme? A trader who checks the extreme first and nothing else is using about a third of the tool."
+        },
+        {
+          "type": "exercise",
+          "md": "Open Nvidia on the daily chart with EMA 9, EMA 21 and the RSI pane (the link does this).\n\n- Find the last three times RSI dropped below 30. For each, write down the close that day and the close 10 bars later. How many of the three \"oversold\" readings were followed by a higher price?\n- Find one bearish divergence (higher price high, lower RSI high) and one bullish divergence. Note how many bars passed between the divergence and the actual turn in price.\n- Now go to the Strategy Lab, pick **RSI reversion** with low 30 and high 70 on the same symbol and run it. Open the trade list (copy it as CSV into a spreadsheet to sort by P&L) and find the worst trade. Look at that trade on the chart: was the stock above or below its 50-day average when the entry happened?\n- Change the thresholds to 20 and 80 and run again. Fewer trades, but are they better?",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=NVDA&interval=1day&ov=ema9,ema21&pane=rsi"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Over the last 14 days a stock averaged a $0.90 gain on up-days and a $0.30 loss on down-days. What is its RSI?",
+              "choices": [
+                "25",
+                "50",
+                "75",
+                "90"
+              ],
+              "answer": 2,
+              "explain": "RS = 0.90 / 0.30 = 3. RSI = 100 − 100 / (1 + 3) = 100 − 25 = 75. Gains three times the size of losses put RSI firmly in the overbought zone."
+            },
+            {
+              "q": "A stock makes a higher high in price while RSI makes a lower high. What is this called and what does it suggest?",
+              "choices": [
+                "Bullish divergence; the uptrend is strengthening",
+                "Bearish divergence; upward momentum is fading",
+                "A failure swing; buy immediately",
+                "A golden cross; the trend has confirmed"
+              ],
+              "answer": 1,
+              "explain": "Price up, momentum down is bearish divergence. It warns that the rally is being driven with less force, raising the odds of a pullback, though it does not time the turn."
+            },
+            {
+              "q": "Over the last 14 bars the highest high was $84 and the lowest low $76. Today closed at $82. What is the stochastic %K?",
+              "choices": [
+                "25",
+                "50",
+                "75",
+                "82"
+              ],
+              "answer": 2,
+              "explain": "%K = 100 × (82 − 76) / (84 − 76) = 100 × 6 / 8 = 75. The close sits three quarters of the way up the recent range."
+            },
+            {
+              "q": "How many points does the composite signal award when RSI is 26?",
+              "choices": [
+                "+1",
+                "+2",
+                "−2",
+                "0, because 26 is only mildly oversold"
+              ],
+              "answer": 1,
+              "explain": "RSI below 30 scores +2, the heaviest single weight in the composite. Above 70 scores −2; anywhere between scores 0."
+            },
+            {
+              "q": "Why does a simple \"buy below RSI 30\" strategy tend to fail in a strong downtrend?",
+              "choices": [
+                "RSI cannot be computed when prices fall",
+                "RSI stays oversold for long stretches while price keeps falling, so each buy is early",
+                "Downtrends have no volume",
+                "RSI only works on weekly charts"
+              ],
+              "answer": 1,
+              "explain": "Oversold describes a stretched rate of decline, not a floor. In a persistent downtrend RSI can stay below 30 for weeks, and every buy is a bet against the trend. A trend filter such as price versus SMA 50 is the usual fix."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l3",
+      "title": "MACD, Bollinger Bands and ATR",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### MACD: trend and momentum in one pane\n\n**MACD** (Moving Average Convergence Divergence), developed by Gerald Appel in the late 1970s, is built from the EMAs you met in Lesson 1. Three lines:\n\n- **MACD line** = EMA 12 − EMA 26 of the closes.\n- **Signal line** = EMA 9 of the MACD line.\n- **Histogram** = MACD line − signal line, drawn as bars.\n\nThe MACD line is positive when the fast average is above the slow one, so its sign is the same information as a 12/26 EMA crossover. Its *distance from zero* adds something a crossover cannot: how far apart the averages are, which is a measure of momentum. The signal line and histogram then measure momentum of the momentum.\n\nWorked example. EMA 12 is $101.50 and EMA 26 is $100.00, so MACD = **+1.50**. The signal line (EMA 9 of recent MACD values) is at 1.20. Histogram = 1.50 − 1.20 = **+0.30**. Yesterday the histogram was +0.20, so it is positive and rising: the bullish gap is still widening. If tomorrow MACD is 1.55 but the signal has caught up to 1.35, the histogram shrinks to +0.20. Still positive, but fading; a trader reads that as \"the rally continues but is losing acceleration.\"\n\nThree standard signals, from most to least frequent:\n\n1. **Histogram turning** (shrinking after growing) — earliest and noisiest.\n2. **Signal-line cross** (MACD crossing the signal line) — the usual trade trigger; the Strategy Lab's **MACD cross** strategy uses this.\n3. **Zero-line cross** (MACD crossing zero) — equivalent to the 12/26 EMA cross; slow but meaningful.\n\nThe composite signal uses the histogram: **+1 when it is positive and rising, −1 when negative and falling, 0 otherwise**. Note what that excludes: a positive-but-shrinking histogram scores zero, so the dashboard stops rewarding a rally as soon as it decelerates. MACD is unbounded (it is in dollars, not 0–100), so \"overbought\" has no fixed level; compare it only with its own history on the same stock."
+        },
+        {
+          "type": "text",
+          "md": "### Bollinger Bands: volatility you can see\n\n**Bollinger Bands**, created by John Bollinger in the 1980s, wrap a moving average in a volatility envelope:\n\n- Middle band = 20-period SMA.\n- Upper band = middle + 2 standard deviations of the last 20 closes.\n- Lower band = middle − 2 standard deviations.\n\nExample. The 20-day SMA is $100 and the standard deviation of those 20 closes is $2. The bands sit at **$96 and $104**. If the stock becomes twice as volatile and the standard deviation rises to $4, the bands widen to $92 and $108 even if the average has not moved. The bands breathe with volatility; that is their whole purpose.\n\n**Bandwidth** = (upper − lower) / middle, here (104 − 96) / 100 = 8%. Tracking bandwidth over time shows when a stock is unusually quiet. A **squeeze** (bandwidth at a multi-month low) often precedes a large move, because volatility tends to cluster: quiet periods are followed by loud ones and vice versa. The squeeze does not tell you the direction; traders wait for the breakout and go with it.\n\nIf daily returns followed a bell curve, about 95% of closes would fall inside two-standard-deviation bands. Real returns have fatter tails and shifting volatility, and in practice noticeably fewer closes stay inside, which is why a close outside the bands is common rather than rare. Bollinger himself stresses that a tag of a band is **not** by itself a signal. Two ways traders use the bands:\n\n- **Mean reversion** in ranges: buy near the lower band, sell near the upper. The Strategy Lab's **Bollinger bounce** does this. It works in sideways markets and bleeds in trends, exactly like RSI reversion, and for the same reason.\n- **Band walking** in trends: a strong trend rides along the upper band for weeks. Here a tag of the upper band is a sign of strength, not a sell.\n\nThe composite signal scores **+1 for a close below the lower band and −1 for a close above the upper band**, a mean-reversion reading that the trend components can override."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The same reading means opposite things in different regimes.** A close above the upper Bollinger Band is a fade in a range and a confirmation in a trend. An RSI of 75 is a warning in a range and normal in a bull run. Before interpreting any indicator, decide which regime you are in. ADX, in the next lesson, is the tool for that decision."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "macd"
+          ],
+          "caption": "Microsoft, daily, with Bollinger Bands (20, 2) around price and the MACD pane (12, 26, 9) below: blue MACD line, amber signal line, green/red histogram. Find a squeeze, where the bands pinch together, and look at what happened to price in the following weeks. Then find a stretch where price walks along the upper band; check whether the histogram was rising (acceleration) or shrinking (a rally losing speed) during that walk."
+        },
+        {
+          "type": "text",
+          "md": "### ATR: measuring the size of a normal day\n\nThe **Average True Range (ATR)**, another Wilder indicator from 1978, answers one plain question: how much does this stock typically move in a bar? It does not care about direction.\n\nEach bar's **true range** is the largest of three distances: high − low; |high − previous close|; |low − previous close|. The second and third terms capture gaps. If a stock closed at $50 yesterday and today trades between $53 and $54, the plain range is $1 but the true range is $4 (from $50 to $54), because anyone holding overnight experienced that $4. ATR is the Wilder-smoothed average of true range over 14 bars by default: today's ATR = (yesterday's ATR × 13 + today's true range) / 14.\n\nATR is in dollars, so a $500 stock will have a far larger ATR than a $20 stock. To compare across stocks, divide by price: an ATR of $7.50 on a $500 stock is 1.5% per day; an ATR of $0.90 on a $20 stock is 4.5%, three times as volatile in the way that matters to your account.\n\nATR has three everyday uses, and none of them is predicting direction:\n\n**Stop placement.** A stop closer than about one ATR from entry is inside the stock's normal daily noise and will be hit by randomness. A common rule is **2 × ATR**. Entry at $50.00 with ATR $1.50 puts the stop at $47.00. The exact multiple is a matter of taste and holding period, and it is widely debated; what is not debated is that stops should scale with volatility rather than be a fixed percentage.\n\n**Position sizing.** Decide the dollars you will risk, then divide by the stop distance. Risking $500 with a $3.00 stop (2 × ATR above) means 500 / 3 ≈ **166 shares**. A quieter stock with ATR $0.75 and a $1.50 stop allows 333 shares for the same $500 risk. Volatile stocks get smaller positions automatically. Module 4 builds on this.\n\n**Regime check.** A rising ATR means bigger days: widen stops, shrink size, expect gaps. A collapsing ATR is the same message as a Bollinger squeeze."
+        },
+        {
+          "type": "text",
+          "md": "### Putting the three together on one trade\n\nThese three tools answer three different questions: MACD, *is momentum building or fading?*; Bollinger Bands, *is price stretched relative to its recent average?*; ATR, *how much room does a normal day need?* Because they answer different questions they combine well, unlike RSI and stochastic, which largely repeat each other.\n\nA worked trade. A stock has been in a quiet range: Bollinger bandwidth is at a six-month low (a squeeze), ATR is $1.10 on a $55 stock (2%). Then it closes at $57.20, above the upper band, on heavy volume, and the MACD histogram flips from −0.15 to +0.25, positive and rising. A trend trader reads this as a breakout from the squeeze with momentum confirming.\n\n- Entry: $57.30 the next morning.\n- Stop: 2 × ATR = $2.20 below, at $55.10. That is back inside the old range; if price returns there the breakout failed.\n- Size: willing to risk $440, so 440 / 2.20 = 200 shares.\n- Management: hold while the histogram keeps rising and price stays above the middle band. The first warning is a shrinking histogram; the exit is a close below the 20-day middle band.\n\nNothing here required a forecast. The squeeze said a move was due, the band break and MACD said which way it had started, ATR said how much to risk. A mean-reversion trader would read the same close above the upper band as a sell; the difference is the squeeze, which says volatility is expanding and reversion is the wrong bet. Lesson 5 turns this kind of reasoning into a checklist."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Switch ATR to percent in your head.** Before any trade, divide ATR by price. Under 1% a day is a calm large-cap; 2–3% is typical for a volatile growth stock; above 5% and you should be sizing very small. The paper portfolio will happily let you buy a 6%-a-day stock with half your account; the lesson is cheaper if ATR stops you first."
+        },
+        {
+          "type": "exercise",
+          "md": "The link opens the Strategy Lab with **Bollinger bounce** (20, 2) on Microsoft.\n\n- Run it and record trades, win rate, profit factor and maximum drawdown. Look at the equity curve: where does it bleed? Hover those trades and check whether price was in a trend at the time.\n- Switch to **MACD cross** (12, 26, 9) on the same symbol. Compare. One is a mean-reversion strategy, one is a trend strategy, and they will usually have opposite good and bad periods.\n- Now go to the dashboard, load any stock from the watchlist on the daily chart and estimate its ATR by hand: hover the last five candles, compute each high minus low, and average them (ignore gaps for this rough check). Divide by the close to get a percent.\n- Finally, in the trade ticket, enter a paper buy for that stock sized so that a stop 2 × ATR below the price risks no more than $500 of the account. Place the sell stop at that level with GTC time in force. Write the ATR, stop and share count in your journal.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=MSFT&tf=1day&strategy=bollingerBounce&n=20&k=2&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "EMA 12 is $48.60 and EMA 26 is $47.40. The signal line is at 0.90. What is the MACD histogram?",
+              "choices": [
+                "+1.20",
+                "+0.30",
+                "−0.30",
+                "+2.10"
+              ],
+              "answer": 1,
+              "explain": "MACD = 48.60 − 47.40 = 1.20. Histogram = MACD − signal = 1.20 − 0.90 = +0.30. Positive histogram means the MACD line is above its signal line."
+            },
+            {
+              "q": "The 20-day SMA is $80 and the standard deviation of the last 20 closes is $3. Where are the standard Bollinger Bands?",
+              "choices": [
+                "$77 and $83",
+                "$74 and $86",
+                "$71 and $89",
+                "$78.50 and $81.50"
+              ],
+              "answer": 1,
+              "explain": "Standard bands are the middle ± 2 standard deviations: 80 ± 6, so $74 and $86. Bandwidth is 12 / 80 = 15%."
+            },
+            {
+              "q": "A stock closed at $100 yesterday. Today its high is $99 and its low is $95. What is today's true range?",
+              "choices": [
+                "$4",
+                "$5",
+                "$1",
+                "$99"
+              ],
+              "answer": 1,
+              "explain": "True range is the largest of high − low ($4), |high − prev close| ($1) and |low − prev close| ($5). The gap down from $100 to the $95 low is the biggest distance, so TR = $5."
+            },
+            {
+              "q": "You will risk $600 on a trade. Entry is $42 and ATR is $1.50. Using a 2 × ATR stop, how many shares do you buy?",
+              "choices": [
+                "100",
+                "200",
+                "400",
+                "600"
+              ],
+              "answer": 1,
+              "explain": "Stop distance = 2 × 1.50 = $3.00. Shares = 600 / 3 = 200. The stop goes at $39.00."
+            },
+            {
+              "q": "Price closes above the upper Bollinger Band right after a multi-month squeeze in bandwidth. How does a trend trader read this?",
+              "choices": [
+                "A sell signal, because price is overbought",
+                "A breakout with expanding volatility, likely the start of a move",
+                "A signal to switch to a 50-day band",
+                "Nothing; band tags are random"
+              ],
+              "answer": 1,
+              "explain": "A squeeze means volatility was unusually low; the first close outside the bands after a squeeze is read as the start of an expansion, not a reversion. The composite signal still scores it −1, which is one reason to read the context, not just the score."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l4",
+      "title": "Trend strength and context: ADX, VWAP and Ichimoku",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### ADX: is there a trend at all?\n\nThe previous lessons kept hitting the same wall: trend tools fail in ranges and mean-reversion tools fail in trends. The **Average Directional Index (ADX)**, another of Wilder's 1978 indicators, exists to tell you which regime you are in. It measures trend **strength**, not direction, and it runs from 0 to 100.\n\nThe construction has three steps. First, **directional movement**: each bar, compare today's high with yesterday's high (an up-move) and yesterday's low with today's low (a down-move). Whichever is larger counts; the other is set to zero. Second, divide the smoothed up-moves and down-moves by the smoothed true range to get **+DI** and **−DI**, two lines that say which side has been winning. Third, compute DX = 100 × |+DI − −DI| / (+DI + −DI) and smooth it over 14 bars to get **ADX**.\n\nExample: +DI is 30 and −DI is 10. DX = 100 × 20 / 40 = 50, a strong trend. If +DI is 22 and −DI is 18, DX = 100 × 4 / 40 = 10: buyers and sellers are nearly balanced, no trend. ADX is the smoothed version of that number, so it needs about 27 bars before it prints a value at all (14 to build the DIs, then 14 more to average DX).\n\nCommon rules of thumb, all debated at the margins:\n\n- **ADX below 20**: no clear trend; expect chop. Crossovers will whipsaw; mean reversion has the edge.\n- **ADX above 25**: trending; trend-following signals are more reliable, and \"overbought\" readings mean less.\n- **Rising ADX**: the trend (in either direction) is strengthening. **Falling ADX** from a high level: the trend is tiring, even if price has not turned.\n\nBecause ADX is direction-blind, a reading of 40 can mean a powerful rally or a powerful collapse. Read **+DI versus −DI** for direction: +DI above −DI means buyers in control. The Broward Trading composite reports ADX in the reasons list as **context with zero points**, labelled \"strong trend\", \"trend building\" or \"no clear trend\", precisely so you can decide how much to trust the other components."
+        },
+        {
+          "type": "text",
+          "md": "### VWAP: the price the whole day paid\n\n**Volume-Weighted Average Price (VWAP)** is the average price at which a stock actually traded, weighting each bar by its volume. It is computed cumulatively from the open: sum of (typical price × volume) divided by sum of volume, where typical price is (high + low + close) / 3. It restarts at zero every session, so on intraday charts it is a fresh line each day.\n\nExample, three 5-minute bars after the open. Bar 1: typical price $100, volume 10,000. Bar 2: $101, volume 30,000. Bar 3: $102, volume 10,000. VWAP after three bars = (100 × 10,000 + 101 × 30,000 + 102 × 10,000) / 50,000 = 5,050,000 / 50,000 = **$101.00**. A plain average of the three prices would also be $101 here, but had the 30,000-share bar been at $100 and the 10,000-share bars at $101 and $102, VWAP would sit at $100.60 while the simple average stayed at $101. VWAP leans toward where the volume was.\n\nWhy institutions care: a fund buying two million shares over a day is judged on whether it paid less than VWAP. That makes VWAP a reference price many large participants are actively trying to beat, which is why intraday price so often reacts to it. Common intraday reads:\n\n- Price above VWAP and VWAP rising: buyers in control today; dips to VWAP are often bought.\n- Price below a falling VWAP: sellers in control; rallies to VWAP are often sold.\n- Price crossing VWAP repeatedly: a balanced, two-sided day, hard to trade directionally.\n\nVWAP is an **intraday** tool. On daily bars there is no session to reset to, so Broward Trading draws a cumulative VWAP across the whole loaded history, which is a very different line (an anchored VWAP from the first bar) and should be read as a long-run average cost, not a day-trading reference. The dashboard's VWAP button is most useful on the 5- and 15-minute intervals."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "15min",
+          "overlays": [
+            "vwap"
+          ],
+          "caption": "Tesla on 15-minute bars with VWAP (pink). Each session is 26 bars and VWAP restarts at the first one. Pick a day where price opened above VWAP and stayed there: notice how pullbacks to the line were bought. Pick a day where price crossed it several times: that is a balanced day with no edge for a directional trader. Live data will show real sessions; demo data follows the NYSE calendar with simulated prices."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**VWAP is a mirror of today's crowd, not a forecast.** It tells you whether the average buyer so far is winning or losing. Someone who bought at the open above VWAP is under water; someone who bought below it is ahead. Price tends to react at VWAP because those two groups behave differently when it gets there."
+        },
+        {
+          "type": "text",
+          "md": "### Ichimoku: five lines, one glance\n\n**Ichimoku Kinko Hyo** (\"one-glance equilibrium chart\") was developed by Japanese journalist Goichi Hosoda and published in 1969 after decades of work. It is a complete trend system in five lines, and its unusual feature is that two of them are drawn **into the future** and one **into the past**.\n\n- **Tenkan-sen** (conversion line): midpoint of the highest high and lowest low of the last **9** bars. A fast trend line, similar in role to a short moving average but using the range, not closes.\n- **Kijun-sen** (base line): the same midpoint over **26** bars. Slower; traders treat it as the trend's centre of gravity and a natural stop level.\n- **Senkou Span A**: average of Tenkan and Kijun, plotted **26 bars ahead**.\n- **Senkou Span B**: midpoint of the **52**-bar range, also plotted 26 bars ahead.\n- **Chikou Span** (lagging line): today's close plotted **26 bars back**.\n\nThe space between Senkou A and B is the **cloud** (kumo), shaded green when A is above B (bullish) and red when B is above A. Because it is projected forward, the cloud shows where support and resistance *should* be next month based on where the midpoints are today. The 9/26/52 settings come from a six-day Japanese trading week of Hosoda's era (about one and a half weeks, one month, two months), and most traders keep them unchanged on daily charts; some adjust to 7/22/44 for a five-day week, a debate with no settled answer.\n\nThe one-glance read:\n\n- Price **above the cloud**: uptrend. **Below**: downtrend. **Inside**: no trend, stand aside.\n- Tenkan above Kijun: bullish momentum (a cross works like a fast/slow MA cross).\n- Chikou above the price of 26 bars ago: the trend has confirmed from behind.\n- Thick cloud: strong support/resistance ahead. Thin cloud: easy to cross, trend may flip.\n\nExample: a stock at $150 sits above a green cloud spanning $138 to $144, with Tenkan at $147 above Kijun at $143. All signals agree: trend up, Kijun at $143 as a logical stop, cloud top at $144 as the level a pullback should respect. A close back inside the cloud would say the trend is in doubt. The dashboard draws Tenkan, Kijun, Chikou and the projected cloud with its Ichimoku button; the lesson chart below can show the other overlays, but the cloud is best studied on the full dashboard."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Apple, daily, with SMA 20 and SMA 50 for orientation. The lesson pane draws plain averages; to see the Ichimoku system itself, including the 26-bar forward cloud, open the same symbol on the dashboard with the exercise link below. Look for the three states: price above a green cloud, price below a red cloud, and price inside the cloud. Then check whether the Tenkan/Kijun cross came before or after the price left the cloud."
+        },
+        {
+          "type": "text",
+          "md": "### Choosing a context tool\n\nADX, VWAP and Ichimoku are each **context** rather than trigger. They tell you what kind of market you are in so you can decide which of the Lesson 1 to 3 tools to believe. Here is how the three divide the work.\n\n**ADX** is the universal regime gauge. It works on any timeframe and reduces to one number. Its weakness is lag: it takes two full lookback periods to build, and it confirms a trend after the trend is well established. A practical daily-chart routine is to check ADX before choosing a strategy: below 20, favour Bollinger bounce or RSI reversion; above 25 with rising ADX, favour crossovers, MACD and breakouts. This is exactly why the composite signal reports it alongside the score.\n\n**VWAP** is the intraday context tool. It has no meaning across days and almost no lag because it is a running average of today. Day traders use it the way swing traders use the 20-day SMA: which side of it price is on sets the bias for the session.\n\n**Ichimoku** is the heaviest tool, and students either love or hate it. Its strength is that trend, momentum, support/resistance and confirmation are all on one chart, with the cloud giving you levels in advance. Its weaknesses are clutter and the temptation to over-read it. It works best on daily and weekly charts of liquid stocks and indexes; on a 5-minute chart its 52-bar span is barely four hours and the cloud flips constantly.\n\nIn backtesting terms, none of these is a strategy by itself in the Strategy Lab; they are the filters you would add to one. Module 6 shows how to code a filter (for example, \"take SMA crossover signals only when ADX is above 25\") and measure whether it actually helps on your data rather than assuming it does."
+        },
+        {
+          "type": "exercise",
+          "md": "Open the dashboard on Apple, daily, with the Ichimoku overlay (the link does this). Then do the same on Tesla and on one quiet stock from the watchlist (a utility or consumer staple).\n\n- For each stock write down: is price above, below or inside the cloud right now? Is Tenkan above or below Kijun? What are the cloud's top and bottom prices 26 bars ahead?\n- Click **Why?** under the signal badge and read the ADX context line. Does the ADX label (\"strong trend\", \"trend building\", \"no clear trend\") agree with what the cloud shows? Note any disagreement and look at the chart to decide who is right.\n- Switch the quiet stock to the 15-minute interval, turn Ichimoku off and VWAP on. Count how many times price crossed VWAP in the most recent full session. More than four crossings is a balanced day.\n- Finally, for the stock with the highest ADX, open the Strategy Lab and run the SMA crossover; for the stock with the lowest ADX, run Bollinger bounce. Record both returns. Did the strategy matched to the regime do better than you would expect from the mismatched one?",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=AAPL&interval=1day&ov=ichimoku"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "+DI is 35 and −DI is 15 on a daily chart. What is the directional index (DX) for that bar, before smoothing?",
+              "choices": [
+                "20",
+                "40",
+                "50",
+                "70"
+              ],
+              "answer": 1,
+              "explain": "DX = 100 × |35 − 15| / (35 + 15) = 100 × 20 / 50 = 40. Smoothing this over 14 bars gives ADX; the DI lines themselves give direction (buyers lead here)."
+            },
+            {
+              "q": "ADX reads 42 on a stock. Which statement is correct?",
+              "choices": [
+                "The stock is in a strong uptrend",
+                "The stock is in a strong downtrend",
+                "The stock is in a strong trend; check +DI vs −DI for direction",
+                "The stock is overbought"
+              ],
+              "answer": 2,
+              "explain": "ADX measures strength only. A high ADX can accompany a rally or a collapse. +DI above −DI means up; −DI above +DI means down."
+            },
+            {
+              "q": "Three 5-minute bars after the open: typical prices $50, $51, $52 with volumes 20,000, 10,000 and 10,000. What is VWAP?",
+              "choices": [
+                "$50.50",
+                "$50.75",
+                "$51.00",
+                "$51.50"
+              ],
+              "answer": 1,
+              "explain": "VWAP = (50 × 20,000 + 51 × 10,000 + 52 × 10,000) / 40,000 = 2,030,000 / 40,000 = $50.75. The heavy volume at $50 pulls it below the simple average of $51."
+            },
+            {
+              "q": "In the Ichimoku system, how is Senkou Span B calculated and where is it drawn?",
+              "choices": [
+                "9-bar midpoint, drawn on the current bar",
+                "Average of Tenkan and Kijun, drawn 26 bars ahead",
+                "52-bar midpoint of the high–low range, drawn 26 bars ahead",
+                "Today's close, drawn 26 bars back"
+              ],
+              "answer": 2,
+              "explain": "Senkou B is the midpoint of the 52-bar range, shifted 26 bars forward. Senkou A is the Tenkan/Kijun average shifted forward; the Chikou is the close shifted back."
+            },
+            {
+              "q": "ADX is 15 on the daily chart. Which family of strategies does this reading favour?",
+              "choices": [
+                "Moving-average crossovers",
+                "Channel breakouts",
+                "Mean-reversion tools such as RSI reversion or Bollinger bounce",
+                "None; trading is impossible below ADX 20"
+              ],
+              "answer": 2,
+              "explain": "An ADX below 20 is the classic rule-of-thumb signature of a range. Trend tools whipsaw in ranges; fading the extremes has the better odds. The thresholds are conventions, not laws, but the direction of the advice is widely agreed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l5",
+      "title": "Combining indicators and the composite signal",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Redundancy: the beginner's indicator stack\n\nThe typical first chart of a new trader has RSI, stochastic, MACD and the Commodity Channel Index stacked under price, all pointing the same way, and the trader feels four times as confident. In fact they have one opinion, measured four ways. Every one of those tools is computed from the same recent closes and every one is a momentum oscillator. When closes rise fast, all four rise. They agree because they are the same thing.\n\nThis is **redundancy**, and it is dangerous because it feels like confirmation. Real confirmation comes from indicators that measure *different* things and still agree. The useful habit is to sort indicators into families and take at most one from each:\n\n- **Trend / direction**: moving averages and crossovers, Ichimoku, the MACD *line* sign, +DI vs −DI.\n- **Momentum / speed**: RSI, stochastic, MACD *histogram*, rate of change.\n- **Volatility**: Bollinger Bands and bandwidth, ATR.\n- **Volume / participation**: VWAP, on-balance volume (OBV), raw volume bars.\n- **Trend strength / regime**: ADX.\n\nA chart with SMA 50 (trend), RSI (momentum), ATR (volatility) and ADX (regime) carries four pieces of independent information. A chart with RSI, stochastic, MACD and CCI carries one. Fewer, better-chosen tools beat more tools every time, partly for the statistical reason above and partly because a cluttered chart is slower to read and easier to rationalize.\n\nA second kind of redundancy is harder to spot: **the same input dressed as a filter**. \"Buy on an RSI oversold reading, but only if the stochastic is also oversold\" sounds like a filter. It mostly just delays the same signal by a bar. A real filter comes from a different family: \"Buy on RSI oversold, but only if price is above the 50-day SMA\" uses momentum for the trigger and trend for the permission. That combination, as you saw in Lesson 2, is what turns a strategy that fails in downtrends into one that mostly stays out of them."
+        },
+        {
+          "type": "text",
+          "md": "### How the Broward Trading composite is scored\n\nThe badge on the dashboard rail (BUY / SELL / HOLD) and the score beneath it come from six rules, each explained in the **Why?** list, summing to a maximum of ±8:\n\n1. **Price vs SMA 50**: +1 if the close is above the 50-bar SMA, −1 if below. *Family: trend.*\n2. **SMA 20 vs SMA 50**: +1 if SMA 20 is above SMA 50 (bullish alignment), −1 if below. *Trend.*\n3. **RSI 14**: +2 if below 30 (oversold), −2 if above 70 (overbought), 0 between. *Momentum, read as mean reversion.*\n4. **MACD histogram**: +1 if positive and not shrinking versus the prior bar, −1 if negative and not recovering, 0 otherwise. *Momentum, read as trend acceleration.*\n5. **Bollinger position**: +1 if the close is below the lower band, −1 if above the upper band, 0 inside. *Volatility, read as mean reversion.*\n6. **Crossover event**: +2 if SMA 20 crossed above SMA 50 **on this bar** (golden cross), −2 for a death cross, 0 on any other bar. *Trend change.*\n\nThe state is **BUY at +3 or higher, SELL at −3 or lower, HOLD otherwise.** Two more lines appear in the reasons with **zero points**: the ADX regime label and the most recent candlestick pattern ending on this bar. They are there to be read, not counted. Before 50 bars of history exist, components that need SMA 50 are skipped.\n\nNotice the deliberate tension. Components 1, 2, 4 and 6 are trend-following: they like a stock that has been going up. Components 3 and 5 are mean-reverting: they like a stock that has been going down hard. In a straight-up rally the trend parts score +3 while RSI and Bollinger subtract up to 3, netting around 0 to +1: HOLD. The score is designed to be **highest on a pullback inside an uptrend** (trend positive, momentum stretched down) and lowest on a bounce inside a downtrend. That is a classic \"buy the dip in a bull market\" rule written as arithmetic, and it is also why the badge rarely screams BUY at the top of a run."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The score is a teaching device, not a trading system.** Six textbook rules, equal-ish weights, no tuning to any particular stock. Its purpose is to show you *why* a chart looks bullish or bearish, in words, so you can agree or disagree. Students who learn to argue with the badge are the ones who learn to trade."
+        },
+        {
+          "type": "text",
+          "md": "### Two worked scores\n\n**Example A: pullback in an uptrend.** A stock closes at $92.00. SMA 50 is $85 and SMA 20 is $90, both rising. RSI has dropped to 28 after a week of selling. The MACD histogram is −0.40, down from −0.30 yesterday. The lower Bollinger Band is at $91.50 and the close is inside the bands. No cross on this bar.\n\n- Price above SMA 50: **+1**\n- SMA 20 above SMA 50: **+1**\n- RSI 28, oversold: **+2**\n- Histogram negative and falling: **−1**\n- Inside the bands: **0**\n- No cross: **0**\n\nTotal **+3 → BUY**. Read aloud: the trend is up, the pullback has stretched momentum, and the only dissent is MACD saying the dip is still accelerating. A trader might wait one more bar for the histogram to stop falling. Note that the ADX context line will probably read \"strong trend\", which raises confidence in the trend components.\n\n**Example B: bounce in a downtrend.** A stock closes at $41.00. SMA 50 is $47, SMA 20 is $43, both falling. RSI is 56. MACD histogram is +0.20, up from +0.05. Close is inside the bands. Yesterday SMA 20 was below SMA 50 and today it still is, so no cross.\n\n- Price below SMA 50: **−1**\n- SMA 20 below SMA 50: **−1**\n- RSI 56, neutral: **0**\n- Histogram positive and rising: **+1**\n- Inside the bands: **0**\n- No cross: **0**\n\nTotal **−1 → HOLD**. The bounce has momentum but it is a bounce inside a downtrend, and the score refuses to call it a buy. If RSI reaches 72 on the bounce, the score drops to −3 and flips to SELL: a stretched rally against the trend is exactly what the two mean-reversion components are built to flag.\n\nNow the flaw. In Example A, if yesterday's bar had also been the day SMA 20 crossed up through SMA 50 (unlikely during a pullback, but possible after a long base), the +2 cross bonus would have made the score +5. The next day the same chart scores +3 because the cross only counts once. A one-day drop from +5 to +3 with nothing changed on the chart is an artefact of scoring an *event* alongside *states*. Backtesting the composite in the exercise will show you how much of its behaviour comes from that one component."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "bb",
+            "rsi",
+            "macd"
+          ],
+          "caption": "Nvidia, daily, with everything the composite reads: SMA 20 and SMA 50 on price, Bollinger Bands around them, RSI below and MACD at the bottom. Pick any bar and score it by hand with the six rules, then open the same symbol on the dashboard and compare with the badge. If you get a different number, click Why? and find which component you read differently; most often it is the MACD histogram's \"rising versus shrinking\" rule."
+        },
+        {
+          "type": "text",
+          "md": "### Weighing, not counting\n\nA composite like this one adds points. Professionals rarely do; they **weight by regime**. The ADX line that the dashboard reports with zero points is the hint. A reasonable mental upgrade to the score:\n\n- **ADX ≥ 25 (trending)**: trust components 1, 2, 4 and 6. Discount 3 and 5, because overbought stays overbought and band walks are normal. An RSI of 74 in a 40-ADX uptrend is not a reason to sell.\n- **ADX < 20 (ranging)**: trust components 3 and 5. Discount 1, 2 and 6, because every crossover in a range is a whipsaw waiting to happen.\n- **Between**: use the raw score, which is what the dashboard does.\n\nEqually important is what the composite does **not** include, and where you must supply it:\n\n**Volume.** None of the six rules look at volume. A breakout on three times average volume and one on half average volume score identically. Turn on the volume histogram or VWAP and read it yourself.\n\n**Multiple timeframes.** The score is computed on whatever interval is loaded. A BUY on the 5-minute chart inside a daily downtrend is a scalp at best. A common discipline is to require the daily trend components (1 and 2) to agree before taking an intraday signal.\n\n**Risk.** The score says nothing about where your stop goes or how many shares to buy. That is ATR's job (Lesson 3) and the subject of Module 4.\n\n**Fundamentals and events.** Earnings dates, Fed meetings and index rebalances do not appear in any indicator until after they have moved the price. Check the calendar before trusting a signal that will be live through an announcement.\n\nFinally, the cleanest way to decide whether a combination of indicators is better than one alone is not to argue about it but to **backtest the difference**. The Strategy Lab can run the composite as a strategy and compare it with the single-indicator strategies on the same stock and period. That comparison, not the badge colour, is where this module hands over to Module 6."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Agreement is not evidence when the inputs are the same.** Before you add any indicator to your chart ask: which family is it in, and do I already have one from that family? If the answer is yes, the new line will almost always agree with the old one, and that agreement will tell you nothing you did not already know."
+        },
+        {
+          "type": "exercise",
+          "md": "The link opens the Strategy Lab with the **Composite signal** strategy (BUY at +3, SELL at −3) on Apple, daily, and runs it.\n\n- Record total return, trades, win rate, profit factor and max drawdown, plus the buy-and-hold return shown next to it.\n- Open the trade list. For the three largest winners and three largest losers, go to the dashboard, find the entry bar and click **Why?** to see which components produced the +3. Were the winners mostly \"pullback in uptrend\" scores (trend +2, RSI +2) or \"cross event\" scores (+2 from a golden cross)?\n- Use **Compare strategies** to run SMA crossover, RSI reversion, MACD cross and Bollinger bounce on the same symbol and period. Rank them by profit factor. Did combining them into the composite beat the best single one? It often does not, and understanding why is the point.\n- Open **Optimise parameters** and let it test buyAt 2, 3 and 4 against sellAt −2, −3 and −4. Look at the plateau plot: a broad hill means the thresholds barely matter; a lone spike means one lucky setting.\n- Write one paragraph in your journal: which two or three indicators, from different families, would *you* keep on a clean chart, and what would each one be allowed to decide?",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=compositeSignal&buyAt=3&sellAt=-3&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which set of indicators draws from four different families and so gives the least redundant picture?",
+              "choices": [
+                "RSI, stochastic, MACD histogram, CCI",
+                "SMA 50, RSI, ATR, ADX",
+                "EMA 9, EMA 21, SMA 50, SMA 200",
+                "Bollinger Bands, ATR, bandwidth, standard deviation"
+              ],
+              "answer": 1,
+              "explain": "SMA 50 is trend, RSI is momentum, ATR is volatility and ADX is regime. The other sets are four versions of one family and will agree with each other almost by construction."
+            },
+            {
+              "q": "Close is above SMA 50, SMA 20 is above SMA 50, RSI is 27, the MACD histogram is positive and rising, the close is inside the Bollinger Bands, and no cross happened this bar. What does the composite score?",
+              "choices": [
+                "+3, BUY",
+                "+4, BUY",
+                "+5, BUY",
+                "+2, HOLD"
+              ],
+              "answer": 2,
+              "explain": "+1 (price vs SMA 50) +1 (alignment) +2 (RSI oversold) +1 (histogram positive and rising) +0 (inside bands) +0 (no cross) = +5, a BUY."
+            },
+            {
+              "q": "Price is below a falling SMA 50, SMA 20 is below SMA 50, RSI is 73, the MACD histogram is positive and rising, and the close is above the upper Bollinger Band. What is the score and state?",
+              "choices": [
+                "−2, HOLD",
+                "−3, SELL",
+                "−4, SELL",
+                "0, HOLD"
+              ],
+              "answer": 2,
+              "explain": "−1 (below SMA 50) −1 (bearish alignment) −2 (RSI overbought) +1 (histogram rising) −1 (above upper band) = −4, SELL. A sharp bounce in a downtrend is exactly what the mean-reversion components flag."
+            },
+            {
+              "q": "Which of these does the composite signal NOT take into account?",
+              "choices": [
+                "The 50-bar simple moving average",
+                "The RSI zone",
+                "Trading volume",
+                "The MACD histogram"
+              ],
+              "answer": 2,
+              "explain": "None of the six scored rules use volume. ADX and candlestick patterns are shown as zero-point context; volume is not shown at all, so you must read it yourself from the volume bars or VWAP."
+            },
+            {
+              "q": "The badge showed BUY at +5 yesterday and +3 today, yet the chart looks unchanged. What is the most likely explanation?",
+              "choices": [
+                "RSI must have risen above 70",
+                "The golden cross bonus (+2) counts only on the bar it occurs",
+                "The data provider changed",
+                "ADX dropped below 20 and removed two points"
+              ],
+              "answer": 1,
+              "explain": "Component 6 scores an event: ±2 on the single bar where SMA 20 crosses SMA 50. The next day the alignment still earns +1 but the cross bonus is gone, so the score falls by 2 with no change in the picture. ADX never adds or removes points."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Broward Trading</title>
+<meta name="description" content="Free educational paper-trading and technical-analysis dashboard: live or simulated charts, indicators, plain-English signals and a $100,000 practice account.">
+<meta name="theme-color" content="#0f1319">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ---- Dashboard-specific layout (shared tokens/components live in css/style.css) ----
+   Three columns on a desktop: watchlist rail | chart stack | control rail.
+   Tablets drop the watchlist to a horizontal strip above the chart; phones stack everything. */
+.dash-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-block:var(--sp-3);border-bottom:1px solid var(--line)}
+.dash-head .ident{display:flex;flex-direction:column;min-width:0}
+.dash-head .ident .name{color:var(--muted);font-size:var(--fs-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.dash-head .quote .px{font-size:24px}
+.dash-head .status{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.dash-head .clock{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:var(--fs-sm)}
+.dash-head .clock .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);margin-right:6px;vertical-align:1px}
+.dash-head .clock.open .dot{background:var(--up)} .dash-head .clock.pre .dot,.dash-head .clock.after .dot{background:var(--warn)}
+
+/* symbol search */
+.search{position:relative;min-width:0;flex:0 1 300px}
+.search input{width:100%;padding-left:30px;text-transform:uppercase;font-family:var(--mono)}
+.search input::placeholder{text-transform:none;font-family:var(--font)}
+.search .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:13px}
+.search kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search .results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:60;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-md);box-shadow:var(--shadow-2);max-height:320px;overflow:auto;padding:4px;margin:0;list-style:none}
+.search .results li{display:grid;grid-template-columns:72px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:var(--r);cursor:pointer}
+.search .results li:hover,.search .results li.active{background:var(--panel2)}
+.search .results li .sym{font-family:var(--mono);font-weight:500}
+.search .results li .nm{color:var(--muted);font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search .results li .ex{color:var(--faint);font-size:var(--fs-xs)}
+.search .results li.hint{grid-template-columns:1fr;color:var(--muted);font-size:var(--fs-xs);cursor:default}
+
+/* toolbar groups */
+.toolbar{row-gap:8px}
+.toolbar .group{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.toolbar .group > label{margin-right:4px}
+.toolbar button.sm{padding:4px 9px;font-size:var(--fs-sm)}
+.toolbar button.ov.on,.toolbar button.pn.on{box-shadow:inset 0 -2px 0 var(--sw,var(--accent-fg))}
+
+/* workspace */
+.workspace3{display:grid;grid-template-columns:210px minmax(0,1fr) 340px;grid-template-rows:auto 1fr;gap:14px;align-items:start}
+.wl,#rail{grid-row:1/span 2}
+#panel-chart{grid-row:1}
+/* educational cards live under the chart column on desktop so the tall rail does not leave the left two thirds empty */
+.below-chart{grid-column:2;grid-row:2;align-self:start;align-items:start}
+.below-chart .card{margin:0}
+.wl{display:flex;flex-direction:column;gap:6px;min-width:0;position:sticky;top:calc(var(--topnav-h) + 10px)}
+.wl .card{padding:10px}
+.wl h2{display:flex;justify-content:space-between;align-items:center}
+.wl-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.wl-list li{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:0 8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;position:relative}
+.wl-list li:hover{background:var(--panel2)} .wl-list li.on{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+.wl-list .sym{font-family:var(--mono);font-weight:500}
+.wl-list .nm{grid-column:1;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wl-list .px{grid-column:2;grid-row:1;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wl-list .ch{grid-column:2;grid-row:2;text-align:right;font-family:var(--mono);font-size:var(--fs-xs)}
+.wl-list .rm{position:absolute;right:4px;top:4px;display:none;padding:0 5px;font-size:11px;line-height:1.4;background:var(--panel3);border-color:transparent;color:var(--muted)}
+.wl-list li:hover .rm{display:inline-flex}
+.wl-list .px.flash-up{animation:flashUp .6s} .wl-list .px.flash-down{animation:flashDown .6s}
+@keyframes flashUp{0%{color:var(--up)}100%{color:inherit}} @keyframes flashDown{0%{color:var(--down)}100%{color:inherit}}
+.wl .empty{padding:var(--sp-3);font-size:var(--fs-xs)}
+
+/* chart stack */
+.pane.price{height:440px}
+.pane .tag .pat{color:var(--warn)}
+.pane .pane-close{position:absolute;top:4px;right:6px;z-index:6;padding:1px 6px;font-size:11px;line-height:1.4;background:transparent;border-color:transparent;color:var(--muted)}
+.pane .pane-close:hover{color:var(--fg);background:var(--panel2)}
+.pane .loading{position:absolute;inset:0;z-index:7;display:grid;place-items:center;color:var(--muted);font-size:var(--fs-sm);background:color-mix(in srgb,var(--panel) 72%,transparent)}
+.pat-legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:var(--fs-xs);color:var(--muted);padding:2px 4px}
+.pat-legend .k{display:inline-flex;align-items:center;gap:5px;cursor:pointer;border-radius:var(--r-sm);padding:1px 4px}
+.pat-legend .k:hover{background:var(--panel2);color:var(--fg)}
+.pat-legend .k i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:0 0 auto}
+.pat-legend .k.bull i{background:var(--up)} .pat-legend .k.bear i{background:var(--down)}
+.pat-legend .k b{font-family:var(--mono);font-weight:500;color:var(--fg)}
+.pat-legend .k .n{color:var(--faint)}
+.pat-detail{font-size:var(--fs-xs);color:var(--muted);padding:4px 6px;min-height:0}
+.pat-detail b{color:var(--fg)}
+.drawhint b{color:var(--fg)}
+
+/* signal card */
+.card .why{font-size:var(--fs-xs);padding:1px 7px}
+.reasons li .pts{color:var(--muted);font-family:var(--mono);margin-left:4px}
+.reasons li small{display:none}
+.card.show-why .reasons li small{display:block}
+.sig-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:var(--fs-xs);color:var(--muted)}
+
+/* trade ticket */
+.ticket .sides{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ticket .sides button{padding:6px 4px;font-size:var(--fs-sm)}
+.ticket .sides button.on.b{background:var(--up);border-color:var(--up);color:#fff}
+.ticket .sides button.on.s{background:var(--down);border-color:var(--down);color:#fff}
+.ticket .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.ticket .row2 .field label{font-size:var(--fs-xs)}
+.ticket .qtymode{display:flex;gap:0}
+.ticket .qtymode button{padding:3px 8px;font-size:var(--fs-xs)}
+.ticket .est{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:var(--fs-sm);margin-top:8px;color:var(--muted)}
+.ticket .est span:nth-child(even){text-align:right;font-family:var(--mono);color:var(--fg)}
+.ticket .submit{width:100%;margin-top:8px}
+.confirm{margin-top:8px;padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--panel2)}
+.confirm p{margin:0 0 8px;font-size:var(--fs-sm)}
+.confirm .actions{display:flex;gap:6px}
+.confirm .actions button{flex:1}
+.orders td{font-size:var(--fs-sm)} .orders td .sm{padding:1px 6px;font-size:10px}
+.orders .type{color:var(--muted);font-size:var(--fs-xs);display:block}
+
+/* account */
+.acct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.acct-grid .stat .value{font-size:var(--fs-lg)}
+.pos-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border-radius:var(--r);background:var(--panel2);font-size:var(--fs-sm)}
+.pos-row .num{font-family:var(--mono)}
+
+/* keyboard help */
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:var(--fs-sm);color:var(--muted)}
+
+/* settings modal */
+.modal .provider-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.modal .keyrow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.modal .keyrow input{font-family:var(--mono)}
+.modal .quota{font-size:var(--fs-xs);color:var(--muted);margin-top:6px}
+.modal .test-out{font-size:var(--fs-sm);min-height:18px;margin-top:6px}
+
+/* tour overlay */
+.tour-backdrop{position:fixed;inset:0;z-index:95;background:rgba(5,8,12,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.tour-card{position:fixed;z-index:96;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(440px,calc(100% - 32px));
+  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);box-shadow:var(--shadow-3);padding:var(--sp-4)}
+.tour-card .step{font-size:var(--fs-xs);color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.tour-card h3{margin:4px 0 6px;font-size:var(--fs-lg)}
+.tour-card p{color:var(--muted);margin:0 0 12px;font-size:var(--fs-sm);line-height:1.55}
+.tour-card .dots{display:flex;gap:5px}
+.tour-card .dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)} .tour-card .dots i.on{background:var(--accent)}
+.tour-card .actions{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tour-target{position:relative;z-index:94;outline:2px solid var(--accent);outline-offset:4px;border-radius:var(--r-md);box-shadow:0 0 0 9999px rgba(5,8,12,.0)}
+body.touring .tour-target{background:var(--panel)}
+
+/* responsive */
+@media (max-width:1180px){
+  .workspace3{grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto auto 1fr}
+  .wl{grid-column:1/-1;grid-row:1;position:static}
+  #panel-chart{grid-row:2}
+  #rail{grid-column:2;grid-row:2/span 2}
+  .below-chart{grid-column:1;grid-row:3}
+  .wl-list{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:2px;scrollbar-width:thin}
+  .wl-list li{flex:0 0 150px;border:1px solid var(--line)}
+  .wl .empty{flex:1 1 auto}
+}
+@media (max-width:900px){
+  .workspace3{grid-template-columns:1fr;grid-template-rows:none}
+  .wl,#panel-chart,#rail,.below-chart{grid-column:1;grid-row:auto}
+  .below-chart{order:5}/* keep the v0.1 rail order on phones: signal, ticket, account, then lessons and shortcuts */
+  .dash-head .ident .name{max-width:200px}
+  .dash-head .status{margin-left:0;width:100%}
+}
+@media (max-width:600px){
+  .pane.price{height:340px}
+  .dash-head .quote .px{font-size:20px}
+  .search{flex:1 1 100%}
+  .search kbd{display:none}
+  .ticket .sides button{font-size:var(--fs-xs);padding:6px 2px}
+  .wl-list li{flex-basis:132px}
+  .tour-card{bottom:0;width:100%;border-radius:var(--r-lg) var(--r-lg) 0 0}
+}
+</style>
+</head>
+<body class="page">
+
+<nav class="topnav" aria-label="Main">
+  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
+  <div class="links">
+    <a href="index.html" class="active" aria-current="page">Dashboard</a>
+    <a href="learn.html">Learn</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="backtest.html">Backtest</a>
+    <a href="about.html">About</a>
+  </div>
+  <div class="right">
+    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+<header class="dash-head" id="panel-search">
+  <div class="search" role="combobox" aria-haspopup="listbox" aria-owns="searchResults" aria-expanded="false" id="searchBox">
+    <span class="icon" aria-hidden="true">⌕</span>
+    <input id="sym" type="text" placeholder="Search a symbol or company…" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Symbol search" aria-autocomplete="list" aria-controls="searchResults">
+    <kbd aria-hidden="true">/</kbd>
+    <ul class="results" id="searchResults" role="listbox" hidden></ul>
+  </div>
+  <div class="ident">
+    <div class="quote"><span class="num px" id="px">—</span><span class="num chg" id="chg">—</span></div>
+    <div class="name" id="symName">Loading…</div>
+  </div>
+  <div class="status">
+    <span class="pill demo" id="mode" title="Where the prices on screen come from"><span class="dot"></span><span id="modeText">demo</span></span>
+    <span class="clock" id="clock"><span class="dot"></span><span id="clockText">NYSE —</span></span>
+    <button id="tourBtn" class="sm" type="button" title="Take the tour">Tour</button>
+    <button id="settingsBtn" class="sm" type="button" title="Data provider settings (API keys)">Live data</button>
+  </div>
+</header>
+
+<div class="toolbar" id="panel-toolbar" role="toolbar" aria-label="Chart controls">
+  <div class="group" id="tfGroup">
+    <label>Interval</label>
+    <button class="tf sm" data-tf="1day" title="Daily bars (about 1.5 years)">1D</button>
+    <button class="tf sm" data-tf="1h" title="Hourly bars">1H</button>
+    <button class="tf sm" data-tf="15min" title="15-minute bars">15m</button>
+    <button class="tf sm" data-tf="5min" title="5-minute bars (one session = 78 bars)">5m</button>
+  </div>
+  <span class="sep"></span>
+  <div class="group" id="ovGroup">
+    <label>Overlays</label>
+    <button class="ov sm" data-ov="sma20" style="--sw:#f5b84d" title="Simple moving average of the last 20 closes">SMA 20</button>
+    <button class="ov sm" data-ov="sma50" style="--sw:#4f8cff" title="Simple moving average of the last 50 closes">SMA 50</button>
+    <button class="ov sm" data-ov="ema9" style="--sw:#c084fc" title="Exponential moving average, 9 bars (fast)">EMA 9</button>
+    <button class="ov sm" data-ov="ema21" style="--sw:#2dd4bf" title="Exponential moving average, 21 bars">EMA 21</button>
+    <button class="ov sm" data-ov="vwap" style="--sw:#fb7185" title="Volume-weighted average price (resets daily on intraday charts)">VWAP</button>
+    <button class="ov sm" data-ov="bb" title="Bollinger Bands: SMA 20 ± 2 standard deviations">Bollinger</button>
+    <button class="ov sm" data-ov="ichi" title="Ichimoku cloud: Tenkan, Kijun, Senkou A/B and Chikou">Ichimoku</button>
+    <button class="ov sm" data-ov="fib" title="Fibonacci retracement levels of the last 120-bar swing">Fib</button>
+    <button class="ov sm" data-ov="sr" title="Auto support (green) and resistance (red) from recent swing points">S/R</button>
+    <button class="ov sm" data-ov="pat" title="Candlestick pattern markers (doji, hammer, engulfing…)">Patterns</button>
+    <button class="ov sm" data-ov="sig" title="Arrows where the composite signal flipped to BUY or SELL">Signals</button>
+  </div>
+  <span class="sep"></span>
+  <div class="group" id="pnGroup">
+    <label>Panes</label>
+    <button class="pn sm" data-pn="rsi" title="Relative Strength Index (14)">RSI</button>
+    <button class="pn sm" data-pn="macd" title="MACD (12, 26, 9)">MACD</button>
+    <button class="pn sm" data-pn="stoch" title="Stochastic %K / %D (14, 3)">Stoch</button>
+    <button class="pn sm" data-pn="adx" title="ADX trend strength with +DI / −DI">ADX</button>
+    <button class="pn sm" data-pn="obv" title="On-Balance Volume">OBV</button>
+    <button class="pn sm" data-pn="atr" title="Average True Range (14)">ATR</button>
+  </div>
+  <span class="sep"></span>
+  <div class="group">
+    <button id="draw" class="sm" title="Click two points on the price chart to draw a trend line (saved per symbol)">✎ Trend line</button>
+    <button id="clearlines" class="sm ghost" title="Remove the trend lines you drew on this symbol and interval">Clear lines</button>
+  </div>
+</div>
+
+<main class="workspace3">
+  <aside class="wl" id="panel-watchlist">
+    <div class="card">
+      <h2>Watchlist <button id="wlAdd" class="sm" type="button" title="Add the current symbol to your watchlist">+ Add</button></h2>
+      <ul class="wl-list" id="wlList" aria-label="Watchlist"></ul>
+      <div class="note" id="wlNote">Click a symbol to chart it. Prices refresh automatically.</div>
+    </div>
+  </aside>
+
+  <section class="charts" id="panel-chart">
+    <div class="pane price" id="price">
+      <div class="tag"><b id="ohlc">—</b><span id="ovTag"></span></div>
+      <div class="drawhint" id="drawhint" hidden>Trend line: click <b>two points</b> on the chart · Esc cancels</div>
+      <div class="loading" id="loading">Loading chart…</div>
+    </div>
+    <div class="pat-legend" id="patLegend" hidden></div>
+    <div class="pat-detail" id="patDetail" hidden></div>
+    <div id="subpanes" class="charts"></div>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+  </section>
+
+  <aside id="rail">
+    <div class="card" id="panel-signal">
+      <h2>Signal <span class="score" id="asof"></span></h2>
+      <div class="signal">
+        <div class="badge hold" id="badge">HOLD</div>
+        <div>
+          <div class="score">Composite score <span class="num" id="score">0</span> / <span id="scoreMax">8</span></div>
+          <div class="score">Buy at +3 or more · Sell at −3 or less</div>
+        </div>
+      </div>
+      <ul class="reasons" id="reasons"></ul>
+      <div class="sig-meta">
+        <button class="why sm" id="whyBtn" type="button" aria-expanded="false">Why? Show the reasoning</button>
+        <span id="sigTrend"></span>
+      </div>
+      <div class="note">Educational signals only. They describe what common indicators say right now, not what will happen next. Check ADX before trusting a crossover and never risk money on a single reading.</div>
+    </div>
+
+    <div class="card ticket" id="panel-ticket">
+      <h2>Trade ticket <span class="score" id="ticketSym"></span></h2>
+      <div class="sides" role="radiogroup" aria-label="Order side">
+        <button class="side b on" data-side="buy" title="Buy shares (go long)">Buy</button>
+        <button class="side s" data-side="sell" title="Sell shares you own">Sell</button>
+        <button class="side s" data-side="short" title="Sell shares you don't own, hoping to buy them back lower (needs 150 % margin)">Short</button>
+        <button class="side b" data-side="cover" title="Buy back shares you are short">Cover</button>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="otype">Order type</label>
+          <select id="otype">
+            <option value="market">Market</option>
+            <option value="limit">Limit</option>
+            <option value="stop">Stop</option>
+            <option value="stop_limit">Stop-limit</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tif">Time in force</label>
+          <select id="tif"><option value="gtc">Good till cancelled</option><option value="day">Day</option></select>
+        </div>
+        <div class="field">
+          <label for="qty"><span id="qtyLabel">Shares</span></label>
+          <div class="input-group">
+            <input id="qty" type="number" min="1" step="1" value="10" inputmode="decimal">
+            <button id="qtyMode" type="button" class="sm" title="Switch between entering shares and a dollar amount">$</button>
+          </div>
+        </div>
+        <div class="field" id="limitField" hidden>
+          <label for="limitPx">Limit price</label>
+          <input id="limitPx" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="field" id="stopField" hidden>
+          <label for="stopPx">Stop price</label>
+          <input id="stopPx" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+      </div>
+      <div class="est" id="est"></div>
+      <button class="submit buy" id="review" type="button">Review order</button>
+      <div class="confirm" id="confirm" hidden>
+        <p id="confirmText"></p>
+        <div class="actions"><button id="confirmYes" class="buy" type="button">Confirm</button><button id="confirmNo" type="button">Cancel</button></div>
+      </div>
+      <div class="msg" id="tmsg" role="status" aria-live="polite"></div>
+      <div class="note" id="otypeHelp"></div>
+    </div>
+
+    <div class="card" id="panel-orders">
+      <h2>Open orders <span class="score" id="ordersCount"></span></h2>
+      <div class="log orders"><table id="orders"></table></div>
+      <div class="note">Limit and stop orders rest here and fill against each new bar or tick, exactly like a broker would fill them against the tape: buy limits need the low to reach your price, buy stops need the high to reach it.</div>
+    </div>
+
+    <div class="card" id="panel-account">
+      <h2>Paper account <span class="row" style="gap:4px"><a class="btn sm" href="portfolio.html">Full portfolio</a><button id="reset" class="sm" type="button">Reset</button></span></h2>
+      <div class="acct-grid" id="acct"></div>
+      <div class="pos-row" id="posRow" hidden></div>
+      <h2 style="margin-top:12px">Recent fills</h2>
+      <div class="log"><table id="log"></table></div>
+    </div>
+  </aside>
+
+  <div class="below-chart grid cols-2" id="below-chart">
+  <div class="card lesson" id="panel-learn">
+    <h2>Learn the indicators <a href="learn.html" class="xs">Full course →</a></h2>
+    <details><summary>Moving averages (SMA / EMA)</summary><p>The average closing price over N bars. <b>SMA 20</b> above <b>SMA 50</b> means the short-term trend is stronger than the long-term one (a “golden cross” when it crosses up, “death cross” when down). EMA weights recent bars more, so it reacts faster; <b>EMA 9/21</b> is a popular fast pair for swing trades.</p></details>
+    <details><summary>RSI (Relative Strength Index)</summary><p>Momentum from 0 to 100. Under <b>30</b> is “oversold” (sellers may be exhausted), over <b>70</b> is “overbought”. Traders look for RSI to turn back from these zones, ideally with a divergence against price.</p></details>
+    <details><summary>MACD</summary><p>Difference between the 12 and 26 EMA, with a 9-bar signal line. The histogram is MACD minus signal. Histogram turning positive is a bullish cross; negative is bearish.</p></details>
+    <details><summary>Bollinger Bands</summary><p>SMA 20 plus and minus two standard deviations. Price touching the lower band is statistically stretched down; the upper band, stretched up. Narrow bands (a “squeeze”) often precede big moves.</p></details>
+    <details><summary>VWAP</summary><p>The average price paid today, weighted by volume. Institutions benchmark fills against it: price above VWAP means buyers are paying up; below, sellers are in control. Resets every session on intraday charts.</p></details>
+    <details><summary>Ichimoku cloud</summary><p>Five lines in one glance. Price above the cloud is an uptrend, below is a downtrend, inside is no-man’s land. Tenkan (9) crossing above Kijun (26) is a bullish trigger, and a thick cloud ahead marks strong future support or resistance.</p></details>
+    <details><summary>Fibonacci retracements</summary><p>After a swing from low to high, pullbacks often pause at 38.2 %, 50 % and 61.8 % of the move. The levels are drawn from the highest high and lowest low of the last 120 bars. They are zones to watch, not magic numbers.</p></details>
+    <details><summary>Stochastic, ADX, OBV, ATR</summary><p><b>Stochastic</b> shows where the close sits in the recent range (above 80 high, below 20 low). <b>ADX</b> measures trend strength regardless of direction: above 25 trust crossovers, below 20 trust mean reversion. <b>OBV</b> adds volume on up bars and subtracts it on down bars; it should confirm price. <b>ATR</b> is the typical bar range, useful for sizing stops (e.g. 2 × ATR below entry).</p></details>
+    <details><summary>Candlestick patterns</summary><p>Single bars and small groups that hint at reversals: a <b>hammer</b> after a decline, a <b>shooting star</b> after a rally, <b>engulfing</b> bars that swallow the previous one, morning/evening <b>stars</b>, and three <b>soldiers</b> or <b>crows</b> in a row. Turn on “Patterns” and hover a marker.</p></details>
+    <details><summary>Support, resistance and trend lines</summary><p>Dashed lines mark recent swing lows (support) and swing highs (resistance), where price reversed before. Use ✎ Trend line to connect two swing points yourself: an upward line of higher lows is an uptrend. Your lines are saved per symbol.</p></details>
+    <details><summary>Order types</summary><p><b>Market</b> fills now at the current price. <b>Limit</b> fills only at your price or better (buy lower, sell higher). <b>Stop</b> becomes a market order once price reaches your trigger: used to cut losses or enter breakouts. <b>Stop-limit</b> triggers like a stop but then insists on a limit, so it may not fill in a fast gap.</p></details>
+  </div>
+
+  <div class="card" id="panel-keys">
+    <h2>Keyboard shortcuts</h2>
+    <div class="keys">
+      <kbd>/</kbd><span>Focus symbol search</span>
+      <kbd>B</kbd><span>Buy ticket</span>
+      <kbd>S</kbd><span>Sell ticket</span>
+      <kbd>L</kbd><span>Draw a trend line</span>
+      <kbd>1–4</kbd><span>Interval 1D / 1H / 15m / 5m</span>
+      <kbd>W</kbd><span>Add symbol to watchlist</span>
+      <kbd>?</kbd><span>Take the tour</span>
+      <kbd>Esc</kbd><span>Close dialogs / cancel drawing</span>
+    </div>
+  </div>
+  </div>
+</main>
+
+<footer class="footer disclaimer-footer">
+  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
+  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
+</footer>
+
+<!-- Data provider settings -->
+<div class="modal-backdrop" id="settingsModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <header><h2 id="settingsTitle">Live data settings</h2><button class="close ghost" id="settingsClose" type="button" aria-label="Close">✕</button></header>
+    <p class="muted small">Without a key the dashboard runs on <b>simulated</b> prices that are deterministic per symbol, so every student sees the same chart. Add a <b>free</b> API key to see real market prices. Keys are stored only in this browser and sent only to the provider you choose. All three providers below have free tiers; the app rate-limits itself to stay inside them.</p>
+    <div class="provider-row">
+      <div class="field">
+        <label for="provider">Provider</label>
+        <select id="provider">
+          <option value="demo">Demo (simulated, no key)</option>
+          <option value="twelvedata">Twelve Data — 8 req/min, 800/day, real-time US stocks (recommended)</option>
+          <option value="finnhub">Finnhub — 60 req/min real-time quotes; candles need a paid plan</option>
+          <option value="alphavantage">Alpha Vantage — 25 req/day, end-of-day</option>
+        </select>
+      </div>
+      <button id="testKey" type="button">Test</button>
+    </div>
+    <div class="test-out" id="testOut"></div>
+    <fieldset style="margin-top:12px">
+      <legend>API keys</legend>
+      <div class="stack tight">
+        <div class="keyrow"><input id="key-twelvedata" type="password" placeholder="Twelve Data key" autocomplete="off" aria-label="Twelve Data API key"><button class="sm showkey" data-for="key-twelvedata" type="button">Show</button><a class="sm btn" href="https://twelvedata.com/pricing" target="_blank" rel="noopener">Get key</a></div>
+        <div class="keyrow"><input id="key-finnhub" type="password" placeholder="Finnhub key" autocomplete="off" aria-label="Finnhub API key"><button class="sm showkey" data-for="key-finnhub" type="button">Show</button><a class="sm btn" href="https://finnhub.io/register" target="_blank" rel="noopener">Get key</a></div>
+        <div class="keyrow"><input id="key-alphavantage" type="password" placeholder="Alpha Vantage key" autocomplete="off" aria-label="Alpha Vantage API key"><button class="sm showkey" data-for="key-alphavantage" type="button">Show</button><a class="sm btn" href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener">Get key</a></div>
+      </div>
+    </fieldset>
+    <div class="quota" id="quota"></div>
+    <div class="note">If live data is blocked where you are viewing this (some embedded viewers block cross-site requests), open the HTML file directly in your browser. The app falls back to demo prices automatically and says so in the status pill.</div>
+    <footer><button id="clearCache" class="ghost" type="button">Clear data cache</button><span class="grow"></span><button id="settingsSave" class="primary" type="button">Save &amp; reload data</button></footer>
+  </div>
+</div>
+
+<!-- First-run tour -->
+<div id="tour" hidden>
+  <div class="tour-backdrop" id="tourBackdrop"></div>
+  <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="step" id="tourStep">Step 1 of 6</div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourBody"></p>
+    <div class="actions">
+      <div class="dots" id="tourDots"></div>
+      <div class="row">
+        <button id="tourSkip" class="ghost sm" type="button">Skip</button>
+        <button id="tourPrev" class="sm" type="button">Back</button>
+        <button id="tourNext" class="primary sm" type="button">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/paper.js"></script>
+<script src="js/options.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

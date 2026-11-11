@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Your Broward Trading paper account: equity curve, open positions with live marks, working orders, trade history, performance statistics and an options strategy lab with payoff diagrams. Free, educational, no real money.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Portfolio — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .pf-head{display:flex;flex-wrap:wrap;gap:10px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .pf-head h1{margin:0;font-size:var(--fs-xl)}
+  .pf-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0}
+  .pf-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3);margin-bottom:var(--sp-3)}
+  @media (max-width:900px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .tiles .stat .value{font-size:clamp(18px,2.2vw,24px)}
+  .tiles .stat .value.up{color:var(--up)} .tiles .stat .value.down{color:var(--down)}
+  .pf-main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--sp-3);align-items:start}
+  @media (max-width:1000px){.pf-main{grid-template-columns:1fr}}
+  .pane.equity{height:300px}
+  @media (max-width:600px){.pane.equity{height:220px}}
+  .pane .tag .live-dot{color:var(--up)}
+  /* empty-state message: opaque, centred, narrow enough to read; the chart underneath is hidden rather than blended */
+  .pane.equity .overlay{padding:16px 24px;text-align:center;background:var(--panel);line-height:1.5}
+  .pane.equity .overlay > p{max-width:46ch;margin:0}
+  .pane.equity:has(> .overlay:not([hidden])) > .tv-lightweight-charts{visibility:hidden}
+  .pane.equity:has(> .overlay:not([hidden])) > .tag{display:none}
+  /* table columns: breathing room where a right-aligned column meets a left-aligned one */
+  table th.right + th:not(.right),table td.right + td:not(.right){padding-left:18px}
+  table th:not(.right) + th.right,table td:not(.right) + td.right{padding-left:12px}
+  /* tap targets: at least 24px tall (WCAG 2.5.8) without changing the compact look */
+  button.sm,.btn.sm,table.chain td.act button{min-height:24px}
+  label.xs{display:inline-flex;align-items:center;gap:6px;min-height:24px;cursor:pointer}
+  .section-tabs{margin-top:var(--sp-4);margin-bottom:var(--sp-3)}
+  .tabpanel{display:flex;flex-direction:column;gap:var(--sp-3)}
+  .card > h2 .right-tools{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0}
+  table.pos td,table.pos th{white-space:nowrap}
+  table.pos td.sym{font-family:var(--mono);font-weight:500}
+  table.pos td .desc{display:block;font-family:var(--font);font-weight:400;color:var(--muted);font-size:var(--fs-xs);white-space:normal}
+  .side-long{color:var(--up)} .side-short{color:var(--down)}
+  .filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:var(--sp-2)}
+  .filters input,.filters select{padding:4px 8px;font-size:var(--fs-sm)}
+  .filters input[type="text"]{width:110px;text-transform:uppercase}
+  .csvbox{width:100%;min-height:140px;font-family:var(--mono);font-size:var(--fs-xs);white-space:pre;overflow:auto;margin-top:var(--sp-2)}
+  .statgrid{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:var(--fs-sm)}
+  .statgrid .k{color:var(--muted);display:flex;align-items:center;gap:6px}
+  .statgrid .v{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  /* educational tooltip: works on hover and on keyboard / tap focus */
+  /* the button is a 24x24 hit area (WCAG 2.5.8); the visible 16px circle is drawn by ::before and negative
+     vertical margins keep the surrounding line box at its original height */
+  button.tip,.card > h2 button.tip,.stat .label button.tip{padding:4px;width:24px;height:24px;min-width:0;min-height:0;line-height:1;margin:-4px 0;border:0;background:transparent;box-shadow:none}
+  .tip{--tip-size:16px;position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:4px;border-radius:50%;
+    color:var(--muted);font-family:var(--mono);font-size:10px;line-height:1;cursor:help;flex:none;vertical-align:middle}
+  .tip::before{content:"?";display:inline-flex;align-items:center;justify-content:center;width:var(--tip-size);height:var(--tip-size);border-radius:50%;
+    border:1px solid var(--line2);background:var(--panel2);color:inherit;font:inherit}
+  .tip:hover,.tip:focus-visible{color:var(--accent);outline:none;background:transparent}
+  .tip:hover::before,.tip:focus-visible::before{border-color:var(--accent)}
+  .tip:focus-visible::before{box-shadow:0 0 0 2px var(--accent-soft)}
+  .tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);
+    width:max-content;max-width:min(300px,80vw);white-space:normal;text-align:left;padding:8px 10px;border-radius:var(--r);
+    background:var(--panel);color:var(--fg);border:1px solid var(--line2);box-shadow:var(--shadow-2);
+    font-family:var(--font);font-size:var(--fs-sm);line-height:1.45;font-weight:400;z-index:50;display:none;pointer-events:none}
+  .tip:hover::after,.tip:focus-visible::after,.tip.open::after{display:block}
+  .tip.edge-r::after{left:auto;right:0;transform:none} .tip.edge-l::after{left:0;transform:none}
+  @media (prefers-reduced-motion:no-preference){ .tip:hover::after,.tip:focus-visible::after,.tip.open::after{animation:tip-in .14s var(--ease)} @keyframes tip-in{from{opacity:0;transform:translate(var(--tx,-50%),3px)}to{opacity:1;transform:translate(var(--tx,-50%),0)}} .tip.edge-r,.tip.edge-l{--tx:0} }
+  th button.tip{--tip-size:14px;margin-left:2px;font-size:9px}
+  td:last-child .tip::after,th:last-child .tip::after{left:auto;right:0;transform:none}
+  td:first-child .tip::after,th:first-child .tip::after{left:0;transform:none}
+  .confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--down);border-radius:var(--r);background:var(--down-soft);font-size:var(--fs-sm);margin-top:var(--sp-2)}
+  .confirm input{width:120px}
+  /* Options Lab */
+  .lab{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:var(--sp-3);align-items:start}
+  @media (max-width:1100px){.lab{grid-template-columns:1fr}}
+  .lab-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+  .lab-controls .field{min-width:0}
+  .lab-controls input[type="text"]{width:90px;text-transform:uppercase}
+  .lab-controls .spot{font-family:var(--mono);font-size:var(--fs-lg);font-weight:500}
+  .ivrow{display:flex;align-items:center;gap:8px;min-width:200px}
+  .ivrow input[type="range"]{flex:1}
+  .expiries{display:flex;gap:4px;flex-wrap:wrap;margin:var(--sp-2) 0}
+  .expiries button{font-size:var(--fs-xs);padding:4px 9px}
+  .expiries button small{color:var(--muted);margin-left:4px}
+  .expiries button.on small{color:inherit;opacity:.85}
+  .chain-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:var(--r)}
+  table.chain{min-width:860px;font-size:var(--fs-xs)}
+  table.chain thead th{position:sticky;top:0;background:var(--panel);z-index:2;padding:6px 6px;text-align:right;white-space:nowrap}
+  table.chain thead tr.group th{text-align:center;font-size:var(--fs-xs);letter-spacing:.6px;border-bottom:1px solid var(--line)}
+  table.chain thead tr.group th.calls{color:var(--up)} table.chain thead tr.group th.puts{color:var(--down)}
+  table.chain td{padding:3px 6px;text-align:right;font-family:var(--mono);white-space:nowrap}
+  table.chain td.strike,table.chain th.strike{text-align:center;font-weight:600;background:var(--panel2);position:sticky;left:auto}
+  table.chain tr.atm td.strike{color:var(--accent)}
+  table.chain td.itm{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)}
+  table.chain td.act{padding:2px 4px}
+  table.chain td.act button{padding:1px 6px;font-size:10px;font-family:var(--mono);line-height:1.4;min-width:22px}
+  table.chain td.act button.b{color:var(--up);border-color:var(--up)} table.chain td.act button.s{color:var(--down);border-color:var(--down)}
+  table.chain td.act button.b:hover{background:var(--up);color:#fff} table.chain td.act button.s:hover{background:var(--down);color:#fff}
+  table.chain tbody tr:hover td:not(.strike){background:var(--panel2)}
+  .legs table td,.legs table th{padding:4px 4px;white-space:nowrap}
+  .legs input[type="number"]{width:72px;padding:2px 6px;font-size:var(--fs-sm)}
+  .legs > h2{flex-wrap:wrap}
+  .legs > h2 .right-tools{flex-wrap:wrap;max-width:100%}
+  .legs > h2 select{max-width:220px}
+  .legs .lbl{font-size:var(--fs-sm)}
+  .legs .lbl small{display:block;color:var(--muted);font-family:var(--mono);font-size:10px}
+  .payoff-wrap{position:relative;height:300px}
+  .payoff-wrap canvas{width:100%;height:100%;display:block;border-radius:var(--r)}
+  .payoff-wrap .readout{position:absolute;top:6px;right:8px;font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted);pointer-events:none;background:color-mix(in srgb,var(--panel) 80%,transparent);padding:2px 6px;border-radius:var(--r-sm)}
+  .analyze .statgrid{font-size:var(--fs)}
+  .analyze .big{font-size:var(--fs-md);font-weight:500}
+  .greeks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:var(--sp-2)}
+  @media (max-width:600px){.greeks{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .greeks .g{background:var(--panel2);border-radius:var(--r);padding:6px 8px;text-align:center}
+  .greeks .g .label{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:center;gap:4px;align-items:center}
+  .greeks .g .value{font-family:var(--mono);font-size:var(--fs-md)}
+  .preset-desc{font-size:var(--fs-sm);color:var(--muted);line-height:1.55}
+  .preset-desc b{color:var(--fg)}
+  .preset-desc .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .emptyline{color:var(--muted);font-size:var(--fs-sm);padding:10px 0}
+  .srcnote{font-size:var(--fs-xs);color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="page">
+<nav class="topnav" aria-label="Main">
+  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
+  <div class="links">
+    <a href="index.html">Dashboard</a>
+    <a href="learn.html">Learn</a>
+    <a href="portfolio.html" class="active" aria-current="page">Portfolio</a>
+    <a href="backtest.html">Backtest</a>
+    <a href="about.html">About</a>
+  </div>
+  <div class="right">
+    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+  <header class="pf-head">
+    <div>
+      <h1>Paper account</h1>
+      <p class="sub">A simulated brokerage account: every fill, mark and statistic here is computed exactly the way a real broker would show it, with play money.</p>
+    </div>
+    <div class="status">
+      <span class="pill demo" id="srcpill" title="Prices are simulated unless you add a free API key on the dashboard">demo</span>
+      <span class="pill" id="marketpill" title="NYSE session status">market —</span>
+      <span class="pill" id="refreshpill" title="When positions were last marked to market">marks —</span>
+      <button class="sm" id="refresh" type="button" title="Fetch fresh quotes for every open position now">Refresh marks</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Account overview tiles -->
+    <section class="tiles" aria-label="Account overview">
+      <div class="card stat">
+        <span class="label">Equity <button class="tip" type="button" aria-label="What is equity?" data-tip="Equity = cash + the current market value of everything you hold (minus what you owe on shorts). It is what your account would be worth if you closed every position at today's marks."></button></span>
+        <span class="value num" id="t-equity">—</span>
+        <span class="sub" id="t-equity-sub">Started with —</span>
+      </div>
+      <div class="card stat">
+        <span class="label">Cash <button class="tip" type="button" aria-label="What is cash?" data-tip="Settled cash available to buy. Buying stock or options lowers it; selling raises it. Short sales add cash but lock it up as margin, so cash can be high while buying power is low."></button></span>
+        <span class="value num" id="t-cash">—</span>
+        <span class="sub" id="t-cash-sub">Buying power —</span>
+      </div>
+      <div class="card stat">
+        <span class="label">Day P&amp;L <button class="tip" type="button" aria-label="What is day P&L?" data-tip="Day P&L compares your equity now with your equity at the start of today, including realized trades and the change in value of open positions."></button></span>
+        <span class="value num" id="t-day">—</span>
+        <span class="sub" id="t-day-sub">since the open</span>
+      </div>
+      <div class="card stat">
+        <span class="label">Total P&amp;L <button class="tip" type="button" aria-label="What is total P&L?" data-tip="Total P&L = equity minus starting cash. Realized (closed trades) plus unrealized (open positions), net of commissions."></button></span>
+        <span class="value num" id="t-total">—</span>
+        <span class="sub" id="t-total-sub">realized — · unrealized —</span>
+      </div>
+    </section>
+
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+
+    <div class="pf-main">
+      <!-- Equity curve -->
+      <section class="card" aria-label="Equity curve">
+        <h2>Equity curve <span class="right-tools"><span class="srcnote" id="eq-points"></span></span></h2>
+        <div class="pane equity" id="equity">
+          <div class="tag"><b id="eq-tag">—</b><span id="eq-tag2"></span></div>
+          <div class="overlay" id="eq-overlay"><p>Your equity curve appears here once your account has been marked to market a few times. Place a trade on the dashboard to begin.</p></div>
+        </div>
+        <div class="note">Each point is your equity at the time positions were marked. The dashed line is your starting cash: above it you are up, below it you are down. A smooth upward line beats a jagged one that ends in the same place; that is what the Sharpe ratio and max drawdown measure.</div>
+      </section>
+
+      <!-- Performance stats -->
+      <aside class="card" aria-label="Performance statistics">
+        <h2>Performance</h2>
+        <div class="statgrid" id="stats"></div>
+        <div class="note" id="stats-note">Statistics count only fills that closed some quantity; an open position is neither a win nor a loss yet.</div>
+      </aside>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="tabs section-tabs" role="tablist" aria-label="Account sections">
+      <button role="tab" id="tab-positions" aria-selected="true" aria-controls="panel-positions" data-tab="positions" type="button">Positions &amp; orders</button>
+      <button role="tab" id="tab-history" aria-selected="false" aria-controls="panel-history" data-tab="history" type="button">Trade history</button>
+      <button role="tab" id="tab-options" aria-selected="false" aria-controls="panel-options" data-tab="options" type="button">Options Lab</button>
+      <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings" data-tab="settings" type="button">Settings &amp; reset</button>
+    </div>
+
+    <!-- Positions & orders -->
+    <section class="tabpanel" id="panel-positions" role="tabpanel" aria-labelledby="tab-positions">
+      <div class="card">
+        <h2>Open positions <span class="right-tools"><span class="srcnote" id="pos-count"></span></span></h2>
+        <div class="table-wrap">
+          <table class="pos hover dense">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th class="right">Qty</th>
+                <th class="right">Avg cost <button class="tip" type="button" aria-label="About average cost" data-tip="Your average cost is the share-weighted mean of what you paid. Buying more at a lower price lowers it; selling part of a position does not change it."></button></th>
+                <th class="right">Mark <button class="tip" type="button" aria-label="About marks" data-tip="The mark is the latest price used to value the position. Stocks use the last quote; options use a Black-Scholes value from the underlying's quote, since the simulator has no live options feed."></button></th>
+                <th class="right">Market value</th>
+                <th class="right">Unrealized P&amp;L <button class="tip" type="button" aria-label="About unrealized P&L" data-tip="(Mark − average cost) × quantity × multiplier. It is on paper until you close: a gain can disappear and a loss can recover."></button></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="positions"></tbody>
+          </table>
+        </div>
+        <div class="emptyline" id="pos-empty" hidden>No open positions. Open the <a href="index.html">dashboard</a>, pick a symbol and place a paper trade, or build a strategy in the Options Lab.</div>
+      </div>
+
+      <div class="card">
+        <h2>Working orders <span class="right-tools"><span class="srcnote" id="ord-count"></span></span></h2>
+        <div class="table-wrap">
+          <table class="hover dense">
+            <thead>
+              <tr>
+                <th>#</th><th>Symbol</th><th>Side</th><th class="right">Qty</th>
+                <th>Type <button class="tip" type="button" aria-label="About order types" data-tip="Limit: fill at your price or better. Stop: becomes a market order once the stop price trades. Stop-limit: triggers like a stop, then works as a limit. Open orders here are checked against each new quote."></button></th>
+                <th class="right">Limit</th><th class="right">Stop</th>
+                <th>TIF <button class="tip" type="button" aria-label="About time in force" data-tip="Time in force. DAY orders expire unfilled at the end of the trading day they were placed. GTC (good-till-cancelled) orders stay working until filled or you cancel them."></button></th>
+                <th>Placed</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="orders"></tbody>
+          </table>
+        </div>
+        <div class="emptyline" id="ord-empty" hidden>No working orders. Limit and stop orders placed on the dashboard wait here until price reaches them.</div>
+      </div>
+    </section>
+
+    <!-- Trade history -->
+    <section class="tabpanel" id="panel-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="card">
+        <h2>Trade history <span class="right-tools"><span class="srcnote" id="hist-count"></span></span></h2>
+        <div class="filters" aria-label="History filters">
+          <input type="text" id="f-sym" placeholder="Symbol" aria-label="Filter by symbol" autocomplete="off" spellcheck="false">
+          <select id="f-side" aria-label="Filter by side"><option value="">Buys and sells</option><option value="buy">Buys</option><option value="sell">Sells</option></select>
+          <select id="f-kind" aria-label="Filter by instrument"><option value="">Stocks and options</option><option value="stock">Stocks</option><option value="option">Options</option></select>
+          <select id="f-result" aria-label="Filter by result"><option value="">All fills</option><option value="closing">Closing fills only</option><option value="win">Winners</option><option value="loss">Losers</option></select>
+          <select id="f-range" aria-label="Filter by date"><option value="">All time</option><option value="today">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select>
+          <span class="grow"></span>
+          <button class="sm" id="csv" type="button" title="Show the filtered history as CSV text you can paste into a spreadsheet">Export CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="hover dense">
+            <thead>
+              <tr>
+                <th>Time</th><th>Symbol</th><th>Side</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Value</th>
+                <th class="right">Fees</th>
+                <th class="right">Realized <button class="tip" type="button" aria-label="About realized P&L" data-tip="Profit or loss locked in by this fill, net of commissions. Only fills that close (or reduce) a position realize anything; opening fills show a dash."></button></th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="history"></tbody>
+          </table>
+        </div>
+        <div class="emptyline" id="hist-empty" hidden>No fills match. Every paper trade you make, on any page, is recorded here.</div>
+        <div id="csvwrap" hidden>
+          <div class="row between mt-3">
+            <span class="srcnote" id="csvnote">CSV of the filtered fills. Downloads are blocked in some viewers, so copy the text below into a spreadsheet instead.</span>
+            <button class="sm" id="csvcopy" type="button">Copy to clipboard</button>
+          </div>
+          <textarea class="csvbox" id="csvbox" readonly spellcheck="false" aria-label="CSV export"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- Options Lab -->
+    <section class="tabpanel" id="panel-options" role="tabpanel" aria-labelledby="tab-options" hidden>
+      <div class="callout compact">
+        <div><span class="title">Options Lab</span>
+        Pick an underlying, browse a synthetic option chain priced with the Black-Scholes model from the stock's quote, click strikes to build a position (or load a preset), and read the payoff diagram before you paper-trade it. One contract controls 100 shares, so a $2.50 premium costs $250.</div>
+      </div>
+
+      <div class="card">
+        <h2>Underlying &amp; chain</h2>
+        <div class="lab-controls">
+          <div class="field">
+            <label for="opt-sym">Underlying</label>
+            <div class="input-group"><input type="text" id="opt-sym" value="AAPL" autocomplete="off" spellcheck="false" aria-label="Underlying symbol"><button id="opt-load" type="button">Load</button></div>
+          </div>
+          <div class="field">
+            <label>Spot <button class="tip" type="button" aria-label="About spot" data-tip="The current price of the underlying stock. Every option price in the chain is derived from it."></button></label>
+            <div class="spot num" id="opt-spot">—</div>
+          </div>
+          <div class="field ivrow">
+            <label for="opt-iv" class="nowrap">Implied vol <button class="tip" type="button" aria-label="About implied volatility" data-tip="Implied volatility: the annualised volatility the option market is pricing in. Higher IV means pricier options. The chain adds a realistic 'smile', so puts and far strikes trade at a little more IV than this base value."></button></label>
+            <input type="range" id="opt-iv" min="8" max="90" value="25" step="1" aria-label="Base implied volatility percent">
+            <span class="num" id="opt-ivv">25%</span>
+          </div>
+          <div class="field">
+            <label>Risk-free rate</label>
+            <div class="num" id="opt-r" style="padding:6px 0">5.00%</div>
+          </div>
+          <span class="srcnote" id="opt-src"></span>
+        </div>
+
+        <div class="expiries" id="expiries" role="tablist" aria-label="Expiration"></div>
+
+        <div class="chain-wrap">
+          <table class="chain">
+            <thead>
+              <tr class="group">
+                <th colspan="8" class="calls">Calls</th>
+                <th class="strike">Strike</th>
+                <th colspan="8" class="puts">Puts</th>
+              </tr>
+              <tr id="chain-head"></tr>
+            </thead>
+            <tbody id="chain"></tbody>
+          </table>
+        </div>
+        <div class="note">Shaded cells are in the money. <b>+</b> buys at the ask, <b>−</b> sells (writes) at the bid: paying the spread is the first cost of every options trade. The chain is synthetic, generated from the underlying's price with a Black-Scholes model and a volatility smile, so it behaves like a real chain without a paid data feed.</div>
+      </div>
+
+      <div class="lab">
+        <div class="stack">
+          <div class="card legs">
+            <h2>Position legs
+              <span class="right-tools">
+                <select id="preset" aria-label="Strategy preset"><option value="">Load a preset strategy…</option></select>
+                <button class="sm ghost" id="legs-clear" type="button">Clear</button>
+              </span>
+            </h2>
+            <div class="table-wrap">
+              <table class="dense">
+                <thead><tr><th>Leg</th><th class="right">Qty <button class="tip" type="button" aria-label="About quantity" data-tip="Positive quantity = long (you bought). Negative = short (you sold / wrote). For a stock leg the quantity is shares; for options it is contracts of 100 shares."></button></th><th class="right">Premium <button class="tip" type="button" aria-label="About premium" data-tip="Price per share of the option. Multiply by 100 for the dollars per contract. For a stock leg this column holds the entry price."></button></th><th class="right">Cost</th><th></th></tr></thead>
+                <tbody id="legs"></tbody>
+              </table>
+            </div>
+            <div class="emptyline" id="legs-empty">No legs yet. Click <b>+</b> or <b>−</b> in the chain, or load a preset above.</div>
+            <div class="preset-desc" id="preset-desc" hidden></div>
+          </div>
+
+          <div class="card">
+            <h2>Payoff at expiration <span class="right-tools"><label class="xs"><input type="checkbox" id="show-t0" checked> show today's value curve</label></span></h2>
+            <div class="payoff-wrap"><canvas id="payoff" role="img" aria-label="Profit and loss at expiration versus underlying price"></canvas><div class="readout" id="payoff-readout"></div></div>
+            <div class="note">Green area: profit at expiration for that stock price. Red: loss. Vertical markers show your breakevens and the current spot. The dotted curve is what the position is worth <em>today</em> under the model: notice how it is smoother than the expiration payoff, and how it drifts toward the kinked line as days pass (that drift is theta).</div>
+          </div>
+        </div>
+
+        <aside class="stack">
+          <div class="card analyze">
+            <h2>Analysis</h2>
+            <div class="statgrid" id="analysis"></div>
+            <div class="greeks" id="greeks"></div>
+            <p class="srcnote mt-2" id="analysis-summary"></p>
+          </div>
+          <div class="card">
+            <h2>Paper trade this strategy</h2>
+            <p class="srcnote">Places one market order per leg at the premiums shown. Option positions are then marked daily with the model until you close them.</p>
+            <div class="row">
+              <label for="lots" class="nowrap">Lots</label>
+              <input type="number" id="lots" min="1" max="50" value="1" class="num" style="width:70px" aria-label="Number of times to repeat the strategy">
+              <button class="primary" id="trade" type="button">Place paper orders</button>
+            </div>
+            <div class="msg" id="trade-msg" role="status" aria-live="polite"></div>
+            <ul class="steps mt-3" style="font-size:var(--fs-sm)">
+              <li><div><b>Check the breakevens</b><small>Does the stock need to move further than it usually does in that time? Compare with the expected move: spot × IV × √(days/365).</small></div></li>
+              <li><div><b>Know the max loss</b><small>For long options it is the premium. For short options it can be unlimited; the simulator demands margin for those.</small></div></li>
+              <li><div><b>Watch theta</b><small>Come back tomorrow and see how the position's mark changed with the stock unchanged.</small></div></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Settings & reset -->
+    <section class="tabpanel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Account settings</h2>
+          <div class="form-row">
+            <div class="field">
+              <label for="commission">Commission per fill ($)</label>
+              <input type="number" id="commission" min="0" step="0.01" class="num" aria-describedby="commission-help">
+              <div class="help" id="commission-help">Most US brokers charge $0 for stocks and about $0.65 per option contract. Set a fee to feel how costs eat into frequent trading.</div>
+            </div>
+            <button id="save-settings" type="button">Save</button>
+          </div>
+          <div class="msg" id="settings-msg"></div>
+          <h2 class="mt-4">Data source</h2>
+          <div class="statgrid" id="datasrc"></div>
+          <div class="note">Add a free API key on the <a href="index.html">dashboard</a> for real quotes. Marks on this page are batched and paced to stay inside the free-tier limits; while a quota is exhausted they fall back to simulated prices and say so.</div>
+        </div>
+        <div class="card">
+          <h2>Reset account</h2>
+          <p class="srcnote">Wipes positions, working orders, trade history and the equity curve, then starts again with fresh cash. Your course progress and API keys are untouched.</p>
+          <button class="danger" id="reset" type="button">Reset paper account…</button>
+          <div class="confirm" id="reset-confirm" hidden>
+            <span>Start over with</span>
+            <input type="number" id="reset-cash" min="1000" step="1000" value="100000" class="num" aria-label="Starting cash">
+            <span>dollars? This cannot be undone.</span>
+            <button class="danger" id="reset-yes" type="button">Yes, reset everything</button>
+            <button class="ghost" id="reset-no" type="button">Keep my account</button>
+          </div>
+          <div class="msg" id="reset-msg" role="status"></div>
+          <h2 class="mt-4">About this simulator</h2>
+          <ul class="srcnote" style="padding-left:18px;line-height:1.7">
+            <li>Market orders fill at the current quote; limit and stop orders fill when a later quote reaches them, with realistic gap handling.</li>
+            <li>Short sales require 150 % of the exposure in cash, like a margin account; writing options adds 20 % of the strike notional.</li>
+            <li>Option positions are valued with Black-Scholes from the underlying's quote and the Lab's base volatility, and go to intrinsic value at expiry.</li>
+            <li>Everything is stored in this browser only (localStorage key <code>bt.portfolio</code>). Clearing site data clears the account.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer disclaimer-footer">
+  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
+  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
+</footer>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/paper.js"></script>
+<script src="js/options.js"></script>
+<script src="js/portfolio.js"></script>
+<script>
+(function(){
+  'use strict';
+  // Theme toggle: remembers an explicit choice in localStorage ('bt.theme'); otherwise follows the OS.
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  function stored(){ try { return localStorage.getItem('bt.theme') || ''; } catch (e) { return ''; } }
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var isLight = t === 'light' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    if (btn) btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isLight ? '#f3f5f8' : '#0f1319');
+    if (window.BT && BT.portfolioPage && BT.portfolioPage.onThemeChange) BT.portfolioPage.onThemeChange();
+  }
+  apply(stored());
+  if (btn) btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    var osLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var effective = cur || (osLight ? 'light' : 'dark');
+    var next = effective === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('bt.theme', next); } catch (e) { /* storage unavailable: still toggle for this view */ }
+    apply(next);
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: light)');
+    var onOs = function(){ if (!stored()) apply(''); };
+    if (mq.addEventListener) mq.addEventListener('change', onOs); else if (mq.addListener) mq.addListener(onOs);
+  }
+  // Mark the current page in the nav even if this file is copied under another name.
+  var here = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.topnav .links a').forEach(function(a){
+    var target = (a.getAttribute('href') || '').split('#')[0];
+    var on = target === here;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+})();
+</script>
+</body>
+</html>

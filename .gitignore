@@ -1,0 +1,39 @@
+# Broward Trading — static site, nothing to build.
+# Keep the repo to source files that GitHub Pages serves directly.
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# Node (only used for tests; no dependencies are committed)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Secrets — API keys live in the browser's localStorage, never in files
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+
+# Local scratch and test output
+scratch/
+tmp/
+*.log
+coverage/
+
+# Future backend (Supabase / Cloudflare Worker) local state, if added
+.wrangler/
+supabase/.temp/
+.supabase/

@@ -1,0 +1,402 @@
+{
+  "id": "m4-risk",
+  "title": "Risk Management & Paper Trading",
+  "level": "intermediate",
+  "minutes": 56,
+  "summary": "Position sizing and the 1% rule, stop losses and risk/reward, expectancy, drawdowns and the psychology that wrecks good plans, short selling and margin, and how to build a trading plan and journal, all practised on your paper account.",
+  "lessons": [
+    {
+      "id": "m4-l1",
+      "title": "Position Sizing and the 1% Rule",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Risk management is the part of trading you actually control\n\nYou do not control whether the next trade wins. Nobody does. A stock can gap down 15% overnight on an earnings miss, a sector can sell off because of a headline from a company you never heard of, and the cleanest chart setup in the world fails roughly as often as a coin flip for most people most of the time. What you *do* control, completely and in advance, is how much you lose when it goes wrong.\n\nThat is the whole idea of risk management: decide the size of every loss *before* you enter, so that no single trade, and no realistic string of trades, can knock you out of the game. The traders who survive long enough to get good are not the ones with the best entries. They are the ones who are still trading in year three because they never took the one loss that ends everything.\n\nThis lesson is about the first and most important tool: **position sizing**, meaning how many shares to buy. Most beginners decide this by feel (\"I have $5,000, I'll put $2,000 in\"). Professionals do it backwards. They decide how many dollars they are willing to lose if the trade fails, decide where the trade will be proven wrong (the stop), and only then compute the share count. The share count is an *output*, never an input.\n\nTwo numbers drive everything:\n\n- **Risk per trade**: the dollars you accept losing if the stop is hit. Usually expressed as a percentage of account equity.\n- **Stop distance**: how far the stop price is from your entry, in dollars per share.\n\nShares to buy = risk per trade ÷ stop distance. Everything else in this lesson is detail around that one division."
+        },
+        {
+          "type": "text",
+          "md": "### The 1% rule, worked through\n\nThe **1% rule** says: never risk more than 1% of your account equity on a single trade. With a $100,000 paper account that is $1,000. Not $1,000 *invested*; $1,000 *lost if the stop is hit*.\n\nSuppose you want to buy a stock at $50.00 and your analysis says the idea is wrong if price closes below $47.50. The stop distance is $2.50 per share. Your risk budget is $1,000. So:\n\n- Shares = $1,000 ÷ $2.50 = **400 shares**\n- Position value = 400 × $50 = **$20,000**, which is 20% of the account\n\nNotice how the two numbers differ. You have 20% of your money *in* the trade, but only 1% of your money *at risk*, because you will exit at $47.50 unless the stock gaps through it. If it hits the stop you lose 400 × $2.50 = $1,000, as planned.\n\nNow change one thing: a wider stop at $45.00, distance $5.00. Shares = $1,000 ÷ $5.00 = 200 shares, a $10,000 position. Same dollar risk, half the shares. A tighter stop at $49.00 gives $1,000 ÷ $1.00 = 1,000 shares, a $50,000 position. This is the key insight most beginners miss: **a tight stop does not make a trade safer if you respond by buying more shares.** It only changes how often you get stopped out.\n\nWhy 1%? It is a rule of thumb, not a law of nature, and it is debated. Many professional risk desks use 0.25% to 0.5% per position; many swing-trading books suggest 1% to 2%; some aggressive traders use more. The arithmetic behind the lower numbers is about survival. At 1% per trade, ten losses in a row (which will happen to you eventually; Lesson 3 shows how often) cost about 9.6% of the account. At 5% per trade, the same streak costs about 40%. At 10%, it costs 65%, and you need a 186% gain just to get back to even.\n\nFor this course, use **1% on the paper account**. It is small enough to survive your learning curve and large enough that the results mean something."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The sizing formula.** Shares = (account equity × risk %) ÷ (entry price − stop price). Round *down* to a whole number of shares, then check the position value is not more than you are comfortable holding in one name. On a $100,000 account at 1% risk, buying at $120 with a stop at $114: $1,000 ÷ $6 = 166 shares, worth about $19,920."
+        },
+        {
+          "type": "text",
+          "md": "### Letting volatility choose the stop: ATR sizing\n\nA stop at a round number like $47.50 is fine if it also sits below real support. But a cleaner, mechanical way to set stop distance is to use the stock's own volatility, measured by the **Average True Range (ATR)**. ATR is the average size of a bar's true range (high to low, including any gap from the previous close) over a lookback period, usually 14 bars. A stock with a 14-day ATR of $3.00 typically travels about $3 a day.\n\nA common rule is to place the stop **2 ATR** below entry for a swing trade (some traders use 1.5, some 3; the number is a preference, not a discovery). The logic: a stop inside one day's ordinary noise will be hit by noise, not by a real change in the trend. Two ATR gives the trade room to breathe.\n\nExample. Stock A trades at $50 with ATR $1.00. Stock B trades at $50 with ATR $3.00. Same price, very different animals.\n\n- Stock A: stop = 50 − 2 × 1.00 = $48.00, distance $2.00. Shares = $1,000 ÷ $2 = 500 shares ($25,000).\n- Stock B: stop = 50 − 2 × 3.00 = $44.00, distance $6.00. Shares = $1,000 ÷ $6 = 166 shares ($8,300).\n\nYou end up with three times as many shares of the calm stock as the wild one, and both positions threaten the account by exactly $1,000. This is what *volatility-adjusted sizing* means, and it is how most systematic funds think about position size. It stops you from accidentally taking three times the risk just because a stock happens to be exciting.\n\nOn the dashboard the ATR pane shows the current 14-bar ATR and, in its readout, that value as a percentage of price. A stock whose ATR is 2% of price is roughly twice as volatile as one at 1%."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "A high-volatility name on daily candles with the 20- and 50-day SMAs. On the dashboard, turn on the ATR pane and read the current ATR as a percentage of price; then compare with a steadier stock such as KO or PG. The size of a 1%-risk position in each should differ by roughly the same ratio. (Demo prices are simulated.)"
+        },
+        {
+          "type": "text",
+          "md": "### Portfolio heat and correlation\n\nSizing one trade correctly is not the end. If you hold eight positions each risking 1%, your **portfolio heat**, the total you lose if every stop is hit at once, is 8%. That sounds unlikely until you remember what happened to anyone holding eight technology stocks in a market-wide selloff: they all hit their stops in the same week. Positions in the same sector, or in stocks that simply move with the index, are not eight independent bets. They are closer to one big bet wearing eight hats.\n\nTwo simple controls help:\n\n- **Cap total heat.** Many traders cap open risk at 5% or 6% of equity. With 1% per trade that means at most five or six open positions, or smaller size on each once you are near the cap.\n- **Cap correlated exposure.** Treat two semiconductor stocks as one position for heat purposes. If you already own NVDA and want AMD, size the second one so that the pair together risks what one position would.\n\nA quick test for correlation: open both charts on the dashboard and compare the last few months. If the big up days and down days line up, you are looking at one trade, not two.\n\nThere is also the opposite failure: positions so small that even a perfect trade changes nothing. If your stop distance is 10% of the entry price and your risk budget is 1%, the position is only 10% of equity; a 20% winner on that position moves the account 2%. That is fine. Risk management is supposed to make individual trades feel slightly boring. The account grows from many boring trades, not from one dramatic one."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Gaps break the arithmetic.** A stop order is an instruction, not a guarantee. If a stock closes at $48 and opens the next morning at $40 after bad news, your $47.50 stop becomes a market order filling near $40, and the loss is $10 per share, four times what you planned. Earnings dates are the usual culprit. Many traders either close or halve positions before earnings, or size them assuming a gap of two to three times the normal ATR is possible. Paper trading is a good place to see this happen without it hurting."
+        },
+        {
+          "type": "exercise",
+          "md": "Size a real paper trade with the formula. Open the dashboard on AAPL with the ATR pane turned on and read the 14-day ATR. Then:\n\n- Compute a stop at 2 × ATR below the current price and write down the stop distance in dollars.\n- Your paper account starts at $100,000 (check the Settings tab on the portfolio page if you have changed it). Compute 1% of equity, divide by the stop distance and round down: that is your share count.\n- Place a **market buy** for that many shares on the dashboard, then immediately place a **sell stop** at your stop price for the same quantity. Both should appear under Positions & orders on the portfolio page.\n- Repeat the calculation, on paper only, for TSLA. Which stock gets more shares, and by roughly what factor?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma20,sma50,sr&pane=atr,rsi", "label": "Open AAPL with the ATR pane" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Your account equity is $100,000 and you risk 1% per trade. You buy a stock at $80 with a stop at $76. How many shares should you buy?",
+              "choices": ["1,250 shares", "250 shares", "100 shares", "25 shares"],
+              "answer": 1,
+              "explain": "Risk budget is $1,000. Stop distance is 80 − 76 = $4. $1,000 ÷ $4 = 250 shares, a $20,000 position. 1,250 shares would put the whole account into one stock."
+            },
+            {
+              "q": "You tighten your stop from $4 below entry to $1 below entry and keep the same 1% risk budget. What happens to the share count?",
+              "choices": ["It falls to a quarter, making the trade safer", "It stays the same", "It quadruples; the dollar risk is unchanged but the stop is far more likely to be hit", "It cannot be calculated without knowing the ATR"],
+              "answer": 2,
+              "explain": "Shares = risk ÷ distance. Dividing the distance by four multiplies the share count by four. The planned dollar loss is still 1%, but a stop one dollar away sits inside normal daily noise and will be triggered far more often."
+            },
+            {
+              "q": "Stock A has an ATR of $1 and stock B an ATR of $4, both at $100. Using a 2-ATR stop and the same risk budget, how do the position sizes compare?",
+              "choices": ["Equal, because the prices are equal", "A gets four times as many shares as B", "B gets four times as many shares as A", "A gets twice as many shares as B"],
+              "answer": 1,
+              "explain": "A's stop distance is $2 and B's is $8. The same risk budget divided by a distance one quarter as large gives four times the shares. Volatility-adjusted sizing equalises the dollar risk, not the share count."
+            },
+            {
+              "q": "Why is the 1% rule described as a rule of thumb rather than a fixed law?",
+              "choices": ["Because it only applies to accounts over $1,000,000", "Because practitioners disagree: many institutional desks use well under 1% and some books suggest up to 2%; the shared idea is that a losing streak must not be fatal", "Because the SEC sets the correct figure each year", "Because it only matters for day traders"],
+              "answer": 1,
+              "explain": "There is no single correct number. The arithmetic of losing streaks argues for small per-trade risk, and most guidance lands between 0.25% and 2%. The 1% figure is a sensible default for learning."
+            },
+            {
+              "q": "You hold six positions each risking 1%, all large-cap technology stocks. What is the main problem?",
+              "choices": ["Nothing; each position is correctly sized", "Portfolio heat is 6% and the positions are highly correlated, so a sector selloff can hit every stop at once", "Six positions is too few for diversification", "Technology stocks cannot be stopped out"],
+              "answer": 1,
+              "explain": "Correctly sizing each trade does not protect you from six correlated trades losing together. Capping total open risk and treating same-sector names as one position for heat purposes are the standard fixes."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l2",
+      "title": "Stop Losses, Risk/Reward and Expectancy",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### A stop is the price at which your idea is wrong\n\nA **stop loss** is a pre-decided exit for a losing trade. Mechanically, it is usually a *stop order*: a sell order (for a long position) that becomes a market order once the stock trades at or below your stop price. Module 1 covered the order types; this lesson is about *where* the stop goes and *why*.\n\nThe cleanest way to think about it: the stop is the price at which the reason you entered no longer holds. If you bought because a stock bounced off support at $47.50, then a close below $47.50 means the support failed and the thesis is dead. There is no point holding a trade whose reason has evaporated, hoping to be rescued by luck. Common stop placements:\n\n- **Below a level**: just under support, a swing low, or a moving average the stock has respected. Give it a little room (a few tenths of a percent, or a fraction of an ATR) because levels are zones, not lines, and stops clustered exactly at the level are a target.\n- **Volatility-based**: a multiple of ATR below entry, as in Lesson 1. Mechanical and unemotional.\n- **Time-based**: if the move has not started within a set number of bars, exit. Capital sitting in a trade that is going nowhere is capital not working elsewhere.\n- **Trailing**: a stop that moves up as price rises (never down), for example 2 ATR below the highest close since entry. It lets a winner run while locking in gains.\n\nWhat *not* to do is set the stop by the dollars you are willing to lose with a share count you already picked (\"I bought 500 shares, I can lose $500, so my stop is $1 away\"). That puts the stop wherever your wallet wants it, not where the chart says the idea failed. Pick the stop from the chart, then size from the stop.\n\nTwo honest caveats. First, stops are not free: in choppy markets you will be stopped out, watch the stock recover, and feel foolish. That is the price of the insurance. Second, researchers disagree about whether fixed stops improve returns in every market; some studies of mean-reverting assets find tight stops hurt. What is not debated is that **a stop caps the loss on a single trade**, and for a learner that cap is the point."
+        },
+        {
+          "type": "text",
+          "md": "### Risk/reward and the R multiple\n\nOnce the stop is set, you know the risk per share: entry minus stop. Call that one **R**. Everything about the trade can now be measured in R.\n\nSuppose you buy at $50 with a stop at $47.50. R = $2.50. If you take profit at $55, the gain is $5.00, or **2R**. If you are stopped out, the loss is **−1R**. If a gap takes you out at $45, that is −2R, which is exactly why gaps matter.\n\nThe **risk/reward ratio** compares the distance to your target against the distance to your stop. A target 2R away is a 1:2 risk/reward trade (sometimes written 2:1 reward-to-risk; the convention varies, so always say which number is the reward). Before entering, you should be able to name a realistic target: the next resistance level, a measured move from a pattern, a prior high. If the realistic target is only 0.5R away, the trade needs a very high win rate to make money, and most setups do not have one.\n\nA minimum of 1:2 is a popular rule. It is popular for a mathematical reason explained in the next section, not because the market owes anyone two-for-one. Some strategies, such as trend following, work with ratios far higher than 1:2 and win rates of 30% to 40%. Others, such as short-term mean reversion, take many small 0.5R to 1R wins with a high win rate. Both can be profitable. What cannot be profitable for long is a strategy that wins small and loses big, and that, unfortunately, is what unmanaged human trading tends to produce: taking profits quickly because the gain feels good, and letting losses run because selling makes them real.\n\nR multiples also make your journal honest. A $400 win on a trade that risked $2,000 is a 0.2R win, which is an undersized result for the risk taken; a $400 win on a trade that risked $200 is 2R. Dollars hide this; R shows it."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Break-even win rate.** For a given risk/reward, the win rate at which you neither make nor lose money (ignoring costs) is 1 ÷ (1 + reward/risk). With 1:1 you need 50%. With 1:2 you need 33.3%. With 1:3 you need 25%. With 2:1 the other way (risk 2 to make 1) you need 66.7%. Any edge above the break-even line is profit; anything below is a slow leak."
+        },
+        {
+          "type": "text",
+          "md": "### Expectancy: what a trade is worth on average\n\n**Expectancy** is the average amount you expect to make per trade, over many trades. It combines win rate and the size of wins and losses into one number:\n\nExpectancy = (win rate × average win) − (loss rate × average loss)\n\nIn R units, with average loss normalised to 1R, it becomes: Expectancy = (W × average win in R) − (1 − W), where W is the win rate.\n\nExample 1. You win 40% of the time; winners average 2.5R and losers average 1R. Expectancy = 0.40 × 2.5 − 0.60 × 1 = 1.00 − 0.60 = **+0.40R per trade**. If R is $1,000 (1% of a $100,000 account), each trade is worth about $400 on average, and 100 trades should produce roughly $40,000 before costs, with a lot of variation along the way.\n\nExample 2. You win 70% of the time, but your winners average 0.5R because you take profits early, and your losers average 1.5R because you sometimes move the stop. Expectancy = 0.70 × 0.5 − 0.30 × 1.5 = 0.35 − 0.45 = **−0.10R per trade**. Seventy percent winners, and the account shrinks. This profile is extremely common among beginners, and it is not a market-knowledge problem; it is a discipline problem.\n\nExample 3. A coin-flip entry (50% win rate) with a strict 1:2 risk/reward and stops always honoured: 0.5 × 2 − 0.5 × 1 = **+0.50R**. In real markets random entries will not hit a 2R target half the time, because the nearer stop gets hit first more often; the point is that exit discipline carries a lot of the load.\n\nA few related statistics you will see on the portfolio and backtest pages:\n\n- **Profit factor** = gross profit ÷ gross loss. Above 1.0 is profitable; many traders consider 1.5 or more good and treat anything above 3 in a backtest as a sign of over-fitting. If there are no losing trades the number is undefined and the page shows a dash.\n- **Win rate** alone is meaningless without average win and loss. A 90% win rate strategy that sells naked options can lose everything on the 10%.\n- **Average win / average loss** is the payoff ratio. Expectancy is win rate and payoff ratio combined.\n\nCommissions and slippage subtract from expectancy directly, which is why scalping strategies that look good on paper often die in live accounts."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sma50", "sr"],
+          "caption": "Daily candles with automatic support and resistance levels and the 50-day SMA. Pick a hypothetical long entry at the current price: put the stop a little under the nearest support and the target at the nearest resistance, then compute the risk/reward in R. If it is worse than 1:1.5, the trade would need an unusually high win rate to pay."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Moving a stop away from price is how small losses become large ones.** It is fine to move a stop *toward* price (trailing it up on a long). Moving it the other way, \"to give it a little more room\", converts a −1R trade into −2R or −3R and quietly destroys the expectancy you calculated. Decide once, at entry, and let the order do its job. If you keep wanting to move stops, the real fix is a wider initial stop with fewer shares."
+        },
+        {
+          "type": "text",
+          "md": "### Reading expectancy off a backtest\n\nThe strategy lab is the quickest place to see these numbers on real trade lists. Run any built-in strategy and look at the trade table: each row has an entry, an exit, P&L in dollars and percent. From those rows you can compute everything in this lesson by hand:\n\n- Win rate = winning rows ÷ total rows.\n- Average win = total profit on winning rows ÷ number of winners. Average loss likewise.\n- Expectancy per trade = (win rate × average win) − (loss rate × average loss), in dollars. Divide by the typical amount risked to get it in R.\n- Profit factor = total profit on winners ÷ total loss on losers.\n\nOne caution before you trust what you compute: a backtest with 12 trades tells you almost nothing. The statistics of small samples are brutal; a strategy with a genuine +0.3R expectancy can easily show a losing 12-trade stretch, and a worthless one can show a winning stretch. Thirty trades is a bare minimum to have an opinion, a hundred or more is where the numbers start to settle, and even then Module 6 will show you how to check whether the result survives on data the strategy never saw.\n\nA second caution: the built-in strategies exit on a signal, not on a fixed stop, so their worst trades can be larger than 1R. That is useful to notice. Compare the biggest loss in the table to the average loss. If the worst trade is five times the average, a stop would have changed the result materially, for better or worse, and that is a question you can test by adding one in Module 6."
+        },
+        {
+          "type": "exercise",
+          "md": "Compute expectancy from a real trade list. In the strategy lab, run the **SMA crossover (20/50)** on AAPL daily with the full lookback. Then, from the trade table (copy it as CSV into a spreadsheet if you like):\n\n- Count the trades, the winners and the losers. Compute the win rate.\n- Compute the average winning P&L and the average losing P&L in dollars.\n- Compute expectancy per trade and check it against the lab's own profit factor: if your win rate and payoff ratio imply profit factor above 1, the lab should agree.\n- Find the single worst trade. How many times larger than the average loss is it? Would a stop at 2 × ATR have cut it?\n- Now switch to **RSI reversion (30/70)** and repeat. Which strategy has the higher win rate, and which has the higher expectancy? Are they the same one?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Run the SMA crossover backtest" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "You buy at $60 with a stop at $57 and a target at $66. What is the trade's reward in R?",
+              "choices": ["0.5R", "1R", "2R", "3R"],
+              "answer": 2,
+              "explain": "R is the risk per share, 60 − 57 = $3. The target is $6 above entry, which is 6 ÷ 3 = 2R. The risk/reward is 1:2."
+            },
+            {
+              "q": "What is the break-even win rate for a strategy whose winners are always 3R and losers always 1R, ignoring costs?",
+              "choices": ["25%", "33%", "50%", "75%"],
+              "answer": 0,
+              "explain": "Break-even = 1 ÷ (1 + 3) = 25%. At a 25% win rate, one 3R win pays for three 1R losses exactly."
+            },
+            {
+              "q": "A trader wins 65% of trades, with average winner 0.6R and average loser 1.4R. What is the expectancy?",
+              "choices": ["+0.39R", "+0.10R", "−0.10R", "−0.49R"],
+              "answer": 2,
+              "explain": "0.65 × 0.6 = 0.39R from winners; 0.35 × 1.4 = 0.49R lost on losers. 0.39 − 0.49 = −0.10R per trade. A high win rate cannot rescue a bad payoff ratio."
+            },
+            {
+              "q": "Which of these is the recommended way to set a stop?",
+              "choices": ["Decide the share count first, then put the stop where the loss equals your budget", "Put the stop where the chart shows the trade idea has failed, then size the position from that distance", "Always use exactly 5% below entry", "Set it after the trade starts losing, once you know how it feels"],
+              "answer": 1,
+              "explain": "The stop should mark where the thesis is wrong (below support, a swing low, or an ATR multiple). The share count is then derived from the stop distance and the risk budget, never the other way round."
+            },
+            {
+              "q": "A backtest shows a profit factor of 1.8 on 11 trades. What is the most important caution?",
+              "choices": ["1.8 is too low to be interesting", "Eleven trades is far too small a sample; the number could easily reverse on the next dozen trades", "Profit factor must be above 3 to count", "Backtests cannot compute profit factor"],
+              "answer": 1,
+              "explain": "Small samples are dominated by chance. A genuine edge can show losing stretches of a dozen trades and a worthless strategy can show winning ones. Thirty trades is a bare minimum, and more is better."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l3",
+      "title": "Drawdowns, Streaks and Trading Psychology",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Drawdown: the number that decides whether you keep trading\n\nA **drawdown** is the decline from a peak in your account equity to the following trough, usually expressed as a percentage of the peak. If your paper account grows from $100,000 to $112,000 and then slides to $100,800, the drawdown is (112,000 − 100,800) ÷ 112,000 = 10%. The **maximum drawdown** over a period is the largest such decline, and it is the single most useful risk statistic on both the portfolio page and the strategy lab, because it measures what you actually had to live through.\n\nDrawdowns matter because of an asymmetry everyone learns the hard way: **the gain needed to recover is larger than the loss**. The formula is gain needed = loss ÷ (1 − loss).\n\n- Lose 10%, need 11.1% to recover.\n- Lose 20%, need 25%.\n- Lose 33%, need 50%.\n- Lose 50%, need 100%.\n- Lose 75%, need 300%.\n\nThe curve bends sharply above 20%, which is why most professional risk limits treat a 20% drawdown as a crisis and a 50% one as the end. It is also why the 1% rule exists: it keeps the account out of the steep part of this curve during the losing streaks that every strategy has.\n\nTwo more drawdown ideas worth knowing:\n\n- **Duration** matters as much as depth. A 15% drawdown that lasts a week is uncomfortable; one that lasts eighteen months tests whether you believe in your method at all, and most people quit during long flat stretches, not at the lows.\n- **Drawdown of an open position** versus **drawdown of the account**. A stock you own can fall 30% while your account falls 1%, if you sized it properly. Risk management is about the second number.\n\nOn the strategy lab, the drawdown pane under the equity curve plots this directly: how far below its previous peak the strategy was at every bar. The buy-and-hold curve of a volatile stock is a sobering thing to look at there."
+        },
+        {
+          "type": "text",
+          "md": "### Losing streaks are normal, and the arithmetic says so\n\nNew traders experience their first run of five or six losses as proof that something is broken. Usually nothing is. Streaks are a property of probability, not of skill.\n\nIf your win rate is 50%, the chance that any given run of five trades is all losers is 0.5⁵ = 1 in 32, about 3%. That sounds rare. But over 100 trades you get roughly 96 overlapping windows of five, and the chance of seeing *at least one* five-loss streak somewhere in those 100 trades is about 80%. Over a trading career you will see streaks of seven, eight and nine losses with a 50% win rate, and far longer ones if your win rate is 35% (common for trend-following approaches, where 10 to 12 losses in a row is expected over a few hundred trades).\n\nThe practical consequences:\n\n- **Size for the streak, not the trade.** If a ten-loss streak is plausible for your method, your per-trade risk must leave the account intact after ten losses. At 1%, ten losses cost 9.6%. At 2%, 18.3%. At 3%, 26.3%, and you are now in the steep part of the recovery curve.\n- **Do not change the method in the middle of a normal streak.** Decide in advance what counts as abnormal. A simple rule: compute the longest streak your backtest produced, add two or three, and only review the method if live results exceed that.\n- **Do not increase size to win it back.** This is the streak's most dangerous moment, and it has a name in the next section.\n\nThe mirror image also holds: a run of eight winners is partly luck, and sizing up after it is how traders give back a good quarter in a week. If anything, many systematic traders reduce size slightly after an unusual winning run, because unusually good results often mean the market was unusually kind rather than the method unusually right.\n\nThe Sharpe ratio you see on the portfolio and backtest pages is one way to summarise all this: average return divided by the variability of returns, annualised. A higher Sharpe means smoother equity for the return earned. Rules of thumb vary (above 1 is often called good, above 2 very good), but Sharpe on a short history or a handful of trades is as unreliable as any other small-sample statistic."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Recovery arithmetic.** Gain needed = loss ÷ (1 − loss). A 25% drawdown needs a 33.3% gain to get back to the old high; a 40% drawdown needs 66.7%. Write these on a card. The purpose of every rule in this module is to keep you in the gentle part of this curve, where recovery is a matter of weeks rather than years."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": ["bb", "sma50"],
+          "caption": "A volatile stock with Bollinger Bands (20-day, 2 standard deviations) and the 50-day SMA. Trace the equity of someone who bought at the highest visible candle and held: the peak-to-trough decline is the drawdown they lived through. Compare the band width here to a steadier name such as JNJ; wider bands mean deeper and more frequent drawdowns for the same position size."
+        },
+        {
+          "type": "text",
+          "md": "### The biases that break good plans\n\nMost trading losses are not caused by bad analysis. They are caused by good analysis overridden at the worst possible moment by a brain that was built for a different job. Behavioural economists have documented these patterns over decades, and you have all of them. Knowing their names helps you catch them in the act.\n\n- **Loss aversion.** In experiments going back to Kahneman and Tversky in the 1970s, people typically feel a loss roughly twice as strongly as an equal gain. In trading this means refusing a small loss (it hurts) and grabbing a small gain (it feels good): the backwards payoff profile from Lesson 2.\n- **The disposition effect.** The tendency to sell winners too early and hold losers too long. Terrance Odean's 1998 study of thousands of discount-brokerage accounts found investors were markedly more likely to sell a stock that had gone up than one that had gone down, and the stocks they sold went on to outperform the ones they kept.\n- **Sunk-cost thinking and anchoring.** \"I'll sell when it gets back to what I paid.\" The market does not know what you paid; your entry price is irrelevant to whether the stock is a good hold today.\n- **Revenge trading.** After a loss, taking an immediate, larger, lower-quality trade to get even: the fastest way to turn a −1R day into a −5R day. The fix is mechanical: a daily loss limit (for example −2R or −3R), after which you close the platform.\n- **Overconfidence and the hot hand.** After a winning streak, sizing up and loosening rules. Partly luck is being mistaken for skill.\n- **Recency bias.** Weighting the last few trades far more than the full record. A strategy with 200 trades of history does not become bad because of the last five.\n- **Confirmation bias.** Searching for reasons to stay in a losing position and ignoring the evidence against it, for example cherry-picking the indicators that agree with you.\n- **Fear of missing out (FOMO).** Buying after the move you wanted has already happened, with no stop and no plan, because sitting out feels worse than losing.\n\nEvery one of these is a *deviation from a plan*. The defence is not willpower; nobody has enough at 3:55 pm on a red day. The defence is a written plan (Lesson 5), sizing so that no single trade feels important (Lesson 1), and stop orders that execute without asking you (Lesson 2)."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Make the computer hold the line.** Loss aversion cannot argue with a resting stop order. Place the stop at the same time as the entry, every time, and let it fill. If you find yourself cancelling stops \"just this once\", that is the journal entry that matters most this week."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Paper trading hides the emotion, not the bias.** You will find it easy to take a $1,000 paper loss. The point of practising the rules now is to make them habits that fire automatically, so that when the money is real and the fear is real, the habit runs before the fear gets a vote. If you break rules on the paper account, expect to break them faster with real money."
+        },
+        {
+          "type": "exercise",
+          "md": "See a drawdown and compute its recovery. In the strategy lab, run **Buy & hold** on TSLA with the longest daily lookback available, then on KO.\n\n- Read the maximum drawdown for each from the statistics. Using gain = loss ÷ (1 − loss), compute the gain each needed to recover its old high.\n- Look at the drawdown pane. Estimate how many months the longest drawdown lasted for TSLA. Would you have held through it?\n- Now run **SMA crossover (20/50)** on TSLA. Did the strategy reduce the maximum drawdown compared with buy and hold? Did it cost return to do so? That trade-off is the whole subject of risk management in one chart.\n- Finally, open your paper portfolio and note its current maximum drawdown. Write down, in one sentence, what drawdown would make you stop and review your method.",
+          "action": { "page": "backtest.html", "hash": "sym=TSLA&tf=1day&strategy=buyAndHold&run=1", "label": "Run buy & hold on TSLA" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "An account falls from a peak of $120,000 to $90,000. What is the drawdown, and what gain is needed to recover?",
+              "choices": ["25% drawdown; 25% gain", "25% drawdown; 33.3% gain", "33% drawdown; 25% gain", "30% drawdown; 30% gain"],
+              "answer": 1,
+              "explain": "Drawdown = 30,000 ÷ 120,000 = 25%. Recovery needs 0.25 ÷ 0.75 = 33.3%, because the gain is measured on the smaller base of $90,000."
+            },
+            {
+              "q": "With a 50% win rate, roughly how likely is it that a trader sees at least one run of five consecutive losses somewhere in 100 trades?",
+              "choices": ["About 3%", "About 20%", "About 80%", "Essentially impossible"],
+              "answer": 2,
+              "explain": "Any single five-trade window has a 1-in-32 chance of being all losers, but there are nearly 100 overlapping windows in 100 trades. The chance of at least one such streak is roughly 80%. Streaks are normal."
+            },
+            {
+              "q": "After three losing trades in a row, a trader doubles the size of the next trade to get back to even quickly. Which bias is this?",
+              "choices": ["Confirmation bias", "Recency bias", "Revenge trading", "The disposition effect"],
+              "answer": 2,
+              "explain": "Increasing size after losses to win back the money is revenge trading. It turns a normal, survivable streak into a large drawdown. A fixed daily loss limit is the usual defence."
+            },
+            {
+              "q": "What did Odean's 1998 study of brokerage accounts find?",
+              "choices": ["Investors held winners too long and sold losers quickly", "Investors were more likely to sell stocks that had risen than stocks that had fallen, and the stocks they sold went on to outperform the ones they kept", "Investors who traded more earned more", "Stop losses were used by most retail investors"],
+              "answer": 1,
+              "explain": "This is the disposition effect: selling winners and holding losers. It is the practical face of loss aversion and the opposite of the payoff profile that produces positive expectancy."
+            },
+            {
+              "q": "Why does sizing at 1% per trade help with losing streaks specifically?",
+              "choices": ["It prevents streaks from happening", "It guarantees a 1% return per trade", "Ten consecutive 1% losses cost under 10% of equity, keeping the account in the gentle part of the recovery curve, whereas ten 5% losses cost about 40%", "It is required by exchanges"],
+              "answer": 2,
+              "explain": "Streaks cannot be prevented, only survived. Small per-trade risk keeps the inevitable streak from pushing the account into drawdowns that need huge gains to recover."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l4",
+      "title": "Short Selling, Margin and Leverage",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Selling something you do not own\n\nEverything so far assumed you buy first and sell later. **Short selling** reverses the order: you sell shares you have borrowed, hoping to buy them back cheaper and return them, keeping the difference. It is how traders profit from a falling price, and it is also how a well-sized portfolio hedges: a short in a weak stock can offset losses on longs during a market slide.\n\nThe mechanics at a real broker:\n\n1. You ask to sell 100 shares of a stock you do not own. The broker locates 100 shares to lend you, usually from another customer's margin account or an institution.\n2. The shares are sold in the market and the cash lands in your account, but you cannot spend it: it is collateral.\n3. While the position is open you pay a **borrow fee** (tiny for big liquid stocks, enormous for stocks many people want to short) and you owe the lender any **dividends** the stock pays.\n4. To close, you **buy to cover**: buy 100 shares and return them. If you sold at $50 and covered at $42, you made $8 a share, $800, minus fees. If you covered at $58, you lost $800.\n\nThe risk profile is upside down compared with a long position. A long position's worst case is the stock going to zero: you lose what you paid, and no more. A short position's worst case is the stock going *up*, and there is no ceiling. Short a $50 stock and it can go to $100 (a 100% loss on the position), to $200 (a 300% loss) or higher. In October 2008, Volkswagen shares briefly multiplied several times over in two days when short sellers scrambled to cover a crowded position; in January 2021, GameStop rose more than tenfold in a few weeks for similar reasons. These **short squeezes** happen when a rising price forces shorts to buy, which pushes the price higher, which forces more shorts to buy.\n\nThere are also rules. In the US, regulators can impose a **short-sale restriction** on a stock that has fallen 10% in a day, allowing shorts only on an uptick for the rest of that day and the next. Naked shorting (selling without locating shares) is prohibited for ordinary investors. And some stocks are simply **hard to borrow**: no shares are available, or the fee makes the trade pointless."
+        },
+        {
+          "type": "text",
+          "md": "### Margin: borrowing to trade\n\nA **margin account** lets you borrow from the broker against the securities you hold. It is required for short selling (because you are borrowing shares) and it lets you buy more stock than your cash would allow. The vocabulary:\n\n- **Initial margin** is the fraction of a purchase you must fund yourself. In the US, Federal Reserve Regulation T sets this at 50% for most stocks: with $50,000 cash you can buy up to $100,000 of stock, borrowing the other $50,000.\n- **Maintenance margin** is the minimum equity you must keep in the account as a fraction of the position value. FINRA's minimum is 25%; most brokers require more (30% to 40% is common, and higher for volatile stocks).\n- A **margin call** happens when equity falls below the maintenance level. The broker demands more cash, and if you do not provide it quickly they sell positions for you, at whatever price the market offers, without asking which ones.\n- **Margin interest** is charged on what you borrow, daily, at rates that vary widely between brokers.\n\nWork through the leverage. You have $50,000 and buy $100,000 of a stock at $100 (1,000 shares) on 50% margin. If the stock rises 10% to $110, the position is worth $110,000, you owe $50,000, so your equity is $60,000: a **20% gain** on your money. If it falls 10% to $90, equity is $40,000: a **20% loss**. Leverage of 2× doubles both outcomes. If it falls 30% to $70, the position is worth $70,000, equity is $20,000, and you are at 28.6% equity, below many brokers' maintenance line. The call arrives and you are forced to sell near the low.\n\nFor short sales the US initial requirement is **150% of the short's value**: the 100% proceeds from the sale plus 50% of your own money as margin. Short $20,000 of stock and you must have at least $10,000 of other equity backing it. As the stock rises, the requirement rises with it, which is the mechanism that forces covering in a squeeze.\n\nOne more rule: US brokers have historically flagged margin accounts making four or more day trades in five business days as **pattern day traders**, requiring $25,000 of equity. FINRA has proposed changing this; check the current rule with your broker."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Leverage multiplies everything, including the mistakes from Lessons 1 to 3.** At 2× leverage a 1% risk rule still works, but your stop distance in price terms must be half as far for the same share count, or your share count half as large for the same stop. Most learners should not use leverage at all until their unleveraged paper record shows positive expectancy over a hundred or more trades."
+        },
+        {
+          "type": "text",
+          "md": "### How the paper account handles shorts and margin\n\nThe simulator lets you practise shorting without a real borrow desk, and it applies simplified margin rules so you learn the shape of the constraints:\n\n- Selling more shares than you own opens a **short position**, shown with a negative quantity on the portfolio page.\n- A short requires **cash equal to 150% of the short's market value**, mirroring the Reg T initial requirement. If you do not have it, the order is rejected with a reason.\n- Short positions are **marked to market** on every quote. As the stock rises, your equity falls and the margin requirement grows.\n- To close, place a **buy** order for the same quantity. A **buy stop** above your entry is the short seller's stop loss: it triggers when the price *rises* to the stop level.\n- Writing (selling) options in the options lab also requires margin, set at a fraction of the strike notional, because a short option can lose far more than the premium received.\n\nThe simulator does not charge borrow fees or margin interest, and it never issues margin calls or forces liquidation; it only refuses to open positions you cannot back. Keep that in mind: a real short that goes badly wrong gets closed *for* you, at the worst moment.\n\nSizing a short uses the same formula as a long, with the stop above entry. Short 400 shares at $50 with a buy stop at $52.50: risk is $2.50 per share, $1,000 total, 1% of a $100,000 account. The position needs 400 × $50 × 1.5 = $30,000 of cash backing. If the stock gaps to $60 overnight on a takeover rumour, the loss is $4,000, four times the plan, which is exactly the gap risk from Lesson 1 with the sign reversed and no ceiling. Many traders keep shorts smaller than longs for this reason, or short only through options such as long puts, whose maximum loss is the premium paid (Module 5)."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMD",
+          "interval": "1day",
+          "overlays": ["ema21", "sr"],
+          "caption": "Daily candles with the 21-day EMA and automatic support and resistance. A short seller looks for the opposite of a long setup: price below a falling EMA, failing at resistance. Place a hypothetical short at the current price, a buy stop just above the nearest resistance, and compute the share count for 1% risk and the 150% cash the simulator would demand."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Unlimited loss is not a figure of speech.** A long position cannot lose more than you paid. A short position has no such floor above it, and a hard-to-borrow stock can be recalled by the lender at any time, forcing you to cover regardless of your plan. Always pair a short with a resting buy stop, and treat earnings dates and takeover-prone names with extra caution."
+        },
+        {
+          "type": "exercise",
+          "md": "Open a small, properly sized paper short and protect it. On the dashboard, open AMD on the daily chart with the 21 EMA and S/R overlays. Then:\n\n- Identify the nearest resistance above the current price. Set a **buy stop** level a little above it and compute the risk per share.\n- Size for **0.5%** of equity (shorts get half the usual budget in this exercise, because of gap risk). Shares = $500 ÷ risk per share, rounded down.\n- Place a **market sell** for that quantity. The simulator will accept it if your cash covers 150% of the short's value; if it rejects the order, read the reason and reduce the size.\n- Place the **buy stop** for the same quantity at your stop level. Check the portfolio page: the position should show a negative quantity and the stop should be waiting under working orders.\n- Compute, on paper, what a 20% overnight gap up would cost you in dollars and in R.",
+          "action": { "page": "index.html", "hash": "symbol=AMD&interval=1day&ov=ema21,sr", "label": "Open AMD on the dashboard" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "You short 200 shares at $40 and cover at $46. Ignoring fees, what is your result?",
+              "choices": ["+$1,200", "−$1,200", "+$800", "−$800"],
+              "answer": 1,
+              "explain": "A short profits when price falls. Here price rose $6, so you lost $6 × 200 = $1,200. Covering higher than you sold is a loss."
+            },
+            {
+              "q": "Under US Regulation T, roughly how much of your own money must back a $20,000 short sale at initiation?",
+              "choices": ["$0, because the sale proceeds cover it", "$5,000", "$10,000, so that total collateral is 150% of the short value", "$30,000"],
+              "answer": 2,
+              "explain": "The requirement is 150% of the short's value: the $20,000 proceeds plus 50% ($10,000) of your own equity. The paper account applies the same 150% cash rule."
+            },
+            {
+              "q": "You buy $100,000 of stock with $50,000 cash and $50,000 of margin. The stock falls 15%. What happens to your equity?",
+              "choices": ["It falls 15% to $42,500", "It falls 30% to $35,000", "It falls 7.5% to $46,250", "It is unchanged because the broker takes the loss"],
+              "answer": 1,
+              "explain": "The position is worth $85,000 and you still owe $50,000, so equity is $35,000: a 30% loss on your money. Two-times leverage doubles the percentage move in both directions."
+            },
+            {
+              "q": "What order type is the short seller's equivalent of a stop loss?",
+              "choices": ["A sell stop below the entry", "A buy stop above the entry, which triggers if price rises to that level", "A buy limit below the entry", "Shorts cannot use stops"],
+              "answer": 1,
+              "explain": "A short loses as price rises, so the protective order is a buy stop placed above entry. When price reaches it, the order buys to cover and caps the loss (gaps aside)."
+            },
+            {
+              "q": "Why is the maximum loss on a short position described as unlimited?",
+              "choices": ["Because brokers charge unlimited fees", "Because a stock's price has no upper bound, so the cost to buy back the borrowed shares can rise without limit, as in a short squeeze", "Because short positions can never be closed", "Because the SEC requires it"],
+              "answer": 1,
+              "explain": "A long can only fall to zero. A short's loss grows with the price, which has no ceiling. Squeezes such as Volkswagen in 2008 and GameStop in 2021 show how far and how fast that can go."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l5",
+      "title": "Your Trading Plan, Journal and Using the Paper Account Well",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### A trading plan is a set of decisions made while calm\n\nEvery bias in Lesson 3 attacks in the moment: at the open, after a loss, when a stock is running away. A **trading plan** is the document that makes those decisions for you in advance, while you are calm and have time to think. It does not need to be long. It does need to be written down, because a plan that lives in your head will be quietly rewritten by the first bad afternoon.\n\nA complete plan answers these questions, each in a sentence or two:\n\n- **What do I trade?** A universe: for example, large-cap US stocks above $20 with average volume over two million shares, on the daily timeframe. A watchlist of 20 to 40 names you know is better than scanning 5,000 you do not.\n- **When do I enter?** The setup, in testable terms. \"Price closes above the 20-day SMA after a pullback to a rising 50-day SMA, with RSI between 40 and 60\" can be checked and backtested. \"When it looks strong\" cannot.\n- **Where is the stop?** The rule from Lesson 2: below the structure, or a fixed ATR multiple. Decide which, and stick to it.\n- **How much do I risk?** The sizing rule from Lesson 1: 1% of equity per trade, a cap on total heat, a cap on correlated exposure.\n- **When do I exit a winner?** A target in R, a trailing stop, an indicator signal, or a combination. Decide in advance whether you scale out or exit all at once.\n- **What do I avoid?** Earnings announcements, the first fifteen minutes of the session, stocks under a short-sale restriction, days when the index is down more than 2%: whatever your experience says costs you money.\n- **When do I stop for the day, the week, the month?** A daily loss limit of 2R or 3R, a weekly limit, and a drawdown level at which you halve size until you recover.\n- **When do I review?** Weekly, with the journal open.\n\nThe plan is allowed to change, but only at review time, never during a trade. Write the date on every version so that you can see how it evolved. A good plan after six months of paper trading will look different from the first one, and the differences will each be backed by a journal observation."
+        },
+        {
+          "type": "text",
+          "md": "### The journal: where your edge actually comes from\n\nYour broker (and the portfolio page) already records what you bought, when and at what price. That is not a journal. A **trading journal** records *why*, and what you were thinking, so that patterns in your behaviour become visible. Nobody finds their edge by staring at charts; they find it by staring at their own trade list and noticing that, say, every loss over 1.5R came from moving a stop, or that Monday-morning entries lose and Wednesday entries win.\n\nFor every trade, record at entry:\n\n- Date, symbol, direction, timeframe, and the setup name from your plan.\n- Entry price, stop price, planned target, share count, and the resulting risk in dollars and as a percentage of equity.\n- The reason, in one sentence, and a screenshot or a note of what the chart looked like.\n- How confident you feel, on a 1-to-5 scale. (Over time, compare confidence with results. Most people find no relationship, which is itself useful.)\n\nAt exit:\n\n- Exit price and date, P&L in dollars and in R, and the reason for the exit: stop hit, target hit, signal, time stop, or \"I panicked\".\n- Whether you followed the plan, yes or no. This single column is the most valuable one in the journal. Compute the expectancy of plan-following trades and of plan-breaking trades separately. For almost everyone the second number is sharply negative, which turns the vague advice \"be disciplined\" into a dollar figure.\n- The maximum adverse excursion (how far the trade went against you before it worked, if it did). If winners rarely go more than 0.5R against you, your stop may be wider than it needs to be.\n\nReview weekly: win rate, average win and loss in R, expectancy, largest loss, current drawdown, and the count of rule breaks. Review monthly for patterns by setup, by day of week, by time held, by sector. A spreadsheet is enough. The portfolio page's trade history tab gives you the fills and realised P&L to start from; copy them out and add the columns the broker cannot know."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The two-column test.** Split your closed trades into \"followed the plan\" and \"broke the plan\" and compute expectancy for each. If the first column is positive and the second negative, your method works and your discipline is the problem, which is fixable with rules and smaller size. If both are negative, the method needs work, and the strategy lab is where to take it. If both are positive, you are either skilled or lucky, and more trades will tell you which."
+        },
+        {
+          "type": "text",
+          "md": "### Using the paper account well\n\nPaper trading is the best free education in markets, and it is also easy to waste. The difference is whether you treat the paper account like the real one you want to have someday. Common ways learners defeat the purpose:\n\n- **Unrealistic size.** Taking $50,000 positions on a $100,000 paper account because the money is not real, then being unable to hold even a correctly sized position when it is. Trade the paper account at the size you will actually use. If you expect to start with $5,000, reset the paper account to $5,000 in the Settings tab and learn what 1% of that buys. It is humbling, and it is the truth.\n- **Ignoring costs.** Set a realistic commission in the paper settings even if your intended broker advertises zero; many zero-commission brokers earn it back through wider effective spreads, and a few dollars per trade keeps your expectancy estimates honest. In the strategy lab, always re-run promising results with commission and slippage turned on.\n- **Ignoring fills.** The paper account fills market orders at the quote. A real order for 2,000 shares of a thin stock moves the price. Stay in liquid names and treat paper fills as slightly optimistic.\n- **Cherry-picking.** Mentally discounting the losers (\"that one didn't count, I was testing\"). Every paper trade counts, or none of them does.\n- **Trading too little.** Thirty trades is the floor for drawing any conclusion and a hundred is better. At a few trades a week that takes several months, and they are the cheapest months of your trading life.\n- **Trading demo data as if it were the market.** When the dashboard shows the *Demo* badge, prices are a simulated random walk. Fine for learning the mechanics, but a profitable record on demo data proves nothing about your strategy. Configure a free data key when you want real prices, and know that free tiers are delayed or rate limited.\n\nA reasonable graduation rule, used in various forms by many educators and prop firms: at least 100 paper trades following a written plan, positive expectancy after realistic costs, maximum drawdown within the plan's limit, and a rule-break rate below 5%. Then start live at the smallest size your broker allows and expect results to be worse than paper for a while. Everyone's are, because now the fear is real, and the only thing between you and the biases is the habit you built here."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50", "rsi"],
+          "caption": "A testable setup written as a rule: price above the 20-day SMA, 20-day above the 50-day, RSI between 40 and 60 on a pullback. Everything in this description can be read directly off these three overlays. If your plan's setup cannot be stated in terms a chart can show, it cannot be journalled or backtested either."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**A pre-trade checklist** fits on an index card: Is this setup in my plan? Where is the stop, and is the position sized from it? Is total heat under the cap? Is there an earnings date inside the holding period? What is the target in R, and is it at least the minimum my plan requires? Did I place the stop order with the entry? Five seconds per trade, and it catches most of Lesson 3."
+        },
+        {
+          "type": "exercise",
+          "md": "Start your paper record properly. On the portfolio page:\n\n- Open **Settings & reset**. Set the starting cash to the amount you realistically expect to trade with (or keep $100,000 if you prefer), set a commission of $1 per fill, and reset the account. The old history is gone; from here, every trade counts.\n- Write your trading plan, one page at most, answering the eight questions in this lesson. Date it.\n- Create a journal spreadsheet with the entry and exit columns listed above, including the \"followed the plan\" column.\n- Place your first planned trade, from the dashboard, sized at 1% with a resting stop, and fill in the entry row of the journal before the order fills, not after.\n- Commit to at least 30 trades under the plan before changing it. Schedule a weekly review and, when the sample reaches 30, compute the two-column expectancy test.",
+          "action": { "page": "portfolio.html", "hash": "settings", "label": "Open portfolio settings" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which of these is a testable entry rule suitable for a trading plan?",
+              "choices": ["Buy when the stock looks strong", "Buy when the news is good", "Buy when price closes above the 20-day SMA after a pullback to a rising 50-day SMA with RSI between 40 and 60", "Buy whenever a friend recommends it"],
+              "answer": 2,
+              "explain": "A plan rule must be specific enough that two people would agree whether it fired on a given chart, and that it can be journalled and backtested. Only the third option meets that standard."
+            },
+            {
+              "q": "What is the single most valuable column in a trading journal, according to this lesson?",
+              "choices": ["The stock's sector", "Whether you followed the plan on that trade", "The time of day", "Your mood before the market opened"],
+              "answer": 1,
+              "explain": "Splitting trades into plan-following and plan-breaking and computing expectancy for each shows whether the method or the discipline is the problem, and puts a dollar figure on rule breaks."
+            },
+            {
+              "q": "A learner trades a $100,000 paper account with $40,000 positions, even though they plan to start live with $5,000. What is the problem?",
+              "choices": ["Nothing; the paper money is not real", "They are not learning to operate at the size and constraints they will actually face, so the habits will not transfer", "Paper accounts cannot hold positions over $10,000", "Positions must always be exactly 1% of equity"],
+              "answer": 1,
+              "explain": "Paper trading only builds useful habits if it mirrors the real account. Resetting the paper account to the intended live size and sizing at 1% of that is the recommended approach."
+            },
+            {
+              "q": "Why should promising backtest or paper results be re-checked with commission and slippage turned on?",
+              "choices": ["Because costs subtract directly from expectancy and can turn a small edge into a loss, especially for frequent trading", "Because the regulator requires it", "Because commission increases win rate", "Because slippage only affects short positions"],
+              "answer": 0,
+              "explain": "Every trade pays costs regardless of outcome. A strategy with a thin per-trade expectancy can have none left after realistic commissions and slippage, which is why high-frequency approaches often fail live."
+            },
+            {
+              "q": "A profitable 40-trade record was built entirely while the dashboard showed the Demo data badge. What does this prove about the strategy?",
+              "choices": ["That it will be profitable live", "That it beats buy and hold", "Very little about the strategy: demo prices are a simulated random walk, so the record only shows the mechanics were practised", "That the 1% rule is unnecessary"],
+              "answer": 2,
+              "explain": "Demo data is generated, not real. It is ideal for learning order entry, sizing and journalling, but a profitable record on it says nothing about an edge in real markets. Use a real data source for that."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

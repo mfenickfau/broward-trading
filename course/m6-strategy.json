@@ -1,0 +1,482 @@
+{
+  "id": "m6-strategy",
+  "title": "Strategy & Backtesting",
+  "level": "advanced",
+  "minutes": 57,
+  "summary": "Turning a trading idea into written entry and exit rules, testing those rules honestly on past data, reading the metrics that matter (CAGR, win rate, profit factor, Sharpe, max drawdown), spotting look-ahead, survivorship and overfitting before they fool you, paying realistic costs, and moving a strategy from the backtester to your paper account in a capstone project.",
+  "lessons": [
+    {
+      "id": "m6-l1",
+      "title": "What a Strategy Is: Entry and Exit Rules",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### An idea is not a strategy\n\n\"Buy strong stocks on dips\" is an idea. \"Buy when the 20-day SMA crosses above the 50-day SMA, risk 1% of equity with a stop 2 ATR below the entry, exit when the 20 crosses back below the 50\" is a strategy. The difference is that the second one can be handed to a stranger, or to a computer, and they would take exactly the same trades you would. That property has a name: the strategy is **fully specified**.\n\nWhy does this matter so much? Three reasons.\n\n- **You can test it.** A rule that can be written down can be run on five years of past prices in a second. An idea cannot be tested, only argued about.\n- **You can follow it.** Under pressure, with money on the line, discretion collapses into emotion. A written rule is something you can obey when you do not feel like it.\n- **You can improve it.** If the rule loses money you can ask *which part* failed. If a vague idea loses money you learn nothing.\n\nEvery complete strategy answers five questions, and if your rule skips one of them it is not finished yet:\n\n1. **Universe**: what do I trade? (One stock? The 40 names in the dashboard watchlist? Only stocks above $10 with average volume above a million shares?)\n2. **Entry**: exactly what condition triggers a buy (or a short), and at what price do I expect to fill?\n3. **Exit**: how do I get out when I am wrong (stop), when I am right (target or trailing rule), and when nothing happens (time stop)?\n4. **Size**: how many shares, decided by the sizing rule from Module 4, not by feel.\n5. **Timeframe**: which bars do I read the rules on, daily, hourly or 5-minute?\n\nThe strategies built into the lab (SMA crossover, RSI reversion, MACD cross, Bollinger bounce, channel breakout, composite signal) each answer all five. Open the lab and read the description under each one: they are short because a good rule *is* short."
+        },
+        {
+          "type": "text",
+          "md": "### Two families: trend following and mean reversion\n\nAlmost every rule-based strategy belongs to one of two families, and knowing which one you are in tells you what to expect from the results before you ever run a test.\n\n**Trend following** bets that a move that has started will continue. The SMA crossover, the MACD cross and the channel breakout are all trend followers: they buy *after* price has already risen and sell after it has already fallen. The typical profile is a **low win rate with large winners**. Many entries are false starts that get stopped out for small losses; a few catch a long move and pay for all the rest. Win rates of 30% to 45% are normal for these systems, and if a trend strategy shows a 70% win rate in a backtest, your first reaction should be suspicion, not delight.\n\n**Mean reversion** bets that a stretched move will snap back. RSI reversion (buy when RSI drops below 30, sell when it climbs above 70) and the Bollinger bounce (buy when price closes back inside the bands after a close below the lower band, sell when it closes back inside after a close above the upper band) are mean-reversion rules. The profile is the mirror image: a **high win rate with small winners and occasional large losers**. The stock that is \"oversold\" at RSI 28 can keep falling to RSI 15 while you hold it, and one of those trades can give back ten small wins. Mean-reversion systems live or die by their stop rule.\n\nNeither family is better. They do well in different market regimes: trend rules shine when a stock moves a long way in one direction and bleed in choppy sideways markets; mean reversion does the opposite. That is also why a backtest on a single stock over a single period tells you very little. If AAPL spent 2023 in a strong uptrend, every trend rule looks brilliant on it; test the same rule on a stock that went sideways and the picture changes.\n\nIn the lab you can check which family you are in by looking at two numbers side by side: win rate and the ratio of average win to average loss. Trend rules have a low first number and a high second number; mean reversion the reverse."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**A strategy is a complete set of rules covering universe, entry, exit, size and timeframe, written so precisely that someone else would take identical trades.** If any of the five is left to judgment on the day, the backtest you run will not describe the trading you actually do."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "Daily candles with the 20-day (gold) and 50-day (blue) SMAs: the raw material of the classic crossover strategy. Find each place where the 20 crosses the 50. Every upward cross is an entry and every downward cross is an exit. Notice how many crosses happen in sideways stretches, where the lines braid around each other, and how few catch a clean, long move. That ratio is the whole story of trend following."
+        },
+        {
+          "type": "text",
+          "md": "### Writing exit rules (the part everyone skips)\n\nBeginners spend 90% of their effort on entries and 10% on exits. Experienced systematic traders say the opposite split is closer to right, because the exit, not the entry, decides the size of every win and every loss. A strategy usually needs three exits; a complete backtester applies whichever fires first (the lab's built-ins use only the signal exit):\n\n**1. The stop loss: where am I wrong?** A fixed stop (\"2 ATR below entry\") or a structural one (\"below the swing low\"). This is the rule that caps the damage of a bad entry. Module 4 covered how to size against it.\n\n**2. The profit exit: when has the idea played out?** Options include a fixed target (\"sell at 2R\"), a trailing stop (\"exit when price closes below the 20-day SMA\"), or an indicator reversal (\"exit when RSI goes above 70\"). A target locks in gains but cuts off big trends; a trailing stop rides trends but gives back some of the open profit at the end. There is no free lunch here, only a choice about which kind of regret you prefer.\n\n**3. The time stop: what if nothing happens?** \"If the trade is not up at least 1R after 10 bars, exit.\" Capital sitting in a trade that is going nowhere is capital not available for the next signal. Time stops are unglamorous and surprisingly effective in backtests of mean-reversion rules, where a bounce that has not arrived in a few days usually is not coming.\n\nA concrete example in dollars. You buy 200 shares at $50 with a stop at $47 (risk $600, which is 1R) and a trailing exit when price closes below the 20-day SMA. Three outcomes: the stop fires at $47 for −$600 (−1R); the stock drifts to $52 and closes under the SMA at $51.50, +$300 (+0.5R); or it trends to $62 and finally closes below the SMA at $59, +$1,800 (+3R). You cannot know in advance which one you will get. What you *can* know is that all three were decided by rules written before the entry.\n\nWhen you look at the trade list in the lab, every row shows an entry and an exit with the P&L in dollars and percent. Reading that list, trade by trade, teaches you more about a strategy than any single summary number."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Write the rule, then try to break it.** After drafting a strategy, ask: on the chart above, is there any bar where two readers could disagree about whether to buy? If yes, the rule is not specific enough. \"Buy when RSI is low\" fails this test. \"Buy at the next open after a daily close with RSI(14) below 30\" passes."
+        },
+        {
+          "type": "exercise",
+          "md": "Compare a trend rule with a mean-reversion rule on the same data. In the strategy lab:\n\n- Run the **SMA crossover (20/50)** on AAPL daily with the default lookback and write down the win rate, the number of trades and the average win versus average loss from the trade summary.\n- Switch the strategy to **RSI reversion (30/70)** and run it again on the same symbol and lookback. Write down the same three numbers.\n- Which rule had the higher win rate? Which had the bigger average winner relative to its average loser? Does each one match the family profile described in this lesson (trend: low win rate, big winners; mean reversion: high win rate, small winners)?\n- Finally, open the trade table for the RSI rule and find its single worst trade. How many of its average winners would it take to pay for that one loss?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Run the SMA crossover in the lab" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which of these is a fully specified strategy rather than an idea?",
+              "choices": [
+                "Buy good companies when they are cheap",
+                "Buy at the next open after a daily close with RSI(14) below 30; stop 2 ATR below entry; exit at the next open after RSI closes above 70",
+                "Buy strong momentum stocks and hold them while they keep going up",
+                "Buy when the chart looks oversold"
+              ],
+              "answer": 1,
+              "explain": "Only the second option tells you exactly when to enter, at what price, where the stop is and when to exit. Two people following it would take the same trades. The others depend on judgment (\"good\", \"cheap\", \"strong\", \"looks oversold\")."
+            },
+            {
+              "q": "A backtest shows a win rate of 38% but a profit overall. Which family does this strategy most likely belong to?",
+              "choices": ["Mean reversion", "Trend following", "Arbitrage", "It must be a bug; a strategy cannot profit with a win rate under 50%"],
+              "answer": 1,
+              "explain": "Trend-following rules typically win less than half the time but their winners are much larger than their losers. A strategy is profitable whenever win rate × average win exceeds loss rate × average loss, so a 38% win rate is fine if winners are big enough."
+            },
+            {
+              "q": "Which of the five parts of a complete strategy is missing from this rule: \"Buy AAPL on daily bars when the 20 SMA crosses above the 50 SMA, risking 1% of equity with a stop 2 ATR below entry\"?",
+              "choices": ["Universe", "Entry", "Exit when the trade is right", "Timeframe"],
+              "answer": 2,
+              "explain": "The rule names its universe (AAPL), entry (the cross), stop (2 ATR), size (1%) and timeframe (daily). It never says how a winning trade ends. Without a profit exit or trailing rule, the strategy is incomplete."
+            },
+            {
+              "q": "What is a time stop?",
+              "choices": [
+                "A stop loss that moves closer to price each day",
+                "A rule that exits a trade if it has not made progress within a set number of bars",
+                "A rule that stops trading after a fixed number of losses",
+                "An order that executes at the market close"
+              ],
+              "answer": 1,
+              "explain": "A time stop frees up capital from trades that are going nowhere, for example \"exit if the trade is not up at least 1R after 10 bars\". It is a third kind of exit alongside the stop loss and the profit exit."
+            },
+            {
+              "q": "A trend-following backtest reports a 72% win rate. What is the most sensible first reaction?",
+              "choices": [
+                "Celebrate; trend following usually wins about 70% of the time",
+                "Be suspicious and check the rules for errors, because trend systems usually win far less than half the time",
+                "Increase position size to take advantage of the edge",
+                "Ignore the win rate; it never matters"
+              ],
+              "answer": 1,
+              "explain": "Trend-following rules buy after a move has started and are stopped out often, so win rates of 30% to 45% are typical. A 72% win rate from such a rule is a red flag for a look-ahead bug or a very small, lucky sample, both covered later in this module."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l2",
+      "title": "Backtesting Basics and the Metrics That Matter",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What a backtest actually does\n\nA backtest replays history one bar at a time and pretends to trade your rules. For each bar, the engine looks only at the bars up to and including that one, asks your strategy \"buy, sell or nothing?\", and records the answer. When a signal fires, the lab fills the order at the **open of the next bar**, not at the close of the bar that produced the signal. That detail matters: when the daily bar closes at 4:00 pm and your rule says buy, you cannot buy at that price any more. The earliest realistic fill is tomorrow's open. Lesson 3 explains why skipping this step is the most common rookie bug.\n\nThe output is three things:\n\n- A **trade list**: every entry and exit with its date, price, size and P&L. This is the raw truth of the backtest; everything else is a summary of it.\n- An **equity curve**: the account value after every bar, including the open profit or loss of any position held. Plot it and you see the shape of the strategy's life: smooth and climbing, jagged, or a long slide.\n- A set of **statistics** that compress the curve and the trade list into a handful of numbers. The lab reports total return, buy-and-hold return, CAGR, win rate, profit factor, max drawdown, Sharpe ratio, exposure and trade count.\n\nThe lab also runs a **buy-and-hold benchmark** on the same bars. This is the most honest comparison a strategy faces: if simply buying on day one and never selling would have made more, with less work, your rule has not earned its complexity. Many trend strategies underperform buy-and-hold in a strong bull market and only show their value by losing less in a bear market. That is a legitimate benefit (smaller drawdowns are easier to live through), but you should know which kind of edge you have.\n\nOne more honest caveat before the numbers. A backtest shows what the rules would have done on *those* bars. It is evidence about the rules, not a forecast. The demo data in this app is a seeded random walk, so on demo data a backtest teaches you the mechanics and the statistics perfectly, but tells you nothing about how any real company behaved. With a free API key on the dashboard, the lab uses real history instead."
+        },
+        {
+          "type": "text",
+          "md": "### Return metrics: total return and CAGR\n\n**Total return** is the simplest number: (final equity − starting equity) ÷ starting equity. A $100,000 account that ends at $150,000 made a 50% total return. The problem is that 50% means something completely different over one year than over ten. To compare strategies tested over different lengths of time you need an annualised figure.\n\n**CAGR**, the compound annual growth rate, is the constant yearly rate that would turn the start into the end over the actual calendar span:\n\nCAGR = (end ÷ start)^(1 ÷ years) − 1\n\n- $100,000 → $150,000 in **3 years**: 1.5^(1/3) − 1 = 1.1447 − 1 ≈ **14.5% per year**\n- $100,000 → $150,000 in **5 years**: 1.5^(1/5) − 1 = 1.0845 − 1 ≈ **8.4% per year**\n- $100,000 → $150,000 in **1 year**: 50% (CAGR equals total return over exactly one year)\n\nSame total return, very different annual pace. Notice that CAGR is *not* total return divided by years: 50% ÷ 3 = 16.7% is wrong because it ignores compounding. The lab computes CAGR from the real dates of the first and last bar, so a test on 500 daily bars (about two years) and a test on 2,000 five-minute bars (about a month) report comparable annual figures. For very short spans (under a week) the lab shows no CAGR at all, because annualising a few days of results produces absurd numbers.\n\nWhat is a good CAGR? Context is everything. The long-run average for the US stock market as a whole, dividends reinvested, has historically been in the high single digits to about 10% per year nominal, though that number moves around depending on the start and end dates you pick. A strategy that reports 60% CAGR over 500 bars in a backtest with no costs has almost certainly been flattered by luck, a bull market, overfitting or a bug. Strategies that survive in the real world tend to earn their keep by modest returns with modest drawdowns, not spectacular ones."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**CAGR = (end ÷ start)^(1 ÷ years) − 1.** Always compare strategies on CAGR (or on return per year), never on raw total return, unless they were tested over the exact same dates. Doubling your money in two years is about 41% a year; doubling it in ten years is about 7.2% a year."
+        },
+        {
+          "type": "text",
+          "md": "### Trade metrics: win rate, profit factor and expectancy\n\nThese three come straight from the trade list.\n\n**Win rate** is the share of trades that closed with a profit. 16 winners out of 40 trades = 40%. On its own it says nothing about profitability; Lesson 1 explained why a 40% rule can beat a 70% rule.\n\n**Profit factor** is gross profit ÷ gross loss: the sum of all winning trades divided by the sum of all losing trades (as a positive number). It answers \"for every dollar I lost, how many did I win?\" Below 1.0 the strategy loses money. Exactly 1.0 is break-even before costs. Many practitioners treat anything above about 1.5 on a decent sample as respectable and anything above 3 on a short test as a warning sign of overfitting, but those are rules of thumb, not thresholds with any theory behind them.\n\nA worked example. Over 40 trades a strategy had 16 winners averaging +$1,500 and 24 losers averaging −$750:\n\n- Gross profit = 16 × $1,500 = $24,000\n- Gross loss = 24 × $750 = $18,000\n- Profit factor = 24,000 ÷ 18,000 = **1.33**\n- Net profit = $6,000; **expectancy** = $6,000 ÷ 40 = **+$150 per trade**\n\nExpectancy (average P&L per trade, which Module 4 introduced) is the number that ties win rate and payoff together: expectancy = (win rate × average win) − (loss rate × average loss) = 0.40 × 1,500 − 0.60 × 750 = 600 − 450 = $150. If you know your expectancy and how many trades the rule generates per year, you can estimate yearly profit: 20 trades a year × $150 = $3,000, or 3% on a $100,000 account before costs. That is a sobering calculation, and you should do it for every strategy you test.\n\n**Trade count** is the metric people forget. Every other statistic is an estimate from a sample, and a sample of 8 trades estimates nothing. A common rule of thumb is to want at least 30 trades before taking a backtest's win rate or profit factor seriously, and more like 100 before trusting it. Statisticians will tell you 30 is an arbitrary tradition rather than a magic threshold, and they are right; the honest statement is simply that fewer trades means wider uncertainty around every number on the screen."
+        },
+        {
+          "type": "text",
+          "md": "### Risk metrics: max drawdown and the Sharpe ratio\n\nReturn tells you what you made. Risk metrics tell you what you had to endure to make it.\n\n**Maximum drawdown** is the largest peak-to-trough fall in the equity curve, as a percentage of the peak. If equity climbed to $120,000, then fell to $96,000 before recovering, the drawdown was (120,000 − 96,000) ÷ 120,000 = **20%**. Drawdowns end trading careers, for two reasons. First, recovery is asymmetric: a 20% loss needs a 25% gain to get back to the peak, a 33% loss needs 50%, and a 50% loss needs 100%. Second, nobody knows during a drawdown whether it is the normal pain of a working strategy or the start of a strategy that has stopped working, and that uncertainty is what makes people abandon good rules at the bottom. A realistic planning assumption is that your live drawdown will be *deeper* than the worst one in the backtest, because the backtest only saw one path through history.\n\n**The Sharpe ratio** measures return per unit of volatility. The lab computes it as the average per-bar return divided by the standard deviation of per-bar returns, annualised by multiplying by the square root of the number of bars per year (√252 for daily bars), with the risk-free rate taken as zero for simplicity. Example: a strategy whose daily returns average 0.05% with a standard deviation of 1.0% has Sharpe = (0.0005 ÷ 0.01) × √252 = 0.05 × 15.87 ≈ **0.79**.\n\nReading it: a Sharpe below 0.5 means a bumpy ride for the return earned; around 1 is good for a single-stock strategy; above 2 on a short backtest is more often a sign of look-ahead or overfitting than of genius. Buy-and-hold on a broad US stock index has historically produced a long-run Sharpe somewhere around 0.4 to 0.6 depending on the period, which gives you a feel for what \"ordinary\" looks like. Sharpe has real weaknesses (it punishes upside volatility the same as downside, and it assumes roughly normal returns, which gap moves violate), so the lab also shows **Sortino**, which counts only downside volatility.\n\n**Exposure** is the share of bars spent holding a position. Two strategies with the same 12% return are not equal if one was in the market 95% of the time and the other 40%: the second took far less market risk for the same money."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sma50", "rsi"],
+
+          "caption": "Daily candles with the 50-day SMA and an RSI(14) pane. The channel-breakout rule you will run in the exercise buys when price closes above the highest high of the last 20 bars and exits when it closes below the lowest low of the last 20. Scan the chart for stretches where price grinds sideways: each false breakout there becomes a small losing trade in the list, and the drawdown they add up to is what the max drawdown figure measures."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**No single metric is enough.** A high return with a 45% drawdown is unlivable. A Sharpe of 2.5 from 9 trades is noise. A profit factor of 1.8 on a rule that trades twice a year earns almost nothing in dollars. Read return, drawdown, Sharpe, profit factor and trade count *together*, then read the trade list to see if the story they tell is real."
+        },
+        {
+          "type": "exercise",
+          "md": "Read a full set of statistics and check them by hand. In the strategy lab, run the **20-bar channel breakout** on MSFT daily with the default lookback, then:\n\n- Write down total return, buy-and-hold return, CAGR, win rate, profit factor, max drawdown, Sharpe and the number of trades.\n- From the trade summary, take the number of winners, the average win and the average loss. Recompute the profit factor yourself (winners × average win) ÷ (losers × average loss) and check it against the lab's figure.\n- Compute expectancy per trade and multiply it by the number of trades per year the rule produced (trades ÷ years of data). Is the annual dollar figure worth the effort of following the rule?\n- Did the strategy beat buy-and-hold? If not, did it at least have a smaller max drawdown? Decide which of the two you would rather have lived through, and write one sentence saying why.",
+          "action": { "page": "backtest.html", "hash": "sym=MSFT&tf=1day&strategy=breakout&n=20&run=1", "label": "Run the channel breakout on MSFT" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "An account grows from $100,000 to $150,000 over 3 years. What is the CAGR, approximately?",
+              "choices": ["16.7%", "14.5%", "50%", "8.4%"],
+              "answer": 1,
+              "explain": "CAGR = 1.5^(1/3) − 1 ≈ 0.145, or 14.5% per year. Dividing 50% by 3 to get 16.7% ignores compounding; 8.4% would be the answer over 5 years."
+            },
+            {
+              "q": "A strategy has 16 winners averaging +$1,500 and 24 losers averaging −$750. What is its profit factor?",
+              "choices": ["0.75", "1.33", "2.00", "0.40"],
+              "answer": 1,
+              "explain": "Gross profit is 16 × 1,500 = $24,000; gross loss is 24 × 750 = $18,000. Profit factor = 24,000 ÷ 18,000 = 1.33. (0.40 is the win rate, not the profit factor.)"
+            },
+            {
+              "q": "Equity peaks at $120,000 and falls to $96,000 before recovering. What is the maximum drawdown, and what gain is needed to recover?",
+              "choices": ["20% drawdown; 20% gain to recover", "20% drawdown; 25% gain to recover", "25% drawdown; 25% gain to recover", "24% drawdown; 24% gain to recover"],
+              "answer": 1,
+              "explain": "Drawdown = (120,000 − 96,000) ÷ 120,000 = 20%. To climb from $96,000 back to $120,000 requires 24,000 ÷ 96,000 = 25%. Losses always need a larger percentage gain to undo."
+            },
+            {
+              "q": "Daily returns average 0.05% with a standard deviation of 1.0%. Using the lab's method (risk-free rate zero, √252 annualisation), the Sharpe ratio is about:",
+              "choices": ["0.05", "0.79", "12.6", "2.0"],
+              "answer": 1,
+              "explain": "Sharpe = (0.0005 ÷ 0.01) × √252 = 0.05 × 15.87 ≈ 0.79. This is a perfectly ordinary figure, roughly in the range of a buy-and-hold stock index over the long run."
+            },
+            {
+              "q": "Why does the lab fill a signal at the open of the next bar rather than the close of the bar that generated it?",
+              "choices": [
+                "Because the open is always a better price",
+                "Because the close is not known until the bar has ended, so you cannot trade at it after deciding on it",
+                "Because brokers only accept orders at the open",
+                "Because it makes the backtest results look better"
+              ],
+              "answer": 1,
+              "explain": "A rule that reads the closing price has to wait for the close to exist. By then that price is gone. The next realistic fill is the following bar's open. Filling at the signal bar's close is a form of look-ahead bias, covered in Lesson 3."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l3",
+      "title": "Why Backtests Lie: Look-Ahead, Survivorship and Overfitting",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Look-ahead bias: using tomorrow's newspaper\n\nA backtest is honest only if, at every bar, the strategy sees nothing but information that was actually available at that moment. **Look-ahead bias** is any leak of future information into a past decision, and it is the single most common reason a brilliant backtest turns into a losing live strategy. It is also sneaky, because the code usually looks perfectly reasonable.\n\nThe classic forms:\n\n- **Trading at the signal bar's close.** Your rule says \"buy when today's close is above the 20-day SMA\". Today's close is known at 4:00 pm. If the backtest fills you *at* that close, it has given you a price that no longer existed by the time you knew to buy. On a trending stock this systematically flatters results, because the bar that triggers a buy is usually a strong up-bar. The lab fills at the next open to avoid exactly this.\n- **Indicators computed on the whole series.** Suppose you \"normalise\" a price by subtracting the average over the entire test period. On bar 50 of 500, that average already contains bars 51 to 500. Any indicator that uses a full-sample mean, maximum, minimum or standard deviation leaks the future. Rolling windows that only look backward (as every indicator in this app does) are safe.\n- **Pivots and patterns that need confirmation.** A swing low is only confirmed once several bars have closed *after* it. If your backtest buys \"at the swing low\", it is buying at a point that could not be identified until days later. The lab's pivot detector requires right-hand bars before it marks a pivot, so the marker appears only once it was knowable.\n- **Daily data with intraday assumptions.** A stop at $47 on daily bars: the backtest sees the low was $46.80 and the close was $48, and assumes the stop filled at $47. Fine. But if both the stop and the target were touched inside the same bar, which filled first? Daily data cannot tell you, and an optimistic engine assumes the target. The lab avoids the problem by exiting only on signals at the next open, which is why its built-in rules carry no fixed stops; when you add stops yourself, resolve ties pessimistically.\n\nThe tell-tale symptom of look-ahead is a result that is simply *too good*: a Sharpe above 3, a win rate near 80% for a trend rule, an equity curve that is almost a straight line. When you see that, your job is not to admire it but to find the leak."
+        },
+        {
+          "type": "text",
+          "md": "### Survivorship bias: testing only on the winners\n\nOpen the dashboard watchlist. Apple, Microsoft, Nvidia, Amazon: every name on it is a company that is large, famous and still trading *today*. That is exactly the problem. A universe chosen now contains only the survivors. The companies that went bankrupt, were delisted, or shrank into obscurity over the test period are missing, and they are precisely the stocks on which a buy-the-dip strategy would have been destroyed.\n\nThis is **survivorship bias**, and it inflates almost every backtest run on \"the stocks I know\". Consider a mean-reversion rule that buys after a sharp 20% drop. Run it on today's megacaps and it looks wonderful, because by construction every one of those stocks recovered from every drop it ever had; otherwise it would not be a megacap today. Run it on the full list of stocks that existed ten years ago, including the ones that fell 20% on their way to zero, and the picture is different. The same logic applies to index membership: backtesting on today's S&P 500 constituents over the last decade means testing on 500 companies that were good enough to be in the index at the end, not the ones that were in it at the start.\n\nThe honest fixes are expensive, which is why hobbyists rarely apply them: use point-in-time universes (the list of stocks as it stood on each historical date) and data that includes delisted companies. Free data sources, including the ones this app can connect to, generally provide neither.\n\nWhat you *can* do for free is be aware of the direction of the bias and lean against it. Treat results on famous large caps as an upper bound, not a central estimate. Test the same rule on several unrelated symbols and on more than one time period, and weight the worst results more heavily than the best. Prefer strategies whose edge does not depend on \"it always comes back\". And remember that in this app the demo universe is itself a list of survivors, chosen for being recognisable to students, so on demo data the universe effect is baked in before you start."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**If a backtest looks amazing, assume a bug until proven otherwise.** The leaks are rarely in the strategy idea; they are in the plumbing: filling at the signal close, indicators that peek at the full sample, pivots used before they were confirmed, or a universe made of survivors. Finding them is not pessimism; it is the job."
+        },
+        {
+          "type": "text",
+          "md": "### Overfitting: when the rules learn the noise\n\nTake the SMA crossover and let the lab's optimiser try fast lengths of 5, 10, 20 and 50 against slow lengths of 50, 100 and 200: twelve combinations. One of them will be the best on your data. Here is the uncomfortable question: *would it have been best by chance?* Among twelve random coin-flip strategies, one will also look best. Pick the top performer out of enough candidates and it will look good even when none of them has any edge at all. This is **overfitting** (also called curve fitting or data mining), and the optimiser is its natural habitat.\n\nThe mechanics are statistical. With a 5% significance threshold, about one in twenty strategies with no real edge will nevertheless show a \"significant\" result on any given sample. Test 100 parameter sets and you should *expect* around five false positives even if every one of them is worthless. The more knobs a strategy has and the more values you try, the more freedom it has to memorise the specific bumps in the past data rather than learn a pattern that repeats.\n\nSymptoms you can see with your own eyes in the optimiser table:\n\n- **Jagged parameter surface.** If 10/50 makes 40%, 20/50 loses 5% and 20/100 makes 35%, performance is hopping around with tiny parameter changes. A real edge is usually a *plateau*: neighbouring parameters give similar results, because the market does not care whether your average is 19 or 21 days long.\n- **One or two trades carrying everything.** Open the trade list of the winning parameter set. If one lucky trade accounts for most of the profit, the rule did not find an edge; it found one trade.\n- **Too few trades.** A combination that fired 7 times cannot be distinguished from luck however good its numbers.\n- **Results that collapse out-of-sample.** This is the definitive test, and the next block is about it.\n\nNone of this means you should never optimise. It means the optimiser's output is a *hypothesis*, not a result. Its job is to show you the shape of the parameter space (is there a plateau? is the rule robust to its own settings?), not to hand you the magic number."
+        },
+        {
+          "type": "text",
+          "md": "### Out-of-sample testing and walk-forward analysis\n\nThe defence against overfitting is simple to state: **judge the rule on data it never saw while you were tuning it.** The method has three levels.\n\n**1. A single hold-out (in-sample / out-of-sample split).** Cut the data in two. Optimise on the first part, the *in-sample* period, then run the winning parameters once, untouched, on the second part, the *out-of-sample* period. A common split is 70/30: on 500 daily bars, tune on the first 350 and verify on the last 150. The lab's optimiser has a hold-out setting that does exactly this and shows the in-sample and out-of-sample results side by side, with a gap column. If the best in-sample Sharpe of 1.8 becomes 0.3 out-of-sample, the optimiser found the noise. If it becomes 1.4, you have one piece of evidence that the rule generalises. One piece, not proof.\n\n**2. Walk-forward analysis.** A single split is still just one experiment, and you might get lucky or unlucky with where the cut falls. Walk-forward repeats the process in a rolling fashion: optimise on bars 1 to 250, test on 251 to 300; then optimise on 51 to 300, test on 301 to 350; and so on to the end. Stitch all the out-of-sample segments together and you get an equity curve that was *never* tuned on itself. This is closer to how you would really trade a system (re-tuning periodically on recent data, then trading forward), which is why many professional system traders consider walk-forward results the only backtest numbers worth quoting.\n\n**3. Cross-symbol and cross-period checks.** Run the same fixed parameters on several unrelated stocks and on a different era. A rule that works on AAPL, MSFT and a boring utility in both a bull year and a sideways year has something; a rule that only works on one stock in one year has a story.\n\nTwo honest cautions. First, the out-of-sample period is only truly out-of-sample *once*. If you look at the hold-out result, go back and tweak the rule, and test again, the hold-out has quietly become in-sample, because your choices are now informed by it. Second, a strategy with few trades will have even fewer in a 30% hold-out, so its out-of-sample statistics are themselves noisy. Out-of-sample testing reduces self-deception; it does not eliminate uncertainty."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50", "bb"],
+          "caption": "NVDA daily with the 20/50 SMAs and Bollinger Bands(20, 2). A stock that has trended strongly is the easiest place to overfit: almost any trend rule tuned on a long rally looks superb, because the rally did the work. Ask yourself which stretches here would have been chopped up by false crossovers and false band touches, and whether a rule tuned on the smooth parts would survive the choppy ones."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**In-sample results are a hypothesis. Out-of-sample results are evidence.** Set a hold-out *before* you optimise, look at the out-of-sample column, and do not go back and re-tune based on what you saw there. A rule that holds up out-of-sample and sits on a plateau of neighbouring parameters is worth paper trading. A rule that only works at one magic setting is a coincidence with a spreadsheet."
+        },
+        {
+          "type": "exercise",
+          "md": "Catch overfitting in the act. In the strategy lab on AAPL daily:\n\n- Choose the **SMA crossover** and open the **Optimise** panel. First run the grid with the hold-out set to **0%** (no out-of-sample). Note the best parameter set and its Sharpe.\n- Set the hold-out to **30%** and run again. Compare the in-sample and out-of-sample columns for the top three rows. How large is the gap? Does the lab show an overfitting warning?\n- Read down the table looking for a *plateau*: do neighbouring parameters (e.g. 10/100, 20/100, 20/200) perform similarly, or does performance jump around? Write one sentence on whether this rule looks robust to its settings.\n- Change the symbol to a different stock and run the top in-sample parameters from AAPL on it. Did the edge travel?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Open the optimiser on AAPL" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which of the following is an example of look-ahead bias?",
+              "choices": [
+                "Filling a buy signal computed from today's close at tomorrow's open",
+                "Normalising prices by subtracting the average price over the whole test period before computing a signal",
+                "Using a 20-day rolling SMA",
+                "Charging commission on every trade"
+              ],
+              "answer": 1,
+              "explain": "A full-sample average on bar 50 already includes bars 51 onward, so the strategy is using future prices to decide a past trade. Rolling backward-looking windows and next-open fills are both legitimate."
+            },
+            {
+              "q": "Why does backtesting a buy-the-dip strategy on today's largest companies overstate its results?",
+              "choices": [
+                "Large companies have higher commissions",
+                "Because every stock in that universe recovered from every dip by definition, while the ones that did not recover are missing",
+                "Because large companies never fall 20%",
+                "It does not; large-cap results are the most reliable"
+              ],
+              "answer": 1,
+              "explain": "This is survivorship bias. A universe chosen today excludes the companies that collapsed or were delisted, which are exactly the stocks where buying the dip would have failed."
+            },
+            {
+              "q": "An optimiser tries 100 parameter combinations for a strategy with no real edge. Using a 5% significance threshold, roughly how many would you expect to look significant by chance?",
+              "choices": ["0", "1", "5", "50"],
+              "answer": 2,
+              "explain": "A 5% threshold means about 1 in 20 worthless strategies passes by luck, so about 5 of 100 will look good. This multiple-comparisons effect is the statistical heart of overfitting."
+            },
+            {
+              "q": "A strategy's best in-sample Sharpe is 1.9. On the 30% hold-out it falls to 0.2. The most reasonable conclusion is:",
+              "choices": [
+                "The hold-out period was unusual; trust the in-sample number",
+                "The optimiser fitted noise in the in-sample data; the parameters are not trustworthy",
+                "The strategy should be traded with larger size to recover",
+                "Sharpe ratios are meaningless"
+              ],
+              "answer": 1,
+              "explain": "A large collapse from in-sample to out-of-sample is the signature of curve fitting. The parameters were chosen to match the past bars, not a repeating pattern."
+            },
+            {
+              "q": "What does walk-forward analysis add over a single in-sample/out-of-sample split?",
+              "choices": [
+                "It uses more parameters",
+                "It repeats the optimise-then-test cycle on rolling windows, so the stitched out-of-sample curve was never tuned on itself and the result does not depend on one lucky cut point",
+                "It removes the need for a stop loss",
+                "It guarantees the strategy will be profitable live"
+              ],
+              "answer": 1,
+              "explain": "Walk-forward rolls the in-sample window forward, re-optimises, and tests on the following segment each time. The combined out-of-sample curve mimics how a system would really be re-tuned and traded. It is stronger evidence than one split, but still not a guarantee."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l4",
+      "title": "Transaction Costs and the Road to Paper Trading",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Costs are not a footnote\n\nEvery backtest you have run so far in the lab used the default settings: zero commission and zero slippage. That is a fiction, and for strategies that trade often it is the fiction that matters most. Real trading has four kinds of cost, and only one shows up on a brokerage statement.\n\n**Commission** is the explicit fee per order. Many US brokers now charge $0 for stock trades, though small regulatory fees and per-contract option fees remain. Even at $1 per fill, commission on a $20,000 position is $2 per round trip, or 0.01%: negligible for a swing trader, significant for a rule that trades 5-minute bars twenty times a day.\n\n**The bid-ask spread** is the gap between the price you can buy at (the ask) and the price you can sell at (the bid). If a stock shows bid $50.00 / ask $50.02, buying at the market costs you $50.02 and selling immediately gets you $50.00. You lost 2 cents a share, 0.04%, for doing nothing. On a liquid megacap the spread is a penny or two; on a thin small-cap it can be 0.5% or more, which alone would wipe out most short-term strategies.\n\n**Slippage** is the difference between the price you expected and the price you got. You saw $50.02 and clicked, but by the time the order reached the exchange the ask had moved to $50.05. Market orders at the open, large orders, fast markets and illiquid stocks all slip more. Slippage is unpredictable but *not* symmetric: it tends to hurt, because you are usually buying when others are buying too.\n\n**Market impact** is slippage you cause yourself: a large order moves the price against you as it fills. A paper account trading 200 shares has none; a fund trading 2 million shares has a great deal.\n\nThe lab models the first three with two numbers: a **commission** per fill in dollars and a **slippage** figure in **basis points** (1 bp = 0.01%) applied against you on every fill. Setting slippage to 10 bps means each buy fills 0.10% above the open and each sell 0.10% below it. The round trip therefore costs 0.20% of the position value before commission, which is a reasonable, slightly conservative stand-in for spread plus slippage on a liquid large-cap stock. For small caps or intraday trading, 20 to 30 bps is more honest."
+        },
+        {
+          "type": "text",
+          "md": "### How costs eat an edge: the arithmetic\n\nCosts are a fixed tax on every trade, so they hurt frequent, small-edge strategies far more than infrequent, large-edge ones. Work through two rules on a $100,000 account trading full-size positions.\n\n**Rule A: a swing strategy.** 20 round trips a year, average gross gain 1.5% per trade. Gross annual return ≈ 20 × 1.5% = 30%. Costs at 0.20% per round trip: 20 × 0.20% = 4%. Net ≈ 26%. Costs took about 13% of the edge. Painful but survivable.\n\n**Rule B: an active intraday strategy.** 300 round trips a year, average gross gain 0.25% per trade. Gross ≈ 300 × 0.25% = 75%, which looks spectacular in a zero-cost backtest. Costs: 300 × 0.20% = 60%. Net ≈ 15%, and that is before commissions and before the slippage on a bad day. Costs took 80% of the edge, and if real slippage is 15 bps instead of 10, the strategy loses money.\n\nThe lesson generalises: **a strategy's average gain per trade must be a comfortable multiple of its round-trip cost**, or the cost assumption decides whether it is profitable, and you do not control the cost assumption. Many rules that look good at zero cost in the lab are simply trading too often to survive.\n\nThere are three practical ways to make a strategy more cost-resistant, and all of them are testable in the lab:\n\n- **Trade less.** Lengthen the moving averages, widen the Bollinger bands or raise the composite-signal threshold so the rule fires only on bigger moves. Fewer trades means fewer tolls.\n- **Hold longer.** The cost of a round trip is the same whether you hold for two hours or two months, so a longer average holding period spreads it over a bigger expected move.\n- **Avoid illiquid names and the opening minutes.** Spreads and slippage are widest on thin stocks and right at 9:30 am. A rule confined to large caps on daily bars faces much smaller costs than the same rule on a small cap on 1-minute bars.\n\nFrom now on, never report a backtest result without saying what cost assumption it used. \"+22% at zero cost\" and \"+22% at $1 and 10 bps\" are different claims."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Round-trip cost ≈ 2 × slippage (bps) + spread + 2 × commission ÷ position value.** At 10 bps slippage with zero commission that is 0.20% of the position per trade. A rule with an average gross gain of 0.3% per trade is giving two-thirds of its edge to costs; a rule with 2% per trade is giving away a tenth. Before trusting any result, re-run it with realistic costs and watch how much survives."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "5min",
+          "overlays": ["vwap", "ema9"],
+          "caption": "TSLA on 5-minute bars with VWAP (pink) and a 9-period EMA. Intraday rules on bars this short generate dozens of signals a week, and each one pays the spread and slippage. Picture a 10 bps toll on every arrow you would draw here, both in and out, and notice how small the typical 5-minute move is next to that toll. This is why frequent intraday rules are the hardest to make work net of costs."
+        },
+        {
+          "type": "text",
+          "md": "### From backtest to paper trading: forward testing\n\nSuppose a rule has passed every test so far: a plausible edge, a plateau of parameters, acceptable out-of-sample results, and it still makes money at realistic costs. The next step is not real money. It is **forward testing** on the paper account: trading the rule in real time on live (or demo) prices with no knowledge of what the next bar holds.\n\nForward testing catches three things backtests cannot.\n\n**1. Execution reality.** A backtest fills every order instantly at the next open. In paper trading you have to actually be there when the signal fires, place the order, and live with the fill. If the rule triggers at 9:31 am and you are in class, that is a real constraint, better discovered with pretend money.\n\n**2. Regime change.** The backtest covered the past; the market ahead may differ. Forward testing is the ultimate out-of-sample test, because nobody has tuned anything on bars that have not happened yet.\n\n**3. You.** The hardest part of systematic trading is following the system during the inevitable losing streak. A backtest shows a 15% drawdown as a dip in a line; forward testing makes you watch it one red day at a time while the rule keeps saying \"take the next trade\". Discovering that you cannot follow your own rules is valuable, and paper trading is the cheapest place to learn it.\n\nA practical forward-testing protocol:\n\n- Write the rule down in full, with the exact parameters, costs, and sizing, *before* the first trade. Do not change it during the test.\n- Decide the test length in advance, in trades rather than days: enough trades to compare with the backtest, which for most swing rules means several months.\n- Record every signal, including the ones you missed or overrode. A missed signal is still data about the strategy's feasibility.\n- At the end, compare win rate, average win, average loss and drawdown with the backtest. Expect the live numbers to be somewhat worse. If they are *dramatically* worse, the backtest had a problem and you have just found it for free.\n\nOnly a rule that has survived all three stages, backtest with costs, out-of-sample, and a forward test you actually followed, has earned consideration for real money. Most rules do not get there, and that is the system working."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Expect live results to be worse than the backtest, and plan for it.** Practitioners often assume a live Sharpe meaningfully below the backtested one and a live drawdown deeper than the historical maximum. The exact haircut is debated and depends on how much optimising went into the rule, but the direction is not: if a strategy only works when the backtest is taken at face value, it does not work."
+        },
+        {
+          "type": "exercise",
+          "md": "Measure what costs do to a strategy. In the strategy lab, run the **RSI reversion (30/70)** on AAPL daily at the default zero cost and write down the total return, profit factor and number of trades. Then, using the link below or the **Realistic costs** button, re-run with **$1 commission and 10 bps slippage**:\n\n- How much of the return survived? Divide the cost-adjusted return by the zero-cost return.\n- Compute the round-trip cost per trade (about 0.20% of the position plus $2) and multiply by the number of trades. Does that roughly match the drop in profit?\n- Try 20 bps slippage, which is more honest for a less liquid stock. Is the strategy still profitable?\n- Finally, make the rule trade less often by changing the thresholds to 25/75 and re-run with costs. Did fewer, bigger trades improve the net result?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=rsiReversion&low=30&high=70&commission=1&slippageBps=10&run=1", "label": "Run RSI reversion with realistic costs" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock is quoted bid $50.00 / ask $50.02. You buy at the market and immediately sell at the market. Ignoring commission and slippage, what did the round trip cost per share?",
+              "choices": ["$0.00", "$0.01", "$0.02", "$0.04"],
+              "answer": 2,
+              "explain": "You paid the ask ($50.02) and received the bid ($50.00). The 2-cent spread, 0.04% of the price, is the cost of the round trip. It is paid on every trade whether or not it shows on a statement."
+            },
+            {
+              "q": "Slippage is set to 10 basis points in the lab. What does that do to a buy fill?",
+              "choices": [
+                "Nothing; it only affects sells",
+                "The buy fills 0.10% above the bar's open",
+                "The buy fills 10% above the bar's open",
+                "The buy is delayed by 10 bars"
+              ],
+              "answer": 1,
+              "explain": "One basis point is 0.01%, so 10 bps is 0.10%. The lab fills buys 0.10% above the next open and sells 0.10% below it, making the round trip cost about 0.20% of the position."
+            },
+            {
+              "q": "Rule B makes 300 round trips a year with an average gross gain of 0.25% per trade. At a round-trip cost of 0.20%, approximately what share of its gross edge goes to costs?",
+              "choices": ["10%", "20%", "50%", "80%"],
+              "answer": 3,
+              "explain": "Costs are 0.20 ÷ 0.25 = 80% of the average gross gain, leaving only 0.05% net per trade. Frequent, small-edge strategies are the most vulnerable to cost assumptions."
+            },
+            {
+              "q": "Which change would most directly make a strategy more resistant to transaction costs?",
+              "choices": [
+                "Trading more often to average out the costs",
+                "Switching to thinly traded small caps for bigger moves",
+                "Trading less often and holding longer so each round trip covers a larger expected move",
+                "Removing the stop loss"
+              ],
+              "answer": 2,
+              "explain": "The cost of a round trip is roughly fixed, so spreading it over a bigger expected move (fewer trades, longer holds, liquid stocks) is the lever that works. More trades and thinner stocks make costs worse."
+            },
+            {
+              "q": "What does forward testing on a paper account reveal that a backtest cannot?",
+              "choices": [
+                "The strategy's CAGR over the last five years",
+                "Whether you can actually execute and follow the rules in real time, on data nobody has tuned on",
+                "The optimal parameter values",
+                "The maximum historical drawdown"
+              ],
+              "answer": 1,
+              "explain": "Forward testing exposes execution constraints, genuine out-of-sample market behaviour and, above all, your own ability to follow the system during losses. The backtest already gave you the historical statistics."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l5",
+      "title": "Capstone: Build, Test and Paper Trade Your Own Strategy",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What you are going to build\n\nThis lesson is a project, not a lecture. By the end of it you will have a one-page written strategy, a backtest of it with realistic costs and an out-of-sample check, a forward-testing log on your paper account, and a short written review. That package is the thing every systematic trader produces for every idea, and producing one end to end is the point of the whole course. It is also exactly the kind of work that proves to anyone, including yourself, that you understand trading as a process rather than a series of hunches.\n\nThe project has six steps. Do them in order, and do not skip the writing: the written parts are where the learning actually happens.\n\n1. **Choose a rule** from the lab's built-ins and decide its parameters, universe and timeframe.\n2. **Write the strategy document**: the five elements from Lesson 1 plus the cost assumptions and the sizing rule from Module 4.\n3. **Backtest honestly**: realistic costs, a hold-out, more than one symbol.\n4. **Decide go / no-go** against criteria you set *before* looking at the results.\n5. **Forward test** on the paper account for a fixed number of trades.\n6. **Review** the live results against the backtest and write what you learned.\n\nA word on ambition. The goal is not to find a strategy that makes money; that would be a nice bonus but it is not within your control. The goal is to run the process correctly. A student who tests a rule properly, concludes it has no edge, and writes a clear review explaining why has done *better* work than one who stumbles onto a lucky backtest and declares victory. Rejecting ideas is most of what professional strategy research consists of.\n\nBudget about two hours for the backtesting steps and then a few minutes a day for the forward test over several weeks. Keep everything in one document (a notes file or spreadsheet is fine) so you can look back at it later."
+        },
+        {
+          "type": "text",
+          "md": "### Steps 1 and 2: pick a rule and write it down\n\nStart from one of the lab's strategies rather than inventing one from scratch. They are simple, well understood, and have no hidden look-ahead, which means your mistakes will be yours and not the engine's. Pick the one whose *family* you prefer to live with: trend following if you can tolerate being wrong often in exchange for occasional big wins, mean reversion if you prefer frequent small wins and can obey a hard stop when the bounce fails.\n\nThen write the strategy document. Keep it to one page and make every line something a stranger could follow. A template:\n\n**Name:** SMA crossover 20/50, daily, large caps.\n\n**Universe:** AAPL, MSFT and one other liquid US large cap I choose before testing (write the ticker now).\n\n**Timeframe:** daily bars; decisions made after the close, orders placed for the next open.\n\n**Entry:** buy at the next open after the 20-day SMA closes above the 50-day SMA.\n\n**Exit (right):** sell at the next open after the 20-day SMA closes below the 50-day SMA.\n\n**Exit (wrong):** a stop 2 ATR(14) below the entry price, placed as a stop order the day of entry and never widened.\n\n**Size:** risk 1% of account equity per trade: shares = (equity × 1%) ÷ (2 × ATR), rounded down.\n\n**Costs assumed:** $1 commission per fill, 10 bps slippage.\n\n**Go / no-go criteria (set before testing):** at least 30 trades across the three symbols combined; profit factor above 1.3 with costs; max drawdown under 20%; out-of-sample (30% hold-out) profit factor still above 1.0 on at least two of the three symbols.\n\nNotice that last block. You are writing down what \"good enough\" means *before* you see any numbers. This is the single most effective defence against fooling yourself, because once the results are on the screen it is very easy to decide that a 1.15 profit factor is \"basically 1.3\". Your thresholds can be different from these; what matters is that they exist in writing first. If the rule fails them, the answer is no-go, and the project continues to step 6 with a different conclusion."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Set the pass/fail criteria before you run the test.** Minimum trade count, minimum profit factor with costs, maximum drawdown, and a requirement that the rule survive out-of-sample on more than one symbol. Write them down. A result judged against criteria chosen afterwards is not a test; it is a rationalisation."
+        },
+        {
+          "type": "text",
+          "md": "### Steps 3 and 4: backtest honestly and decide\n\nNow run the tests, in this order, recording each result in your document.\n\n**a. Baseline with costs.** For each symbol in your universe, run the rule in the lab with your stated commission and slippage and the longest daily lookback available. Record trades, total return, buy-and-hold return, CAGR, win rate, profit factor, max drawdown and Sharpe. Three symbols, one table. The lab cannot apply your 2-ATR stop, so the backtest tests the signal exits only; note this in your document and apply the stop manually in the forward test.\n\n**b. Out-of-sample check.** Open the optimiser, set the hold-out to 30%, and run the default grid for your strategy. You are *not* trying to find better parameters; you are looking at two things. First, whether your chosen parameters sit on a plateau (neighbouring settings behave similarly) or on a spike. Second, whether the out-of-sample column for your parameters is in the same neighbourhood as the in-sample one. Record the in-sample and out-of-sample profit factor for your parameter set on each symbol.\n\n**c. Benchmark comparison.** Use the **Compare** panel to see how your rule ranks against the other built-ins and against buy-and-hold on the same bars. If buy-and-hold beat you on return *and* had a smaller drawdown, your rule has not justified itself on that symbol.\n\n**d. Read the trade list.** Open the worst symbol's trade table. Find the biggest win and the biggest loss. Does one trade account for most of the profit? Does the biggest loss exceed your intended 1% risk by a wide margin (a sign of gapping through the stop)? Note anything that surprises you.\n\n**e. Decide.** Put the results next to the go / no-go criteria you wrote in step 2 and answer each criterion with a plain yes or no. If every answer is yes, the strategy proceeds to forward testing. If any answer is no, write one paragraph on *which* criterion failed and what you think the reason was: too few trades, costs ate the edge, overfitting signature, one symbol carrying the results. Then stop, and go to step 6.\n\nIt is entirely normal, and entirely acceptable, for a first strategy to fail at step 4. Many students find that the simple built-in rules on a single stock do not clear a 1.3 profit factor with costs. That is not a failure of the project; it is the project working. A no-go with a clear reason is a complete, gradable capstone."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["ema9", "ema21", "macd"],
+          "caption": "AMZN daily with 9/21 EMAs and a MACD pane: a second, unrelated large cap to test your rule on. A strategy that only works on the symbol you first tried has found a story about that stock, not an edge. Testing on at least three unrelated names is the minimum cross-check for the capstone."
+        },
+        {
+          "type": "text",
+          "md": "### Steps 5 and 6: forward test and review\n\nIf the strategy passed step 4, trade it on the paper account exactly as written, for a fixed number of trades decided now (ten is a practical minimum for a swing rule; it will take weeks). Each trading day after the close, open the dashboard with your symbol and overlays, check whether the rule fired, and if it did, place the order on the portfolio page for the next session along with its stop. Size it with the formula from your document, not by feel.\n\nKeep a forward-test log with one row per signal: date, symbol, signal (entry or exit), the price the rule implied, the price you actually got, the shares, and a yes/no for whether you followed the rule. Record the signals you *missed* too, with the reason. The log is the data for your review.\n\nWhen the trade count is reached, write the review. It has four parts, each a short paragraph:\n\n**1. Backtest vs live.** Put the forward-test win rate, average win, average loss and worst drawdown next to the backtest's figures for the same symbols. Which were close and which were not? Live results that are a little worse are expected; dramatically worse means the backtest was flawed and you should say how.\n\n**2. Execution.** How much did your real fills differ from the next-open assumption? Was the 10 bps slippage assumption too generous or too harsh? Did you miss signals, and why?\n\n**3. You.** Did you follow every signal? If not, what made you override the rule, and would you have been better or worse off had you obeyed it? Be honest; this paragraph is for you.\n\n**4. Verdict and next step.** One of: continue forward testing with the same rule; modify the rule (say exactly what, and note that the modified rule starts the whole process again from step 2); or retire the rule and explain what you learned from it.\n\nThat document, the strategy page, the backtest table, the log and the review, is your capstone. Save it. Months from now it will tell you more about how you have grown as a trader than any P&L figure, and it is a piece of work you can show to anyone who asks whether you know what you are doing."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Journal the misses.** The most useful rows in a forward-test log are the signals you did not take. They reveal whether the strategy fits your schedule and your temperament. A rule that fires at 9:31 am on days you cannot watch the market is not a rule you can trade, however good its backtest."
+        },
+        {
+          "type": "exercise",
+          "md": "Start the capstone now. In this sitting, complete steps 1 to 4:\n\n- Write your one-page strategy document, including the go / no-go criteria, *before* opening the lab.\n- In the strategy lab, run your rule with $1 commission and 10 bps slippage on each of your three symbols and fill in the results table.\n- Open the optimiser with a 30% hold-out and record the in-sample and out-of-sample profit factor for your parameters on each symbol. Use the Compare panel to check the rule against buy-and-hold.\n- Write your go / no-go decision with one paragraph of reasoning.\n\nIf the decision is go, open your paper portfolio, confirm the starting cash and commission settings match your document, and set a reminder to check the rule after each close. Place your first order only when the rule actually fires. If the decision is no-go, write the review (step 6) now and pick a second rule to take through the process.",
+          "action": { "page": "portfolio.html", "hash": "positions", "label": "Open your paper portfolio" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "When should the go / no-go criteria for a strategy be written?",
+              "choices": [
+                "After the backtest, so they can be set realistically",
+                "Before running any test, so the results are judged against standards not influenced by them",
+                "Only if the backtest is profitable",
+                "They are unnecessary if the Sharpe ratio is above 1"
+              ],
+              "answer": 1,
+              "explain": "Criteria set after seeing results are rationalisations. Writing minimum trades, minimum profit factor with costs, maximum drawdown and an out-of-sample requirement in advance is the strongest defence against fooling yourself."
+            },
+            {
+              "q": "Your rule clears every criterion on AAPL but fails on MSFT and AMZN. What is the most defensible conclusion?",
+              "choices": [
+                "Trade it on AAPL only; that is where the edge is",
+                "The rule has probably found something specific to AAPL's past price path rather than a general edge, so it is a no-go or needs more evidence",
+                "Average the three results and proceed if the average passes",
+                "Remove MSFT and AMZN from the universe retroactively"
+              ],
+              "answer": 1,
+              "explain": "An edge that appears on one symbol and vanishes on two unrelated ones is the signature of a story about that stock, not a repeatable pattern. Dropping the failing symbols after the fact is a form of overfitting the universe."
+            },
+            {
+              "q": "A first capstone strategy fails the profit-factor criterion with costs. What should the student do?",
+              "choices": [
+                "Lower the criterion to match the result",
+                "Remove the costs; the rule passes at zero cost",
+                "Record the no-go, write a paragraph on which criterion failed and why, and complete the review; this is a complete project",
+                "Increase position size to compensate"
+              ],
+              "answer": 2,
+              "explain": "Rejecting a rule with a clear, written reason is correct process and most of what real strategy research consists of. Changing the criteria or the cost assumptions to rescue a result is exactly the self-deception the project is designed to prevent."
+            },
+            {
+              "q": "Why does the capstone ask you to log signals you did not take?",
+              "choices": [
+                "To make the win rate look better",
+                "Because missed signals reveal whether the strategy fits your schedule and temperament, which the backtest cannot show",
+                "Because the lab requires it",
+                "Missed signals do not need to be logged"
+              ],
+              "answer": 1,
+              "explain": "Feasibility is part of a strategy. A rule you cannot follow in practice, whether because of timing or nerves, is not a rule you can trade, and the only way to discover that is to record the misses honestly."
+            },
+            {
+              "q": "If the forward-test results are dramatically worse than the backtest, the most likely explanation is:",
+              "choices": [
+                "Paper trading is unrelated to backtesting",
+                "The backtest had a flaw such as look-ahead, unrealistic costs or survivorship bias, which the forward test has just exposed",
+                "The strategy needs a larger account",
+                "The market was closed on key days"
+              ],
+              "answer": 1,
+              "explain": "Live results are usually somewhat worse than backtests, but a dramatic gap points to a problem in the backtest itself. Finding that out with paper money, before real money, is the entire purpose of forward testing."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

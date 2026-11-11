@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learn · Broward Trading</title>
+<meta name="description" content="A free, six-module course on markets, charts, indicators, risk, options and backtesting, with quizzes, a paper-trading lab and a completion certificate.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Minimal fallback so the page is readable when css/style.css is missing.
+   css/style.css (linked below) uses the same token names and wins when present. */
+:root{
+  --bg:#0f1319; --panel:#161c25; --panel2:#1c2430; --line:#263040; --fg:#e6ebf2; --muted:#8a97a8;
+  --accent:#4f8cff; --up:#22c55e; --down:#ef4444; --warn:#f5b84d;
+  --font:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d6dce5; --fg:#141a22; --muted:#5f6b7a; --accent:#2563eb; --up:#16a34a; --down:#dc2626; --warn:#b7791f; color-scheme:light } }
+:root[data-theme="light"]{ --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d6dce5; --fg:#141a22; --muted:#5f6b7a; --accent:#2563eb; --up:#16a34a; --down:#dc2626; --warn:#b7791f; color-scheme:light }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;margin:0;
+  padding-block:0 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)} button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)} button:disabled{opacity:.55;cursor:not-allowed}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.topnav{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-block:12px;border-bottom:1px solid var(--line)}
+.topnav .brand{font-weight:600;font-size:16px;color:var(--fg);text-decoration:none}
+.topnav .brand small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.topnav .links{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+.topnav .links a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;font-size:13px}
+.topnav .links a:hover{color:var(--fg);background:var(--panel2)}
+.topnav .links a.active{color:var(--fg);background:var(--panel2);border:1px solid var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.card h2{margin:0 0 8px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:500}
+.pill{font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.demo{color:var(--warn);border-color:var(--warn)} .pill.live{color:var(--up);border-color:var(--up)}
+footer.disclaimer{color:var(--muted);font-size:11px;padding-block:14px 0;text-align:center;border-top:1px solid var(--line);margin-top:20px}
+</style>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ---- learn.html specific ---- */
+.learn-wrap{max-width:1180px;margin:0 auto}
+.learn-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:22px 0 10px}
+.learn-hero h1{margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-.2px}
+.learn-hero p{margin:0;color:var(--muted);max-width:66ch}
+.learn-hero .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media (max-width:720px){.learn-hero{grid-template-columns:1fr}}
+.ring{position:relative;width:84px;height:84px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7}
+.ring .track{stroke:var(--line)} .ring .bar{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .5s}
+.ring.done .bar{stroke:var(--up)}
+.ring .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600}
+.ring.big{width:120px;height:120px} .ring.big .lbl{font-size:22px}
+.ring.sm{width:56px;height:56px} .ring.sm .lbl{font-size:12px}
+.modgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:14px}
+.modcard{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;text-decoration:none;color:inherit;transition:border-color .15s}
+.modcard:hover{border-color:var(--accent)}
+.modcard .idx{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+.modcard h3{margin:4px 0 6px;font-size:16px;font-weight:600}
+.modcard p{margin:0 0 10px;color:var(--muted);font-size:13px}
+.modcard .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.lvl{font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.lvl.beginner{color:var(--up);border-color:var(--up)} .lvl.intermediate{color:var(--accent);border-color:var(--accent)} .lvl.advanced{color:var(--warn);border-color:var(--warn)}
+.homegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:14px}
+.teaser{position:relative;opacity:.78}
+.teaser .soon{position:absolute;top:12px;right:12px}
+.teaser ul{margin:8px 0 10px;padding-left:18px;color:var(--muted)}
+.teaser button[disabled]{width:100%}
+.learn-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;margin-top:14px}
+@media (max-width:860px){.learn-layout{grid-template-columns:1fr}}
+.sidebar{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto;padding:8px}
+@media (max-width:860px){.sidebar{position:static;max-height:none}}
+.sidebar .back{display:block;padding:8px 10px;font-size:13px;text-decoration:none}
+.sidebar details{border-top:1px solid var(--line)}
+.sidebar summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px 10px;font-weight:500;font-size:13px;color:var(--fg)}
+.sidebar summary > span{min-width:0}
+.sidebar summary::-webkit-details-marker{display:none}
+.sidebar summary small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+.sidebar .lessons{list-style:none;margin:0;padding:0 0 8px}
+.sidebar .lessons a{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:6px 10px 6px 14px;color:var(--muted);text-decoration:none;font-size:13px;border-radius:6px}
+.sidebar .lessons a:hover{background:var(--panel2);color:var(--fg)}
+.sidebar .lessons a.current{background:var(--panel2);color:var(--fg);font-weight:500}
+.sidebar .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);display:inline-block}
+.sidebar .tick.done{background:var(--up);border-color:var(--up)}
+.sidebar .score{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.sidebar .score.pass{color:var(--up)} .sidebar .score.fail{color:var(--warn)}
+.reader{min-width:0}
+.crumbs{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.crumbs a{color:var(--muted);text-decoration:none} .crumbs a:hover{color:var(--fg)}
+.reader h1{margin:6px 0 4px;font-size:24px;font-weight:600;letter-spacing:-.2px}
+.reader .lmeta{color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.blocks{display:flex;flex-direction:column;gap:14px;max-width:78ch}
+.block-text p,.callout p,.exercise p{margin:0 0 10px;font-size:15px;line-height:1.65}
+.block-text p:last-child,.callout p:last-child{margin-bottom:0}
+.block-text h3,.block-text h4{margin:16px 0 6px;font-weight:600}
+.block-text h3{font-size:19px} .block-text h4{font-size:16px}
+.block-text ul,.block-text ol,.callout ul,.exercise ul{margin:0 0 10px;padding-left:22px;font-size:15px;line-height:1.65}
+.block-text li,.callout li{margin:3px 0}
+.block-text blockquote{margin:0 0 10px;padding:6px 14px;border-left:3px solid var(--line);color:var(--muted)}
+.block-text hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+code{font-family:var(--mono);font-size:.92em;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.callout{border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;padding:12px 14px}
+.callout .ctitle{font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;color:var(--accent);margin-bottom:6px}
+.callout.tip{border-left-color:var(--up)} .callout.tip .ctitle{color:var(--up)}
+.callout.warn{border-left-color:var(--warn)} .callout.warn .ctitle{color:var(--warn)}
+.callout.key{border-left-color:var(--accent)}
+.chartblock{padding:0;overflow:hidden}
+.chartblock .chead{display:flex;gap:8px;align-items:center;padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.chartblock .chead b{color:var(--fg);font-weight:500}
+.chartblock .cpane{height:300px;position:relative}
+.chartblock .cpane.sub{height:110px;border-top:1px solid var(--line)}
+.chartblock .cstatus{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;padding:12px;text-align:center;pointer-events:none}
+.chartblock .caption{padding:10px 12px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.chartblock .legend{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+.chartblock .legend span::before{content:"";display:inline-block;width:10px;height:3px;border-radius:2px;background:currentColor;margin-right:4px;vertical-align:middle}
+.exercise{border:1px dashed var(--accent);border-radius:8px;padding:14px;background:var(--panel)}
+.exercise .etitle{font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;color:var(--accent);margin-bottom:6px}
+.exercise .go{display:inline-block;margin-top:6px;text-decoration:none;background:var(--accent);color:#fff;border-radius:6px;padding:7px 12px;font-weight:500}
+.quiz{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel)}
+.quiz .qtitle{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;color:var(--muted);margin-bottom:8px}
+.quiz .q{padding:12px 0;border-top:1px solid var(--line)}
+.quiz .q p.stem{margin:0 0 8px;font-weight:500;font-size:15px}
+.quiz .choices{display:flex;flex-direction:column;gap:6px}
+.quiz .choice{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;text-align:left;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:14px;line-height:1.45}
+.quiz .choice .k{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:1px}
+.quiz .choice:hover{border-color:var(--accent)}
+.quiz .choice:disabled{cursor:default;opacity:1}
+.quiz .choice.correct{border-color:var(--up);background:color-mix(in srgb,var(--up) 14%,var(--panel2))}
+.quiz .choice.wrong{border-color:var(--down);background:color-mix(in srgb,var(--down) 14%,var(--panel2))}
+.quiz .choice.dim{opacity:.6}
+.quiz .explain{margin-top:8px;padding:8px 12px;border-radius:6px;background:var(--panel2);font-size:14px;line-height:1.5}
+.quiz .explain b{color:var(--fg)} .quiz .explain.ok b{color:var(--up)} .quiz .explain.bad b{color:var(--down)}
+.quiz .result{margin-top:12px;padding:12px;border-radius:6px;background:var(--panel2);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.quiz .result .big{font-size:24px;font-weight:600}
+.quiz .result .big.pass{color:var(--up)} .quiz .result .big.fail{color:var(--warn)}
+.lesson-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:22px;padding-top:14px;border-top:1px solid var(--line);max-width:78ch}
+.lesson-nav a{text-decoration:none}
+.lesson-nav .done-note{color:var(--up);font-size:13px}
+.msg{color:var(--warn);font-size:13px;margin:8px 0}
+.empty{color:var(--muted);text-align:center;padding:40px 12px}
+.cert-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:14px}
+@media (max-width:860px){.cert-layout{grid-template-columns:1fr}}
+.cert-img{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel2);display:block}
+.cert-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cert-form input{flex:1;min-width:180px}
+.checklist{list-style:none;margin:0;padding:0}
+.checklist li{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.checklist li:last-child{border-bottom:0}
+.checklist small{display:block;color:var(--muted)}
+.checklist .ok{color:var(--up)} .checklist .no{color:var(--muted)}
+.stat{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13px}
+.stat span:nth-child(even){text-align:right;font-family:var(--mono)}
+.srow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.srow .grow{flex:1}
+.toolbtn{font-size:12px;padding:4px 9px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.ring .bar{transition:none}}
+@media print{.topnav,.sidebar,.lesson-nav,.cert-form,.teaser{display:none !important}}
+</style>
+</head>
+<body class="page">
+
+<nav class="topnav" aria-label="Main">
+  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
+  <div class="links">
+    <a href="index.html">Dashboard</a>
+    <a href="learn.html" class="active" aria-current="page">Learn</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="backtest.html">Backtest</a>
+    <a href="about.html">About</a>
+  </div>
+  <div class="right">
+    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+<main id="app" class="learn-wrap" aria-live="polite">
+  <div class="empty" id="boot">Loading the course…</div>
+  <noscript><div class="empty">The course needs JavaScript enabled to run.</div></noscript>
+</main>
+
+<footer class="footer disclaimer-footer">
+  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
+  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
+</footer>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/course.js"></script>
+<script src="js/learn.js"></script>
+</body>
+</html>

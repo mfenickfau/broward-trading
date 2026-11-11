@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Broward Trading is a free educational paper-trading and technical-analysis simulator built for Broward College students and anyone learning how markets work. No real money, no real orders.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>About — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; all visual tokens come from css/style.css */
+  .about-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--sp-5);align-items:center}
+  @media (max-width:900px){.about-hero{grid-template-columns:1fr}}
+  .pillars .card h3{display:flex;align-items:center;gap:8px}
+  .pillars .card h3 .ico{width:26px;height:26px;border-radius:var(--r);display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:12px}
+  .sources th:last-child,.sources td:last-child{text-align:left}
+  .faq details{margin-bottom:8px}
+  .anchor-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp-3)}
+  .anchor-nav a{font-size:var(--fs-sm)}
+  section[id]{scroll-margin-top:calc(var(--topnav-h) + 12px)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<nav class="topnav" aria-label="Main">
+  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
+  <div class="links">
+    <a href="index.html">Dashboard</a>
+    <a href="learn.html">Learn</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="backtest.html">Backtest</a>
+    <a href="about.html" class="active" aria-current="page">About</a>
+  </div>
+  <div class="right">
+    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+  <!-- ============================ HERO ============================ -->
+  <header class="hero about-hero" style="border-bottom:0">
+    <div>
+      <div class="eyebrow">About the project</div>
+      <h1>Learn to trade with real tools and zero real risk.</h1>
+      <p class="lede">Broward Trading is a free, open educational simulator: a professional-style charting dashboard, a $100,000 paper-trading account, an options lab, a strategy backtester and a six-module course. It was built for students at Broward College and for anyone who wants to understand how markets work before putting a single dollar at risk.</p>
+      <div class="row mt-3">
+        <a class="btn primary lg" href="index.html">Open the dashboard</a>
+        <a class="btn lg" href="learn.html">Start the free course</a>
+      </div>
+      <nav class="anchor-nav" aria-label="On this page">
+        <a class="pill" href="#how">How it works</a>
+        <a class="pill" href="#data">Data &amp; accuracy</a>
+        <a class="pill" href="#disclaimer">Disclaimer</a>
+        <a class="pill" href="#course">Course &amp; certificate</a>
+        <a class="pill" href="#roadmap">Roadmap</a>
+        <a class="pill" href="#faq">FAQ</a>
+        <a class="pill" href="#contact">Contact</a>
+      </nav>
+    </div>
+    <div class="card pad accent">
+      <h2 style="text-transform:none;letter-spacing:0;font-size:var(--fs-md);color:var(--fg)">What you get, for free</h2>
+      <ul class="steps">
+        <li class="done"><div><b>Charts that look like the real thing</b><small>Candlesticks, volume, moving averages, Bollinger Bands, RSI, MACD, support &amp; resistance and hand-drawn trend lines.</small></div></li>
+        <li class="done"><div><b>A paper account that behaves like a broker</b><small>Market, limit and stop orders, shorting, options contracts, P&amp;L, drawdown and win-rate statistics.</small></div></li>
+        <li class="done"><div><b>A strategy lab</b><small>Backtest moving-average crosses, RSI reversion, breakouts and your own rules against years of bars.</small></div></li>
+        <li class="done"><div><b>A structured course</b><small>Six modules, quizzes and exercises you complete inside the simulator, with a certificate at the end.</small></div></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ============================ MISSION ============================ -->
+  <section class="section" id="mission">
+    <div class="eyebrow">Mission</div>
+    <div class="prose">
+      <h2>Why this exists</h2>
+      <p>Most people meet the stock market for the first time through an app that is designed to get them trading quickly, with real money, before they understand what a limit order is. We think the order should be reversed: <strong>learn first, practise with pretend money second, and only then decide whether real trading is for you.</strong></p>
+      <p>Broward Trading is our attempt at that first two steps. It is a classroom-friendly simulator that runs entirely in your browser, costs nothing, asks for no account or personal data, and is honest about its limits. It is being developed alongside students at <strong>Broward College</strong> in South Florida, but anyone, anywhere, can use it.</p>
+      <p>Three principles guide every feature we add:</p>
+    </div>
+    <div class="grid cols-3 pillars mt-3">
+      <div class="card pad">
+        <h3><span class="ico">1</span>Education before execution</h3>
+        <p class="muted">Every indicator on the dashboard has a plain-English explanation next to it. Every signal lists its reasons. Nothing is a black box.</p>
+      </div>
+      <div class="card pad">
+        <h3><span class="ico">2</span>Honest about uncertainty</h3>
+        <p class="muted">Signals describe what indicators say <em>right now</em>, never what will happen next. Backtests show drawdowns as prominently as returns.</p>
+      </div>
+      <div class="card pad">
+        <h3><span class="ico">3</span>Free and private</h3>
+        <p class="muted">No sign-up, no tracking, no real money. Your portfolio and progress live in your own browser. The code is plain HTML, CSS and JavaScript you can read.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ HOW IT WORKS ============================ -->
+  <section class="section" id="how">
+    <div class="eyebrow">How it works</div>
+    <div class="prose">
+      <h2>Five pages, one workflow</h2>
+      <p>The site is a set of linked tools that mirror what a disciplined trader actually does: study, plan, practise, review.</p>
+    </div>
+    <div class="grid cols-2 mt-3">
+      <div class="card pad">
+        <h3>Dashboard <a class="pill accent" href="index.html">index.html</a></h3>
+        <p class="muted">Load a ticker, pick a timeframe, toggle overlays and watch a composite signal score the chart from −8 (strong sell) to +8 (strong buy). Every point in the score comes with a reason and a "why". Buy and sell shares into your paper account without leaving the chart.</p>
+      </div>
+      <div class="card pad">
+        <h3>Learn <a class="pill accent" href="learn.html">learn.html</a></h3>
+        <p class="muted">The course: six modules from "what is a stock?" through candlesticks, indicators, risk management and options, to building and backtesting a strategy. Lessons embed live charts, exercises that send you to the dashboard, and quizzes that track your progress.</p>
+      </div>
+      <div class="card pad">
+        <h3>Portfolio <a class="pill accent" href="portfolio.html">portfolio.html</a></h3>
+        <p class="muted">Your $100,000 paper account. Open positions, pending limit and stop orders, trade history, an equity curve and statistics such as win rate, profit factor, maximum drawdown and Sharpe ratio. Includes an options chain and payoff diagrams for nine classic strategies.</p>
+      </div>
+      <div class="card pad">
+        <h3>Backtest <a class="pill accent" href="backtest.html">backtest.html</a></h3>
+        <p class="muted">Pick a rule set (SMA cross, RSI reversion, MACD, Bollinger bounce, breakout, the composite signal or buy-and-hold), tune its parameters, and run it over the chart history. Compare against buy-and-hold and see exactly where it would have entered and exited.</p>
+      </div>
+    </div>
+    <div class="callout key mt-4">
+      <div><span class="title">Everything runs in your browser</span>There is no server. Indicators are computed locally in JavaScript, bars are cached in <code>localStorage</code>, and your paper trades never leave your device. Clearing your browser data resets the simulator; use the export buttons if you want to keep a record.</div>
+    </div>
+  </section>
+
+  <!-- ============================ DATA & ACCURACY ============================ -->
+  <section class="section" id="data">
+    <div class="eyebrow">Data sources &amp; accuracy</div>
+    <div class="prose">
+      <h2>Demo mode versus live mode</h2>
+      <p>Out of the box, the simulator runs in <strong>demo mode</strong>: prices are generated by a seeded random walk, so the chart for a given ticker always looks the same, moves realistically, and ticks every few seconds, but it is <strong>not</strong> the real price of that company. Demo mode is perfect for learning how indicators and orders behave, and it is clearly labelled with an amber <span class="pill demo">demo</span> pill on every page.</p>
+      <p>If you want real market data, you can switch to <strong>live mode</strong> by pasting a free API key on the dashboard. We deliberately support only providers with a genuinely free tier so that nobody has to pay to learn.</p>
+    </div>
+    <div class="card mt-3 sources">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Provider</th><th>Free tier (approx.)</th><th>Intervals</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>Demo</b> (built in)</td><td class="num">Unlimited</td><td>1 min – 1 day</td><td>Simulated. Deterministic per symbol so lessons and screenshots match. 40+ well-known US tickers for search.</td></tr>
+            <tr><td><b>Twelve Data</b></td><td class="num">8 requests / min · 800 / day</td><td>1 min – 1 day</td><td>Best all-rounder for learning. Quotes on the free plan are typically delayed about 15 minutes for US exchanges.</td></tr>
+            <tr><td><b>Finnhub</b></td><td class="num">60 requests / min</td><td>Daily candles, real-time quote</td><td>Generous rate limit; intraday candles for US stocks are not included in the free plan.</td></tr>
+            <tr><td><b>Alpha Vantage</b></td><td class="num">25 requests / day</td><td>Daily, intraday</td><td>Very small daily budget. Good for one or two end-of-day charts, not for watching the market.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Limits are those published by each provider at the time of writing and may change. The app enforces a per-provider rate limiter and caches bars (60 seconds intraday, 10 minutes daily) so you stay inside the free allowance. When a key is missing, a limit is hit or a request fails, the app falls back to demo data and tells you why.</p>
+    </div>
+    <div class="grid cols-2 mt-3">
+      <div class="callout warn">
+        <div><span class="title">Expect a 15-minute delay</span>Free market-data plans in the United States almost always deliver quotes delayed by about 15 minutes, because exchanges charge for real-time feeds. For learning this does not matter at all; for real trading it would. Treat any "live" price here as recent, not current.</div>
+      </div>
+      <div class="callout tip">
+        <div><span class="title">How accurate are the indicators?</span>The indicator maths (SMA, EMA, RSI, MACD, Bollinger Bands, ATR, ADX, stochastic, VWAP, Ichimoku and more) follows the standard textbook definitions and is covered by automated tests in the <code>tests/</code> folder. Small differences from other platforms usually come from how many bars of history are loaded, since EMA-based indicators need a long warm-up.</div>
+      </div>
+    </div>
+    <div class="prose mt-4">
+      <h3>What the paper broker does and does not simulate</h3>
+      <ul>
+        <li><strong>Does:</strong> market, limit, stop and stop-limit orders filled against each bar's high and low; short selling; optional commissions and slippage in the backtester; options priced with the Black-Scholes model and a synthetic chain with bid/ask spreads and a volatility smile.</li>
+        <li><strong>Does not:</strong> real order books, partial fills, borrow fees, dividends, margin calls, trading halts, or the real options market. Real options quotes require paid data; ours are model prices, which is why the options lab is labelled "synthetic".</li>
+      </ul>
+      <p>These simplifications make the simulator kinder than a real account. If a strategy barely works here, it will not work with real friction. That is a feature: the point is to learn the mechanics and the discipline, not to find a money machine.</p>
+    </div>
+  </section>
+
+  <!-- ============================ DISCLAIMER ============================ -->
+  <section class="section" id="disclaimer">
+    <div class="eyebrow">Disclaimer</div>
+    <div class="card pad" style="border-color:var(--warn)">
+      <div class="prose wide">
+        <h2 style="margin-top:0">Please read this. It is short and it matters.</h2>
+        <ul>
+          <li><strong>This is not financial advice.</strong> Nothing on this site, including the BUY / SELL / HOLD signal, course content, backtest results or options analysis, is a recommendation to buy or sell any security. It is educational material about how common technical-analysis tools work.</li>
+          <li><strong>No real money is involved.</strong> The paper account is a game score stored in your browser. No orders are sent anywhere, no brokerage is connected, and no money changes hands.</li>
+          <li><strong>Simulated results are not predictive.</strong> Demo prices are generated. Backtests are run on past data with simplified fills and ignore many real-world costs. Past performance, real or simulated, does not predict future results.</li>
+          <li><strong>Trading real money involves substantial risk of loss</strong>, including the loss of your entire investment and, with margin, shorting or certain options strategies, more than you invested. Most retail traders lose money. If you ever decide to trade for real, start small, use a regulated broker, and consider speaking to a licensed financial adviser.</li>
+          <li><strong>We are not a broker, dealer, investment adviser or educational institution's official product.</strong> Broward Trading is an independent student-focused project; it is not endorsed by, affiliated with or an official offering of Broward College, any exchange, or any data provider named on this page.</li>
+          <li><strong>Data may be wrong, late or missing.</strong> Third-party data is provided "as is" and may contain errors or outages. The software is provided as is, without warranty of any kind.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ COURSE & CERTIFICATE ============================ -->
+  <section class="section" id="course">
+    <div class="eyebrow">Course &amp; certificate</div>
+    <div class="prose">
+      <h2>A free course, with a certificate when you finish</h2>
+      <p>The <a href="learn.html">Learn</a> page holds a structured, self-paced course of six modules and roughly six hours of material. Lessons are short, every module ends with a quiz, and exercises send you into the dashboard or the paper account to actually do the thing you just read about: place a limit order, draw a trend line, run a backtest, size a position.</p>
+    </div>
+    <div class="grid cols-3 mt-3">
+      <div class="card">
+        <h2>Beginner</h2>
+        <h3>1 · Market Foundations</h3>
+        <p class="muted small">Markets, orders, what moves prices, why paper trade.</p>
+        <h3 class="mt-3">2 · Reading Charts &amp; Candlesticks</h3>
+        <p class="muted small">Timeframes, trends, support &amp; resistance, reversal patterns.</p>
+      </div>
+      <div class="card">
+        <h2>Intermediate</h2>
+        <h3>3 · Technical Indicators</h3>
+        <p class="muted small">Moving averages, RSI, MACD, Bollinger Bands, volume, the composite signal.</p>
+        <h3 class="mt-3">4 · Risk Management &amp; Paper Trading</h3>
+        <p class="muted small">Position sizing, stops, expectancy, drawdowns, the journal.</p>
+      </div>
+      <div class="card">
+        <h2>Advanced</h2>
+        <h3>5 · Options Basics</h3>
+        <p class="muted small">Calls, puts, premium, the Greeks, payoff diagrams, defined-risk strategies.</p>
+        <h3 class="mt-3">6 · Strategy &amp; Backtesting</h3>
+        <p class="muted small">Rules into strategies, honest backtests, overfitting, a trading plan.</p>
+      </div>
+    </div>
+
+    <div class="grid cols-2 mt-4">
+      <div class="card pad plan">
+        <div class="row between">
+          <h3 style="margin:0">Free</h3>
+          <span class="pill live">available now</span>
+        </div>
+        <div class="price">$0 <small>forever</small></div>
+        <ul>
+          <li>Full dashboard, paper account, options lab and backtester</li>
+          <li>All six course modules, quizzes and exercises</li>
+          <li>Progress saved in your browser</li>
+          <li>Completion certificate (self-issued, with your name) when you finish every lesson and average 80 % or better on the quizzes</li>
+          <li>Bring your own free API key for live data</li>
+        </ul>
+        <div class="cta"><a class="btn primary" href="learn.html">Start learning</a></div>
+      </div>
+      <div class="card pad plan">
+        <div class="row between">
+          <h3 style="margin:0">Pro membership</h3>
+          <span class="pill">planned · not for sale yet</span>
+        </div>
+        <div class="price">TBD <small>monthly or one-time, kept student-affordable</small></div>
+        <ul>
+          <li><b>Verified certificate</b> with a unique ID that employers and schools can check online</li>
+          <li>Graded capstone: a written trading plan and a backtested strategy reviewed with feedback</li>
+          <li>Extra modules (futures, crypto mechanics, tax basics, psychology deep-dives)</li>
+          <li>Cohort sessions and a moderated discussion space</li>
+          <li>Cloud sync of your portfolio and progress across devices</li>
+          <li class="no">Never: trade signals sold as advice, or any promise of profit</li>
+        </ul>
+        <div class="cta"><a class="btn" href="#contact">Tell us you are interested</a></div>
+      </div>
+    </div>
+    <div class="callout mt-3">
+      <div><span class="title">Our commitment</span>The simulator and the core course stay free. If a paid tier arrives, it pays for verified credentials, human feedback and hosting, never for access to the tools you can already use today. There is <strong>no payment system on this site</strong> right now; anyone asking you to pay for Broward Trading is not us.</div>
+    </div>
+  </section>
+
+  <!-- ============================ ROADMAP ============================ -->
+  <section class="section" id="roadmap">
+    <div class="eyebrow">Roadmap</div>
+    <div class="grid sidebar">
+      <div class="prose">
+        <h2>Where this is going</h2>
+        <p>This is an open, evolving project. The list on the right is our honest plan; items move as students tell us what helps them learn. Have an idea? See <a href="#contact">contact</a>.</p>
+      </div>
+      <ul class="timeline">
+        <li class="done"><b>v0.1 — Single-file prototype</b><p>Candlestick chart, RSI, MACD, Bollinger Bands, composite signal, a basic paper account and Twelve Data live quotes.</p></li>
+        <li class="now"><b>v0.2 — Modular app (now)</b><p>Shared design system, a full indicator library, multi-provider data layer with caching and rate limits, a real paper-trading engine with limit/stop orders and shorting, an options lab, a backtester with optimisation, and the six-module course with quizzes and a certificate.</p></li>
+        <li class="soon"><b>v0.3 — Learning loop</b><p>Trading journal with tagging and review prompts, lesson-linked exercises that check themselves against your paper account, a watchlist with alerts, and a screener for the demo universe.</p></li>
+        <li class="soon"><b>v0.4 — Classroom tools</b><p>Instructor mode: share a class code, see anonymised cohort progress, assign modules, export grades as CSV. Spanish and Haitian Creole translations of the course.</p></li>
+        <li><b>v1.0 — Pro membership</b><p>Accounts and cloud sync, verified certificates with public verification page, graded capstone, additional modules and cohort sessions. Payment only arrives with this release.</p></li>
+        <li><b>Always</b><p>Better data accuracy within free limits, more candlestick patterns, more strategies, accessibility fixes and mobile polish.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================ FAQ ============================ -->
+  <section class="section faq" id="faq">
+    <div class="eyebrow">Frequently asked</div>
+    <h2 style="font-size:var(--fs-lg)">Quick answers</h2>
+    <details><summary>Do I need an account?</summary><p class="muted">No. Everything is stored in your browser's local storage. The downside is that clearing site data, or switching devices, resets your paper account and course progress. Export options and cloud sync are on the roadmap.</p></details>
+    <details><summary>Is the BUY / SELL signal good?</summary><p class="muted">It is a transparent, rule-based score built from standard indicators. It is useful for learning how those indicators agree or disagree. It is not a profitable trading system and we never claim it is. Backtest it yourself on the Backtest page to see.</p></details>
+    <details><summary>Why are demo prices for AAPL not Apple's real price?</summary><p class="muted">Demo mode generates a realistic-looking series from the ticker's name so that lessons are repeatable and the site works with no API key. Add a free key on the dashboard to see real (delayed) prices.</p></details>
+    <details><summary>Can I use this on my phone?</summary><p class="muted">Yes. Every page is responsive; the chart panes shrink and the control rail stacks below them. Drawing trend lines is easier with a mouse or a stylus.</p></details>
+    <details><summary>Can I run it myself or contribute?</summary><p class="muted">Yes. The site is plain HTML, CSS and JavaScript with no build step. Open <code>index.html</code> in a browser or serve the folder with any static file server. Design tokens and components are documented in <code>docs/BRAND.md</code> and module interfaces in <code>CONTRACTS.md</code>.</p></details>
+    <details><summary>Is my API key safe?</summary><p class="muted">Your key is stored only in your own browser and sent only to the provider you chose, directly from your device. We never see it. Use a free-tier key and revoke it from the provider's dashboard if you ever share your computer.</p></details>
+  </section>
+
+  <!-- ============================ CONTACT ============================ -->
+  <section class="section" id="contact">
+    <div class="eyebrow">Contact</div>
+    <div class="card pad">
+      <div class="grid cols-2">
+        <div class="prose">
+          <h2 style="margin-top:0">Get in touch</h2>
+          <p>Questions, bug reports, lesson ideas, or interest in the Pro membership or classroom tools: we want to hear from you. A contact form and a public issue tracker are coming with the next release; for now use the placeholder below.</p>
+        </div>
+        <div class="stack">
+          <div class="field">
+            <label>Email</label>
+            <div class="row"><code id="email">hello@example.com</code><span class="pill">placeholder — replace before launch</span></div>
+            <div class="help">Project maintainers: set the real address here and in the footer of every page.</div>
+          </div>
+          <div class="field">
+            <label>Source code</label>
+            <div class="row"><code>github.com/your-org/broward-trading</code><span class="pill">placeholder</span></div>
+            <div class="help">Issues and pull requests welcome once the repository is public.</div>
+          </div>
+          <div class="field">
+            <label>Classroom use</label>
+            <div class="help">Instructors: the whole site can be copied onto a USB stick or a school web server and used offline in demo mode. No licence fee, no sign-up.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer disclaimer-footer">
+  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
+  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
+</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  // Theme toggle: remembers an explicit choice in localStorage ('bt.theme'); otherwise follows the OS.
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  function stored(){ try { return localStorage.getItem('bt.theme') || ''; } catch (e) { return ''; } }
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var isLight = t === 'light' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    if (btn) btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isLight ? '#f3f5f8' : '#0f1319');
+  }
+  apply(stored());
+  if (btn) btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    var osLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var effective = cur || (osLight ? 'light' : 'dark');
+    var next = effective === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('bt.theme', next); } catch (e) { /* storage unavailable: still toggle for this view */ }
+    apply(next);
+  });
+  // Mark the current page in the nav even if this file is copied under another name.
+  var here = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.topnav .links a').forEach(function(a){
+    var target = (a.getAttribute('href') || '').split('#')[0];
+    var on = target === here;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+})();
+</script>
+</body>
+</html>

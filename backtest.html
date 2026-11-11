@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<!-- Content-Security-Policy: scripts only from this origin and the pinned CDN; network requests only to this origin
+     and the three price providers, so a provider key stored in localStorage cannot be sent anywhere else.
+     Inline script and style blocks in this file need 'unsafe-inline'. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.twelvedata.com https://finnhub.io https://www.alphavantage.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Strategy Lab · Broward Trading</title>
+<meta name="description" content="Backtest classic trading strategies on real or simulated prices: see every trade on the chart, compare with buy-and-hold, optimise parameters and learn why most back-tests lie.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Minimal fallback so the page is readable when css/style.css is missing.
+   css/style.css (linked below) uses the same token names and wins when present. */
+:root{
+  --bg:#0f1319; --panel:#161c25; --panel2:#1c2430; --line:#263040; --fg:#e6ebf2; --muted:#8a97a8;
+  --accent:#4f8cff; --up:#22c55e; --down:#ef4444; --warn:#f5b84d;
+  --font:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d6dce5; --fg:#141a22; --muted:#5f6b7a; --accent:#2563eb; --up:#16a34a; --down:#dc2626; --warn:#b7791f; color-scheme:light } }
+:root[data-theme="light"]{ --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --line:#d6dce5; --fg:#141a22; --muted:#5f6b7a; --accent:#2563eb; --up:#16a34a; --down:#dc2626; --warn:#b7791f; color-scheme:light }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;margin:0;
+  padding-block:0 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)} button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input,select{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.topnav{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-block:12px;border-bottom:1px solid var(--line)}
+.topnav .links{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+.topnav .links a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;font-size:13px}
+.topnav .links a.active{color:var(--fg);background:var(--panel2);border:1px solid var(--line)}
+footer.footer{color:var(--muted);font-size:11px;padding-block:14px 0;text-align:center;border-top:1px solid var(--line);margin-top:20px}
+</style>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ---- Strategy Lab layout (shared tokens/components live in css/style.css) ----
+   Desktop: result column | 340px control rail. Phones stack, controls first. */
+.lab-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start;padding-block:var(--sp-4) var(--sp-3);border-bottom:1px solid var(--line)}
+.lab-head h1{margin:0 0 4px;font-size:clamp(22px,3vw,28px);font-weight:600;letter-spacing:-.2px}
+.lab-head .sub{margin:0;color:var(--muted);max-width:70ch}
+.lab-head .status{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;padding-top:6px}
+
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start;margin-top:var(--sp-4)}
+.lab .rail{display:flex;flex-direction:column;gap:12px;min-width:0;position:sticky;top:calc(var(--topnav-h,52px) + 10px);max-height:calc(100vh - var(--topnav-h,52px) - 20px);overflow:auto;padding-right:2px}
+.lab .result{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:980px){
+  .lab{grid-template-columns:1fr}
+  .lab .rail{position:static;max-height:none;order:-1;overflow:visible}
+}
+
+/* control rail */
+.rail .card h2{display:flex;justify-content:space-between;align-items:center}
+.rail .field + .field{margin-top:8px}
+.rail select,.rail input[type=text],.rail input[type=number]{width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sym-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.sym-row input{font-family:var(--mono);text-transform:uppercase}
+.sym-row input::placeholder{text-transform:none;font-family:var(--font)}
+.symname{font-size:var(--fs-xs);color:var(--muted);min-height:16px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.strat-desc{font-size:var(--fs-sm);color:var(--muted);line-height:1.55;margin:6px 0 10px}
+.param{display:grid;grid-template-columns:minmax(0,1fr) 68px;grid-template-rows:auto auto;gap:2px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.param:first-child{border-top:0}
+.param label{grid-column:1;font-weight:500;color:var(--fg);font-size:var(--fs-sm)}
+.param input[type=number]{grid-column:2;grid-row:1;padding:3px 6px;font-family:var(--mono);text-align:right}
+.param input[type=range]{grid-column:1/-1;width:100%;margin:2px 0;accent-color:var(--accent)}
+.param .help{grid-column:1/-1;font-size:var(--fs-xs);color:var(--muted)}
+.check{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--fg);cursor:pointer;padding:6px 0}
+.check input{width:16px;height:16px;accent-color:var(--accent);margin:0}
+.run-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.run-row .primary{grid-column:1/-1;padding:9px}
+.costnote{font-size:var(--fs-xs);color:var(--muted);margin-top:8px;line-height:1.5}
+
+/* result column */
+.result .pane.price{height:440px}
+.result .pane.sub{height:140px}
+.result .pane.equity{height:260px}
+.result .pane.dd{height:110px}
+.pane .tag .sw{display:inline-block;width:10px;height:2px;vertical-align:middle;margin-right:4px;border-radius:1px}
+.pane .tag .sw.dash{background:repeating-linear-gradient(90deg,currentColor 0 3px,transparent 3px 5px)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.statgrid .stat{background:var(--panel2);border-radius:var(--r);padding:10px 12px}
+.statgrid .stat .value{font-size:20px}
+.statgrid .stat .sub{font-size:var(--fs-xs);line-height:1.4}
+.statgrid .stat .label{display:flex;justify-content:space-between;gap:6px;align-items:center}
+/* Educational "?" tooltips. Same pattern as portfolio.html (.tip + data-tip): the text is drawn
+   by CSS from data-tip, so it works on hover, on keyboard focus and on tap (click toggles .open),
+   unlike the native title attribute which touch and keyboard users never see.
+   The visible circle is 14px but the hit area is 24px, drawn via ::before. */
+.statgrid .stat .label .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  min-width:24px;min-height:24px;width:24px;height:24px;padding:0;margin:-5px -5px -5px 0;border:0;background:transparent;
+  color:var(--muted);font-family:var(--mono);font-size:9px;line-height:1;cursor:help;border-radius:50%}
+.statgrid .stat .label .tip::before{content:"?";display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;
+  border:1px solid var(--line2,var(--line));background:var(--panel2);color:inherit}
+.statgrid .stat .label .tip:hover::before,.statgrid .stat .label .tip:focus-visible::before,.statgrid .stat .label .tip.open::before{border-color:var(--accent);color:var(--accent)}
+.statgrid .stat .label .tip:hover,.statgrid .stat .label .tip:focus-visible{outline:none;transform:none}
+.statgrid .stat .label .tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);
+  width:max-content;max-width:min(300px,80vw);white-space:normal;text-align:left;padding:8px 10px;border-radius:var(--r);
+  background:var(--panel);color:var(--fg);border:1px solid var(--line2,var(--line));box-shadow:var(--shadow-2,0 8px 24px rgba(0,0,0,.35));
+  font-family:var(--font);font-size:var(--fs-sm);line-height:1.45;font-weight:400;text-transform:none;letter-spacing:0;z-index:50;display:none;pointer-events:none}
+.statgrid .stat .label .tip:hover::after,.statgrid .stat .label .tip:focus-visible::after,.statgrid .stat .label .tip.open::after{display:block}
+.statgrid .stat .label .tip.edge-r::after{left:auto;right:0;transform:none}
+.statgrid .stat .label .tip.edge-l::after{left:0;transform:none}
+@media (prefers-reduced-motion:no-preference){
+  .statgrid .stat .label .tip:hover::after,.statgrid .stat .label .tip:focus-visible::after,.statgrid .stat .label .tip.open::after{animation:tip-in .14s var(--ease,ease)}
+  @keyframes tip-in{from{opacity:0;transform:translate(var(--tx,-50%),3px)}to{opacity:1;transform:translate(var(--tx,-50%),0)}}
+  .statgrid .stat .label .tip.edge-r,.statgrid .stat .label .tip.edge-l{--tx:0}
+}
+.coach{margin:0;padding-left:18px;line-height:1.6;color:var(--fg)}
+.coach li{margin:2px 0}
+.coach li::marker{color:var(--accent)}
+.trades-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.trades-head .sum{font-size:var(--fs-sm);color:var(--muted)}
+table.trades td,table.trades th{padding:5px 6px;font-size:var(--fs-sm);white-space:nowrap}
+table.trades td:first-child,table.trades th:first-child{padding-left:0}
+table.trades tbody tr{cursor:pointer}
+table.trades tbody tr:hover{background:var(--panel2)}
+table.trades tbody tr.on{background:var(--accent-soft)}
+table.trades .side{font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:1px 6px;border-radius:999px;border:1px solid}
+table.trades .side.long{color:var(--up);border-color:var(--up)} table.trades .side.short{color:var(--down);border-color:var(--down)}
+table.trades .num{font-family:var(--mono);text-align:right}
+.result-empty{padding:var(--sp-6) var(--sp-4);text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r-md)}
+.result-empty b{display:block;color:var(--fg);margin-bottom:6px;font-size:var(--fs-md)}
+.result-empty ol{text-align:left;display:inline-block;margin:10px auto 0;padding-left:20px;line-height:1.7}
+
+/* optimize & compare */
+.opt-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 12px;align-items:end}
+.gridrows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;margin:10px 0}
+.gridrows label{font-family:var(--mono);font-size:var(--fs-sm);color:var(--fg)}
+.gridrows input{width:100%;font-family:var(--mono);font-size:var(--fs-sm);padding:4px 8px}
+table.opt td,table.opt th{padding:4px 6px;font-size:var(--fs-sm);white-space:nowrap}
+table.opt td:first-child,table.opt th:first-child{padding-left:0}
+table.opt tbody tr{cursor:pointer} table.opt tbody tr:hover{background:var(--panel2)}
+table.opt tr.top td{font-weight:500}
+table.opt .few{color:var(--muted);font-style:italic}
+table.opt .gap{font-family:var(--mono)}
+.plateau{display:flex;gap:2px;align-items:flex-end;height:46px;margin:8px 0 4px}
+.plateau span{flex:1 1 0;min-width:2px;background:var(--accent);border-radius:1px 1px 0 0;opacity:.85}
+.plateau span.neg{background:var(--down)} .plateau span.few{opacity:.3}
+.cmp-bar{display:grid;grid-template-columns:140px minmax(0,1fr) 72px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:var(--fs-sm)}
+.cmp-bar:last-child{border-bottom:0}
+.cmp-bar .nm{display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-bar .nm i{display:inline-block;width:10px;height:3px;border-radius:1px;flex:none}
+.cmp-bar .track{position:relative;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.cmp-bar .track b{position:absolute;top:0;bottom:0;border-radius:5px;background:var(--up)} .cmp-bar .track b.neg{background:var(--down)}
+.cmp-bar .track i{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.cmp-bar .v{font-family:var(--mono);text-align:right}
+.busy{opacity:.6;pointer-events:none}
+
+/* "what this teaches" */
+.teach details{border-top:1px solid var(--line)}
+.teach details:first-of-type{border-top:0}
+.teach summary{cursor:pointer;padding:9px 0;font-weight:500;font-size:var(--fs-sm);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.teach summary::-webkit-details-marker{display:none}
+.teach summary::after{content:"▸";color:var(--muted);transition:transform var(--dur,160ms)}
+.teach details[open] summary::after{transform:rotate(90deg)}
+.teach .body{font-size:var(--fs-sm);color:var(--muted);line-height:1.6;padding:0 0 10px}
+.teach .body p{margin:0 0 6px}
+.teach .body b{color:var(--fg)}
+.teach .try{display:block;margin-top:6px;padding:6px 8px;border-left:2px solid var(--accent);background:var(--accent-soft);color:var(--fg);border-radius:0 var(--r) var(--r) 0}
+.teach .try button{margin-top:4px}
+.sr-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media print{ .rail .card:not(.teach){display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+<nav class="topnav" aria-label="Main">
+  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
+  <div class="links">
+    <a href="index.html">Dashboard</a>
+    <a href="learn.html">Learn</a>
+    <a href="portfolio.html">Portfolio</a>
+    <a href="backtest.html" class="active" aria-current="page">Backtest</a>
+    <a href="about.html">About</a>
+  </div>
+  <div class="right">
+    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
+  </div>
+</nav>
+
+  <header class="lab-head">
+    <div>
+      <h1>Strategy Lab</h1>
+      <p class="sub">Write down a rule, run it on years of price history, and look at every trade it would have made. The goal is not to find a money machine: it is to learn what a trading rule really does before you risk anything on it.</p>
+    </div>
+    <div class="status">
+      <span class="pill demo hide-sm" id="srcpill" title="Prices are simulated unless you add a free API key on the dashboard">demo</span>
+      <span class="pill" id="datapill" title="Where the bars for the current run came from">no data yet</span>
+      <span class="pill" id="barspill" title="Bars in the current run">—</span>
+    </div>
+  </header>
+
+  <main class="lab">
+    <!-- ───────────────── result column ───────────────── -->
+    <section class="result" aria-label="Results">
+
+      <div id="empty" class="result-empty">
+        <b>No back-test yet</b>
+        Pick a symbol and a strategy on the right, then press <strong>Run back-test</strong>.
+        <ol>
+          <li>Every entry and exit is drawn on the price chart as an arrow.</li>
+          <li>The equity curve shows your account against simply buying and holding.</li>
+          <li>Each statistic comes with a plain-English note on what it means and when to distrust it.</li>
+        </ol>
+      </div>
+
+      <div id="resultwrap" hidden>
+        <div class="callout warn compact" id="fallbacknote" hidden></div>
+        <div class="callout compact" id="pendingnote" hidden></div>
+
+        <div class="charts">
+          <div class="pane price" id="pricepane">
+            <div class="tag" id="pricetag"></div>
+            <div class="overlay" id="priceoverlay" hidden>Loading…</div>
+          </div>
+          <div class="pane sub" id="subpane" hidden>
+            <div class="tag" id="subtag"></div>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <h2>Equity curve <span class="legend"><span><span class="sw" style="background:var(--accent)"></span>strategy</span><span><span class="sw" style="background:var(--muted)"></span>buy &amp; hold</span><span><span class="sw" style="background:var(--down)"></span>drawdown</span></span></h2>
+          <div class="charts">
+            <div class="pane equity" id="equitypane"><div class="tag" id="equitytag"></div></div>
+            <div class="pane dd" id="ddpane"><div class="tag"><b>Drawdown</b> <span>% below the previous peak</span></div></div>
+          </div>
+          <p class="caption">Both lines start with the same cash. Buy-and-hold pays no commissions, so the strategy must beat it <em>after</em> costs to have added anything.</p>
+        </div>
+
+        <div class="card">
+          <h2>Statistics <span class="pill" id="statstitle"></span></h2>
+          <div class="statgrid" id="stats"></div>
+        </div>
+
+        <div class="card">
+          <h2>What the numbers say</h2>
+          <ul class="coach" id="coach"></ul>
+        </div>
+
+        <div class="card">
+          <div class="trades-head">
+            <h2 class="mb-0">Trades <span class="sum" id="tradesum"></span></h2>
+            <div class="row">
+              <button class="sm" type="button" id="csvbtn" title="Copy the trade list as CSV for a spreadsheet">Copy CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap mt-2">
+            <table class="trades dense" id="tradetable">
+              <thead>
+                <tr><th>#</th><th>Side</th><th>Entry</th><th class="num">Price</th><th>Exit</th><th class="num">Price</th><th class="num">Qty</th><th class="num">Bars</th><th class="num">P&amp;L</th><th class="num">P&amp;L %</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="caption">Click a row to zoom the chart to that trade. Fills happen at the <em>next bar's open</em> after a signal, plus slippage, so the price here is never the signal bar's close.</p>
+        </div>
+      </div>
+
+      <!-- Optimize -->
+      <section class="card" id="optcard" hidden aria-label="Parameter optimisation">
+        <h2>Optimise parameters <button class="ghost sm" type="button" id="optclose" aria-label="Hide optimiser">✕</button></h2>
+        <p class="muted" style="font-size:var(--fs-sm);margin:0 0 10px">Every combination of the values below is back-tested on the same bars and ranked. Edit the lists (comma-separated). More than 200 combinations are thinned to 200.</p>
+        <div class="gridrows" id="gridrows"></div>
+        <div class="opt-controls">
+          <div class="field"><label for="optmetric">Rank by</label>
+            <select id="optmetric">
+              <option value="sharpe">Sharpe ratio (risk-adjusted)</option>
+              <option value="totalReturnPct">Total return</option>
+              <option value="cagr">CAGR</option>
+              <option value="profitFactor">Profit factor</option>
+              <option value="calmar">Calmar (CAGR ÷ max drawdown)</option>
+            </select></div>
+          <div class="field"><label for="optoos">Hold out for out-of-sample</label>
+            <select id="optoos">
+              <option value="0">Nothing (tune on everything)</option>
+              <option value="20">Last 20 % of bars</option>
+              <option value="30" selected>Last 30 % of bars</option>
+              <option value="40">Last 40 % of bars</option>
+            </select></div>
+          <div class="field"><label for="optmin">Minimum trades</label><input id="optmin" type="number" min="0" max="500" step="1" value="5"></div>
+          <div class="field"><button class="primary" type="button" id="optrun">Run optimisation</button></div>
+        </div>
+        <div class="msg" id="optmsg" role="status"></div>
+        <div id="optout" hidden>
+          <div class="callout warn" id="optwarn"></div>
+          <div class="row between">
+            <span class="muted" style="font-size:var(--fs-sm)" id="optsummary"></span>
+          </div>
+          <div class="plateau" id="plateau" title="Score of every combination tested, in grid order. A broad hill is trustworthy; a lone spike is luck."></div>
+          <p class="caption mt-0">Score of every combination in grid order. Look for a wide hill of similar results (a plateau), not a single spike.</p>
+          <div class="table-wrap">
+            <table class="opt dense hover" id="opttable"><thead></thead><tbody></tbody></table>
+          </div>
+          <p class="caption">Click a row to load those parameters into the sliders and re-run. <b>In-sample</b> = the bars the parameters were tuned on. <b>Out-of-sample</b> = bars they never saw. A big drop between the two is what overfitting looks like.</p>
+        </div>
+      </section>
+
+      <!-- Compare -->
+      <section class="card" id="cmpcard" hidden aria-label="Compare strategies">
+        <h2>Compare strategies <button class="ghost sm" type="button" id="cmpclose" aria-label="Hide comparison">✕</button></h2>
+        <p class="muted" style="font-size:var(--fs-sm);margin:0 0 10px">All built-in strategies at their default parameters, run on the same bars with the same cash, costs and sizing. Ranked by the metric you choose.</p>
+        <div class="opt-controls">
+          <div class="field"><label for="cmpmetric">Rank by</label>
+            <select id="cmpmetric">
+              <option value="sharpe">Sharpe ratio (risk-adjusted)</option>
+              <option value="totalReturnPct">Total return</option>
+              <option value="cagr">CAGR</option>
+              <option value="maxDrawdownPct">Smallest max drawdown</option>
+              <option value="profitFactor">Profit factor</option>
+            </select></div>
+          <div class="field"><button class="primary" type="button" id="cmprun">Run comparison</button></div>
+        </div>
+        <div class="msg" id="cmpmsg" role="status"></div>
+        <div id="cmpout" hidden>
+          <div class="pane equity mt-2" id="cmppane"><div class="tag" id="cmptag"></div></div>
+          <p class="caption">Equity of every strategy on one chart, same starting cash. The dashed grey line is buy-and-hold.</p>
+          <div id="cmpbars" class="mt-2"></div>
+          <div class="table-wrap mt-3">
+            <table class="opt dense hover" id="cmptable"><thead></thead><tbody></tbody></table>
+          </div>
+          <div class="callout key compact" id="cmpnote"></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ───────────────── control rail ───────────────── -->
+    <aside class="rail" aria-label="Back-test settings">
+      <div class="card">
+        <h2>Data</h2>
+        <div class="field">
+          <label for="symbol">Symbol</label>
+          <div class="sym-row">
+            <input id="symbol" type="text" list="symlist" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. AAPL" maxlength="12" value="AAPL">
+            <button type="button" id="randsym" title="Pick a random symbol from the demo universe">Random</button>
+          </div>
+          <datalist id="symlist"></datalist>
+          <div class="symname" id="symname"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="interval">Bar size</label>
+            <select id="interval">
+              <option value="1day" selected>Daily</option>
+              <option value="1h">1 hour</option>
+              <option value="15min">15 minutes</option>
+              <option value="5min">5 minutes</option>
+              <option value="1min">1 minute</option>
+            </select></div>
+          <div class="field"><label for="lookback">History</label><select id="lookback"></select></div>
+        </div>
+        <p class="costnote" id="datanote">Daily bars give the most history and the most trustworthy tests. Intraday bars give more trades, but a 5-minute strategy must beat much larger relative costs.</p>
+      </div>
+
+      <div class="card">
+        <h2>Strategy</h2>
+        <div class="field">
+          <label for="strategy" class="sr-only">Strategy</label>
+          <select id="strategy"></select>
+        </div>
+        <p class="strat-desc" id="stratdesc"></p>
+        <div id="params"></div>
+        <button class="ghost sm mt-2" type="button" id="resetparams">Reset to defaults</button>
+      </div>
+
+      <div class="card">
+        <h2>Account &amp; costs</h2>
+        <div class="two">
+          <div class="field"><label for="cash">Starting cash ($)</label><input id="cash" type="number" min="1000" step="1000" value="100000"></div>
+          <div class="field"><label for="sizepct">Position size (% of equity)</label><input id="sizepct" type="number" min="1" max="100" step="5" value="100"></div>
+          <div class="field"><label for="commission">Commission ($ per fill)</label><input id="commission" type="number" min="0" step="0.5" value="0"></div>
+          <div class="field"><label for="slippage">Slippage (bps per fill)</label><input id="slippage" type="number" min="0" max="200" step="1" value="5"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="allowshort"> Allow short selling <span class="muted">(sell signals open shorts)</span></label>
+        <p class="costnote">1 basis point (bp) = 0.01 %. Five bps of slippage on a $100 stock means you pay $100.05 to buy and receive $99.95 to sell. Small, but it is charged on <em>every</em> fill.</p>
+        <div class="run-row">
+          <button class="primary lg" type="button" id="run">Run back-test</button>
+          <button type="button" id="optbtn" title="Search a grid of parameter values">Optimise</button>
+          <button type="button" id="cmpbtn" title="Run every built-in strategy on these bars">Compare strategies</button>
+        </div>
+        <div class="msg" id="runmsg" role="status"></div>
+      </div>
+
+      <div class="card teach">
+        <h2>What this teaches</h2>
+        <details open>
+          <summary>Look-ahead bias</summary>
+          <div class="body">
+            <p>A back-test cheats whenever a rule uses information that was not yet known at the moment of the decision. The classic slip: deciding on today's <b>close</b> and then pretending you bought at today's <b>open</b>, hours earlier.</p>
+            <p>This engine only ever fills at the <b>next bar's open</b>. Indicators at bar <i>i</i> use bars 0…<i>i</i> only, and the breakout channel excludes the current bar so that a new high cannot "break out" of itself.</p>
+            <span class="try">Try it: in the trade list, notice every entry price is an <b>open</b>, one bar after the arrow appears on the signal bar. If a vendor's back-test shows fills at the signal bar's close, ask how.</span>
+          </div>
+        </details>
+        <details>
+          <summary>Survivorship bias</summary>
+          <div class="body">
+            <p>The symbols you can type here today are the ones that <b>survived</b>. Companies that went bankrupt, were delisted or got acquired at a loss are not in any watchlist, so a strategy tested only on today's famous names looks better than it would have in real time.</p>
+            <p>Apple, Nvidia and Microsoft all look like easy money in hindsight; Enron, Lehman Brothers and Bed Bath &amp; Beyond do not appear in the dropdown at all.</p>
+            <span class="try">Try it: run the same rule on five random symbols (the <b>Random</b> button) and on an index ETF such as SPY. If it only works on last decade's winners, it is the winners, not the rule.</span>
+          </div>
+        </details>
+        <details>
+          <summary>Transaction costs</summary>
+          <div class="body">
+            <p>Commissions, the bid-ask spread and slippage are small per trade and enormous in total. A rule that trades every few days on 5-minute bars can be profitable with zero costs and lose steadily with realistic ones.</p>
+            <p>Costs are charged <b>twice</b> per round trip (entry and exit), and they do not shrink when your edge does.</p>
+            <span class="try">Try it: run with 0 bps slippage and $0 commission, then again with 10 bps and $1. Watch the "Costs" tile and the gap to buy-and-hold.<button class="sm" type="button" id="trycosts">Apply realistic costs</button></span>
+          </div>
+        </details>
+        <details>
+          <summary>Overfitting</summary>
+          <div class="body">
+            <p>Given enough knobs, any rule can be tuned to fit the past perfectly, because it ends up fitting the <b>noise</b>, not a repeatable pattern. The symptom: spectacular in-sample results that collapse on data the parameters never saw.</p>
+            <p>Defences: few parameters, many trades, a wide <b>plateau</b> of good settings rather than one spike, and always a held-out <b>out-of-sample</b> period judged only once.</p>
+            <span class="try">Try it: press <b>Optimise</b> with 30 % held out. Compare the in-sample and out-of-sample columns of the top row, then look at the plateau chart.<button class="sm" type="button" id="tryopt">Open the optimiser</button></span>
+          </div>
+        </details>
+        <details>
+          <summary>How to read a back-test honestly</summary>
+          <div class="body">
+            <p>Ask, in this order: how many trades (fewer than 30 is an anecdote), did it beat buy-and-hold after costs, how deep was the worst drawdown (could you have kept following the rules?), and does it still work on other symbols, other years and slightly different parameters.</p>
+            <p>A back-test can only ever show that a rule <b>did not work in the past</b>. It cannot prove that it will work in the future.</p>
+          </div>
+        </details>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer disclaimer-footer">
+  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
+  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
+</footer>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="sr-live" id="srlive" aria-live="polite"></div>
+
+<!-- Subresource Integrity: the browser refuses the CDN file unless its SHA-384 matches the pinned 4.2.0 build
+     (hash computed from the byte-identical vendored copy in js/vendor/). On a mismatch or a blocked CDN,
+     window.LightweightCharts stays undefined and the next line loads the local copy instead. -->
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js" integrity="sha384-OK7vELvjHdhUFi31JYioPIcRHTROLdcDa6ZsNWgvgLaKj+9JqhU0Ad8g4wz3CXjA" crossorigin="anonymous"></script>
+<script>/* Offline / blocked-CDN / failed-integrity fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/backtest.js"></script>
+<script src="js/backtest-ui.js"></script>
+<script>
+(function(){
+  'use strict';
+  // Theme toggle: remembers an explicit choice in localStorage ('bt.theme'); otherwise follows the OS.
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  function stored(){ try { return localStorage.getItem('bt.theme') || ''; } catch (e) { return ''; } }
+  function apply(t){
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var isLight = t === 'light' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    if (btn) btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isLight ? '#f3f5f8' : '#0f1319');
+    if (window.BT && BT.backtestPage && BT.backtestPage.onThemeChange) BT.backtestPage.onThemeChange();
+  }
+  apply(stored());
+  if (btn) btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    var osLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var effective = cur || (osLight ? 'light' : 'dark');
+    var next = effective === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('bt.theme', next); } catch (e) { /* storage unavailable: still toggle for this view */ }
+    apply(next);
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: light)');
+    var onOs = function(){ if (!stored()) apply(''); };
+    if (mq.addEventListener) mq.addEventListener('change', onOs); else if (mq.addListener) mq.addListener(onOs);
+  }
+  // Mark the current page in the nav even if this file is copied under another name.
+  var here = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.topnav .links a').forEach(function(a){
+    var target = (a.getAttribute('href') || '').split('#')[0];
+    var on = target === here;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+
+  // Statistic "?" hints. js/backtest-ui.js renders them as <span class="q" title="..." tabindex="0">.
+  // A title tooltip never shows on touch devices or on keyboard focus, so each span is upgraded here
+  // into a real <button class="tip" data-tip="..."> whose text is drawn by CSS (see the .tip rules above):
+  // visible on hover, on focus, and toggled by tap/click, Enter or Space; Escape closes it.
+  var stats = document.getElementById('stats');
+  function upgradeHints(scope) {
+    scope.querySelectorAll('span.q[title]').forEach(function (q) {
+      var text = q.getAttribute('title') || q.getAttribute('aria-label') || '';
+      var label = q.parentNode ? (q.parentNode.textContent || '').replace(/\?\s*$/, '').trim() : '';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tip';
+      b.setAttribute('data-tip', text);
+      b.setAttribute('aria-label', label ? 'About ' + label + ': ' + text : text);
+      q.parentNode.replaceChild(b, q);
+    });
+  }
+  function placeTip(el) {
+    // Keep the bubble on screen when the stat sits near either edge of the viewport.
+    var r = el.getBoundingClientRect(), cx = r.left + r.width / 2, half = 150;
+    el.classList.toggle('edge-r', cx + half > window.innerWidth - 8);
+    el.classList.toggle('edge-l', cx - half < 8);
+  }
+  function closeTips(except) {
+    document.querySelectorAll('#stats .tip.open').forEach(function (el) { if (el !== except) el.classList.remove('open'); });
+  }
+  if (stats) {
+    upgradeHints(stats);
+    if (window.MutationObserver) {
+      new MutationObserver(function () { upgradeHints(stats); }).observe(stats, { childList: true, subtree: true });
+    }
+    stats.addEventListener('mouseover', function (e) { var t = e.target.closest && e.target.closest('.tip'); if (t) placeTip(t); });
+    stats.addEventListener('focusin', function (e) { var t = e.target.closest && e.target.closest('.tip'); if (t) placeTip(t); });
+    stats.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('.tip');
+      closeTips(t);
+      if (t) { placeTip(t); t.classList.toggle('open'); e.preventDefault(); }
+    });
+    document.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('#stats .tip'))) closeTips(null); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeTips(null); });
+  }
+})();
+</script>
+</body>
+</html>
