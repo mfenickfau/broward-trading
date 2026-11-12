@@ -93,3 +93,28 @@ Server (`server/worker.js`, Cloudflare Worker + KV, free tier; `server/wrangler.
 - compare.html + js/compare.js: normalized % performance lines for up to 6 symbols, correlation matrix, watchlist heatmap tiles (% change), relative strength vs SPY, drawn with lightweight-charts and canvas.
 - PWA: manifest.json (name Broward Trading, theme colors from tokens, icons/icon-192.png, icons/icon-512.png, icons/icon.svg), sw.js (precache app shell + course JSON, network-first for API hosts, never cache api.twelvedata.com / finnhub.io / alphavantage.co responses longer than 60 s).
 - Course: course/m7-replay.json 'Practice Drills: Market Replay' (intermediate) and course/m8-capstone.json 'Capstone: Your Trading Plan' (advanced); index.json gains them; learn.js shows glossary term tooltips (`[[term]]` in md) and a 'Practice in Replay' button on drill blocks (`{type:'drill', drillId}`).
+
+# v0.4 additions
+
+## js/i18n.js → `BT.i18n`
+- Locales: 'en' (default) and 'es'. `BT.i18n.lang()` / `setLang('es')` persisted in `bt.lang`, sets `<html lang>`, and re-translates the page. Nav gets an EN/ES toggle (js/nav.js) and the language list is extensible.
+- UI translation is DOM-based so pages need no rewrite: `i18n/es.json` is `{ "ui": { "<exact English string>": "<Spanish>" }, "attrs": { "<exact English>": "<Spanish>" } }`. `translatePage()` walks text nodes, `placeholder`, `title`, `aria-label` and `alt` attributes, replacing exact (trimmed, whitespace-collapsed) matches, remembering originals on the node so switching back to English restores them; a MutationObserver translates dynamically inserted content (debounced, skips `<script>/<style>/<code>/.no-i18n`, never touches inputs' values). `BT.t(str, vars)` is the programmatic helper for JS-built strings with `{name}` interpolation. `BT.i18n.fmtNumber/fmtMoney/fmtDate` use `Intl` with the active locale.
+- Course content: Spanish modules live in `course/es/<same filename>.json` with identical ids, structure, `answer` indexes and chart/drill references; `BT.course` loads `course/<lang>/x.json` and falls back to `course/x.json` (English) when missing, showing a small 'English only' badge. Same for `course/es/glossary.json`, `course/es/drills.json`, `course/es/questionbank.json`, `course/es/index.json`.
+
+## Classroom → `BT.classroom` (js/classroom.js), instructor.html + js/instructor.js, server/worker.js routes
+- Student side (card in learn.html): join with a 6-char class code; `snapshot()` → `{studentId (random, persisted), displayName (optional), lessonsDone, quizScores, drills:[{id, returnPct, date}], paper:{equity, trades, winRate}, journalEntries, streak, updatedAt}`. With `BT.auth.config.apiBase` set it POSTs snapshots to `/classes/:code/snapshots` (throttled, at most once per 5 min and on lesson/quiz completion); without a backend it produces a **share code** (`BT1.` + base64url of deflated JSON via CompressionStream when available, else plain base64url JSON) the student can copy to the instructor.
+- Instructor side (instructor.html): create a class (name, section, term) → class code; roster table (name/id, progress %, quiz avg, drills done, paper return, journal entries, last active) sortable; per-student drawer with module breakdown; import share codes (paste many at once); gradebook using the rubric in docs/TEACHING_GUIDE.md with editable weights; CSV export (textarea); privacy notice (no emails required, pseudonymous ids, FERPA-minded data minimization). Works fully offline from pasted share codes; syncs when the backend exists. Instructor data persisted in `bt.instructor`.
+- Worker routes: POST /classes (instructor session required when auth is configured; else open with an instructor secret) → {code}; POST /classes/:code/snapshots; GET /classes/:code/roster (instructor); DELETE /classes/:code/students/:id. KV namespace CLASSES. Rate limit per IP.
+
+## Onboarding → start.html + js/onboarding.js (`BT.onboarding`)
+Seven-day "First Week" path for complete beginners. `course/firstweek.json` defines 7 days × 3 tasks: `{id, title, why, steps[], check:{type:'lesson'|'quiz'|'trade'|'replay'|'journal'|'alert'|'watchlist'|'glossary'|'manual', ...}}`. `BT.onboarding.status()` evaluates each check against localStorage state (bt.course, bt.portfolio, bt.replay.sessions, bt.journal, bt.alerts, bt.flashcards, watchlist) so tasks tick themselves; manual tasks have a checkbox. Day unlocks sequentially but can be skipped. Progress in `bt.onboarding`. A compact "Your first week" card on learn.html home links here (owner: course-engine agent).
+
+## Crypto & ETFs
+- `BT.data` universe gains crypto (BTC-USD, ETH-USD, SOL-USD, with 24/7 calendar in the demo generator and `marketStatus(symbol)` returning open 24/7 for `kind:'crypto'`) and ETFs with `kind:'etf'` and expense ratios in metadata. Provider symbol mapping: Twelve Data `BTC/USD`, Finnhub `BINANCE:BTCUSDT`, Alpha Vantage `DIGITAL_CURRENCY_DAILY`.
+- Course module `course/m9-crypto-etf.json` 'Crypto & ETFs: Different Markets, Same Discipline' (intermediate, m9-l1…l5), added to course/index.json.
+
+## Printing & certificate
+- `css/print.css` (media print): hides nav/tab bar/buttons, prints lesson prose at readable size with page breaks between lessons; 'Print / Save as PDF' button in the lesson reader (calls `window.print()`; hidden when `window.print` is unavailable or the page is framed).
+- `certificate.html`: standalone printable certificate (name, course, date, certificate id, verify URL, signature line, Broward Trading mark), landscape print CSS, loaded from `bt.course` certificate record or query params.
+
+## Pages list for nav.js (More sheet) now also includes: start.html 'First Week', instructor.html 'Instructor', certificate.html (hidden from nav, linked from Learn).
