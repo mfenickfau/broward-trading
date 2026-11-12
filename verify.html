@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Check whether a Broward Trading course certificate is genuine. Enter the certificate id (BT-YYYY-XXXXXX) to see the holder's name, issue date and completed modules.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Verify certificate — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and fonts come from css/style.css tokens */
+  .vf{max-width:820px}
+  .vf-head{padding-block:var(--sp-5) var(--sp-3);border-bottom:0}
+  .vf-head h1{margin:0 0 6px;font-size:var(--fs-2xl);line-height:1.15}
+  .vf-head .lede{margin:0;color:var(--muted);font-size:var(--fs-md);max-width:60ch}
+
+  /* phone first: every control is at least 44px tall */
+  .vf button,.vf input:not([type=checkbox]){min-height:44px}
+
+  .lookup form{display:grid;gap:8px}
+  .lookup .input-group{display:flex}
+  .lookup input{flex:1;min-width:0;font-family:var(--mono);font-size:var(--fs-lg);letter-spacing:1px;text-transform:uppercase;border-radius:var(--r) 0 0 var(--r)}
+  .lookup input::placeholder{text-transform:none;letter-spacing:0;font-family:var(--font);font-size:var(--fs-md)}
+  .lookup button{border-radius:0 var(--r) var(--r) 0;white-space:nowrap}
+  @media (max-width:420px){ .lookup .input-group{flex-direction:column} .lookup input,.lookup button{border-radius:var(--r)} }
+
+  /* result */
+  .result{margin-top:var(--sp-4);display:none}
+  .result.show{display:block}
+  .result .status{display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-3);flex-wrap:wrap}
+  .result .status .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-family:var(--mono);font-size:20px;font-weight:600}
+  .result.ok .status .ico{background:var(--up-soft);color:var(--up)}
+  .result.self .status .ico{background:var(--warn-soft);color:var(--warn-text,var(--warn))}
+  .result.bad .status .ico{background:var(--down-soft);color:var(--down)}
+  .result .status h2{margin:0;font-size:var(--fs-lg);text-transform:none;letter-spacing:0;color:var(--fg)}
+  .result .status p{margin:2px 0 0;color:var(--muted);font-size:var(--fs-sm)}
+  .result .kv{margin:var(--sp-3) 0;font-size:var(--fs-md)}
+  .result .kv .v{font-weight:500;overflow-wrap:anywhere}
+  .result .kv .v.num{font-family:var(--mono);letter-spacing:1px}
+  .mods{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .mods li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);font-size:var(--fs-sm);min-height:40px}
+  .mods li .ok{color:var(--up);font-family:var(--mono)}
+  .mods li .q{color:var(--muted);font-family:var(--mono);white-space:nowrap}
+
+  .local-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .local-list li{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .local-list li .id{font-family:var(--mono);letter-spacing:1px}
+  .local-list li small{color:var(--muted);grid-column:1}
+  .local-list li button{grid-row:1 / span 2;min-height:40px}
+
+  section.card{margin-top:var(--sp-4)}
+  .section-title{margin:var(--sp-5) 0 var(--sp-2);font-size:var(--fs-lg)}
+  .explain{color:var(--muted);line-height:1.6}
+  .explain h3{color:var(--fg);margin:var(--sp-3) 0 4px;font-size:var(--fs-md)}
+  .explain p{margin:0 0 8px}
+  .explain code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:var(--r-sm)}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page vf">
+  <header class="vf-head">
+    <h1>Verify a certificate</h1>
+    <p class="lede">Every Broward Trading certificate carries an id in the form <span class="num">BT-2026-ABC234</span>. Enter it below to see who it was issued to, when, and which modules they completed.</p>
+  </header>
+
+  <section class="card pad lookup" aria-labelledby="lookupTitle">
+    <h2 id="lookupTitle">Certificate id</h2>
+    <form id="verifyForm" novalidate>
+      <label for="certId" class="muted" style="font-size:var(--fs-sm)">Type or paste the id printed at the bottom of the certificate</label>
+      <div class="input-group">
+        <input id="certId" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BT-2026-ABC234" maxlength="20" aria-describedby="idHelp">
+        <button type="submit" class="primary" id="btnVerify">Verify</button>
+      </div>
+      <div class="msg" id="verifyMsg" role="status" aria-live="polite"></div>
+      <small id="idHelp" class="muted">Dashes and capital letters are added automatically. Ids never contain the letters O or I or the digits 0 or 1.</small>
+    </form>
+
+    <div class="result" id="result" role="region" aria-live="polite" aria-label="Verification result"></div>
+  </section>
+
+  <section class="card pad" id="localCard" aria-labelledby="localTitle" hidden>
+    <h2 id="localTitle">Certificates issued in this browser</h2>
+    <p class="muted" style="margin:0 0 var(--sp-3);font-size:var(--fs-sm)">These were created on this device. Self-issued ones are not stored on a server and cannot be verified by other people.</p>
+    <ul class="local-list" id="localList"></ul>
+  </section>
+
+  <h2 class="section-title">What a result means</h2>
+  <div class="card pad explain">
+    <h3>Verified</h3>
+    <p>The id exists on the Broward Trading server. It was issued to a signed-in account after the server received the course record: every lesson marked done and a quiz average of at least 80% in each module. The name shown is the one the holder entered; we do not verify legal names and we never show the holder's email.</p>
+    <h3>Self-issued (unverified)</h3>
+    <p>Ids whose third group starts with <code>L</code> (for example <code>BT-2026-LK7Q2M</code>), and the older eight-character ids such as <code>BT-1A2B3C4D</code>, were created inside a student's browser from progress saved on their device. The site cannot confirm them because nothing was sent to a server. They are still a meaningful personal record, but treat them like a self-reported score. Students who want a checkable certificate can sign in on the <a href="pricing.html">Pro page</a> once accounts are available.</p>
+    <h3>Not found</h3>
+    <p>No certificate with that id exists on the server. Check for a mistyped character first (the font on a printout can make <code>8</code> and <code>B</code> look alike). If the id still cannot be found, the certificate did not come from this site.</p>
+    <h3>What a certificate is not</h3>
+    <p>Completion of a free online course. It is not a licence, a professional qualification, or evidence of trading skill, and Broward Trading is not affiliated with any college or institution. Nothing on this site is investment advice.</p>
+  </div>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.BT.auth;
+  var nav = window.BT.nav || {};
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(msg, kind, title) { if (nav.toast) nav.toast(msg, kind, title); }
+  function fmtDate(iso) { var d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); }
+  var input = $('certId'), msg = $('verifyMsg'), out = $('result'), btn = $('btnVerify');
+  var busy = false;
+
+  // Light formatting as you type: uppercase, strip spaces; insert dashes once the shape is clear.
+  input.addEventListener('input', function () {
+    var raw = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    var compact = raw.replace(/-/g, '');
+    if (/^BT\d{4}[A-Z0-9]{0,6}$/.test(compact) && compact.length > 6) raw = 'BT-' + compact.slice(2, 6) + '-' + compact.slice(6);
+    else if (/^BT\d{1,4}$/.test(compact) && compact.length > 2 && raw.indexOf('-') < 0) raw = 'BT-' + compact.slice(2);
+    if (raw !== input.value) input.value = raw;
+    input.removeAttribute('aria-invalid');
+  });
+
+  function kv(k, v, cls) { return '<span class="k">' + esc(k) + '</span><span class="v ' + (cls || '') + '">' + v + '</span>'; }
+  function modulesHtml(mods) {
+    if (!Array.isArray(mods) || !mods.length) return '<p class="muted" style="margin:0;font-size:var(--fs-sm)">No module breakdown was recorded for this certificate.</p>';
+    return '<ul class="mods">' + mods.map(function (m) {
+      return '<li><span>' + (m.done ? '<span class="ok">✓</span> ' : '') + esc(m.title || m.id) + '</span>' +
+        (typeof m.quizAvg === 'number' ? '<span class="q">' + Math.round(m.quizAvg) + '% quiz</span>' : '') + '</li>';
+    }).join('') + '</ul>';
+  }
+  function render(r) {
+    out.className = 'result show';
+    var rec = r.record || {};
+    if (r.found && r.verified) {
+      out.classList.add('ok');
+      out.innerHTML =
+        '<div class="status"><div class="ico" aria-hidden="true">✓</div><div><h2>Verified certificate</h2><p>This id exists on the Broward Trading server.</p></div></div>' +
+        '<div class="kv">' + kv('Issued to', esc(rec.name)) + kv('Issued on', fmtDate(rec.issuedAt)) + kv('Course', esc(rec.course || 'Broward Trading Course')) +
+          (rec.scorePct != null ? kv('Quiz average', '<span class="num">' + esc(rec.scorePct) + '%</span>') : '') + kv('Certificate id', esc(rec.id || r.id), 'num') + '</div>' +
+        '<h3 style="margin:var(--sp-3) 0 6px;font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Modules</h3>' + modulesHtml(rec.modules) +
+        '<p class="disclaimer" style="margin:var(--sp-3) 0 0">A certificate recognises completion of a free educational course. It is <b>not</b> a licence or qualification.</p>';
+      return;
+    }
+    if (r.found && r.local) {
+      out.classList.add('self');
+      out.innerHTML =
+        '<div class="status"><div class="ico" aria-hidden="true">!</div><div><h2>Self-issued (unverified)</h2><p>Found on this device only. It was drawn in the browser and never stored on a server, so other people cannot verify it.</p></div></div>' +
+        '<div class="kv">' + kv('Name entered', esc(rec.name)) + kv('Created on', fmtDate(rec.issuedAt)) +
+          (rec.scorePct != null ? kv('Quiz average', '<span class="num">' + esc(rec.scorePct) + '%</span>') : '') + kv('Certificate id', esc(rec.id || r.id), 'num') + '</div>' +
+        modulesHtml(rec.modules) +
+        '<p class="muted" style="margin:var(--sp-3) 0 0;font-size:var(--fs-sm)">Want one that anyone can check? ' + (A.configured() ? 'Sign in on the <a href="pricing.html">Pro page</a> and re-issue your certificate from the Learn page.' : 'Verified certificates arrive with the membership backend; see the <a href="pricing.html">Pro page</a>.') + '</p>';
+      return;
+    }
+    if (r.selfIssued) {
+      out.classList.add('self');
+      out.innerHTML =
+        '<div class="status"><div class="ico" aria-hidden="true">!</div><div><h2>Self-issued (unverified)</h2><p>' + esc(r.error) + '</p></div></div>' +
+        '<div class="kv">' + kv('Certificate id', esc(r.id), 'num') + kv('Status', 'Not stored on a server') + '</div>' +
+        '<p class="muted" style="margin:0;font-size:var(--fs-sm)">The holder created this certificate in their own browser. Ask them to show the certificate image and their course progress, or to issue a verified one once signed in.</p>';
+      return;
+    }
+    out.classList.add('bad');
+    var why = r.invalid ? esc(r.error) :
+      r.notConfigured ? 'This copy of the site has no verification server configured, so only certificates created in this browser can be looked up.' :
+      r.network ? esc(r.error) :
+      'No certificate with this id exists on the server. Check the characters and try again.';
+    out.innerHTML =
+      '<div class="status"><div class="ico" aria-hidden="true">✕</div><div><h2>' + (r.invalid ? 'Not a valid id' : 'Not found') + '</h2><p>' + why + '</p></div></div>' +
+      '<div class="kv">' + kv('Looked up', esc(r.id || input.value.trim().toUpperCase() || '—'), 'num') + '</div>';
+  }
+
+  function doVerify(id, fromUrl) {
+    if (busy) return;
+    var norm = A.normalizeCertId(id);
+    msg.className = 'msg'; msg.textContent = '';
+    out.className = 'result'; out.innerHTML = '';
+    if (!norm) { msg.className = 'msg err'; msg.textContent = 'Enter a certificate id.'; input.focus(); return; }
+    if (!A.isCertId(norm)) {
+      input.setAttribute('aria-invalid', 'true');
+      msg.className = 'msg err'; msg.textContent = 'That does not look like a certificate id. Expected BT-YYYY-XXXXXX (6 letters or digits).';
+      return;
+    }
+    input.value = norm;
+    busy = true; btn.disabled = true; btn.textContent = 'Checking…';
+    try { history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(norm)); } catch (e) { /* ignore */ }
+    A.verify(norm).then(function (r) {
+      busy = false; btn.disabled = false; btn.textContent = 'Verify';
+      render(r);
+      if (!fromUrl) out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+  $('verifyForm').addEventListener('submit', function (ev) { ev.preventDefault(); doVerify(input.value); });
+
+  // Certificates created in this browser (self-issued or verified), for convenience.
+  function renderLocal() {
+    var list = A.localCertificates(), card = $('localCard'), ul = $('localList');
+    if (!list.length) { card.hidden = true; return; }
+    card.hidden = false;
+    ul.innerHTML = list.map(function (c) {
+      return '<li><span class="id">' + esc(c.id) + '</span><button type="button" class="sm" data-id="' + esc(c.id) + '">Look up</button>' +
+        '<small>' + esc(c.name) + ' · ' + fmtDate(c.issuedAt) + ' · ' + (c.local ? 'self-issued' : 'verified') + '</small></li>';
+    }).join('');
+    ul.querySelectorAll('button[data-id]').forEach(function (b) {
+      b.addEventListener('click', function () { input.value = b.dataset.id; doVerify(b.dataset.id); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    });
+  }
+  renderLocal();
+
+  // Deep link: verify.html?id=BT-2026-ABC234
+  var q = new URLSearchParams(location.search).get('id');
+  if (q) { input.value = A.normalizeCertId(q); doVerify(q, true); }
+  else if (!A.configured()) { msg.className = 'msg'; msg.textContent = 'No verification server is configured on this copy of the site; only certificates created in this browser can be looked up.'; }
+})();
+</script>
+</body>
+</html>

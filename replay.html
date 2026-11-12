@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Market Replay: step through historical bars one at a time with the future hidden, place paper trades at the price you can see, and get a scorecard against buy-and-hold. Free, educational, no real money.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Replay — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .rp-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .rp-head h1{margin:0;font-size:var(--fs-xl)}
+  .rp-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0;max-width:70ch}
+  .rp-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .honesty summary{font-size:var(--fs-sm)}
+  .honesty p{margin:0;font-size:var(--fs-sm);color:var(--muted);line-height:1.55}
+
+  /* phones first: every interactive control is at least 44px tall */
+  .rp button,.rp select,.rp input:not([type=checkbox]):not([type=radio]),.rp textarea{min-height:44px}
+  .rp button.sm{min-height:32px}
+  .rp input[type=checkbox]{width:22px;height:22px;margin:0}
+  .rp .field label{font-size:var(--fs-sm)}
+  .rp .form-row .field{flex:1 1 150px}
+  .rp .field.sym{flex:2 1 200px;position:relative}
+  .rp .field.chk{flex-direction:row;align-items:center;gap:10px;min-height:44px}
+  .results{position:absolute;left:0;right:0;top:100%;z-index:30;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--shadow-2);max-height:240px;overflow:auto;margin-top:4px}
+  .results[hidden]{display:none}
+  .results button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 12px}
+  .results button:last-child{border-bottom:0}
+  .results button:hover,.results button:focus-visible{background:var(--panel2)}
+  .results .t{font-family:var(--mono);font-weight:500;min-width:64px}
+  .results .n{color:var(--muted);font-size:var(--fs-sm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .drillbox{margin-top:var(--sp-3);padding:12px;border:1px dashed var(--accent);border-radius:var(--r-md);background:var(--panel2)}
+  .drillbox[hidden]{display:none}
+  .drillbox h3{margin:0 0 4px;font-size:var(--fs-md)}
+  .drillbox .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);font-size:var(--fs-sm);margin-bottom:8px}
+  .drillbox p{margin:0 0 8px;line-height:1.55}
+  .drillbox details{background:transparent;border-color:var(--line)}
+  .drillbox ul{margin:6px 0 0;padding-left:18px;color:var(--muted);line-height:1.5;font-size:var(--fs-sm)}
+  .drillbox ul li{margin-bottom:4px}
+  .drillbox .crit{list-style:none;padding:0;margin:6px 0 0}
+  .drillbox .crit li::before{content:"◦ ";color:var(--accent)}
+
+  .setup-actions{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center;margin-top:var(--sp-3)}
+  .setup-actions .primary{flex:1 1 200px}
+
+  /* session */
+  .sess-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+  .sess-head .title{font-weight:600;font-size:var(--fs-md)}
+  .sess-head .title .num{color:var(--muted);font-weight:400;font-size:var(--fs-sm);margin-left:6px}
+  .sess-head .when{font-family:var(--mono);font-size:var(--fs-sm);color:var(--muted)}
+  .sess-head .bar{flex:1 1 140px;min-width:120px}
+  .sess-head .pct{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
+  @media (min-width:761px){.pane.price{height:380px}}
+  /* <=760px: css/style.css governs (min(360px,52vh) portrait, min(300px,60vh) landscape) */
+  .pane .tag{top:8px;left:10px}
+  .ovl{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin:-6px 0}
+  .ovl .lbl{font-size:var(--fs-xs);color:var(--muted);margin-right:4px;text-transform:uppercase;letter-spacing:.5px}
+  .ovl button{font-size:var(--fs-xs);padding:4px 10px;color:var(--muted)}
+  .ovl button.on{color:var(--fg);border-color:var(--line2);background:var(--panel2)}
+  .ovl button.on[data-ovl=sma20]{color:var(--s1)} .ovl button.on[data-ovl=sma50]{color:var(--s2)} .ovl button.on[data-ovl=ema9]{color:var(--s3)} .ovl button.on[data-ovl=vwap]{color:var(--s4)} .ovl button.on[data-ovl=rsi]{color:var(--purple)}
+  .pane .future{position:absolute;right:10px;bottom:30px;z-index:5;font-size:var(--fs-xs);color:var(--warn-text,var(--warn));pointer-events:none;background:color-mix(in srgb,var(--panel) 80%,transparent);padding:2px 6px;border-radius:var(--r-sm)}
+  .pane.sub{height:120px}
+
+  /* Transport bar. Desktop: Step | Play | speed on the first row, secondary controls on a second row.
+     Phones: a single 44–56px sticky row (Step | Play | speed | More); the second row is a popover
+     toggled by the More button so the stuck bar never covers more than ~9% of the viewport. */
+  .controls{position:sticky;top:calc(var(--topnav-h,52px) + 8px);z-index:20;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center;box-shadow:var(--shadow-1)}
+  .controls button{padding:8px 6px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:44px}
+  .controls select{width:100%;min-height:44px}
+  .controls .more{display:none;width:44px;padding:8px 0;font-size:var(--fs-lg);line-height:1}
+  .controls .row2{grid-column:1/-1;display:flex;gap:6px 10px;align-items:center;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--muted)}
+  .controls .row2 label{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+  .controls .row2 .end{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  @media (max-width:760px){
+    .controls{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto 44px;padding:6px 8px;gap:4px}
+    .controls .more{display:block}
+    .controls .more[aria-expanded="true"]{background:var(--panel2);border-color:var(--line2);color:var(--fg)}
+    .controls .row2{display:none}
+    .controls.open .row2{display:flex;padding:4px 0 2px}
+    .controls .row2 .end{margin-left:0;width:100%}
+    .controls .row2 .end button{flex:1 1 120px}
+  }
+
+  .work{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-3);align-items:start}
+  @media (max-width:760px){.work{grid-template-columns:1fr}}
+
+  /* ticket */
+  .ticket .qtyrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}
+  .ticket .sizes{display:flex;gap:4px}
+  .ticket .sizes button{padding:6px 8px;font-size:var(--fs-xs);min-height:44px}
+  .ticket .types{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .ticket .prices{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .ticket .prices .field[hidden]{display:none}
+  .ticket .sides{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+  .ticket .sides button{font-size:var(--fs-md);padding:10px 8px}
+  .ticket .sides button.short{background:transparent;border-color:var(--down);color:var(--down)}
+  .ticket .sides button.cover{background:transparent;border-color:var(--up);color:var(--up)}
+  .ticket .sides button:disabled{opacity:.4}
+  .ticket .close{margin-top:6px;width:100%}
+  .ticket .msg{margin-top:8px;line-height:1.45;min-height:18px}
+  .ticket .hint{font-size:var(--fs-xs);color:var(--muted);margin-top:6px}
+
+  /* account strip */
+  .acct{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px}
+  .acct .stat{min-width:0}
+  .acct .stat .value{font-size:var(--fs-lg);overflow-wrap:anywhere}
+  .acct .stat .sub{overflow-wrap:anywhere}
+  @media (max-width:420px){.acct{grid-template-columns:repeat(2,minmax(0,1fr))}.acct .stat .value{font-size:var(--fs-md)}}
+  .acct .stat.wide{grid-column:1/-1}
+  .acct .value.up{color:var(--up)} .acct .value.down{color:var(--down)}
+  .acct .margin{grid-column:1/-1;font-size:var(--fs-xs);color:var(--warn-text,var(--warn))}
+  .acct .margin[hidden]{display:none}
+
+  /* orders + log */
+  .orders table td:last-child{width:1%}
+  .orders button{padding:4px 12px}
+  .orders .desc{font-size:var(--fs-sm)}
+  .orders .desc small{display:block;color:var(--muted)}
+  .log{max-height:260px;overflow:auto;font-size:var(--fs-sm)}
+  .log table{table-layout:fixed}
+  .log td{padding:5px 0;vertical-align:top;overflow-wrap:anywhere}
+  .log td.t{width:92px;font-family:var(--mono);color:var(--muted);font-size:var(--fs-xs);white-space:nowrap}
+  .log td.k{width:14px;padding-right:6px}
+  .log .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-top:5px}
+  .log .dot.fill{background:var(--accent)} .log .dot.reject{background:var(--down)} .log .dot.order{background:var(--warn)} .log .dot.end{background:var(--up)}
+  .log td:last-child{text-align:left}
+  details.card{padding:6px 12px} details.card summary{min-height:44px;color:var(--fg);font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;font-weight:500}
+  details.card summary .count{margin-left:auto;font-family:var(--mono);color:var(--muted);text-transform:none;letter-spacing:0}
+  #sessDrillWrap summary .count{margin-left:0;font-family:var(--font);color:var(--fg);font-weight:400;text-align:left}
+  details.card > *:not(summary){margin:6px 0 8px}
+
+  /* scorecard */
+  .score h2{text-transform:none;letter-spacing:0;font-size:var(--fs-lg);color:var(--fg);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .score .verdict{font-size:var(--fs-xs)}
+  .score .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:var(--sp-3) 0}
+  @media (max-width:420px){.score .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .score .tiles .stat{background:var(--panel2);border-radius:var(--r);padding:10px}
+  .score .tiles .value{font-size:var(--fs-lg)}
+  .score .value.up{color:var(--up)} .score .value.down{color:var(--down)}
+  .score .crit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .score .crit li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:var(--r);background:var(--panel2);font-size:var(--fs-sm)}
+  .score .crit li small{display:block;color:var(--muted)}
+  .score .crit .ok{color:var(--up);font-weight:600} .score .crit .no{color:var(--down);font-weight:600}
+  .score .note{font-size:var(--fs-sm);color:var(--muted);line-height:1.5}
+  .jform{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--sp-3)}
+  .jform .field.full{grid-column:1/-1}
+  .jform textarea{resize:vertical;min-height:72px;font:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;color:inherit}
+  .stars{display:flex;gap:4px}
+  .stars button{flex:1;padding:6px 0;font-family:var(--mono);font-weight:500}
+  .stars button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .score .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--sp-3)}
+  .score .actions button{flex:1 1 140px}
+
+  /* history */
+  .hist td.num{font-family:var(--mono)}
+  .hist .drillok{color:var(--up)} .hist .drillno{color:var(--down)}
+  .table-wrap table{min-width:560px}
+
+  [hidden]{display:none!important}
+  .rp .stack{gap:var(--sp-3)}
+  main.rp{padding-bottom:var(--sp-5)}
+  body.has-tabbar .controls{top:6px}
+  @media (max-width:760px){.controls{top:6px}}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page">
+
+  <header class="rp-head">
+    <div>
+      <h1>Market Replay</h1>
+      <p class="sub">Step through past bars one at a time with the future hidden, trade at the price you can see, and get graded against buy-and-hold. The best way to practise decisions without hindsight.</p>
+    </div>
+    <div class="status">
+      <span class="pill demo" id="srcpill" title="Prices are simulated unless you add a free API key on the dashboard">demo</span>
+      <span class="pill accent" id="acctpill" title="Replay trades use a separate paper account; your main account is untouched">account: replay</span>
+    </div>
+  </header>
+
+  <main class="rp stack">
+
+    <details class="honesty card" id="honesty">
+      <summary>How Replay hides the future (and why fills here are too kind)</summary>
+      <p id="honestyText"></p>
+    </details>
+
+    <!-- ---------------- Setup ---------------- -->
+    <section class="card" id="setup" aria-labelledby="setupTitle">
+      <h2 id="setupTitle">Set up a session</h2>
+
+      <div class="field">
+        <label for="drill">Drill (optional)</label>
+        <select id="drill"><option value="">Free replay — choose my own symbol and dates</option></select>
+        <span class="help">Drills come from the course: a symbol, a period, an objective and the criteria you are graded on.</span>
+      </div>
+      <div class="drillbox" id="drillbox" hidden></div>
+
+      <div class="form-row mt-3">
+        <div class="field sym">
+          <label for="sym">Symbol</label>
+          <input id="sym" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. AAPL" value="AAPL" aria-describedby="symHelp">
+          <div class="results" id="symResults" hidden role="listbox"></div>
+          <span class="help" id="symHelp">Search by ticker or company name.</span>
+        </div>
+        <div class="field">
+          <label for="interval">Interval</label>
+          <select id="interval">
+            <option value="1day">Daily</option>
+            <option value="1h">1 hour</option>
+            <option value="15min">15 minutes</option>
+            <option value="5min">5 minutes</option>
+            <option value="1min">1 minute</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row mt-2">
+        <div class="field">
+          <label for="start">Start date</label>
+          <input id="start" type="date" min="2000-01-03" value="2024-01-02">
+        </div>
+        <div class="field">
+          <label for="end">End date</label>
+          <input id="end" type="date" min="2000-01-03">
+          <span class="help" id="endHelp">Filled in for you; change it to make the session longer or shorter.</span>
+        </div>
+        <div class="field">
+          <label for="cash">Starting cash</label>
+          <select id="cash">
+            <option value="10000">$10,000</option>
+            <option value="25000">$25,000</option>
+            <option value="100000" selected>$100,000</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row mt-2">
+        <label class="field chk" for="ticks"><input type="checkbox" id="ticks"> <span>Intrabar ticks <span class="help">reveal each bar as open → extremes → close so stops fill inside the bar</span></span></label>
+      </div>
+      <div class="setup-actions">
+        <button class="primary lg" id="startBtn" type="button">Start replay</button>
+        <span class="msg" id="setupMsg" role="status"></span>
+      </div>
+    </section>
+
+    <!-- ---------------- Session ---------------- -->
+    <section id="session" class="stack" hidden aria-live="polite">
+      <div class="card sess-head">
+        <span class="title"><span id="sTitle">—</span><span class="num" id="sInterval"></span></span>
+        <span class="when num" id="sWhen">—</span>
+        <div class="bar" id="sBar" style="--pct:0" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Bars revealed"></div>
+        <span class="pct" id="sPct">0 / 0 bars</span>
+        <button class="ghost" id="changeSetup" type="button">Change setup</button>
+      </div>
+      <details class="card" id="sessDrillWrap" hidden><summary>Drill <span class="count" id="sessDrillName"></span></summary><div class="drillbox" id="sessDrill" style="margin-top:0"></div></details>
+      <div class="disclaimer" id="sessNote" hidden></div>
+
+      <div class="ovl" id="ovl" aria-label="Overlays (computed from revealed bars only)">
+        <span class="lbl">Overlays</span>
+        <button type="button" data-ovl="sma20" class="on">SMA 20</button>
+        <button type="button" data-ovl="sma50" class="on">SMA 50</button>
+        <button type="button" data-ovl="ema9">EMA 9</button>
+        <button type="button" data-ovl="bb">BB</button>
+        <button type="button" data-ovl="vwap">VWAP</button>
+        <button type="button" data-ovl="rsi">RSI</button>
+      </div>
+      <div class="pane price" id="chartPane">
+        <div class="tag" id="chartTag"></div>
+        <div id="chart" style="position:absolute;inset:0"></div>
+        <div class="future" id="futureHint">future hidden ▸</div>
+      </div>
+      <div class="pane sub" id="rsiPane" hidden>
+        <div class="tag"><b>RSI (14)</b> <span id="rsiVal">—</span></div>
+        <div id="rsiChart" style="position:absolute;inset:0"></div>
+      </div>
+
+      <div class="card controls" id="controls" aria-label="Playback">
+        <button type="button" id="stepBtn" title="Reveal the next bar (Space)">Step ▸</button>
+        <button type="button" id="playBtn" class="primary" title="Play / pause (P)">Play</button>
+        <select id="speed" aria-label="Playback speed">
+          <option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option>
+        </select>
+        <button type="button" class="more" id="moreBtn" aria-label="More playback controls" aria-expanded="false" aria-controls="controlsMore" title="Jump to end, intrabar ticks, end session">⋯</button>
+        <div class="row2" id="controlsMore">
+          <label><input type="checkbox" id="ticksLive"> Intrabar ticks</label>
+          <span id="phaseLbl"></span>
+          <span class="end">
+            <button type="button" id="jumpBtn" title="Reveal every remaining bar; working orders still fill on the way">Jump to end</button>
+            <button type="button" class="danger" id="endBtn" title="Stop here and see the scorecard">End session</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="work">
+        <section class="card ticket" aria-labelledby="ticketTitle">
+          <h2 id="ticketTitle">Trade ticket <span class="pill" id="pxPill">—</span></h2>
+          <div class="qtyrow">
+            <div class="field">
+              <label for="qty">Quantity (shares)</label>
+              <input id="qty" type="number" inputmode="numeric" min="1" step="1" value="10">
+            </div>
+            <div class="sizes" aria-label="Size as a share of equity">
+              <button type="button" data-size="0.1">10 %</button>
+              <button type="button" data-size="0.25">25 %</button>
+              <button type="button" data-size="0.5">50 %</button>
+            </div>
+          </div>
+          <div class="types">
+            <div class="field">
+              <label for="otype">Order type</label>
+              <select id="otype">
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+                <option value="stop">Stop</option>
+                <option value="stop_limit">Stop-limit</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tif">Time in force</label>
+              <select id="tif"><option value="gtc">GTC</option><option value="day">Day</option></select>
+            </div>
+          </div>
+          <div class="prices">
+            <div class="field" id="limitField" hidden>
+              <label for="limitPx">Limit price</label>
+              <input id="limitPx" type="number" inputmode="decimal" step="0.01" min="0.01">
+            </div>
+            <div class="field" id="stopField" hidden>
+              <label for="stopPx">Stop price</label>
+              <input id="stopPx" type="number" inputmode="decimal" step="0.01" min="0.01">
+            </div>
+          </div>
+          <div class="sides">
+            <button type="button" class="buy" id="buyBtn">Buy</button>
+            <button type="button" class="sell" id="sellBtn">Sell</button>
+            <button type="button" class="short" id="shortBtn">Short</button>
+            <button type="button" class="cover" id="coverBtn">Cover</button>
+          </div>
+          <button type="button" class="close ghost" id="closeBtn" hidden>Close position at market</button>
+          <div class="msg" id="tmsg" role="status"></div>
+          <div class="hint" id="thint"></div>
+        </section>
+
+        <section class="card" aria-labelledby="acctTitle">
+          <h2 id="acctTitle">Position &amp; P&amp;L</h2>
+          <div class="acct">
+            <div class="stat"><span class="label">Equity</span><span class="value num" id="aEquity">—</span><span class="sub num" id="aPnl">—</span></div>
+            <div class="stat"><span class="label">Cash</span><span class="value num" id="aCash">—</span><span class="sub" id="aOrders">0 working orders</span></div>
+            <div class="stat"><span class="label">Realized</span><span class="value num" id="aRealized">—</span><span class="sub num" id="aTrades">0 closed trades</span></div>
+            <div class="stat wide"><span class="label">Position</span><span class="value num" id="aPos">flat</span><span class="sub num" id="aUnreal">—</span></div>
+            <div class="margin" id="aMargin" hidden>Margin call: cash no longer covers 150 % of your short exposure. Cover some shorts.</div>
+          </div>
+          <p class="note" id="bhNote">Buy-and-hold since the start: —</p>
+        </section>
+      </div>
+
+      <details class="card orders" id="ordersCard" open>
+        <summary>Open orders <span class="count" id="ordersCount">0</span></summary>
+        <div id="orders" class="empty">No working orders. Limit and stop orders rest here until a revealed bar reaches them.</div>
+      </details>
+
+      <details class="card" id="logCard">
+        <summary>Event log <span class="count" id="logCount">0</span></summary>
+        <div class="log" id="log"></div>
+      </details>
+    </section>
+
+    <!-- ---------------- Scorecard ---------------- -->
+    <section class="card accent score" id="scorecard" hidden aria-labelledby="scoreTitle">
+      <h2 id="scoreTitle">Scorecard <span class="pill verdict" id="verdict"></span></h2>
+      <p class="note" id="scoreSummary"></p>
+      <div class="tiles" id="scoreTiles"></div>
+      <div id="scoreDrill" hidden>
+        <h3 id="scoreDrillTitle" style="font-size:var(--fs-md);margin:0 0 8px"></h3>
+        <ul class="crit" id="scoreCrit"></ul>
+      </div>
+      <p class="note" id="scoreNote"></p>
+
+      <div class="jform" id="jform">
+        <div class="field">
+          <label>How did it go? (1–5)</label>
+          <div class="stars" id="rating" role="radiogroup" aria-label="Rating">
+            <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3" class="on">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="emotion">Dominant emotion</label>
+          <select id="emotion">
+            <option value="calm">Calm</option><option value="confident">Confident</option><option value="anxious">Anxious</option><option value="impatient">Impatient</option><option value="fomo">FOMO</option><option value="frustrated">Frustrated</option><option value="bored">Bored</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="lessons">What did you learn? Did you follow your plan?</label>
+          <textarea id="lessons" rows="3" placeholder="e.g. I moved my stop twice instead of taking the loss."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="primary" id="saveJournal">Save to journal</button>
+        <button type="button" id="tryAgain">Try again</button>
+        <button type="button" class="ghost" id="newSetup">New setup</button>
+      </div>
+      <p class="msg" id="scoreMsg" role="status"></p>
+    </section>
+
+    <!-- ---------------- History ---------------- -->
+    <section class="card hist" id="history" aria-labelledby="histTitle">
+      <h2 id="histTitle">Past sessions <button class="sm ghost" id="clearHist" type="button" hidden>Clear</button></h2>
+      <div id="histBody" class="empty">No sessions yet. Your finished replays are listed here and can be saved to the journal.</div>
+    </section>
+
+  </main>
+</div>
+
+<div id="footer"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/paper.js"></script>
+<script src="js/replay.js"></script>
+<script>
+/* Broward Trading — replay.html page script (UI only; the engine is js/replay.js → BT.replay) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var LW = window.LightweightCharts;
+  var ind = BT.ind, data = BT.data, paper = BT.paper, replay = BT.replay;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var fmt = function (v, dp) { if (v == null || !isFinite(v)) return '—'; if (dp == null) dp = Math.abs(v) < 1 ? 4 : 2; return v.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp }); };
+  var money = function (v) { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
+  var signed = function (v) { return v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
+  var pct = function (v) { return v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; };
+  var cls = function (v) { return v > 0 ? 'up' : v < 0 ? 'down' : ''; };
+  var debounce = function (fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms); }; };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+  var isTyping = function (el) { return el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable); };
+
+  if (!LW || !ind || !data || !paper || !replay) {
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">Market Replay could not start: a required script (lightweight-charts, indicators.js, data.js, paper.js or replay.js) did not load. Check your connection and reload.</div>');
+    return;
+  }
+
+  function toast(msg, kind, title, ms) {
+    var host = $('toasts'); if (!host) return;
+    var el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    var kill = function () { el.classList.add('leaving'); setTimeout(function () { el.remove(); }, 220); };
+    el.querySelector('.close').onclick = kill;
+    host.appendChild(el);
+    while (host.children.length > 4) host.firstChild.remove();
+    setTimeout(kill, ms || 4500);
+  }
+
+  $('honestyText').textContent = replay.HONESTY;
+
+  /* ------------------------------------------------------------------ *
+   * Setup form
+   * ------------------------------------------------------------------ */
+  var DEFAULT_START = { '1day': '2024-01-02', '1h': '2024-06-03', '15min': '2024-03-11', '5min': '2024-03-15', '1min': '2024-03-15' };
+  var prefs = store.get('bt.replay.prefs', {});
+  var endTouched = false;
+  var today = (function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+  $('start').max = today; $('end').max = today;
+
+  function setSrcPill() {
+    var st = data.status();
+    var pill = $('srcpill');
+    pill.textContent = st.live ? st.label : 'demo';
+    pill.className = 'pill ' + (st.live ? 'live' : 'demo');
+    pill.title = st.live ? 'Live candles from ' + st.label + ' when they cover your dates; otherwise demo' : 'Prices are simulated unless you add a free API key on the dashboard';
+  }
+  setSrcPill();
+
+  function refreshEnd(force) {
+    if (endTouched && !force) return;
+    var s = $('start').value, iv = $('interval').value;
+    if (!s) return;
+    var e = replay.defaultEnd(s, iv);
+    if (e > today) e = today;
+    $('end').value = e;
+  }
+  $('interval').addEventListener('change', function () {
+    if (!$('drill').value) $('start').value = DEFAULT_START[$('interval').value] || DEFAULT_START['1day'];
+    endTouched = false; refreshEnd(true);
+    $('endHelp').textContent = budgetText();
+  });
+  $('start').addEventListener('change', function () { refreshEnd(false); $('endHelp').textContent = budgetText(); });
+  $('end').addEventListener('change', function () { endTouched = true; $('endHelp').textContent = budgetText(); });
+  function budgetText() {
+    var s = $('start').value, e = $('end').value, iv = $('interval').value;
+    if (!s || !e || e < s) return 'The end date must be after the start date.';
+    var b = replay.barBudget(iv, s, e);
+    var n = b.days * (iv === '1day' ? 1 : b.per);
+    return (iv === '1day' ? b.days + ' trading days' : b.days + ' session' + (b.days === 1 ? '' : 's') + ' ≈ ' + n.toLocaleString() + ' bars') + (b.truncated ? ' — more than the ' + replay.MAX_LIMIT.toLocaleString() + '-bar limit, so the start will move later.' : '.');
+  }
+
+  // symbol search
+  var symBox = $('sym'), results = $('symResults');
+  var doSearch = debounce(function () {
+    var q = symBox.value.trim();
+    if (!q) { results.hidden = true; return; }
+    Promise.resolve(data.search(q)).then(function (list) {
+      list = (list || []).slice(0, 8);
+      if (!list.length || document.activeElement !== symBox) { results.hidden = true; return; }
+      results.innerHTML = list.map(function (r) { return '<button type="button" role="option" data-sym="' + esc(r.symbol) + '"><span class="t">' + esc(r.symbol) + '</span><span class="n">' + esc(r.name || '') + (r.exchange ? ' · ' + esc(r.exchange) : '') + '</span></button>'; }).join('');
+      results.hidden = false;
+    }).catch(function () { results.hidden = true; });
+  }, 180);
+  symBox.addEventListener('input', doSearch);
+  symBox.addEventListener('focus', doSearch);
+  symBox.addEventListener('keydown', function (e) { if (e.key === 'Escape') results.hidden = true; if (e.key === 'Enter') { e.preventDefault(); results.hidden = true; } });
+  results.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-sym]'); if (!b) return;
+    symBox.value = b.getAttribute('data-sym'); results.hidden = true;
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.field.sym')) results.hidden = true; });
+
+  // drills
+  var drills = [];
+  function drillHtml(d, compact) {
+    var crit = replay.evaluateDrill(d, { trades: 0, returnPct: 0, buyHoldPct: 0, alphaPct: 0, maxDrawdownPct: 0, winRate: null, profitFactor: null, wins: 0, losses: 0, openPosition: null, stopsUsed: 0, limitsUsed: 0, shortsOpened: 0 });
+    return '<h3>' + esc(d.title) + '</h3>' +
+      '<div class="meta"><span class="pill ' + esc(d.level) + '">' + esc(d.level) + '</span><span class="num">' + esc(d.symbol) + ' · ' + esc(d.interval) + ' · ' + esc(d.start) + ' → ' + esc(d.end) + '</span>' + (d.minutes ? '<span>~' + d.minutes + ' min</span>' : '') + (d.ticks ? '<span class="pill">ticks on</span>' : '') + '</div>' +
+      '<p>' + esc(d.objective) + '</p>' +
+      '<details' + (compact ? '' : ' open') + '><summary>You pass when</summary><ul class="crit">' + crit.map(function (c) { return '<li>' + esc(c.text) + '</li>'; }).join('') + '</ul></details>' +
+      (d.hints.length ? '<details><summary>Hints (' + d.hints.length + ')</summary><ul>' + d.hints.map(function (h) { return '<li>' + esc(h) + '</li>'; }).join('') + '</ul></details>' : '') +
+      (d.lesson ? '<p class="note" style="margin:8px 0 0"><a href="learn.html#' + esc(d.lesson) + '">Related lesson ▸</a></p>' : '');
+  }
+  function applyDrill(id) {
+    var d = replay.getDrill(id);
+    var box = $('drillbox');
+    if (!d) { box.hidden = true; box.innerHTML = ''; $('sym').disabled = $('interval').disabled = $('start').disabled = $('end').disabled = false; return; }
+    box.innerHTML = drillHtml(d, false); box.hidden = false;
+    $('sym').value = d.symbol; $('interval').value = d.interval; $('start').value = d.start; $('end').value = d.end; $('cash').value = String(d.cash || 100000);
+    if (!$('cash').value) $('cash').value = '100000';
+    $('ticks').checked = !!d.ticks;
+    endTouched = true;
+    $('endHelp').textContent = budgetText();
+  }
+  $('drill').addEventListener('change', function () { applyDrill($('drill').value); });
+
+  replay.loadDrills().then(function (list) {
+    drills = list;
+    var sel = $('drill');
+    list.forEach(function (d) { var o = document.createElement('option'); o.value = d.id; o.textContent = d.title + ' (' + d.level + ')'; sel.appendChild(o); });
+    var want = (location.hash.match(/drill=([\w-]+)/) || location.search.match(/drill=([\w-]+)/) || [])[1];
+    if (want && replay.getDrill(want)) { sel.value = want; applyDrill(want); startSession(); }
+  }).catch(function (e) {
+    $('drill').disabled = true;
+    $('drill').options[0].textContent = 'Drills unavailable (' + (location.protocol === 'file:' ? 'open the site over http to load course/drills.json' : e.message) + ')';
+  });
+
+  // restore prefs
+  if (prefs.interval && DEFAULT_START[prefs.interval]) $('interval').value = prefs.interval;
+  if (prefs.symbol) $('sym').value = prefs.symbol;
+  if (prefs.start) $('start').value = prefs.start; else $('start').value = DEFAULT_START[$('interval').value];
+  if (prefs.cash) $('cash').value = String(prefs.cash);
+  if (prefs.ticks) $('ticks').checked = true;
+  refreshEnd(true);
+  $('endHelp').textContent = budgetText();
+
+  /* ------------------------------------------------------------------ *
+   * Chart
+   * ------------------------------------------------------------------ */
+  var chart = null, candles = null, vol = null, rsiChart = null, rsiLine = null;
+  var overlays = {};                                   // key → series or [series]
+  var ov = Object.assign({ sma20: true, sma50: true, ema9: false, bb: false, vwap: false, rsi: false }, store.get('bt.replay.ov', {}));
+  var OV_COLORS = { sma20: '--s1', sma50: '--s2', ema9: '--s3', vwap: '--s4', bb: '--muted' };
+  var markers = [], priceLines = [];
+
+  function chartTheme(intraday) {
+    return {
+      layout: { background: { type: 'solid', color: css('--panel') }, textColor: css('--muted'), fontFamily: css('--mono') },
+      grid: { vertLines: { color: css('--line') }, horzLines: { color: css('--line') } },
+      rightPriceScale: { borderColor: css('--line') },
+      timeScale: { borderColor: css('--line'), timeVisible: !!intraday, secondsVisible: false, rightOffset: 6,
+        tickMarkFormatter: intraday ? function (t, type) { return type >= 3 ? nyClock(t) : nyDay(t); } : undefined },
+      localization: intraday ? { timeFormatter: function (t) { return nyDay(t) + ' ' + nyClock(t) + ' ET'; } } : undefined,
+      crosshair: { mode: 0 }
+    };
+  }
+  // Intraday bars are unix seconds; show them on the New York clock, not the viewer's.
+  function nyClock(t) { try { return new Date(t * 1000).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return ''; } }
+  function nyDay(t) { try { return new Date(t * 1000).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' }); } catch (e) { return ''; } }
+  function lineOpts(colorVar, extra) { return Object.assign({ color: css(colorVar), lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }, extra || {}); }
+  function ensureChart(intraday) {
+    if (chart) { chart.remove(); chart = null; }
+    if (rsiChart) { rsiChart.remove(); rsiChart = null; }
+    overlays = {}; markers = []; priceLines = [];
+    chart = LW.createChart($('chart'), Object.assign({ autoSize: true, handleScale: { axisPressedMouseMove: true } }, chartTheme(intraday)));
+    candles = chart.addCandlestickSeries({ upColor: css('--up'), downColor: css('--down'), wickUpColor: css('--up'), wickDownColor: css('--down'), borderVisible: false });
+    vol = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', priceLineVisible: false, lastValueVisible: false });
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    chart.priceScale('right').applyOptions({ scaleMargins: { top: 0.08, bottom: 0.2 } });
+    rsiChart = LW.createChart($('rsiChart'), Object.assign({ autoSize: true }, chartTheme(intraday), { rightPriceScale: { borderColor: css('--line'), scaleMargins: { top: 0.1, bottom: 0.1 } } }));
+    rsiLine = rsiChart.addLineSeries(lineOpts('--purple', { lastValueVisible: true }));
+    rsiLine.createPriceLine({ price: 70, color: css('--down'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false });
+    rsiLine.createPriceLine({ price: 30, color: css('--up'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false });
+    // keep the two time scales aligned
+    chart.timeScale().subscribeVisibleLogicalRangeChange(function (r) { if (r && rsiChart) rsiChart.timeScale().setVisibleLogicalRange(r); });
+  }
+  function applyTheme() {
+    if (!chart) return;
+    var intraday = S && S.interval !== '1day';
+    chart.applyOptions(chartTheme(intraday));
+    candles.applyOptions({ upColor: css('--up'), downColor: css('--down'), wickUpColor: css('--up'), wickDownColor: css('--down') });
+    if (rsiChart) { rsiChart.applyOptions(chartTheme(intraday)); rsiLine.applyOptions({ color: css('--purple') }); }
+    Object.keys(overlays).forEach(function (k) { var s = overlays[k]; (Array.isArray(s) ? s : [s]).forEach(function (x) { x.applyOptions({ color: css(OV_COLORS[k] || '--muted') }); }); });
+    renderChart(true);
+  }
+  try { new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* ignore */ }
+  if (window.matchMedia) { try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme); } catch (e) { /* old Safari */ } }
+
+  function toLine(bars, arr) { var out = []; for (var i = 0; i < bars.length; i++) if (arr[i] != null) out.push({ time: bars[i].time, value: arr[i] }); return out; }
+  function volData(bars) { var up = css('--up') + '55', dn = css('--down') + '55'; return bars.map(function (b) { return { time: b.time, value: b.volume || 0, color: b.close >= b.open ? up : dn }; }); }
+
+  /** Indicators are computed from the revealed bars only — never from the engine's full array. */
+  function computeOverlays(bars) {
+    var closes = bars.map(function (b) { return b.close; });
+    var out = {};
+    if (ov.sma20) out.sma20 = ind.sma(closes, 20);
+    if (ov.sma50) out.sma50 = ind.sma(closes, 50);
+    if (ov.ema9) out.ema9 = ind.ema(closes, 9);
+    if (ov.bb) out.bb = ind.bollinger(closes, 20, 2);
+    if (ov.vwap) out.vwap = vwapCompleted(bars);
+    if (ov.rsi) out.rsi = ind.rsi(closes, 14);
+    return out;
+  }
+  /* VWAP uses volume, and the forming bar's volume is a synthetic (seeded) share of the
+   * real bar's total. Compute VWAP from completed bars only and carry the last completed
+   * value forward onto the forming bar so the line never bends on fabricated volume. */
+  function vwapCompleted(bars) {
+    var last = bars[bars.length - 1];
+    if (!last || !last.partial) return ind.vwap(bars);
+    var done = bars.slice(0, -1);
+    var v = done.length ? ind.vwap(done) : [];
+    v.push(v.length ? v[v.length - 1] : null);
+    return v;
+  }
+  function overlaySeries(key) {
+    if (overlays[key]) return overlays[key];
+    if (key === 'bb') overlays.bb = [chart.addLineSeries(lineOpts('--muted', { lineStyle: 2 })), chart.addLineSeries(lineOpts('--muted', { lineStyle: 2 })), chart.addLineSeries(lineOpts('--muted'))];
+    else overlays[key] = chart.addLineSeries(lineOpts(OV_COLORS[key]));
+    return overlays[key];
+  }
+  function dropOverlay(key) {
+    if (!overlays[key]) return;
+    (Array.isArray(overlays[key]) ? overlays[key] : [overlays[key]]).forEach(function (s) { chart.removeSeries(s); });
+    delete overlays[key];
+  }
+  function lastPoint(bars, arr) { var i = bars.length - 1; return arr[i] == null ? null : { time: bars[i].time, value: arr[i] }; }
+
+  /** Full redraw from the visible bars (start, jump, overlay toggle, theme). */
+  function renderChart(keepRange) {
+    if (!S || !chart) return;
+    var bars = S.visible();
+    var range = keepRange ? chart.timeScale().getVisibleLogicalRange() : null;
+    candles.setData(bars.map(function (b) { return { time: b.time, open: b.open, high: b.high, low: b.low, close: b.close }; }));
+    vol.setData(volData(bars));
+    var I = computeOverlays(bars);
+    ['sma20', 'sma50', 'ema9', 'vwap'].forEach(function (k) { if (ov[k]) overlaySeries(k).setData(toLine(bars, I[k])); else dropOverlay(k); });
+    if (ov.bb) { var s = overlaySeries('bb'); s[0].setData(toLine(bars, I.bb.upper)); s[1].setData(toLine(bars, I.bb.lower)); s[2].setData(toLine(bars, I.bb.middle)); } else dropOverlay('bb');
+    $('rsiPane').hidden = !ov.rsi;
+    if (ov.rsi) { rsiLine.setData(toLine(bars, I.rsi)); $('rsiVal').textContent = I.rsi[bars.length - 1] == null ? '—' : I.rsi[bars.length - 1].toFixed(1); }
+    candles.setMarkers(markers);
+    drawPriceLines();
+    if (range) chart.timeScale().setVisibleLogicalRange(range);
+    else { var n = bars.length; chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 70), to: n + 5 }); }
+    updateTag(bars);
+  }
+  /** Incremental update after one step: only the newest bar/points change. */
+  function updateChart(payload) {
+    if (!S || !chart) return;
+    var bars = S.visible();
+    var b = bars[bars.length - 1];
+    var wasAtEnd = (function () { var r = chart.timeScale().getVisibleLogicalRange(); return !r || r.to >= bars.length - 2; })();
+    candles.update({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close });
+    vol.update(volData([b])[0]);
+    var I = computeOverlays(bars);
+    ['sma20', 'sma50', 'ema9', 'vwap'].forEach(function (k) { if (ov[k]) { var p = lastPoint(bars, I[k]); if (p) overlaySeries(k).update(p); } });
+    if (ov.bb) { var s = overlaySeries('bb'); var pu = lastPoint(bars, I.bb.upper), pl = lastPoint(bars, I.bb.lower), pm = lastPoint(bars, I.bb.middle); if (pu) s[0].update(pu); if (pl) s[1].update(pl); if (pm) s[2].update(pm); }
+    if (ov.rsi) { var pr = lastPoint(bars, I.rsi); if (pr) rsiLine.update(pr); $('rsiVal').textContent = pr ? pr.value.toFixed(1) : '—'; }
+    if (payload && payload.fills && payload.fills.length) { payload.fills.forEach(addMarker); candles.setMarkers(markers); }
+    if (wasAtEnd) chart.timeScale().scrollToRealTime();
+    updateTag(bars);
+  }
+  function addMarker(f) {
+    var buy = f.order.side === 'buy';
+    // the fill happened at the bar that is currently visible (market fills use the paper clock, in ms, so never that)
+    markers.push({ time: S.currentTime(), position: buy ? 'belowBar' : 'aboveBar', color: css(buy ? '--up' : '--down'), shape: buy ? 'arrowUp' : 'arrowDown', text: (buy ? 'B ' : 'S ') + f.trade.qty });
+    markers.sort(function (a, b) { return replay.toMs(a.time) - replay.toMs(b.time); });
+  }
+  function drawPriceLines() {
+    priceLines.forEach(function (l) { try { candles.removePriceLine(l); } catch (e) { /* ignore */ } });
+    priceLines = [];
+    if (!S) return;
+    var pos = S.position();
+    if (pos) priceLines.push(candles.createPriceLine({ price: pos.avg, color: css(pos.qty > 0 ? '--up' : '--down'), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: (pos.qty > 0 ? 'long ' : 'short ') + Math.abs(pos.qty) }));
+    S.openOrders().forEach(function (o) {
+      var px = o.type === 'stop' || o.type === 'stop_limit' ? o.stopPrice : o.limitPrice;
+      if (px == null) return;
+      priceLines.push(candles.createPriceLine({ price: px, color: css(o.type === 'limit' ? '--accent' : '--warn'), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: (o.side === 'buy' ? 'buy ' : 'sell ') + o.type.replace('_', '-') }));
+    });
+  }
+  function updateTag(bars) {
+    var b = bars[bars.length - 1];
+    var chg = bars.length > 1 ? (b.close / bars[bars.length - 2].close - 1) * 100 : 0;
+    $('chartTag').innerHTML = '<b>' + esc(S.symbol) + '</b> O ' + fmt(b.open) + ' H ' + fmt(b.high) + ' L ' + fmt(b.low) + ' C <b>' + fmt(b.close) + '</b> <span class="' + cls(chg) + '">' + pct(chg) + '</span>' + (b.partial ? ' <span class="warnc">forming…</span>' : '');
+  }
+  $('ovl').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ovl]'); if (!b) return;
+    var k = b.getAttribute('data-ovl'); ov[k] = !ov[k]; b.classList.toggle('on', ov[k]);
+    store.set('bt.replay.ov', ov);
+    renderChart(true);
+  });
+  $$('#ovl button').forEach(function (b) { b.classList.toggle('on', !!ov[b.getAttribute('data-ovl')]); });
+
+  /* ------------------------------------------------------------------ *
+   * Session lifecycle
+   * ------------------------------------------------------------------ */
+  var S = null, lastSetup = null, lastLoad = null, logShown = 0;
+
+  function startSession() {
+    var sym = $('sym').value.trim().toUpperCase();
+    var iv = $('interval').value, start = $('start').value, end = $('end').value;
+    var cash = +$('cash').value || 100000, ticks = $('ticks').checked, drillId = $('drill').value;
+    var msg = $('setupMsg');
+    if (!sym) { msg.textContent = 'Enter a symbol first.'; $('sym').focus(); return; }
+    if (!start) { msg.textContent = 'Pick a start date.'; return; }
+    if (end && end < start) { msg.textContent = 'The end date must be after the start date.'; return; }
+    msg.textContent = 'Loading bars…'; $('startBtn').disabled = true;
+    store.set('bt.replay.prefs', { symbol: sym, interval: iv, start: start, cash: cash, ticks: ticks });
+    lastSetup = { symbol: sym, interval: iv, start: start, end: end, cash: cash, ticks: ticks, drillId: drillId };
+    replay.loadBars({ symbol: sym, interval: iv, start: start, end: end }).then(function (r) {
+      lastLoad = r;
+      beginSession(r, lastSetup);
+      msg.textContent = '';
+    }).catch(function (e) {
+      msg.textContent = (e && e.message) || 'Could not load bars.';
+      toast(msg.textContent, 'err', 'Replay');
+    }).then(function () { $('startBtn').disabled = false; });
+  }
+  function beginSession(r, setup) {
+    if (S) { S.destroy(); S = null; }
+    var drill = setup.drillId ? replay.getDrill(setup.drillId) : null;
+    S = replay.createSession(r.bars, { symbol: r.symbol, interval: r.interval, startIndex: r.startIndex, cash: setup.cash, ticks: setup.ticks, drill: drill, source: r.source, note: r.note });
+    logShown = 0; $('log').innerHTML = ''; $('logCount').textContent = '0';
+    $('setup').hidden = true; $('scorecard').hidden = true; $('session').hidden = false;
+    $('sTitle').textContent = S.symbol; $('sInterval').textContent = S.interval + ' · ' + (r.source === 'demo' ? 'demo data' : r.source);
+    $('sessNote').hidden = !r.note; $('sessNote').innerHTML = r.note ? '<b>Note</b> ' + esc(r.note) : '';
+    $('sessDrillWrap').hidden = !drill; $('sessDrillWrap').open = false; $('sessDrillName').textContent = drill ? drill.title : ''; $('sessDrill').innerHTML = drill ? drillHtml(drill, true) : '';
+    $('ticksLive').checked = S.ticks;
+    $('speed').value = String(S.speed);
+    ensureChart(S.interval !== '1day');
+    S.on('step', onStep); S.on('fill', onFill); S.on('order', function () { renderAccount(); renderOrders(); drawPriceLines(); });
+    S.on('log', onLog); S.on('end', onEnd); S.on('play', renderControls); S.on('pause', renderControls); S.on('jump', function () { renderChart(false); renderAll(); });
+    S.log.forEach(onLog);
+    renderChart(false); renderAll();
+    $('qty').value = String(defaultQty(0.1));
+    $('tmsg').textContent = ''; $('tmsg').className = 'msg';
+    $('thint').textContent = 'Market orders fill at the last revealed price. Limit and stop orders rest until a revealed bar reaches them.';
+    window.scrollTo({ top: $('session').offsetTop - 8, behavior: 'smooth' });
+    toast('Replay ready: press Step or Play. The future stays hidden until you reveal it.', 'ok', S.symbol + ' ' + S.interval);
+  }
+  function endSession(toSetup) {
+    if (S) { S.destroy(); S = null; }
+    $('session').hidden = true; $('scorecard').hidden = true;
+    if (toSetup) { $('setup').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  }
+
+  function onStep(p) { updateChart(p); renderAccount(); renderOrders(); renderProgress(); if (p.fills.length) drawPriceLines(); }
+  function onFill(f) { if (!f || !f.trade) return; toast((f.order.side === 'buy' ? 'Bought ' : 'Sold ') + f.trade.qty + ' @ ' + money(f.trade.price) + (f.trade.realized ? ' · realized ' + signed(f.trade.realized) : ''), f.trade.realized < 0 ? 'warn' : 'ok', 'Fill'); }
+  function onLog(e) {
+    var host = $('log');
+    var all = S ? S.log : [];
+    // newest first: prepend a row
+    var row = '<tr><td class="k"><span class="dot ' + esc(e.kind) + '"></span></td><td class="t">' + esc(shortTime(e.time)) + '</td><td>' + esc(e.text) + '</td></tr>';
+    var table = host.querySelector('table');
+    if (!table) { host.innerHTML = '<table><tbody></tbody></table>'; table = host.querySelector('table'); }
+    table.querySelector('tbody').insertAdjacentHTML('afterbegin', row);
+    while (table.querySelector('tbody').children.length > 200) table.querySelector('tbody').lastChild.remove();
+    $('logCount').textContent = String(all.length || table.querySelector('tbody').children.length);
+  }
+  function shortTime(t) { var s = replay.fmtTime(t); return s.length > 10 ? s.slice(5).replace(' ET', '') : s; }
+
+  function renderAll() { renderAccount(); renderOrders(); renderProgress(); renderControls(); }
+  function renderProgress() {
+    if (!S) return;
+    var p = S.progress();
+    $('sBar').style.setProperty('--pct', p.pct.toFixed(1)); $('sBar').setAttribute('aria-valuenow', String(Math.round(p.pct)));
+    $('sPct').textContent = Math.floor(p.revealed) + ' / ' + p.total + ' bars';
+    $('sWhen').textContent = replay.fmtTime(S.currentTime());
+    $('phaseLbl').textContent = S.phaseLabel();
+    $('futureHint').hidden = S.done;
+  }
+  function renderControls() {
+    if (!S) return;
+    $('playBtn').textContent = S.playing ? 'Pause' : 'Play';
+    $('playBtn').classList.toggle('primary', !S.playing);
+    $('stepBtn').disabled = S.playing || S.done; $('playBtn').disabled = S.done; $('jumpBtn').disabled = S.done; $('endBtn').disabled = S.done;
+  }
+  function renderAccount() {
+    if (!S) return;
+    var s = S.snapshot();
+    $('pxPill').textContent = money(s.price);
+    $('aEquity').textContent = money(s.equity);
+    $('aPnl').textContent = signed(s.pnl) + ' (' + pct(s.pnlPct) + ')'; $('aPnl').className = 'sub num ' + cls(s.pnl);
+    $('aCash').textContent = money(s.cash);
+    $('aOrders').textContent = s.openOrders.length + ' working order' + (s.openOrders.length === 1 ? '' : 's');
+    $('aRealized').textContent = signed(s.realized); $('aRealized').className = 'value num ' + cls(s.realized);
+    var st = paper.stats();
+    $('aTrades').textContent = st.trades + ' closed trade' + (st.trades === 1 ? '' : 's') + (st.winRate == null ? '' : ' · ' + st.winRate.toFixed(0) + '% won');
+    if (s.position) {
+      $('aPos').textContent = (s.position.qty > 0 ? 'Long ' : 'Short ') + Math.abs(s.position.qty) + ' @ ' + fmt(s.position.avg);
+      $('aPos').className = 'value num ' + (s.position.qty > 0 ? 'up' : 'down');
+      $('aUnreal').textContent = 'Unrealized ' + signed(s.position.unrealized) + ' (' + pct(s.position.unrealizedPct) + ')'; $('aUnreal').className = 'sub num ' + cls(s.position.unrealized);
+    } else { $('aPos').textContent = 'flat'; $('aPos').className = 'value num'; $('aUnreal').textContent = 'No open position'; $('aUnreal').className = 'sub'; }
+    var v = paper.valuation({}); var mc = v.shortValue > 0 && s.cash < v.shortValue * paper.SHORT_MARGIN;
+    $('aMargin').hidden = !mc;
+    var first = S.visible()[S.startIndex].close;
+    var bh = first ? (s.price / first - 1) * 100 : 0;
+    $('bhNote').innerHTML = 'Buy-and-hold since the start: <b class="num ' + cls(bh) + '">' + pct(bh) + '</b> · you: <b class="num ' + cls(s.pnlPct) + '">' + pct(s.pnlPct) + '</b>';
+    // ticket buttons by context
+    var q = s.position ? s.position.qty : 0;
+    $('sellBtn').disabled = !(q > 0); $('coverBtn').disabled = !(q < 0); $('shortBtn').disabled = q > 0; $('buyBtn').disabled = q < 0;
+    $('closeBtn').hidden = !s.position; $('closeBtn').textContent = s.position ? (q > 0 ? 'Sell to close ' : 'Buy to cover ') + Math.abs(q) + ' at market' : '';
+    if (S.done) ['buyBtn', 'sellBtn', 'shortBtn', 'coverBtn'].forEach(function (id) { $(id).disabled = true; });
+  }
+  function renderOrders() {
+    if (!S) return;
+    var list = S.openOrders();
+    $('ordersCount').textContent = String(list.length);
+    if (!list.length) { $('orders').className = 'empty'; $('orders').textContent = 'No working orders. Limit and stop orders rest here until a revealed bar reaches them.'; return; }
+    $('orders').className = '';
+    $('orders').innerHTML = '<table><tbody>' + list.map(function (o) {
+      return '<tr><td class="desc"><b>' + esc(o.side.toUpperCase()) + ' ' + o.qty + '</b> ' + esc(o.type.replace('_', '-')) + (o.limitPrice != null ? ' · limit ' + money(o.limitPrice) : '') + (o.stopPrice != null ? ' · stop ' + money(o.stopPrice) : '') + ' · ' + esc(o.tif.toUpperCase()) + '<small>' + esc(o.reason || paper.describeOrder(o)) + '</small></td><td><button type="button" data-cancel="' + o.id + '">Cancel</button></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  $('orders').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cancel]'); if (!b || !S) return;
+    S.cancel(+b.getAttribute('data-cancel'));
+    renderOrders(); renderAccount(); drawPriceLines();
+  });
+
+  /* ---- controls ---- */
+  $('stepBtn').onclick = function () { if (S) S.step(); };
+  $('playBtn').onclick = function () { if (S) S.toggle(); };
+  $('speed').onchange = function () { if (S) S.setSpeed(+$('speed').value); };
+  $('jumpBtn').onclick = function () { if (!S) return; if (!confirm('Reveal every remaining bar now? Working orders will still fill on the way. You can keep trading until the last bar only by stepping.')) return; S.jumpToEnd(); };
+  function finishEarly() {
+    if (!S || S.done) return;
+    if (S.drill && !confirm('End the drill now? Ending early cannot pass a drill — only a fully revealed session can. Your trades are still scored and saved.')) return;
+    S.finish();
+  }
+  $('endBtn').onclick = finishEarly;
+  $('moreBtn').onclick = function () {
+    var open = !$('controls').classList.contains('open');
+    $('controls').classList.toggle('open', open);
+    $('moreBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  $('ticksLive').onchange = function () { if (S) S.setTicks($('ticksLive').checked); renderProgress(); };
+  $('changeSetup').onclick = function () { if (S && !S.done && !confirm('Abandon this replay and go back to the setup? Its trades will not be scored.')) return; endSession(true); };
+  document.addEventListener('keydown', function (e) {
+    if (!S || isTyping(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); if (!S.playing) S.step(); }
+    else if (e.key === 'p' || e.key === 'P') { S.toggle(); }
+    else if (e.key === 'e' || e.key === 'E') { finishEarly(); }
+  });
+
+  /* ---- ticket ---- */
+  function defaultQty(frac) {
+    if (!S) return 10;
+    var s = S.snapshot();
+    return Math.max(1, Math.floor(s.equity * frac / s.price));
+  }
+  $$('.ticket .sizes button').forEach(function (b) { b.onclick = function () { $('qty').value = String(defaultQty(+b.getAttribute('data-size'))); }; });
+  function syncTypeFields() {
+    var t = $('otype').value;
+    var needLimit = t === 'limit' || t === 'stop_limit', needStop = t === 'stop' || t === 'stop_limit';
+    $('limitField').hidden = !needLimit; $('stopField').hidden = !needStop;
+    if (S) { var px = S.price(); if (needLimit && !$('limitPx').value) $('limitPx').value = px.toFixed(2); if (needStop && !$('stopPx').value) $('stopPx').value = px.toFixed(2); }
+    var g = paper.glossary[t]; $('thint').textContent = g || '';
+  }
+  $('otype').onchange = syncTypeFields; syncTypeFields();
+  function place(side, intent) {
+    if (!S) return;
+    var qty = Math.floor(+$('qty').value);
+    var t = $('otype').value;
+    var o = S.order({ side: side, qty: qty, type: t, tif: $('tif').value, intent: intent,
+      limitPrice: (t === 'limit' || t === 'stop_limit') ? +$('limitPx').value : undefined,
+      stopPrice: (t === 'stop' || t === 'stop_limit') ? +$('stopPx').value : undefined });
+    var m = $('tmsg');
+    if (!o) return;
+    if (o.status === 'filled') { m.className = 'msg ok'; m.textContent = 'Filled ' + o.qty + ' ' + S.symbol + ' @ ' + money(o.fillPrice) + '.'; }
+    else if (o.status === 'open') { m.className = 'msg'; m.textContent = 'Working: ' + paper.describeOrder(o); }
+    else { m.className = 'msg err'; m.textContent = o.reason; }
+    $('limitPx').value = ''; $('stopPx').value = ''; syncTypeFields();
+    renderAccount(); renderOrders(); drawPriceLines();
+  }
+  $('buyBtn').onclick = function () { place('buy', 'buy'); };
+  $('sellBtn').onclick = function () { place('sell', 'sell'); };
+  $('shortBtn').onclick = function () { place('sell', 'short'); };
+  $('coverBtn').onclick = function () { place('buy', 'cover'); };
+  $('closeBtn').onclick = function () {
+    if (!S) return;
+    var o = S.closePosition(); var m = $('tmsg');
+    if (o && o.status === 'filled') { m.className = 'msg ok'; m.textContent = 'Closed @ ' + money(o.fillPrice) + '.'; }
+    else if (o) { m.className = 'msg err'; m.textContent = o.reason; }
+    renderAccount(); renderOrders(); drawPriceLines();
+  };
+
+  /* ------------------------------------------------------------------ *
+   * Scorecard
+   * ------------------------------------------------------------------ */
+  var card = null, rating = 3, journalSaved = false;
+  function onEnd(c) {
+    card = c; journalSaved = false;
+    renderAll(); renderChart(true);
+    replay.saveSession(c);
+    renderHistory();
+    var sc = $('scorecard');
+    var beat = c.returnPct > c.buyHoldPct;
+    $('verdict').textContent = c.drill ? (c.drill.passed ? 'drill passed' : (c.completed ? 'drill not passed' : 'drill not passed (ended early)')) : (beat ? 'beat buy-and-hold' : 'behind buy-and-hold');
+    $('verdict').className = 'pill verdict ' + ((c.drill ? c.drill.passed : beat) ? 'up' : 'down');
+    $('scoreSummary').textContent = c.symbol + ' ' + c.interval + ' · ' + c.startLabel + ' → ' + c.endLabel + ' · ' + c.barsRevealed + ' of ' + c.bars + ' bars revealed' + (c.completed ? '' : ' (ended early)') + '.';
+    var tiles = [
+      ['Your return', pct(c.returnPct), cls(c.returnPct), signed(c.pnl)],
+      ['Buy & hold', pct(c.buyHoldPct), cls(c.buyHoldPct), 'same period'],
+      ['Alpha', pct(c.alphaPct), cls(c.alphaPct), 'you minus buy & hold'],
+      ['Closed trades', String(c.trades), '', c.fills + ' fills'],
+      ['Win rate', c.winRate == null ? '—' : c.winRate.toFixed(0) + '%', '', c.wins + ' W · ' + c.losses + ' L'],
+      ['Max drawdown', c.maxDrawdownPct.toFixed(2) + '%', c.maxDrawdownPct > 10 ? 'down' : '', money(c.maxDrawdown)],
+      ['Profit factor', c.profitFactor == null ? (c.wins ? '∞' : '—') : c.profitFactor.toFixed(2), '', 'gross win ÷ gross loss'],
+      ['Final equity', money(c.equity), '', 'from ' + money(c.startingCash)],
+      ['Orders', String(c.ordersPlaced), '', c.stopsUsed + ' stops · ' + c.limitsUsed + ' limits']
+    ];
+    $('scoreTiles').innerHTML = tiles.map(function (t) { return '<div class="stat"><span class="label">' + esc(t[0]) + '</span><span class="value num ' + t[2] + '">' + esc(t[1]) + '</span><span class="sub">' + esc(t[3]) + '</span></div>'; }).join('');
+    if (c.drill) {
+      $('scoreDrill').hidden = false;
+      $('scoreDrillTitle').textContent = 'Drill: ' + c.drill.title;
+      $('scoreCrit').innerHTML = c.drill.results.map(function (r) { return '<li><span class="' + (r.pass ? 'ok' : 'no') + '">' + (r.pass ? '✓' : '✕') + '</span><span>' + esc(r.text) + '<small>' + esc(r.actualText) + '</small></span></li>'; }).join('');
+    } else $('scoreDrill').hidden = true;
+    var notes = [];
+    if (c.openPosition) notes.push('You still hold ' + c.openPosition.qty + ' shares; their ' + (c.openPosition.unrealized >= 0 ? 'gain' : 'loss') + ' of ' + signed(c.openPosition.unrealized) + ' is counted in equity but not as a closed trade.');
+    if (!c.trades) notes.push('No round trips were completed, so win rate and profit factor are undefined. Sitting out is a valid decision — but make it on purpose.');
+    if (c.trades >= 1 && c.maxDrawdownPct > 15) notes.push('A drawdown above 15 % means at least one position was too large for its stop distance. Revisit position sizing (Module 4).');
+    if (beat && c.trades) notes.push('Beating buy-and-hold once proves little: run the same rules on another period before trusting them.');
+    notes.push('Fills here have no spread, slippage or commission, so real results would be a little worse.');
+    $('scoreNote').textContent = notes.join(' ');
+    $('scoreMsg').textContent = ''; $('lessons').value = '';
+    rating = c.returnPct > 0 ? 4 : 2; $$('#rating button').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-v') === rating); });
+    $('saveJournal').disabled = false; $('saveJournal').textContent = 'Save to journal';
+    sc.hidden = false;
+    setTimeout(function () { sc.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    toast('Session finished. Scorecard ready.', 'ok', 'Replay');
+  }
+  $('rating').addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (!b) return; rating = +b.getAttribute('data-v'); $$('#rating button').forEach(function (x) { x.classList.toggle('on', x === b); }); });
+  $('saveJournal').onclick = function () {
+    if (!card) return;
+    var entry = replay.saveToJournal(card, { rating: rating, emotion: $('emotion').value, lessons: $('lessons').value, confidence: rating });
+    journalSaved = true;
+    $('saveJournal').disabled = true; $('saveJournal').textContent = 'Saved to journal ✓';
+    $('scoreMsg').className = 'msg ok'; $('scoreMsg').innerHTML = 'Saved as a journal entry (' + esc(entry.setup) + '). <a href="journal.html">Open the journal ▸</a>';
+    toast('Journal entry saved.', 'ok', 'Journal');
+  };
+  $('tryAgain').onclick = function () {
+    if (!lastLoad || !lastSetup) { endSession(true); return; }
+    $('scorecard').hidden = true;
+    beginSession(lastLoad, lastSetup);
+  };
+  $('newSetup').onclick = function () { endSession(true); };
+  $('startBtn').onclick = startSession;
+
+  /* ------------------------------------------------------------------ *
+   * History
+   * ------------------------------------------------------------------ */
+  function renderHistory() {
+    var list = replay.sessions().slice().reverse().slice(0, 12);
+    $('clearHist').hidden = !list.length;
+    if (!list.length) { $('histBody').className = 'empty'; $('histBody').textContent = 'No sessions yet. Your finished replays are listed here and can be saved to the journal.'; return; }
+    $('histBody').className = 'table-wrap';
+    $('histBody').innerHTML = '<table><thead><tr><th>When</th><th>Session</th><th class="num">Return</th><th class="num">B&amp;H</th><th class="num">Trades</th><th class="num">Max DD</th><th>Drill</th></tr></thead><tbody>' + list.map(function (s) {
+      var d = new Date(s.at);
+      return '<tr><td class="num">' + esc(d.toLocaleDateString()) + '</td><td>' + esc(s.symbol) + ' ' + esc(s.interval) + '<br><small class="muted num">' + esc(replay.fmtTime(s.start).slice(0, 10)) + ' → ' + esc(replay.fmtTime(s.end).slice(0, 10)) + '</small></td>' +
+        '<td class="num ' + cls(s.returnPct) + '">' + pct(s.returnPct) + '</td><td class="num ' + cls(s.buyHoldPct) + '">' + pct(s.buyHoldPct) + '</td><td class="num">' + s.trades + (s.winRate == null ? '' : ' <small class="muted">' + s.winRate.toFixed(0) + '%</small>') + '</td><td class="num">' + (s.maxDrawdownPct == null ? '—' : s.maxDrawdownPct.toFixed(1) + '%') + '</td>' +
+        '<td>' + (s.drill ? '<span class="' + (s.drill.passed ? 'drillok' : 'drillno') + '">' + (s.drill.passed ? '✓ ' : '✕ ') + esc(s.drill.title) + '</span>' : '<span class="muted">free replay</span>') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  $('clearHist').onclick = function () { if (confirm('Clear your replay history? Journal entries are kept.')) { replay.clearSessions(); renderHistory(); } };
+  renderHistory();
+
+  window.addEventListener('beforeunload', function () { if (S) S.destroy(); });
+  window.BT.replayPage = { session: function () { return S; }, start: startSession };
+})();
+</script>
+</body>
+</html>

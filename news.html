@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Company profile, key statistics, earnings calendar and headlines for any US stock, with plain-English explanations of P/E, EPS, market cap and dividend yield. Free and educational; connect a free Finnhub or Alpha Vantage key for live company data.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>News — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .nw-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .nw-head h1{margin:0;font-size:var(--fs-xl)}
+  .nw-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0;max-width:70ch}
+  .nw-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .nw button,.nw input,.nw select,.nw .btn{min-height:44px}
+  .nw button.sm{min-height:36px;padding:4px 10px;font-size:var(--fs-sm)}
+  @media (max-width:760px){.nw button.sm{min-height:44px}}
+
+  /* symbol bar */
+  .symbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--sp-2);align-items:end}
+  .symbar input{font-family:var(--mono);text-transform:uppercase;font-size:var(--fs-md)}
+  @media (max-width:520px){.symbar{grid-template-columns:minmax(0,1fr) auto} .symbar .refresh{grid-column:1/-1}}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp-2)}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm);font-family:var(--mono);min-height:36px}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  @media (max-width:760px){.chip{min-height:44px}}
+  .srcnote{font-size:var(--fs-xs);color:var(--muted);margin-top:var(--sp-2);line-height:1.5}
+
+  /* connect card */
+  .connect{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--sp-4);align-items:start}
+  @media (max-width:760px){.connect{grid-template-columns:1fr}}
+  .connect h3{margin:0 0 6px;font-size:var(--fs-lg)}
+  .connect p{color:var(--muted);line-height:1.6}
+  .connect .steps{margin:var(--sp-2) 0 0;padding-left:20px;line-height:1.7}
+  .connect .steps li::marker{color:var(--accent);font-weight:600}
+  .connect .btn.primary{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:44px;padding:0 18px;border-radius:var(--r-md);font-weight:500;margin-top:var(--sp-2)}
+  .providers{display:grid;gap:var(--sp-2)}
+  .prov{border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);padding:10px 12px}
+  .prov b{display:block;font-weight:600}
+  .prov small{display:block;color:var(--muted);line-height:1.5;margin-top:2px}
+  .prov a{word-break:break-all}
+
+  /* explainers */
+  .ex-list{display:grid;gap:var(--sp-2)}
+  details.ex{margin:0;padding:0;background:var(--panel2);border-color:var(--line)}
+  details.ex summary{min-height:48px;padding:10px 12px;align-items:flex-start;color:var(--fg)}
+  details.ex summary::before{margin-top:5px}
+  details.ex summary .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+  details.ex summary .t b{font-weight:600}
+  details.ex summary .t span{color:var(--muted);font-size:var(--fs-sm);font-weight:400;line-height:1.5}
+  details.ex .body{padding:0 12px 12px 30px;line-height:1.65;font-size:var(--fs);margin-top:0}
+  details.ex .body p{margin:0 0 8px}
+  details.ex .body .lbl{font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:500;display:block;margin:10px 0 2px}
+  .checklist{margin:0;padding-left:20px;color:var(--muted);line-height:1.7}
+  .checklist b{color:var(--fg);font-weight:500}
+
+  /* profile */
+  .profile{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--sp-3);align-items:start}
+  .profile .logo{width:56px;height:56px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;object-fit:contain;padding:4px}
+  .profile .logo.ph{display:grid;place-items:center;background:var(--panel2);font-family:var(--mono);font-weight:600;color:var(--muted);font-size:var(--fs-sm)}
+  .profile .name{font-size:var(--fs-lg);font-weight:600;line-height:1.2}
+  .profile .sym{font-family:var(--mono);color:var(--muted);font-weight:500;margin-left:6px;font-size:var(--fs-md)}
+  .profile .meta{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);font-size:var(--fs-sm);margin-top:4px}
+  .profile .meta a{color:var(--accent)}
+  .desc{margin:var(--sp-3) 0 0;color:var(--muted);line-height:1.6;font-size:var(--fs);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .desc.open{display:block}
+  .quicklinks{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3)}
+  .quicklinks a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r);text-decoration:none;color:var(--fg);background:var(--panel2);font-size:var(--fs-sm)}
+  .quicklinks a:hover{border-color:var(--accent)}
+
+  /* stat tiles with tap-to-explain */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--sp-2)}
+  @media (max-width:420px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .tile{border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .tile.wide{grid-column:1/-1}
+  .tile .top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .tile .label{font-size:var(--fs-xs);letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+  .tile .why{min-height:44px;min-width:44px;padding:0;margin:-10px -10px -10px 0;border-radius:50%;font-size:var(--fs-sm);font-family:var(--mono);color:var(--muted);background:transparent;border-color:transparent;line-height:1}
+  .tile .why:hover{border-color:var(--line)}
+  @media (min-width:761px){.tile .why{min-height:30px;min-width:30px;margin:-4px -6px -4px 0;border-color:var(--line);font-size:var(--fs-xs)}}
+  .tile .why[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .tile .value{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:var(--fs-lg);font-weight:500;line-height:1.15;overflow-wrap:anywhere}
+  .tile .sub{font-size:var(--fs-xs);color:var(--muted);line-height:1.4}
+  .tile .explain{font-size:var(--fs-sm);color:var(--fg);line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+  .tile .explain[hidden]{display:none}
+  .rangebar{position:relative;height:6px;border-radius:3px;background:var(--line);margin:6px 0 2px}
+  .rangebar i{position:absolute;top:-3px;width:12px;height:12px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
+  .rangebar .lo,.rangebar .hi{position:absolute;top:10px;font-size:var(--fs-xs);font-family:var(--mono);color:var(--muted)}
+  .rangebar .lo{left:0} .rangebar .hi{right:0}
+  .tile.range{padding-bottom:26px}
+
+  /* earnings */
+  .nextearn{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--sp-3);align-items:center;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);padding:10px 12px;margin-bottom:var(--sp-3)}
+  .nextearn .days{font-family:var(--mono);font-size:var(--fs-2xl);font-weight:600;line-height:1}
+  .nextearn .days small{display:block;font-size:var(--fs-xs);color:var(--muted);font-weight:400;letter-spacing:.5px;text-transform:uppercase}
+  .nextearn p{margin:0;font-size:var(--fs-sm);color:var(--muted);line-height:1.5}
+  .nextearn p b{color:var(--fg);font-weight:500}
+  table.earn{width:100%;border-collapse:collapse}
+  table.earn th,table.earn td{padding:7px 6px;white-space:nowrap}
+  table.earn td{border-bottom:1px solid var(--line);font-size:var(--fs-sm)}
+  table.earn td.num,table.earn th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .table-wrap table.earn{min-width:420px}
+  .hour{font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+  /* prompts */
+  .prompts{display:grid;gap:var(--sp-2)}
+  .prompt{border-left:3px solid var(--accent);background:var(--panel2);border-radius:var(--r);padding:10px 12px}
+  .prompt.earnings,.prompt.upcoming{border-left-color:var(--warn)}
+  .prompt.move{border-left-color:var(--purple,var(--accent))}
+  .prompt b{display:block;font-weight:600;margin-bottom:2px;line-height:1.4}
+  .prompt p{margin:0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+
+  /* news list */
+  .kinds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--sp-3)}
+  .kinds .chip{font-family:var(--font);text-transform:none}
+  .newslist{list-style:none;margin:0;padding:0;display:grid;gap:var(--sp-2)}
+  .item{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:10px 12px}
+  .item .ih{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:var(--fs-xs);color:var(--muted)}
+  .item .kind{font-size:var(--fs-xs);letter-spacing:.5px;text-transform:uppercase;padding:1px 7px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--muted)}
+  .item .kind.earnings,.item .kind.guidance{color:var(--warn-text,var(--warn));border-color:var(--warn)}
+  .item .kind.analyst,.item .kind.deal{color:var(--accent);border-color:var(--accent)}
+  .item .kind.legal{color:var(--down);border-color:var(--down)}
+  .item .time{margin-left:auto;font-family:var(--mono)}
+  .item h3{margin:6px 0 0;font-size:var(--fs-md);font-weight:500;line-height:1.4}
+  .item h3 a{color:var(--fg);text-decoration:none;display:block;padding:4px 0}
+  .item h3 a:hover{color:var(--accent);text-decoration:underline}
+  .item .sum{margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .item .sent{font-family:var(--mono)}
+  .item .sent.up{color:var(--up)} .item .sent.down{color:var(--down)}
+  .ondemand{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+  .ondemand p{margin:0;flex:1 1 220px;color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
+  .empty{color:var(--muted);font-size:var(--fs-sm);padding:var(--sp-3) 0;text-align:center}
+  .more{width:100%}
+  .honest{font-size:var(--fs-xs);color:var(--muted);line-height:1.5;margin-top:var(--sp-3);border-top:1px solid var(--line);padding-top:var(--sp-2)}
+
+  /* loading */
+  .sk{display:grid;gap:8px}
+  .sk .skeleton{height:14px} .sk .skeleton.tall{height:44px} .sk .skeleton.w60{width:60%} .sk .skeleton.w40{width:40%}
+  .msgs:empty{display:none}
+  .msgs .callout{margin-bottom:var(--sp-2)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page nw">
+
+  <header class="nw-head">
+    <div>
+      <h1>News &amp; company</h1>
+      <p class="sub">Who is this company, what does the market think it is worth, when does it report, and what are people saying? Numbers come only from a provider you connect; this page never invents a headline or a figure.</p>
+    </div>
+    <div class="status">
+      <span class="pill demo" id="pillSource" title="Where company data comes from">demo · no key</span>
+      <span class="pill" id="pillQuota" hidden title="Requests used on the free plan"></span>
+    </div>
+  </header>
+
+  <main class="stack">
+
+    <!-- ---------------- Symbol ---------------- -->
+    <section class="card" aria-labelledby="symTitle">
+      <h2 id="symTitle">Company</h2>
+      <form class="symbar" id="symForm" autocomplete="off">
+        <div class="field">
+          <label for="sym">Ticker symbol</label>
+          <input id="sym" type="text" inputmode="latin" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="AAPL" aria-describedby="symHelp">
+        </div>
+        <button type="submit" class="primary" id="goBtn">Look up</button>
+        <button type="button" class="refresh" id="refreshBtn" title="Ignore the cache and fetch fresh data (uses requests)">Refresh</button>
+      </form>
+      <div class="chips" id="chips" aria-label="Popular symbols"></div>
+      <p class="srcnote" id="symHelp"></p>
+    </section>
+
+    <div class="msgs" id="msgs" aria-live="polite"></div>
+
+    <!-- ---------------- No-key state ---------------- -->
+    <section class="card accent" id="connectCard" hidden aria-labelledby="connectTitle">
+      <h2 id="connectTitle">Connect a free key to see real company data</h2>
+      <div class="connect">
+        <div>
+          <h3>Why there are no numbers here yet</h3>
+          <p>Demo prices on the dashboard are simulated so you can practise safely. Company facts cannot be simulated honestly: a made-up P/E or a fake headline would teach you the wrong thing. So this page stays empty until a real source is connected, and explains the vocabulary meanwhile.</p>
+          <ol class="steps">
+            <li>Create a free account at Finnhub (best fit: profile, stats, earnings and headlines, 60 requests a minute) or Alpha Vantage (profile and stats; headlines and earnings on request, 25 requests a day).</li>
+            <li>Copy the API key. On the Dashboard, tap <b>Live data</b>, paste it under the provider, test, save.</li>
+            <li>Come back here and look up any US ticker. Your key is stored only in this browser (localStorage) and sent only to that provider.</li>
+          </ol>
+          <a class="btn primary" id="settingsLink" href="index.html#settings=1">Open Live data settings on the Dashboard</a>
+        </div>
+        <div class="providers" id="providers"></div>
+      </div>
+    </section>
+
+    <!-- ---------------- Live: profile ---------------- -->
+    <section class="card" id="profileCard" hidden aria-labelledby="profileTitle">
+      <h2 id="profileTitle">Profile <span class="pill solid" id="capPill" hidden></span></h2>
+      <div id="profileBody"></div>
+    </section>
+
+    <!-- ---------------- Live: key stats ---------------- -->
+    <section class="card" id="statsCard" hidden data-acc="open" aria-labelledby="statsTitle">
+      <h2 id="statsTitle">Key stats <button class="ghost sm" type="button" id="explainAll" aria-pressed="false">Explain all</button></h2>
+      <div class="tiles" id="tiles"></div>
+      <p class="note" id="statsNote"></p>
+    </section>
+
+    <!-- ---------------- Live: earnings ---------------- -->
+    <section class="card" id="earnCard" hidden data-acc="open" aria-labelledby="earnTitle">
+      <h2 id="earnTitle">Earnings calendar</h2>
+      <div id="earnBody"></div>
+    </section>
+
+    <!-- ---------------- Live: what moved it ---------------- -->
+    <section class="card" id="promptCard" hidden data-acc="open" aria-labelledby="promptTitle">
+      <h2 id="promptTitle">What moved it? Questions to ask</h2>
+      <div class="prompts" id="prompts"></div>
+      <p class="honest">These are prompts, not answers. Markets rarely move for one clean reason, and the headline you read last is not necessarily the cause. Check the chart, compare with SPY, then write your own explanation in the Journal.</p>
+    </section>
+
+    <!-- ---------------- Live: news ---------------- -->
+    <section class="card" id="newsCard" hidden data-acc="open" aria-labelledby="newsTitle">
+      <h2 id="newsTitle">Headlines <span class="muted" id="newsCount" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div id="newsBody"></div>
+    </section>
+
+    <!-- ---------------- Learn (always) ---------------- -->
+    <section class="card" id="learnCard" data-acc="open" aria-labelledby="learnTitle">
+      <h2 id="learnTitle">Reading the numbers</h2>
+      <div class="ex-list" id="explainers"></div>
+    </section>
+
+    <section class="card" id="howCard" data-acc aria-labelledby="howTitle">
+      <h2 id="howTitle">How traders read a news page</h2>
+      <ol class="checklist">
+        <li><b>Source and time first.</b> Wire services report facts fast. A headline from three days ago is already in the price.</li>
+        <li><b>Is it new, and is it material?</b> A scheduled product launch rarely moves a stock. A surprise guidance cut does.</li>
+        <li><b>Check the calendar.</b> Earnings dates are known in advance. Gaps through a stop-loss are the main way a small loss becomes a big one.</li>
+        <li><b>Compare with the market.</b> If SPY fell 2% too, the "company news" may be a coincidence.</li>
+        <li><b>Valuation as context, not a signal.</b> P/E tells you what the market expects; the chart tells you what it is doing. Neither predicts tomorrow.</li>
+        <li><b>Write it down.</b> Note your explanation in the Journal before you see what happens next, so you can grade yourself later.</li>
+      </ol>
+    </section>
+
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/news.js"></script>
+<script>
+/* Broward Trading — news.html page script (UI only; data and copy live in js/news.js → BT.news) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var N = BT.news, D = BT.data;
+  var $ = function (id) { return document.getElementById(id); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var safeUrl = function (u) { return /^https?:\/\//i.test(String(u || '')) ? String(u) : ''; };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+
+  if (!N || !D) {
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">This page could not start: js/data.js or js/news.js did not load. Reload the page.</div>');
+    return;
+  }
+  var fmt = N.fmt;
+  function toast(msg, kind, title) {
+    if (BT.nav && BT.nav.toast) return BT.nav.toast(msg, kind, title);
+    var host = $('toasts'), el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    el.querySelector('.close').onclick = function () { el.remove(); };
+    host.appendChild(el); setTimeout(function () { el.remove(); }, 4500);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * State
+   * ------------------------------------------------------------------ */
+  var POPULAR = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'JPM'];
+  var symbol = '';
+  var current = null;          // last BT.news.load result
+  var newsFilter = 'all';
+  var shownNews = 15;
+  var loading = false;
+  var loadSeq = 0;
+
+  function readHash() {
+    var h = (location.hash || '').replace(/^#/, ''); if (!h) return '';
+    var out = '';
+    h.split('&').forEach(function (kv) { var p = kv.split('='); if (p.length === 1 && p[0]) out = p[0]; if (p[0] === 'symbol' && p[1]) out = p[1]; });
+    try { out = decodeURIComponent(out); } catch (e) { /* keep raw */ }
+    return out.toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 10);
+  }
+  function writeHash() { try { history.replaceState(null, '', location.pathname + location.search + (symbol ? '#symbol=' + encodeURIComponent(symbol) : '')); } catch (e) { /* file:// */ } }
+
+  /* ------------------------------------------------------------------ *
+   * Header pills, symbol bar, popular chips
+   * ------------------------------------------------------------------ */
+  function renderSource() {
+    var src = N.source();
+    var pill = $('pillSource');
+    pill.className = 'pill ' + (src.live ? 'live' : 'demo');
+    pill.textContent = src.live ? 'live · ' + src.label : 'demo · no key';
+    var q = $('pillQuota');
+    if (src.live) {
+      var rs = N.rateStatus(src.provider);
+      var parts = [];
+      if (isFinite(rs.minuteLimit)) parts.push(rs.minuteUsed + '/' + rs.minuteLimit + ' this min');
+      if (isFinite(rs.dayLimit)) parts.push(rs.dayUsed + '/' + rs.dayLimit + ' today');
+      q.textContent = parts.join(' · ') || 'no cap'; q.hidden = false;
+    } else q.hidden = true;
+    var help = $('symHelp');
+    if (!src.live) help.textContent = src.reason;
+    else help.textContent = (src.reason ? src.reason + ' ' : '') + src.budget.note + ' Responses are cached (profile 24 h, headlines 10 min) so reloading is free.';
+    $('connectCard').hidden = src.live;
+    $('refreshBtn').hidden = !src.live;
+    return src;
+  }
+  function renderChips() {
+    $('chips').innerHTML = POPULAR.map(function (s) {
+      var u = D.lookup ? D.lookup(s) : null;
+      return '<button type="button" class="chip' + (s === symbol ? ' on' : '') + '" data-sym="' + s + '" title="' + esc(u && u.name || s) + '">' + s + '</button>';
+    }).join('');
+    $$('#chips .chip').forEach(function (b) { b.onclick = function () { $('sym').value = b.dataset.sym; go(b.dataset.sym); }; });
+  }
+  function renderProviders() {
+    var rows = [
+      { name: 'Finnhub', url: 'https://finnhub.io/register', what: 'Company profile, key stats, earnings dates and headlines. 60 requests a minute, no daily cap. Real-time US quotes too.' },
+      { name: 'Alpha Vantage', url: 'https://www.alphavantage.co/support/#api-key', what: 'Company overview with P/E, EPS, dividend yield and 52-week range in one request. 25 requests a day, so headlines and earnings load only when you tap.' },
+      { name: 'Twelve Data', url: '', what: 'Great for charts on the dashboard, but its free plan has no company profile or news endpoint, so it cannot feed this page.' }
+    ];
+    $('providers').innerHTML = rows.map(function (r) {
+      return '<div class="prov"><b>' + esc(r.name) + '</b><small>' + esc(r.what) + (r.url ? ' <a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">Get a key ↗</a>' : '') + '</small></div>';
+    }).join('');
+  }
+  function renderExplainers() {
+    $('explainers').innerHTML = N.EXPLAINERS.map(function (e) {
+      return '<details class="ex" id="ex-' + esc(e.id) + '"><summary><span class="t"><b>' + esc(e.term) + '</b><span>' + esc(e.short) + '</span></span></summary>' +
+        '<div class="body"><p>' + esc(e.long) + '</p><span class="lbl">Example</span><p>' + esc(e.example) + '</p><span class="lbl">Why traders care</span><p>' + esc(e.why) + '</p></div></details>';
+    }).join('');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Messages
+   * ------------------------------------------------------------------ */
+  function renderErrors(errors) {
+    var host = $('msgs');
+    host.innerHTML = (errors || []).filter(function (e) { return e.code !== 'nokey'; }).map(function (e) {
+      var tone = e.code === 'rate_limit' ? 'warn' : e.code === 'symbol' ? 'warn' : 'danger';
+      var where = e.section === 'profile' ? 'Company profile' : e.section === 'stats' ? 'Key stats' : e.section === 'news' ? 'Headlines' : e.section === 'earnings' ? 'Earnings' : 'Lookup';
+      return '<div class="callout ' + tone + ' compact"><span class="title">' + esc(where) + '</span>' + esc(e.message) + '</div>';
+    }).join('');
+  }
+  function skeleton(lines) {
+    var out = '<div class="sk" aria-busy="true">';
+    for (var i = 0; i < lines; i++) out += '<div class="skeleton' + (i === 0 ? ' tall' : i % 3 === 1 ? ' w60' : i % 3 === 2 ? ' w40' : '') + '">&nbsp;</div>';
+    return out + '</div>';
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Profile
+   * ------------------------------------------------------------------ */
+  function renderProfile(r) {
+    var p = r.profile, card = $('profileCard');
+    if (!p) { card.hidden = true; return; }
+    card.hidden = false;
+    var logo = safeUrl(p.logo);
+    var meta = [];
+    if (p.exchange) meta.push(esc(p.exchange));
+    if (p.sector) meta.push(esc(p.sector));
+    if (p.industry) meta.push(esc(p.industry));
+    if (p.country) meta.push(esc(p.country));
+    if (p.ipo) meta.push('IPO ' + esc(fmt.dateLabel(p.ipo).indexOf(',') > 0 ? fmt.dateLabel(p.ipo) : p.ipo));
+    var site = safeUrl(p.website);
+    if (site) meta.push('<a href="' + esc(site) + '" target="_blank" rel="noopener noreferrer">' + esc(site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')) + ' ↗</a>');
+    var bucket = N.capBucket(p.marketCap);
+    $('capPill').hidden = !bucket; $('capPill').textContent = bucket;
+    $('profileBody').innerHTML =
+      '<div class="profile">' +
+        (logo ? '<img class="logo" id="logoImg" src="' + esc(logo) + '" alt="" width="56" height="56" loading="lazy">' : '<div class="logo ph">' + esc(r.symbol.slice(0, 4)) + '</div>') +
+        '<div><div class="name">' + esc(p.name || r.symbol) + '<span class="sym">' + esc(r.symbol) + '</span></div><div class="meta">' + meta.join('<span aria-hidden="true">·</span>') + '</div></div>' +
+      '</div>' +
+      (p.description ? '<p class="desc" id="desc">' + esc(p.description) + '</p><button type="button" class="ghost sm" id="descMore" aria-expanded="false">Read more</button>' : '') +
+      '<div class="quicklinks">' +
+        '<a href="index.html#symbol=' + encodeURIComponent(r.symbol) + '&interval=1day">Open chart on Dashboard</a>' +
+        '<a href="portfolio.html#symbol=' + encodeURIComponent(r.symbol) + '">Paper trade it</a>' +
+        '<a href="compare.html#symbols=' + encodeURIComponent(r.symbol) + ',SPY">Compare with SPY</a>' +
+      '</div>' +
+      '<p class="honest">Source: ' + esc(r.label) + '. Company facts update slowly (profile cached 24 h). Market cap uses the latest price your provider gave' + (p.marketCapDerived ? ' (price × shares, computed here)' : '') + '.</p>';
+    var img = $('logoImg');
+    if (img) img.onerror = function () { var ph = document.createElement('div'); ph.className = 'logo ph'; ph.textContent = r.symbol.slice(0, 4); img.replaceWith(ph); };
+    var more = $('descMore');
+    if (more) more.onclick = function () { var d = $('desc'), open = d.classList.toggle('open'); more.textContent = open ? 'Show less' : 'Read more'; more.setAttribute('aria-expanded', String(open)); };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Key stats
+   * ------------------------------------------------------------------ */
+  function tile(opts) {
+    var explain = N.TOOLTIPS[opts.key] || '';
+    return '<div class="tile' + (opts.cls ? ' ' + opts.cls : '') + '">' +
+      '<div class="top"><span class="label">' + esc(opts.label) + '</span>' + (explain ? '<button type="button" class="why" aria-expanded="false" aria-label="Explain ' + esc(opts.label) + '" data-key="' + esc(opts.key) + '">?</button>' : '') + '</div>' +
+      '<div class="value' + (opts.vcls ? ' ' + opts.vcls : '') + '">' + opts.value + '</div>' +
+      (opts.sub ? '<div class="sub">' + opts.sub + '</div>' : '') +
+      (opts.extra || '') +
+      (explain ? '<div class="explain" hidden>' + esc(explain) + (opts.learn ? ' <a href="#ex-' + esc(opts.learn) + '" class="learn">Learn more</a>' : '') + '</div>' : '') +
+    '</div>';
+  }
+  function renderStats(r) {
+    var s = r.stats || {}, p = r.profile || {}, card = $('statsCard');
+    var any = ['price', 'pe', 'eps', 'dividendYield', 'beta', 'high52', 'revenueTTM'].some(function (k) { return typeof s[k] === 'number'; }) || typeof p.marketCap === 'number';
+    if (!r.profile || !any) { card.hidden = true; return; }
+    card.hidden = false;
+    var tiles = [];
+    if (typeof s.price === 'number') tiles.push(tile({ key: 'price', label: 'Price', value: fmt.money(s.price), sub: r.quote && typeof r.quote.changePct === 'number' ? '<span class="' + (r.quote.changePct >= 0 ? 'up' : 'down') + '">' + esc(fmt.signedPct(r.quote.changePct)) + ' today</span>' : (r.quote && r.quote.source ? 'via ' + esc(r.quote.source) : '') }));
+    tiles.push(tile({ key: 'marketCap', label: 'Market cap', value: fmt.big(p.marketCap), sub: esc(N.capBucket(p.marketCap)) + (typeof p.shares === 'number' ? ' · ' + esc(fmt.big(p.shares, '')) + ' shares' : ''), learn: 'marketcap' }));
+    tiles.push(tile({ key: 'pe', label: 'P/E (TTM)', value: typeof s.pe === 'number' ? fmt.num(s.pe, 1) : '—', sub: typeof s.pe === 'number' ? (s.peDerived ? 'price ÷ EPS, computed here' : s.pe > 40 ? 'high: fast growth expected, or depressed earnings' : s.pe < 12 ? 'low: slow growth expected, or a bargain' : 'typical range for large US companies') : (typeof s.eps === 'number' && s.eps <= 0 ? 'not meaningful: earnings are negative' : 'not provided'), learn: 'pe' }));
+    tiles.push(tile({ key: 'eps', label: 'EPS (TTM)', value: typeof s.eps === 'number' ? fmt.money(s.eps) : '—', sub: typeof s.eps === 'number' && s.eps < 0 ? '<span class="down">loss-making over the last 4 quarters</span>' : 'profit per share, last 4 quarters', learn: 'eps' }));
+    tiles.push(tile({ key: 'dividendYield', label: 'Dividend yield', value: typeof s.dividendYield === 'number' ? fmt.pct(s.dividendYield) : '—', sub: typeof s.dividendYield === 'number' ? (s.dividendYield === 0 ? 'no dividend: profits are reinvested' : typeof s.dividendPerShare === 'number' ? esc(fmt.money(s.dividendPerShare)) + ' per share per year' : 'annual payout ÷ price') : 'not provided', learn: 'dividend' }));
+    if (typeof s.beta === 'number') tiles.push(tile({ key: 'beta', label: 'Beta', value: fmt.num(s.beta, 2), sub: s.beta > 1.3 ? 'moves more than the market' : s.beta < 0.7 ? 'moves less than the market' : 'moves roughly with the market', learn: 'beta' }));
+    if (typeof s.high52 === 'number' && typeof s.low52 === 'number') {
+      var pos = s.rangePos;
+      tiles.push(tile({
+        key: 'high52', label: '52-week range', cls: 'range wide', value: esc(fmt.money(s.low52)) + ' – ' + esc(fmt.money(s.high52)),
+        sub: typeof pos === 'number' ? 'price sits at ' + Math.round(pos * 100) + '% of the range' + (pos > 0.9 ? ', near the high' : pos < 0.1 ? ', near the low' : '') : 'current price needed to place the marker',
+        extra: '<div class="rangebar">' + (typeof pos === 'number' ? '<i style="left:' + (pos * 100).toFixed(1) + '%"></i>' : '') + '<span class="lo">low</span><span class="hi">high</span></div>', learn: 'range52'
+      }));
+    }
+    if (typeof s.revenueTTM === 'number') tiles.push(tile({ key: 'revenueTTM', label: 'Revenue (TTM)', value: fmt.big(s.revenueTTM), sub: typeof s.revenueGrowth === 'number' ? esc(fmt.signedPct(s.revenueGrowth * 100)) + ' vs a year ago' : 'sales, last 4 quarters' }));
+    if (typeof s.profitMargin === 'number') tiles.push(tile({ key: 'profitMargin', label: 'Net margin', value: fmt.pct(s.profitMargin), sub: 'profit kept per $1 of sales' }));
+    if (s.nextEarnings) tiles.push(tile({ key: 'nextEarnings', label: 'Next earnings', value: esc(fmt.dateLabel(s.nextEarnings)), sub: (function () { var d = fmt.daysUntil(s.nextEarnings); return d == null ? '' : d === 0 ? 'today' : 'in ' + d + ' day' + (d === 1 ? '' : 's'); })(), learn: 'earnings' }));
+    $('tiles').innerHTML = tiles.join('');
+    $$('#tiles .why').forEach(function (b) {
+      b.onclick = function () { var ex = b.closest('.tile').querySelector('.explain'); var open = ex.hidden; ex.hidden = !open; b.setAttribute('aria-expanded', String(open)); };
+    });
+    $$('#tiles .learn').forEach(function (a) { a.onclick = function () { var d = document.querySelector(a.getAttribute('href')); if (d) { d.open = true; } }; });
+    $('explainAll').setAttribute('aria-pressed', 'false'); $('explainAll').textContent = 'Explain all';
+    $('statsNote').textContent = 'Tap ? on any tile for a one-line explanation. TTM = trailing twelve months. Figures come from ' + r.label + (r.provider === 'finnhub' ? ' (/stock/metric)' : ' (OVERVIEW)') + ' and may lag the latest report by a few days.';
+  }
+  $('explainAll').onclick = function () {
+    var open = this.getAttribute('aria-pressed') !== 'true';
+    $$('#tiles .explain').forEach(function (ex) { ex.hidden = !open; });
+    $$('#tiles .why').forEach(function (b) { b.setAttribute('aria-expanded', String(open)); });
+    this.setAttribute('aria-pressed', String(open)); this.textContent = open ? 'Hide explanations' : 'Explain all';
+  };
+
+  /* ------------------------------------------------------------------ *
+   * Earnings
+   * ------------------------------------------------------------------ */
+  function hourLabel(h) { return h === 'amc' ? 'after close' : h === 'bmo' ? 'before open' : h === 'dmh' ? 'during hours' : ''; }
+  function renderEarnings(r) {
+    var card = $('earnCard'), body = $('earnBody');
+    if (!r.profile) { card.hidden = true; return; }
+    card.hidden = false;
+    if (r.skipped.indexOf('earnings') >= 0) {
+      body.innerHTML = '<div class="ondemand"><p>Alpha Vantage allows 25 requests a day, so the earnings history (last 8 quarters: estimate vs actual, surprise, timing) is loaded only when you ask.</p><button type="button" class="primary" id="loadEarn">Load earnings (1 request)</button></div>';
+      $('loadEarn').onclick = function () { loadSection('earnings', this); };
+      return;
+    }
+    var sp = r.earningsSplit, html = '';
+    if (sp.next) {
+      var d = fmt.daysUntil(sp.next.date);
+      html += '<div class="nextearn"><div class="days">' + (d == null ? '—' : d) + '<small>' + (d === 1 ? 'day' : 'days') + '</small></div>' +
+        '<p><b>Next report: ' + esc(fmt.dateLabel(sp.next.date)) + (sp.next.hour ? ', ' + esc(hourLabel(sp.next.hour)) : '') + '.</b> ' +
+        (typeof sp.next.epsEstimate === 'number' ? 'Analysts expect EPS of ' + esc(fmt.money(sp.next.epsEstimate)) + (typeof sp.next.revenueEstimate === 'number' ? ' on revenue of ' + esc(fmt.big(sp.next.revenueEstimate)) : '') + '. ' : '') +
+        'Decide before the date how much of a gap you are willing to hold through.</p></div>';
+    } else {
+      html += '<p class="note">No upcoming report date in the next ' + 120 + ' days from ' + esc(r.label) + '. Dates are usually confirmed two to four weeks ahead.</p>';
+    }
+    if (sp.past.length) {
+      html += '<div class="table-wrap"><table class="earn"><thead><tr><th>Reported</th><th>Quarter</th><th class="num">EPS est.</th><th class="num">EPS actual</th><th class="num">Surprise</th>' + (sp.past.some(function (e) { return typeof e.revenueActual === 'number'; }) ? '<th class="num">Revenue</th>' : '') + '</tr></thead><tbody>';
+      sp.past.slice(0, 8).forEach(function (e) {
+        var sc = typeof e.surprisePct === 'number' ? (e.surprisePct > 0 ? 'up' : e.surprisePct < 0 ? 'down' : '') : '';
+        html += '<tr><td>' + esc(fmt.dateLabel(e.date)) + (e.hour ? ' <span class="hour">' + esc(hourLabel(e.hour)) + '</span>' : '') + '</td>' +
+          '<td>' + (e.quarter ? 'Q' + e.quarter + (e.year ? ' ' + e.year : '') : '—') + '</td>' +
+          '<td class="num">' + esc(fmt.money(e.epsEstimate)) + '</td><td class="num">' + esc(fmt.money(e.epsActual)) + '</td>' +
+          '<td class="num ' + sc + '">' + esc(fmt.signedPct(e.surprisePct)) + '</td>' +
+          (sp.past.some(function (x) { return typeof x.revenueActual === 'number'; }) ? '<td class="num">' + esc(fmt.big(e.revenueActual)) + '</td>' : '') + '</tr>';
+      });
+      html += '</tbody></table></div>';
+      var beats = sp.past.filter(function (e) { return typeof e.surprisePct === 'number' && e.surprisePct > 0; }).length, total = sp.past.filter(function (e) { return typeof e.surprisePct === 'number'; }).length;
+      if (total) html += '<p class="note">Beat the EPS estimate in ' + beats + ' of the last ' + total + ' reports. Beating is common (companies guide conservatively), so the stock\'s reaction depends more on guidance than on the beat itself. Open the chart on each date to see the gap.</p>';
+    } else html += '<p class="empty">No past reports returned.</p>';
+    body.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Prompts
+   * ------------------------------------------------------------------ */
+  function renderPrompts(r) {
+    var card = $('promptCard');
+    if (!r.profile || !r.prompts.length) { card.hidden = true; return; }
+    card.hidden = false;
+    $('prompts').innerHTML = r.prompts.map(function (p) {
+      return '<div class="prompt ' + esc(p.kind) + '"><b>' + esc(p.title) + '</b><p>' + esc(p.text) + '</p></div>';
+    }).join('');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * News
+   * ------------------------------------------------------------------ */
+  function renderNews(r) {
+    var card = $('newsCard'), body = $('newsBody');
+    if (!r.profile) { card.hidden = true; return; }
+    card.hidden = false;
+    if (r.skipped.indexOf('news') >= 0) {
+      $('newsCount').textContent = '';
+      body.innerHTML = '<div class="ondemand"><p>Headlines come from Alpha Vantage NEWS_SENTIMENT and cost 1 of your 25 daily requests. They are cached for 10 minutes once loaded.</p><button type="button" class="primary" id="loadNews">Load headlines (1 request)</button></div>';
+      $('loadNews').onclick = function () { loadSection('news', this); };
+      return;
+    }
+    var news = r.news || [];
+    $('newsCount').textContent = news.length ? news.length + ' in the last 14 days' : '';
+    if (!news.length) {
+      body.innerHTML = '<p class="empty">' + esc(r.label) + ' returned no headlines for ' + esc(r.symbol) + ' in the last two weeks. Quiet is normal for most companies most of the time.</p>';
+      return;
+    }
+    var counts = {}; news.forEach(function (n) { counts[n.kind] = (counts[n.kind] || 0) + 1; });
+    var kinds = N.KINDS.filter(function (k) { return counts[k.kind]; });
+    var html = '<div class="kinds" role="group" aria-label="Filter by kind"><button type="button" class="chip' + (newsFilter === 'all' ? ' on' : '') + '" data-kind="all">All (' + news.length + ')</button>' +
+      kinds.map(function (k) { return '<button type="button" class="chip' + (newsFilter === k.kind ? ' on' : '') + '" data-kind="' + esc(k.kind) + '">' + esc(k.label) + ' (' + counts[k.kind] + ')</button>'; }).join('') +
+      (counts.other ? '<button type="button" class="chip' + (newsFilter === 'other' ? ' on' : '') + '" data-kind="other">General (' + counts.other + ')</button>' : '') + '</div>';
+    var view = newsFilter === 'all' ? news : news.filter(function (n) { return n.kind === newsFilter; });
+    if (newsFilter !== 'all') { var ki = N.kindInfo(newsFilter); html += '<div class="callout compact bare">' + esc(ki.hint) + '</div>'; }
+    html += '<ul class="newslist">' + view.slice(0, shownNews).map(function (n) {
+      var url = safeUrl(n.url), ki = N.kindInfo(n.kind);
+      var sent = n.sentiment && typeof n.sentiment.score === 'number' ? '<span class="sent ' + (n.sentiment.score > 0.15 ? 'up' : n.sentiment.score < -0.15 ? 'down' : '') + '" title="Alpha Vantage sentiment score for this ticker">' + esc(n.sentiment.label || '') + '</span>' : '';
+      return '<li class="item"><div class="ih"><span class="kind ' + esc(n.kind) + '">' + esc(n.kind === 'other' ? 'General' : ki.label) + '</span><span>' + esc(n.source || 'unknown source') + '</span>' + sent + '<span class="time" title="' + (n.time ? esc(new Date(n.time * 1000).toLocaleString()) : '') + '">' + esc(fmt.relTime(n.time)) + '</span></div>' +
+        '<h3>' + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.headline) + ' ↗</a>' : esc(n.headline)) + '</h3>' +
+        (n.summary && n.summary !== n.headline ? '<p class="sum">' + esc(n.summary) + '</p>' : '') + '</li>';
+    }).join('') + '</ul>';
+    if (view.length > shownNews) html += '<button type="button" class="more" id="moreNews">Show ' + Math.min(15, view.length - shownNews) + ' more</button>';
+    html += '<p class="honest">Headlines and summaries are shown as the provider sent them, with their source and publish time, and open on the publisher\'s site. Broward Trading does not write, rank or edit news.</p>';
+    body.innerHTML = html;
+    $$('#newsBody .kinds .chip').forEach(function (b) { b.onclick = function () { newsFilter = b.dataset.kind; shownNews = 15; renderNews(current); }; });
+    var more = $('moreNews'); if (more) more.onclick = function () { shownNews += 15; renderNews(current); };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Loading
+   * ------------------------------------------------------------------ */
+  function setBusy(on) {
+    loading = on;
+    $('goBtn').disabled = on; $('refreshBtn').disabled = on;
+    $('goBtn').textContent = on ? 'Loading…' : 'Look up';
+  }
+  function showSkeletons() {
+    $('profileCard').hidden = false; $('profileBody').innerHTML = skeleton(3);
+    $('statsCard').hidden = false; $('tiles').innerHTML = skeleton(2); $('statsNote').textContent = '';
+    ['earnCard', 'promptCard', 'newsCard'].forEach(function (id) { $(id).hidden = true; });
+  }
+  function render(r) {
+    current = r;
+    renderErrors(r.errors);
+    renderProfile(r); renderStats(r); renderEarnings(r); renderPrompts(r); renderNews(r);
+    renderSource();
+  }
+  async function barsFor(sym) {
+    // Daily bars for the "biggest move" prompt. Demo/fallback bars are simulated, so they are never paired with real headlines.
+    try { var b = await D.candles(sym, '1day', 45); return (b && !b.fallback) ? b : null; } catch (e) { return null; }
+  }
+  async function go(sym, opts) {
+    opts = opts || {};
+    sym = String(sym || '').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '').slice(0, 10);
+    if (!sym) { $('sym').focus(); return; }
+    symbol = sym; store.set('bt.news.sym', symbol); writeHash();
+    $('sym').value = symbol; renderChips();
+    var src = renderSource();
+    newsFilter = 'all'; shownNews = 15;
+    if (!src.live) {
+      // Demo state: no numbers, only the explainers; the connect card is already visible.
+      ['profileCard', 'statsCard', 'earnCard', 'promptCard', 'newsCard'].forEach(function (id) { $(id).hidden = true; });
+      $('msgs').innerHTML = '';
+      current = null;
+      return;
+    }
+    var seq = ++loadSeq;
+    setBusy(true); showSkeletons();
+    try {
+      var want = { force: !!opts.force, news: opts.news, earnings: opts.earnings };
+      if (src.provider === 'alphavantage') {
+        // Remember on-demand sections per symbol so a reload does not hide what was already paid for (they are cached anyway).
+        var paid = store.get('bt.news.paid', {})[symbol] || {};
+        if (want.news == null) want.news = !!paid.news;
+        if (want.earnings == null) want.earnings = !!paid.earnings;
+      }
+      var r = await N.load(symbol, want);
+      if (seq !== loadSeq) return;
+      if (r.profile) {
+        var bars = await barsFor(symbol);
+        if (seq !== loadSeq) return;
+        if (bars) r.prompts = N.whatMovedIt({ news: r.news, earnings: r.earnings, bars: bars });
+      }
+      render(r);
+      if (!r.errors.length && r.requests) toast(r.requests + ' request' + (r.requests === 1 ? '' : 's') + ' to ' + r.label + (r.cached.length ? ', ' + r.cached.length + ' from cache' : ''), 'ok', symbol + ' loaded');
+      else if (r.requests === 0 && r.profile) toast('Everything came from the local cache: no requests used.', 'ok', symbol + ' loaded');
+    } catch (e) {
+      if (seq !== loadSeq) return;
+      renderErrors([{ section: 'lookup', code: 'error', message: (e && e.message) || String(e) }]);
+      ['profileCard', 'statsCard'].forEach(function (id) { $(id).hidden = true; });
+    } finally { if (seq === loadSeq) setBusy(false); }
+  }
+  async function loadSection(section, btn) {
+    if (!current || !current.profile) return;
+    btn.disabled = true; btn.textContent = 'Loading…';
+    var paid = store.get('bt.news.paid', {}); paid[symbol] = paid[symbol] || {}; paid[symbol][section] = true; store.set('bt.news.paid', paid);
+    var r = section === 'news' ? await N.loadNews(symbol) : await N.loadEarnings(symbol);
+    if (r.error) { renderErrors(current.errors.concat([{ section: section, code: r.error.code, message: N.explainError(r.error, r.provider) }])); btn.disabled = false; btn.textContent = 'Try again'; renderSource(); return; }
+    if (section === 'news') current.news = r.news; else { current.earnings = r.earnings; current.earningsSplit = N.splitEarnings(r.earnings); if (current.earningsSplit.next) { current.stats.nextEarnings = current.earningsSplit.next.date; renderStats(current); } }
+    current.skipped = current.skipped.filter(function (s) { return s !== section; });
+    var bars = await barsFor(symbol);
+    current.prompts = N.whatMovedIt({ news: current.news, earnings: current.earnings, bars: bars });
+    render(current);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Wire up
+   * ------------------------------------------------------------------ */
+  $('symForm').onsubmit = function (e) { e.preventDefault(); go($('sym').value); };
+  $('refreshBtn').onclick = function () { if (symbol) { N.clearCache(); go(symbol, { force: true }); } };
+  window.addEventListener('hashchange', function () { var s = readHash(); if (s && s !== symbol) go(s); });
+  window.addEventListener('storage', function (e) { if (e.key === 'bt.data') { renderSource(); if (symbol && !loading) go(symbol); } });
+  window.addEventListener('focus', function () { renderSource(); });
+
+  renderProviders(); renderExplainers();
+  symbol = readHash() || store.get('bt.news.sym', '') || '';
+  renderChips();
+  var src = renderSource();
+  if (symbol) { $('sym').value = symbol; go(symbol); }
+  else if (!src.live) { /* nothing to load; the explainers are the content */ }
+})();
+</script>
+</body>
+</html>

@@ -21,12 +21,19 @@
  *
  * All money is in dollars as JavaScript numbers (never strings). Prices and
  * cash are rounded to the cent where they are stored.
+ *
+ * Multiple accounts (v0.3): BT.paper.use(id) switches the active account.
+ * 'main' (the default) keeps the historical storage key `bt.portfolio`;
+ * any other id ('replay' for Market Replay, 'class-a', ...) is stored under
+ * `bt.portfolio.<id>`. Every other function acts on the active account.
  */
 (function () {
   'use strict';
   window.BT = window.BT || {};
 
-  var STORAGE_KEY = 'bt.portfolio';
+  var STORAGE_KEY = 'bt.portfolio';          // the 'main' account (backward compatible)
+  var ACCOUNTS_KEY = 'bt.portfolio.accounts'; // registry of account ids that have been used
+  var MAIN_ACCOUNT = 'main';
   var DEFAULT_CASH = 100000;
   var SHORT_MARGIN = 1.5;        // cash must cover 150 % of short market value
   var NAKED_OPTION_MARGIN = 0.2; // plus 20 % of strike notional for written options
@@ -101,6 +108,45 @@
       ls.setItem(key, JSON.stringify(value));
       return true;
     } catch (e) { return false; }
+  }
+  function storageRemove(key) {
+    try {
+      var ls = (typeof localStorage !== 'undefined') ? localStorage : (window.localStorage || null);
+      if (!ls) return false;
+      ls.removeItem(key);
+      return true;
+    } catch (e) { return false; }
+  }
+  // Every stored key, when the storage supports enumeration (browsers do; test shims may not).
+  function storageKeys() {
+    var out = [];
+    try {
+      var ls = (typeof localStorage !== 'undefined') ? localStorage : (window.localStorage || null);
+      if (!ls || typeof ls.key !== 'function' || !isNum(ls.length)) return out;
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (typeof k === 'string') out.push(k); }
+    } catch (e) { /* ignore */ }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Accounts — which localStorage key the active account lives under
+   * ------------------------------------------------------------------ */
+  function normAccountId(id) {
+    var s = String(id == null ? MAIN_ACCOUNT : id).trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+    return s || MAIN_ACCOUNT;
+  }
+  function keyFor(id) { return id === MAIN_ACCOUNT ? STORAGE_KEY : STORAGE_KEY + '.' + id; }
+  var activeAccount = MAIN_ACCOUNT;
+
+  function readRegistry() {
+    var reg = storageGet(ACCOUNTS_KEY);
+    var ids = Array.isArray(reg) ? reg.filter(function (x) { return typeof x === 'string'; }).map(normAccountId) : [];
+    if (ids.indexOf(MAIN_ACCOUNT) === -1) ids.unshift(MAIN_ACCOUNT);
+    return ids;
+  }
+  function rememberAccount(id) {
+    var ids = readRegistry();
+    if (ids.indexOf(id) === -1) { ids.push(id); storageSet(ACCOUNTS_KEY, ids); }
   }
 
   /* ------------------------------------------------------------------ *
@@ -182,11 +228,83 @@
   }
 
   function load() {
-    state = sanitize(storageGet(STORAGE_KEY));
+    state = sanitize(storageGet(keyFor(activeAccount)));
     return state;
   }
   function save() {
-    return storageSet(STORAGE_KEY, state);
+    if (activeAccount !== MAIN_ACCOUNT) rememberAccount(activeAccount);
+    return storageSet(keyFor(activeAccount), state);
+  }
+
+  /**
+   * use(accountId) → state
+   * Switch the active account. The current account is already persisted on
+   * every mutation, so switching simply loads the other account's saved state
+   * (a fresh $100,000 account when it has never been used). 'main' is the
+   * default and keeps the legacy `bt.portfolio` key; other ids live under
+   * `bt.portfolio.<id>`. Returns the now-active state.
+   *
+   * The outgoing account is deliberately NOT written back from memory: another
+   * tab (the Dashboard on 'main' while Replay or Journal is open) may have
+   * traded since this page loaded, and writing this page's stale snapshot would
+   * erase those fills. The only write is for an account that has never been
+   * stored at all, so its fresh state is visible to accounts() in other tabs.
+   */
+  function use(accountId) {
+    var id = normAccountId(accountId);
+    if (id === activeAccount) return state;
+    if (storageGet(keyFor(activeAccount)) == null) save();
+    activeAccount = id;
+    load();
+    if (id !== MAIN_ACCOUNT) rememberAccount(id);
+    return state;
+  }
+  function account() { return activeAccount; }
+
+  /**
+   * accounts() → [{id, equity, cash, startingCash, positions, trades, active, storageKey}]
+   * Every account that has been used (the registry plus any `bt.portfolio.*`
+   * key found in storage), valued at its last known marks. 'main' is always
+   * listed first.
+   */
+  function accounts() {
+    var ids = readRegistry();
+    storageKeys().forEach(function (k) {
+      if (k === STORAGE_KEY) return;
+      if (k.indexOf(STORAGE_KEY + '.') === 0 && k !== ACCOUNTS_KEY && k.indexOf('.', STORAGE_KEY.length + 1) === -1) {
+        var id = normAccountId(k.slice(STORAGE_KEY.length + 1));
+        if (ids.indexOf(id) === -1) ids.push(id);
+      }
+    });
+    if (ids.indexOf(activeAccount) === -1) ids.push(activeAccount);
+    var current = state;
+    var out = ids.map(function (id) {
+      var st = id === activeAccount ? current : sanitize(storageGet(keyFor(id)));
+      var saved = state; state = st;              // valuation() reads the module-level state
+      var v = valuation({});
+      state = saved;
+      return {
+        id: id,
+        equity: cents(st.cash + v.marketValue),
+        cash: st.cash,
+        startingCash: st.startingCash,
+        positions: Object.keys(st.positions).length,
+        trades: st.trades.length,
+        active: id === activeAccount,
+        storageKey: keyFor(id)
+      };
+    });
+    return out;
+  }
+
+  /** deleteAccount(id): remove a non-main account's saved state (switches to 'main' if it was active). */
+  function deleteAccount(accountId) {
+    var id = normAccountId(accountId);
+    if (id === MAIN_ACCOUNT) return false;
+    if (id === activeAccount) { activeAccount = MAIN_ACCOUNT; load(); }
+    storageRemove(keyFor(id));
+    storageSet(ACCOUNTS_KEY, readRegistry().filter(function (x) { return x !== id; }));
+    return true;
   }
   function reset(startingCash) {
     var keepCommission = state.settings.commission;
@@ -928,11 +1046,17 @@
    * ------------------------------------------------------------------ */
   window.BT.paper = {
     STORAGE_KEY: STORAGE_KEY,
+    ACCOUNTS_KEY: ACCOUNTS_KEY,
     DEFAULT_CASH: DEFAULT_CASH,
     SHORT_MARGIN: SHORT_MARGIN,
     load: load,
     save: save,
     reset: reset,
+    use: use,
+    account: account,
+    accounts: accounts,
+    deleteAccount: deleteAccount,
+    storageKeyFor: function (id) { return keyFor(normAccountId(id)); },
     getState: getState,
     get state() { return state; },
     get settings() { return state.settings; },
@@ -955,4 +1079,17 @@
 
   // Pick up any saved portfolio as soon as the script loads.
   load();
+
+  // Cross-tab sync: when another tab writes the active account's key, reload it
+  // so this page never trades against (or later persists) a stale snapshot.
+  // The `storage` event only fires in *other* tabs, so our own saves are ignored.
+  try {
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('storage', function (ev) {
+        if (!ev || ev.key !== keyFor(activeAccount)) return;
+        load();
+        try { window.dispatchEvent(new CustomEvent('bt:paper-sync', { detail: { account: activeAccount } })); } catch (e) { /* optional */ }
+      });
+    }
+  } catch (e) { /* no window events (node) */ }
 })();

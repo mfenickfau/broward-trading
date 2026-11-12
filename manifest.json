@@ -1,0 +1,27 @@
+{
+  "name": "Broward Trading",
+  "short_name": "Broward",
+  "description": "Free educational paper-trading and technical-analysis simulator: charts, indicators, a $100,000 practice account, market replay, options lab, backtester and a full course. No real orders, no real money.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0f1319",
+  "theme_color": "#0f1319",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "short_name": "Dashboard", "description": "Charts, indicators and the paper trade ticket", "url": "index.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Learn", "short_name": "Learn", "description": "Continue the free course", "url": "learn.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Market Replay", "short_name": "Replay", "description": "Practice on past data, bar by bar", "url": "replay.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Portfolio", "short_name": "Portfolio", "description": "Your paper account and options lab", "url": "portfolio.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
+  "prefer_related_applications": false
+}

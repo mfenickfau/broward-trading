@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Every trading term in the Broward Trading course explained in plain English with a worked example, plus flashcards with spaced repetition and a Daily 5 quiz with a streak counter. Free and educational.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Glossary — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and fonts come from css/style.css tokens */
+  .gl{max-width:1100px}
+  .gl-head{display:flex;flex-wrap:wrap;gap:6px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-2);border-bottom:0}
+  .gl-head h1{margin:0;font-size:var(--fs-xl)}
+  .gl-head .sub{margin:0;color:var(--muted);font-size:var(--fs-sm);max-width:70ch;flex:1 1 100%}
+  .gl-head .pills{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+
+  /* phone first: every control is at least 44px tall */
+  .gl button,.gl select,.gl input:not([type=checkbox]){min-height:44px}
+  .gl button.sm{min-height:32px}
+  .gl .az button{min-height:40px}
+
+  /* mode switcher */
+  .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);margin:var(--sp-3) 0}
+  .modes button{border:0;background:transparent;color:var(--muted);font-weight:500;border-radius:var(--r);padding:8px 6px;gap:8px}
+  .modes button:hover{color:var(--fg);border-color:transparent;background:var(--panel2)}
+  .modes button[aria-selected="true"]{background:var(--accent-soft);color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
+  .modes button .ico{width:18px;height:18px}
+  .modes .cnt{font-family:var(--mono);font-size:var(--fs-xs);padding:1px 7px;border-radius:var(--r-pill);background:var(--panel2);color:var(--muted)}
+  .modes button[aria-selected="true"] .cnt{background:var(--accent);color:var(--accent-fg)}
+  .modes .cnt:empty{display:none}
+  @media (max-width:420px){ .modes button{font-size:var(--fs-sm);padding:8px 2px} .modes button .ico{display:none} }
+
+  /* browse */
+  .searchbar{position:sticky;top:calc(var(--topnav-h) + 6px);z-index:20;background:var(--bg);padding:6px 0 8px;margin:0 -2px;padding-inline:2px}
+  .searchbar .input-group{position:relative}
+  .searchbar input{flex:1;padding-left:38px;font-size:var(--fs-md);border-radius:var(--r-md) 0 0 var(--r-md)}
+  .searchbar .ico.lead{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+  .searchbar button{min-width:48px;border-radius:0 var(--r-md) var(--r-md) 0}
+  .scrollrow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 2px 6px;margin:0 -2px}
+  .scrollrow::-webkit-scrollbar{display:none}
+  .cats button{flex:0 0 auto;border-radius:var(--r-pill);padding:6px 14px;font-size:var(--fs-sm);color:var(--muted)}
+  .cats button.on{color:var(--accent-fg)}
+  .az{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px;margin:2px 0 var(--sp-3)}
+  .az button{padding:0;font-family:var(--mono);font-weight:500;font-size:var(--fs-sm)}
+  .az button:disabled{opacity:.3}
+  .az button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .count{color:var(--muted);font-size:var(--fs-sm);margin:0 0 var(--sp-2)}
+  .letter{position:sticky;top:calc(var(--topnav-h) + 66px);z-index:10;font-family:var(--mono);font-size:var(--fs-sm);letter-spacing:.6px;color:var(--muted);background:var(--bg);padding:10px 0 6px;margin:var(--sp-2) 0 4px;border-bottom:1px solid var(--line);scroll-margin-top:calc(var(--topnav-h) + 70px)}
+  .letter small{font-family:var(--font);letter-spacing:0;text-transform:none;color:var(--faint);margin-left:8px}
+  .terms{display:flex;flex-direction:column;gap:6px}
+  details.term{margin:0;padding:0;border-radius:var(--r-md);scroll-margin-top:calc(var(--topnav-h) + 130px)}
+  /* phones: one letter at a time; previous / next letter at the foot of the section */
+  .letter-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:var(--sp-3)}
+  .letter-nav button{min-height:48px;justify-content:center}
+  .letter-nav button:disabled{visibility:hidden}
+  .letter-nav .k{font-family:var(--mono);font-weight:600;margin:0 6px}
+  details.term summary{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;padding:12px 14px;min-height:48px;color:var(--fg)}
+  details.term summary::before{display:none}
+  details.term summary .t{font-weight:600;font-size:var(--fs-md);min-width:0;overflow-wrap:anywhere}
+  details.term summary .brief{grid-column:1 / -1;color:var(--muted);font-size:var(--fs-sm);line-height:1.45;overflow-wrap:anywhere}
+  details.term[open] summary .brief{display:none}
+  details.term summary .pill{justify-self:end}
+  details.term .body{padding:0 14px 14px;border-top:1px solid var(--line);margin:0}
+  details.term .body p{margin:10px 0 0;font-size:var(--fs-md);line-height:1.6;overflow-wrap:anywhere}
+  details.term .ex{margin-top:10px;padding:10px 12px;border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 var(--r) var(--r) 0}
+  details.term .ex b{display:block;font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+  details.term .ex p{margin:0;font-size:var(--fs);color:var(--fg)}
+  details.term .rel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+  details.term .rel .lbl{font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-right:2px}
+  details.term .rel button{min-height:36px;padding:4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm)}
+  details.term .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  details.term .acts .btn,details.term .acts button{flex:1 1 150px}
+  details.term.flash{animation:flash 1.2s var(--ease)}
+  @keyframes flash{0%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+  .empty{color:var(--muted);text-align:center;padding:40px 12px}
+  .empty b{color:var(--fg)}
+
+  /* flashcards */
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  @media (max-width:520px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .tiles .card{padding:10px 12px}
+  .tiles .value{font-size:22px}
+  .fc-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:var(--sp-3)}
+  .fc-controls .field{flex:1 1 150px}
+  .fc-controls .primary{flex:1 1 100%}
+  @media (min-width:600px){ .fc-controls .primary{flex:0 0 auto;min-width:200px} }
+  .fcard{margin-top:var(--sp-3);min-height:260px;display:flex;flex-direction:column;gap:12px;padding:var(--sp-4)}
+  .fcard .meta{display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--muted);font-size:var(--fs-sm)}
+  .fcard .meta .num{font-family:var(--mono)}
+  .fcard .front{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:18px 6px}
+  .fcard .front .term{font-size:clamp(22px,6vw,30px);font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
+  .fcard .front .hint{color:var(--muted);font-size:var(--fs-sm)}
+  .fcard .back p{margin:0 0 10px;font-size:var(--fs-md);line-height:1.6}
+  .fcard .back .ex{padding:10px 12px;border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 var(--r) var(--r) 0;margin-bottom:10px}
+  .fcard .back .ex b{display:block;font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+  .fcard .back .ex p{margin:0;font-size:var(--fs)}
+  .fcard .back .links{display:flex;flex-wrap:wrap;gap:8px;font-size:var(--fs-sm)}
+  .fcard .flip{width:100%;min-height:52px;font-size:var(--fs-md)}
+  .grades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .grades button{flex-direction:column;gap:2px;min-height:56px;padding:8px 6px;font-weight:500;border-width:1px}
+  .grades button small{font-family:var(--mono);font-size:var(--fs-xs);font-weight:400;opacity:.85}
+  .grades .again{border-color:var(--down);color:var(--down)} .grades .again:hover{background:var(--down-soft)}
+  .grades .hard{border-color:var(--warn);color:var(--warn-text,var(--warn))} .grades .hard:hover{background:var(--warn-soft)}
+  .grades .good{border-color:var(--up);color:var(--up)} .grades .good:hover{background:var(--up-soft)}
+  .progress{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--accent);transition:width .25s var(--ease)}
+  .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+  .summary div{text-align:center;padding:10px 6px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .summary .n{font-family:var(--mono);font-size:22px;font-weight:500;display:block}
+  .summary small{color:var(--muted)}
+  .kbd-hint{color:var(--faint);font-size:var(--fs-xs);text-align:center;margin-top:8px}
+  @media (max-width:760px){ .kbd-hint{display:none} }
+
+  /* daily 5 */
+  .streak{display:flex;flex-wrap:wrap;gap:12px var(--sp-4);align-items:center;padding:var(--sp-3) var(--sp-4)}
+  .streak .flame{display:flex;align-items:center;gap:10px}
+  .streak .flame .ico{width:36px;height:36px;color:var(--warn)}
+  .streak .flame .ico.cold{color:var(--faint)}
+  .streak .big{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1}
+  .streak .lbl{display:block;color:var(--muted);font-size:var(--fs-xs);letter-spacing:.5px;text-transform:uppercase}
+  .streak .kv{margin-left:auto;font-size:var(--fs-sm);min-width:160px}
+  .q-wrap{margin-top:var(--sp-3)}
+  .q-head{display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--muted);font-size:var(--fs-sm);margin-bottom:8px}
+  .q-head .num{font-family:var(--mono)}
+  .stem{font-size:var(--fs-md);font-weight:500;line-height:1.55;margin:10px 0 14px;overflow-wrap:anywhere}
+  .options{display:flex;flex-direction:column;gap:8px;list-style:none;margin:0;padding:0}
+  .options .option{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;text-align:left;width:100%;padding:10px 12px;min-height:48px;line-height:1.45;font-size:var(--fs);border:1px solid var(--line);background:var(--panel2);border-radius:var(--r-md);white-space:normal}
+  .options .option .key{width:26px;height:26px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
+  .options .option .txt{min-width:0;overflow-wrap:anywhere}
+  .options .option:hover{border-color:var(--accent)}
+  .options .option:disabled{opacity:1;cursor:default}
+  .options .option.correct{border-color:var(--up);background:var(--up-soft)} .options .option.correct .key{background:var(--up);border-color:var(--up);color:#fff}
+  .options .option.wrong{border-color:var(--down);background:var(--down-soft)} .options .option.wrong .key{background:var(--down);border-color:var(--down);color:#fff}
+  .options .option.dim{opacity:.55}
+  .explain{margin-top:12px;padding:10px 12px;border-radius:var(--r);background:var(--panel2);font-size:var(--fs);line-height:1.55}
+  .explain b{display:block;margin-bottom:2px} .explain.ok b{color:var(--up)} .explain.bad b{color:var(--down)}
+  .q-foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:12px}
+  .q-foot .primary{flex:1 1 160px}
+  .q-foot .src{font-size:var(--fs-xs);color:var(--faint)}
+  .score{display:flex;flex-wrap:wrap;gap:12px var(--sp-4);align-items:center;margin:8px 0 12px}
+  .score .big{font-family:var(--mono);font-size:40px;font-weight:600;line-height:1}
+  .score .big.pass{color:var(--up)} .score .big.mid{color:var(--warn-text,var(--warn))} .score .big.fail{color:var(--down)}
+  .score p{margin:0;color:var(--muted);max-width:50ch}
+  .review{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .review li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs-sm);line-height:1.45}
+  .review .mark{font-family:var(--mono);font-weight:600} .review .mark.ok{color:var(--up)} .review .mark.no{color:var(--down)}
+  .review li > span{min-width:0;overflow-wrap:anywhere}
+  .hist{margin-top:var(--sp-3)}
+  .hist .dots{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+  .hist .dot{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:var(--fs-xs);background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  .hist .dot.done{background:var(--up-soft);border-color:var(--up);color:var(--up)}
+  .hist .dot.today{box-shadow:0 0 0 2px var(--accent-soft)}
+  .notice{color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
+  .stack{display:flex;flex-direction:column;gap:var(--sp-3)}
+  .danger-zone{margin-top:var(--sp-4)}
+  .danger-zone summary{min-height:44px;align-items:center}
+  .danger-zone .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+  /* ---------------------------------------------------------------- *
+   * Phones (≤ 760px). The top bar scrolls away on phones (#nav is static),
+   * so the search bar sticks to the very top, the A–Z strip sticks right
+   * under it as a horizontally scrolling row, and Browse shows ONE letter
+   * section at a time instead of all ~220 cards (see renderBrowse()).
+   * Heights: searchbar 58px (44 input + 6 + 8 padding), A–Z strip 56px.
+   * ---------------------------------------------------------------- */
+  @media (max-width:760px){
+    .searchbar{top:0;padding-top:6px}
+    .gl .az{position:sticky;top:58px;z-index:15;display:flex;overflow-x:auto;gap:4px;padding:4px 2px 8px;margin:0 -2px var(--sp-2);
+      background:var(--bg);scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+    .gl .az::-webkit-scrollbar{display:none}
+    .gl .az button{flex:0 0 auto;min-width:44px;min-height:44px;scroll-snap-align:center}
+    .letter{top:114px;scroll-margin-top:118px}
+    details.term{scroll-margin-top:152px}   /* clears search (58) + A–Z (56) + sticky letter heading (~32) */
+    details.term .rel button{min-height:44px;padding:8px 14px}
+    details.term .acts .btn,details.term .acts button{flex:1 1 100%}
+  }
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page gl">
+  <header class="gl-head">
+    <h1>Glossary</h1>
+    <div class="pills"><span class="pill" id="termCount">… terms</span><span class="pill accent" id="catPill" hidden></span></div>
+    <p class="sub">Every term the course uses, in plain English with a worked example and a link to the lesson that teaches it. Study them as flashcards, or take today's Daily&nbsp;5 and keep your streak alive.</p>
+  </header>
+
+  <nav class="modes" role="tablist" aria-label="Glossary modes">
+    <button role="tab" id="tab-browse" aria-selected="true" aria-controls="view-browse" data-mode="browse">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+      Browse <span class="cnt" id="cntBrowse"></span></button>
+    <button role="tab" id="tab-flash" aria-selected="false" aria-controls="view-flash" data-mode="flashcards">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="14" height="12" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v10"/></svg>
+      Flashcards <span class="cnt" id="cntFlash"></span></button>
+    <button role="tab" id="tab-daily" aria-selected="false" aria-controls="view-daily" data-mode="daily">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+      Daily 5 <span class="cnt" id="cntDaily"></span></button>
+  </nav>
+
+  <main>
+    <!-- ============================ BROWSE ============================ -->
+    <section id="view-browse" role="tabpanel" aria-labelledby="tab-browse">
+      <div class="searchbar">
+        <div class="input-group">
+          <svg class="ico lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input id="q" type="search" placeholder="Search terms, e.g. stop, RSI, theta…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search glossary" enterkeyhint="search">
+          <button id="clearQ" type="button" aria-label="Clear search" hidden>
+            <svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="scrollrow cats" id="cats" role="group" aria-label="Filter by category"></div>
+      <div class="az" id="az" role="group" aria-label="Jump to letter"></div>
+      <p class="count" id="count"></p>
+      <div id="results" class="terms"></div>
+    </section>
+
+    <!-- ========================== FLASHCARDS ========================== -->
+    <section id="view-flash" role="tabpanel" aria-labelledby="tab-flash" hidden>
+      <div class="tiles" id="fcTiles"></div>
+      <div id="fcSetup">
+        <div class="fc-controls">
+          <div class="field"><label for="fcCat">Category</label><select id="fcCat"><option value="">All categories</option></select></div>
+          <div class="field"><label for="fcNew">New cards per session</label>
+            <select id="fcNew"><option value="0">None, only reviews</option><option value="5">5 new</option><option value="10" selected>10 new</option><option value="20">20 new</option></select></div>
+          <button class="primary" id="fcStart">Start session</button>
+        </div>
+        <p class="notice" style="margin-top:10px">How it works: read the term, recall the definition, then grade yourself. <b>Again</b> brings the card back in ten minutes, <b>Hard</b> schedules it a little later, <b>Good</b> spaces it out (1 day, 3 days, then roughly doubling). Cards you find easy fade into the background; the ones you miss keep coming back. Progress is saved in this browser.</p>
+      </div>
+      <div id="fcSession" hidden></div>
+      <details class="danger-zone">
+        <summary>Reset flashcard progress</summary>
+        <p class="notice">This forgets every grade and schedule. Your Daily 5 history and course progress are not affected.</p>
+        <div class="row"><button class="danger" id="fcReset">Reset flashcards</button></div>
+      </details>
+    </section>
+
+    <!-- ============================ DAILY 5 =========================== -->
+    <section id="view-daily" role="tabpanel" aria-labelledby="tab-daily" hidden>
+      <div class="card streak" id="streakCard"></div>
+      <div id="dailyBody" class="q-wrap"></div>
+      <div class="hist card" id="dailyHist"></div>
+    </section>
+  </main>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/glossary.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = window.BT.glossary;
+  var nav = window.BT.nav || {};
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = G.util.esc;
+  function toast(msg, kind, title) { if (nav.toast) nav.toast(msg, kind, title); }
+  function el(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var lessonTitles = {};   // lessonId → {title, module}
+  // letter: on phones Browse shows one letter section at a time ('' = not chosen yet → first letter present)
+  var state = { mode: 'browse', q: '', cat: '', letter: '', ready: false, bankReady: false };
+  var phoneMQ = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
+  function isPhone() { return !!(phoneMQ && phoneMQ.matches); }
+  /** True when Browse is in one-letter-at-a-time mode (phone, no search query). */
+  function letterMode() { return isPhone() && !state.q; }
+
+  /* ------------------------------------------------------------------ *
+   * Routing: #browse · #flashcards · #daily · #term/<id>
+   * ------------------------------------------------------------------ */
+  function route() {
+    var h = (location.hash || '#browse').replace(/^#\/?/, '');
+    var parts = h.split('/');
+    var mode = parts[0] || 'browse';
+    var id = parts.slice(1).join('/');
+    try { id = decodeURIComponent(id); } catch (e) { id = ''; }
+    if (mode === 'term') { setMode('browse'); if (state.ready) openTerm(id, true); else state.pendingTerm = id; return; }
+    if (mode !== 'flashcards' && mode !== 'daily') mode = 'browse';
+    setMode(mode);
+  }
+  function setMode(mode) {
+    state.mode = mode;
+    [['browse', 'view-browse', 'tab-browse'], ['flashcards', 'view-flash', 'tab-flash'], ['daily', 'view-daily', 'tab-daily']].forEach(function (m) {
+      var on = m[0] === mode;
+      $(m[1]).hidden = !on;
+      $(m[2]).setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if (mode === 'flashcards') renderFcHome();
+    if (mode === 'daily') renderDaily();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.modes button'), function (b) {
+    b.addEventListener('click', function () { location.hash = b.getAttribute('data-mode'); });
+  });
+  window.addEventListener('hashchange', route);
+
+  /* ------------------------------------------------------------------ *
+   * Browse
+   * ------------------------------------------------------------------ */
+  function lessonLabel(id) {
+    var L = lessonTitles[id];
+    return L ? L.title : ('Lesson ' + id);
+  }
+  function termCard(t) {
+    var rel = G.related(t.id);
+    return '<details class="term card" id="term-' + esc(t.id) + '" data-id="' + esc(t.id) + '">' +
+      '<summary><span class="t">' + esc(t.term) + '</span><span class="pill">' + esc(G.categoryLabel(t.category)) + '</span>' +
+      '<span class="brief">' + esc(G.summary(t, 150)) + '</span></summary>' +
+      '<div class="body">' +
+        '<p>' + esc(t.definition) + '</p>' +
+        (t.example ? '<div class="ex"><b>Example</b><p>' + esc(t.example) + '</p></div>' : '') +
+        (t.aliases && t.aliases.length ? '<p class="notice" style="margin-top:8px">Also called: ' + esc(t.aliases.join(', ')) + '</p>' : '') +
+        (rel.length ? '<div class="rel"><span class="lbl">Related</span>' + rel.map(function (r) {
+          return '<button type="button" data-open="' + esc(r.id) + '">' + esc(r.term) + '</button>';
+        }).join('') + '</div>' : '') +
+        '<div class="acts">' +
+          '<a class="btn primary" href="' + esc(G.lessonUrl(t)) + '">Lesson: ' + esc(lessonLabel(t.lesson)) + ' ▸</a>' +
+          '<button type="button" data-study="' + esc(t.id) + '">Add to today\'s flashcards</button>' +
+          '<button type="button" class="ghost" data-link="' + esc(t.id) + '">Copy link</button>' +
+        '</div>' +
+      '</div></details>';
+  }
+  function renderBrowse() {
+    var list = G.search(state.q, { category: state.cat });
+    var res = $('results');
+    var catLabel = state.cat ? G.categoryLabel(state.cat) : '';
+    $('catPill').hidden = !state.cat; $('catPill').textContent = catLabel;
+    if (!list.length) {
+      res.innerHTML = '<div class="empty"><b>No terms match "' + esc(state.q) + '"' + (catLabel ? ' in ' + esc(catLabel) : '') + '.</b><br>Try a shorter word, or clear the filters.</div>';
+      $('count').textContent = '';
+      renderAz([]);
+      return;
+    }
+    if (state.q) {
+      $('count').textContent = list.length + (list.length === 1 ? ' result' : ' results') + ' for "' + state.q + '"' + (catLabel ? ' in ' + catLabel : '');
+      res.innerHTML = list.map(termCard).join('');
+      // a single strong hit opens itself
+      if (list.length <= 2) { var first = res.querySelector('details'); if (first) first.open = true; }
+      renderAz([]);
+    } else if (letterMode()) {
+      // Phone: one letter section at a time. 220 expanded-closed cards made a 24,000px page;
+      // one letter is 5–30 cards and the sticky A–Z strip is the navigation.
+      var pg = G.byLetter(list), pl = G.letters(list);
+      // first visit, or the category filter removed the chosen letter: start at A (Symbols is usually 1–2 terms)
+      if (pl.indexOf(state.letter) < 0) state.letter = pl[0] === '#' && pl.length > 1 ? pl[1] : pl[0];
+      var L0 = state.letter, idx = pl.indexOf(L0), sect = pg[L0] || [];
+      var prev = idx > 0 ? pl[idx - 1] : '', next = idx < pl.length - 1 ? pl[idx + 1] : '';
+      var lname = function (L) { return L === '#' ? 'Symbols' : L; };
+      $('count').textContent = list.length + ' terms' + (catLabel ? ' in ' + catLabel : '') + '. Tap a letter above, or a term to expand it.';
+      res.innerHTML = '<h2 class="letter" id="L-' + (L0 === '#' ? 'sym' : L0) + '">' + esc(lname(L0)) +
+          '<small>' + sect.length + (sect.length === 1 ? ' term' : ' terms') + '</small></h2>' +
+        sect.map(termCard).join('') +
+        '<nav class="letter-nav" aria-label="Previous and next letter">' +
+          '<button type="button" data-letter="' + esc(prev) + '"' + (prev ? '' : ' disabled') + ' aria-label="Previous letter' + (prev ? ', ' + lname(prev) : '') + '">‹ <span class="k">' + esc(prev) + '</span>' + (prev ? '(' + pg[prev].length + ')' : '') + '</button>' +
+          '<button type="button" data-letter="' + esc(next) + '"' + (next ? '' : ' disabled') + ' aria-label="Next letter' + (next ? ', ' + lname(next) : '') + '">' + (next ? '(' + pg[next].length + ')' : '') + ' <span class="k">' + esc(next) + '</span> ›</button>' +
+        '</nav>';
+      renderAz(pl, L0);
+    } else {
+      $('count').textContent = list.length + ' terms' + (catLabel ? ' in ' + catLabel : '') + '. Tap a term to expand it.';
+      var groups = G.byLetter(list), letters = G.letters(list);
+      res.innerHTML = letters.map(function (L) {
+        return '<h2 class="letter" id="L-' + (L === '#' ? 'sym' : L) + '">' + esc(L === '#' ? 'Symbols' : L) + '</h2>' + groups[L].map(termCard).join('');
+      }).join('');
+      renderAz(letters);
+    }
+  }
+  /** A–Z strip. `active` (phone letter mode) marks the letter currently shown and scrolls it into the strip. */
+  function renderAz(present, active) {
+    var all = ['#'].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
+    var has = {}; present.forEach(function (L) { has[L] = true; });
+    var az = $('az');
+    az.innerHTML = all.map(function (L) {
+      var on = active && L === active;
+      return '<button type="button" data-letter="' + L + '"' + (has[L] ? '' : ' disabled') + (on ? ' class="on" aria-current="true"' : '') +
+        ' aria-label="' + (active ? 'Show ' : 'Jump to ') + (L === '#' ? 'symbols' : L) + '">' + L + '</button>';
+    }).join('');
+    if (active) {
+      var b = az.querySelector('button.on');
+      // keep the active letter visible in the horizontally scrolling strip (no-op when the strip is a grid)
+      if (b && az.scrollWidth > az.clientWidth) az.scrollLeft = Math.max(0, b.offsetLeft - (az.clientWidth - b.offsetWidth) / 2);
+    }
+  }
+  /** Phone letter mode: show letter L, re-render, and bring the section heading to the top. */
+  function showLetter(L) {
+    if (!L) return;
+    state.letter = L;
+    renderBrowse();
+    var res = $('results');
+    // Scroll so the section starts right under the sticky search + A–Z strips (both ~114px tall).
+    var top = res.getBoundingClientRect().top + window.pageYOffset - 118;
+    if (window.pageYOffset > top) window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+  function onLetterClick(e) {
+    var b = e.target.closest('button[data-letter]'); if (!b || b.disabled) return;
+    var L = b.getAttribute('data-letter');
+    if (letterMode()) { showLetter(L); return; }
+    var h = $('L-' + (L === '#' ? 'sym' : L));
+    if (h) h.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('az').addEventListener('click', onLetterClick);
+  // phone ⇄ desktop (rotation, split view): re-render Browse in the right mode
+  if (phoneMQ) {
+    var onMQ = function () { if (state.ready) renderBrowse(); };
+    if (phoneMQ.addEventListener) phoneMQ.addEventListener('change', onMQ); else if (phoneMQ.addListener) phoneMQ.addListener(onMQ);
+  }
+  function renderCats() {
+    var cats = G.categories();
+    $('cats').innerHTML = '<button type="button" data-cat="" class="' + (state.cat ? '' : 'on') + '">All</button>' + cats.map(function (c) {
+      return '<button type="button" data-cat="' + esc(c.id) + '" class="' + (state.cat === c.id ? 'on' : '') + '">' + esc(c.label) + '</button>';
+    }).join('');
+    var sel = $('fcCat');
+    sel.innerHTML = '<option value="">All categories</option>' + cats.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.label) + '</option>'; }).join('');
+  }
+  $('cats').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cat]'); if (!b) return;
+    state.cat = b.getAttribute('data-cat');
+    Array.prototype.forEach.call($('cats').children, function (x) { x.classList.toggle('on', x === b); });
+    renderBrowse();
+  });
+  var qTimer = null;
+  $('q').addEventListener('input', function () {
+    clearTimeout(qTimer);
+    $('clearQ').hidden = !$('q').value;
+    qTimer = setTimeout(function () { state.q = $('q').value.trim(); renderBrowse(); }, 120);
+  });
+  $('q').addEventListener('keydown', function (e) { if (e.key === 'Escape') { $('q').value = ''; $('q').dispatchEvent(new Event('input')); } });
+  $('clearQ').addEventListener('click', function () { $('q').value = ''; $('q').dispatchEvent(new Event('input')); $('q').focus(); });
+
+  $('results').addEventListener('click', function (e) {
+    if (e.target.closest('.letter-nav button[data-letter]')) { onLetterClick(e); return; }
+    var b = e.target.closest('button[data-open],button[data-study],button[data-link]');
+    if (!b) return;
+    if (b.hasAttribute('data-open')) { e.preventDefault(); openTerm(b.getAttribute('data-open'), true); return; }
+    if (b.hasAttribute('data-study')) {
+      var id = b.getAttribute('data-study');
+      G.flashcards.add(id);
+      b.textContent = 'In today\'s queue ✓'; b.disabled = true;
+      updateCounts();
+      toast('"' + G.get(id).term + '" is due now in Flashcards.', 'ok', 'Added');
+      return;
+    }
+    if (b.hasAttribute('data-link')) {
+      var url = location.href.split('#')[0] + '#term/' + encodeURIComponent(b.getAttribute('data-link'));
+      var done = function () { toast('Link copied.', 'ok'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link', url); });
+      else prompt('Copy this link', url);
+    }
+  });
+  /** Open a term card: clears filters if needed, expands, scrolls (true = smooth, 'instant' = jump), flashes. */
+  function openTerm(id, scroll) {
+    var t = G.get(id);
+    if (!t) { toast('No glossary entry for "' + id + '".', 'warn'); return; }
+    var L = G.letterOf(t), rerender = false;
+    if (state.q || (state.cat && state.cat !== t.category)) {
+      state.q = ''; $('q').value = ''; $('clearQ').hidden = true;
+      state.cat = ''; Array.prototype.forEach.call($('cats').children, function (x) { x.classList.toggle('on', x.getAttribute('data-cat') === ''); });
+      rerender = true;
+    }
+    // phone letter mode: the term's card only exists when its letter section is the one shown
+    if (letterMode() && state.letter !== L) rerender = true;
+    state.letter = L;
+    if (rerender) renderBrowse();
+    var d = $('term-' + t.id);
+    if (!d) return;
+    d.open = true;
+    d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash');
+    if (scroll === 'instant') {
+      // Page just loaded from a #term/ link: jump (css/style.css sets scroll-behavior:smooth on <html>,
+      // so override it) and re-align once the web font has swapped in and the cards above have reflowed.
+      var jump = function () {
+        var x = $('term-' + t.id); if (!x) return;
+        var html = document.documentElement, prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
+        x.scrollIntoView({ behavior: 'auto', block: 'start' });
+        html.style.scrollBehavior = prev;
+      };
+      jump();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(jump, 60); });
+      setTimeout(jump, 1500);
+    } else if (scroll) d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    var s = d.querySelector('summary'); if (s && scroll) s.focus({ preventScroll: true });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Flashcards
+   * ------------------------------------------------------------------ */
+  var fcS = null; // session: {queue:[], i, again:[], results:{again,hard,good}, flipped}
+  function fcIcon(name) {
+    var p = { due: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', new: '<path d="M12 5v14M5 12h14"/>', learned: '<path d="M4 12l5 5L20 7"/>', today: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/>' };
+    return '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p[name] + '</svg>';
+  }
+  function renderFcHome() {
+    if (!state.ready) return;
+    var cat = $('fcCat').value;
+    var st = G.flashcards.stats(Date.now(), { category: cat });
+    $('fcTiles').innerHTML =
+      '<div class="card stat"><span class="label">Due now</span><span class="value">' + st.due + '</span><span class="sub">' + (st.due ? 'ready to review' : 'all caught up') + '</span></div>' +
+      '<div class="card stat"><span class="label">New</span><span class="value">' + st.unseen + '</span><span class="sub">never studied</span></div>' +
+      '<div class="card stat"><span class="label">Learned</span><span class="value">' + st.learned + '</span><span class="sub">' + st.mature + ' mature (3+ wk)</span></div>' +
+      '<div class="card stat"><span class="label">Today</span><span class="value">' + st.reviewedToday + '</span><span class="sub">' + st.reviews + ' all time · ' + st.daysActive + ' day' + (st.daysActive === 1 ? '' : 's') + '</span></div>';
+    var n = G.flashcards.queue({ limit: 20, newLimit: +$('fcNew').value, category: cat }).length;
+    $('fcStart').textContent = n ? 'Start session (' + n + ' card' + (n === 1 ? '' : 's') + ')' : 'Nothing to study right now';
+    $('fcStart').disabled = !n;
+    if (!fcS) { $('fcSetup').hidden = false; $('fcSession').hidden = true; }
+  }
+  $('fcCat').addEventListener('change', renderFcHome);
+  $('fcNew').addEventListener('change', renderFcHome);
+  $('fcStart').addEventListener('click', function () {
+    var q = G.flashcards.queue({ limit: 20, newLimit: +$('fcNew').value, category: $('fcCat').value, shuffle: Date.now() });
+    if (!q.length) return;
+    fcS = { queue: q, i: 0, again: [], results: { again: 0, hard: 0, good: 0 }, flipped: false, total: q.length };
+    $('fcSetup').hidden = true; $('fcSession').hidden = false;
+    renderFcCard();
+  });
+  $('fcReset').addEventListener('click', function () {
+    if (!confirm('Reset all flashcard progress? This cannot be undone.')) return;
+    G.flashcards.reset(); fcS = null; renderFcHome(); updateCounts(); toast('Flashcards reset.', 'ok');
+  });
+  function fcCurrent() {
+    if (!fcS) return null;
+    if (fcS.i < fcS.queue.length) return fcS.queue[fcS.i];
+    if (fcS.again.length) { fcS.queue = fcS.again; fcS.again = []; fcS.i = 0; return fcS.queue[0]; }
+    return null;
+  }
+  function renderFcCard() {
+    var host = $('fcSession');
+    var t = fcCurrent();
+    if (!t) { renderFcDone(); return; }
+    var done = fcS.results.again + fcS.results.hard + fcS.results.good;
+    var remaining = (fcS.queue.length - fcS.i) + fcS.again.length;
+    var pct = Math.round(done / (done + remaining) * 100);
+    var card = G.flashcards.card(t.id);
+    var pv = G.flashcards.preview(t.id);
+    var seenLbl = (!card || !card.last) ? 'New card' : (card.reps === 0 ? 'Relearning' : 'Seen ' + card.reps + '×, interval ' + card.interval + 'd');
+    host.innerHTML =
+      '<div class="card fcard">' +
+        '<div class="meta"><span>' + esc(G.categoryLabel(t.category)) + ' · ' + esc(seenLbl) + '</span><span class="num">' + done + ' done · ' + remaining + ' left</span></div>' +
+        '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+        (!fcS.flipped ?
+          '<div class="front"><div class="term">' + esc(t.term) + '</div><div class="hint">Say the definition in your own words, then check.</div></div>' +
+          '<button class="primary flip" id="fcFlip">Show answer</button>'
+        :
+          '<div class="back"><div class="front" style="padding:4px 0 10px;align-items:flex-start;text-align:left"><div class="term" style="font-size:22px">' + esc(t.term) + '</div></div>' +
+            '<p>' + esc(t.definition) + '</p>' +
+            (t.example ? '<div class="ex"><b>Example</b><p>' + esc(t.example) + '</p></div>' : '') +
+            '<div class="links"><a href="' + esc(G.lessonUrl(t)) + '">Lesson: ' + esc(lessonLabel(t.lesson)) + ' ▸</a><a href="#term/' + encodeURIComponent(t.id) + '" data-browse="' + esc(t.id) + '">Open in glossary</a></div>' +
+          '</div>' +
+          '<div class="grades">' +
+            '<button class="again" data-grade="again">Again<small>' + esc(pv.again) + '</small></button>' +
+            '<button class="hard" data-grade="hard">Hard<small>' + esc(pv.hard) + '</small></button>' +
+            '<button class="good" data-grade="good">Good<small>' + esc(pv.good) + '</small></button>' +
+          '</div>'
+        ) +
+        '<div class="kbd-hint">Space flips · 1 again · 2 hard · 3 good · Esc ends</div>' +
+      '</div>' +
+      '<div class="card-actions" style="justify-content:flex-end"><button class="ghost" id="fcEnd">End session</button></div>';
+    var flip = $('fcFlip'); if (flip) flip.addEventListener('click', fcFlip);
+    Array.prototype.forEach.call(host.querySelectorAll('[data-grade]'), function (b) { b.addEventListener('click', function () { fcGrade(b.getAttribute('data-grade')); }); });
+    $('fcEnd').addEventListener('click', renderFcDone);
+    var focusEl = flip || host.querySelector('[data-grade="good"]'); if (focusEl) focusEl.focus({ preventScroll: true });
+  }
+  function fcFlip() { if (!fcS) return; fcS.flipped = true; renderFcCard(); }
+  function fcGrade(g) {
+    var t = fcCurrent(); if (!t) return;
+    G.flashcards.rate(t.id, g);
+    fcS.results[g]++;
+    if (g === 'again') fcS.again.push(t);
+    fcS.i++; fcS.flipped = false;
+    renderFcCard(); updateCounts();
+  }
+  function renderFcDone() {
+    var r = fcS ? fcS.results : { again: 0, hard: 0, good: 0 };
+    var n = r.again + r.hard + r.good;
+    var st = G.flashcards.stats();
+    $('fcSession').innerHTML =
+      '<div class="card">' +
+        '<h2>' + (n ? 'Session complete' : 'Session ended') + '</h2>' +
+        '<div class="summary"><div><span class="n">' + r.good + '</span><small>good</small></div><div><span class="n">' + r.hard + '</span><small>hard</small></div><div><span class="n">' + r.again + '</span><small>again</small></div></div>' +
+        '<p class="notice">' + (n ? 'You graded ' + n + ' card' + (n === 1 ? '' : 's') + '. ' : '') + (st.due ? st.due + ' card' + (st.due === 1 ? ' is' : 's are') + ' still due. ' : 'Nothing else is due right now. ') +
+          'Cards marked Good come back in a few days; the ones you missed return sooner. Little and often beats one long cram.</p>' +
+        '<div class="card-actions"><button class="primary" id="fcAgain">' + (st.due ? 'Review what is due' : 'Study new cards') + '</button><button id="fcBack">Back to flashcards</button><a class="btn" href="#daily">Take the Daily 5 ▸</a></div>' +
+      '</div>';
+    fcS = null;
+    $('fcAgain').addEventListener('click', function () { $('fcSetup').hidden = false; $('fcSession').hidden = true; renderFcHome(); $('fcStart').click(); });
+    $('fcBack').addEventListener('click', function () { $('fcSetup').hidden = false; $('fcSession').hidden = true; renderFcHome(); });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (state.mode !== 'flashcards' || !fcS || e.target.matches('input,select,textarea')) return;
+    if (e.key === ' ' || e.key === 'Enter') { if (!fcS.flipped) { e.preventDefault(); fcFlip(); } }
+    else if (fcS.flipped && (e.key === '1' || e.key === '2' || e.key === '3')) { e.preventDefault(); fcGrade(['again', 'hard', 'good'][+e.key - 1]); }
+    else if (e.key === 'Escape') renderFcDone();
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Daily 5
+   * ------------------------------------------------------------------ */
+  var dq = null; // {date, qs:[], i, answers:[], picked:null}
+  function flame(cold) {
+    return '<svg class="ico' + (cold ? ' cold' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3 4 4.5 4 9a4 4 0 0 1-8 0c0-1.5.5-2.5 1-3.5.5 1.2 1.2 1.8 2 2 .3-2.5-.5-5 1-7.5z"/><path d="M12 21a7 7 0 0 0 7-7c0-2-.6-3.4-1.5-4.7"/><path d="M5 14a7 7 0 0 0 7 7"/></svg>';
+  }
+  function renderStreak() {
+    var today = G.util.dateKey();
+    var st = G.daily.stats(today);
+    $('streakCard').innerHTML =
+      '<div class="flame">' + flame(!st.streak) + '<div><span class="big">' + st.streak + '</span><span class="lbl">day streak</span></div></div>' +
+      '<div><span class="big" style="font-size:22px">' + st.best + '</span><span class="lbl">best</span></div>' +
+      '<div class="kv"><span class="k">Days played</span><span class="num">' + st.days + '</span><span class="k">Accuracy</span><span class="num">' + (st.answered ? st.pct + '%' : '—') + '</span></div>';
+  }
+  function renderDaily() {
+    renderStreak();
+    renderDailyHist();
+    var body = $('dailyBody');
+    if (!state.bankReady) {
+      body.innerHTML = '<div class="card"><p class="notice" id="bankMsg">Loading today\'s questions…</p></div>';
+      G.daily.loadBank().then(function () { state.bankReady = true; updateCounts(); if (state.mode === 'daily') renderDaily(); }, function (e) {
+        var m = $('bankMsg'); if (m) m.innerHTML = 'Could not load <code>course/questionbank.json</code> (' + esc(e.message) + '). The Daily 5 needs the site served over http(s); see the README for a one-line local server.';
+      });
+      return;
+    }
+    var today = G.util.dateKey();
+    var s = G.daily.status(today);
+    if (dq && dq.date !== today) dq = null;
+    if (s.done) { renderDailyResult(s, false); return; }
+    if (!dq) {
+      body.innerHTML =
+        '<div class="card">' +
+          '<h2>Today\'s five</h2>' +
+          '<p class="notice">Five questions drawn from the course quizzes and the question bank, the same five for everyone on ' + esc(fmtDate(today)) + '. Answer them once a day to build a streak; each answer links back to the lesson it comes from.</p>' +
+          '<div class="card-actions"><button class="primary lg" id="dStart">Start today\'s Daily 5</button></div>' +
+        '</div>';
+      $('dStart').addEventListener('click', function () {
+        dq = { date: today, qs: G.daily.pick(today, G.daily.N), i: 0, answers: [], picked: null };
+        renderQuestion();
+      });
+      return;
+    }
+    renderQuestion();
+  }
+  function fmtDate(key) {
+    var p = key.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  function renderQuestion() {
+    var body = $('dailyBody');
+    var q = dq.qs[dq.i];
+    var picked = dq.picked;
+    var letters = 'ABCDEF';
+    body.innerHTML =
+      '<div class="card">' +
+        '<div class="q-head"><span>Question <span class="num">' + (dq.i + 1) + ' / ' + dq.qs.length + '</span></span><span class="pill">' + esc(q.difficulty) + '</span></div>' +
+        '<div class="progress"><i style="width:' + Math.round(dq.i / dq.qs.length * 100) + '%"></i></div>' +
+        '<p class="stem">' + esc(q.q) + '</p>' +
+        '<ul class="options">' + q.choices.map(function (c, i) {
+          var cls = 'option';
+          if (picked != null) { if (i === q.answer) cls += ' correct'; else if (i === picked) cls += ' wrong'; else cls += ' dim'; }
+          return '<li><button type="button" class="' + cls + '" data-i="' + i + '"' + (picked != null ? ' disabled' : '') + '><span class="key"><span>' + letters[i] + '</span></span><span class="txt">' + esc(c) + '</span></button></li>';
+        }).join('') + '</ul>' +
+        (picked != null ? '<div class="explain ' + (picked === q.answer ? 'ok' : 'bad') + '"><b>' + (picked === q.answer ? 'Correct.' : 'Not quite. The answer is ' + letters[q.answer] + '.') + '</b>' + esc(q.explain) + '</div>' : '') +
+        '<div class="q-foot"><span class="src">' + (q.lessonId ? 'From ' + esc(lessonLabel(q.lessonId)) : 'Question bank') + '</span>' +
+          (picked != null ? '<button class="primary" id="dNext">' + (dq.i + 1 < dq.qs.length ? 'Next question' : 'See my score') + '</button>' : '') +
+        '</div>' +
+      '</div>';
+    Array.prototype.forEach.call(body.querySelectorAll('.option'), function (b) {
+      b.addEventListener('click', function () {
+        if (dq.picked != null) return;
+        dq.picked = +b.getAttribute('data-i');
+        dq.answers.push({ id: q.id, picked: dq.picked, correct: dq.picked === q.answer });
+        renderQuestion();
+        var nx = $('dNext'); if (nx) nx.focus({ preventScroll: true });
+      });
+    });
+    var nxt = $('dNext');
+    if (nxt) nxt.addEventListener('click', function () {
+      dq.i++; dq.picked = null;
+      if (dq.i >= dq.qs.length) {
+        var score = dq.answers.filter(function (a) { return a.correct; }).length;
+        var r = G.daily.record(dq.date, { score: score, total: dq.qs.length, answers: dq.answers });
+        var s = G.daily.status(dq.date);
+        dq = null;
+        renderStreak(); renderDailyHist(); updateCounts();
+        renderDailyResult(s, true);
+        toast(score + ' / ' + s.total + ' today. Streak: ' + r.streak + ' day' + (r.streak === 1 ? '' : 's') + '.', score >= 4 ? 'ok' : 'warn', 'Daily 5 complete');
+      } else renderQuestion();
+    });
+  }
+  function renderDailyResult(s, fresh) {
+    var body = $('dailyBody');
+    var qs = G.daily.pick(s.date, G.daily.N);
+    var byId = {}; qs.forEach(function (q) { byId[q.id] = q; });
+    var pct = Math.round(s.score / s.total * 100);
+    var cls = pct >= 80 ? 'pass' : pct >= 60 ? 'mid' : 'fail';
+    var msg = pct === 100 ? 'Perfect. Every one of these is a concept you own now.' :
+      pct >= 80 ? 'Strong. Re-read the one you missed and it will stick.' :
+      pct >= 60 ? 'Decent. The misses below link to the exact lesson that covers them.' :
+      'A rough one. That is useful information: the lessons below are where to spend ten minutes today.';
+    var st = G.daily.stats(s.date);
+    body.innerHTML =
+      '<div class="card">' +
+        '<h2>' + (fresh ? 'Today\'s result' : 'Done for today') + '</h2>' +
+        '<div class="score"><span class="big ' + cls + '">' + s.score + '<small style="font-size:18px;color:var(--muted)"> / ' + s.total + '</small></span><p>' + esc(msg) + ' ' + (st.streak > 1 ? 'Your streak is ' + st.streak + ' days. ' : st.streak === 1 ? 'Day one of a streak. ' : '') + 'Come back tomorrow for five new questions.</p></div>' +
+        '<ul class="review">' + (s.answers || []).map(function (a, i) {
+          var q = byId[a.id];
+          if (!q) return '';
+          return '<li><span class="mark ' + (a.correct ? 'ok' : 'no') + '">' + (a.correct ? '✓' : '✕') + '</span><span>' + esc(q.q) +
+            (!a.correct ? '<br><span class="muted">Answer: ' + esc(q.choices[q.answer]) + '</span>' : '') +
+            (q.lessonId ? ' <a href="learn.html#/lesson/' + encodeURIComponent(q.lessonId) + '">' + esc(lessonLabel(q.lessonId)) + ' ▸</a>' : '') + '</span></li>';
+        }).join('') + '</ul>' +
+        '<div class="card-actions"><a class="btn primary" href="#flashcards">Study flashcards ▸</a><a class="btn" href="learn.html">Open the course</a></div>' +
+      '</div>';
+  }
+  function renderDailyHist() {
+    var today = G.util.dateKey();
+    var h = {}; G.daily.history().forEach(function (x) { h[x.date] = x; });
+    var dots = '';
+    for (var i = 27; i >= 0; i--) {
+      var k = G.util.shiftKey(today, -i);
+      var x = h[k];
+      dots += '<span class="dot' + (x ? ' done' : '') + (k === today ? ' today' : '') + '" title="' + esc(k) + (x ? ': ' + x.score + '/' + x.total : '') + '">' + (x ? x.score : '·') + '</span>';
+    }
+    var hs = G.daily.history(7);
+    $('dailyHist').innerHTML = '<h2>Last 28 days</h2><div class="dots">' + dots + '</div>' +
+      (hs.length ? '<p class="notice" style="margin:10px 0 0">Recent: ' + hs.map(function (x) { return esc(x.date.slice(5)) + ' <b class="num">' + x.score + '/' + x.total + '</b>'; }).join(' · ') + '</p>' : '<p class="notice" style="margin:10px 0 0">No rounds yet. Your scores will appear here.</p>');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Counts in the tab bar
+   * ------------------------------------------------------------------ */
+  function updateCounts() {
+    if (state.ready) {
+      var due = G.flashcards.stats().due;
+      $('cntFlash').textContent = due ? String(due) : '';
+      $('cntFlash').title = due ? due + ' flashcards due' : '';
+    }
+    var st = G.daily.stats();
+    $('cntDaily').textContent = st.doneToday ? '✓' : (st.streak ? st.streak + 'd' : '');
+    $('cntDaily').title = st.doneToday ? 'Done today' : (st.streak ? st.streak + '-day streak' : '');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Boot
+   * ------------------------------------------------------------------ */
+  function boot() {
+    renderAz([]);
+    $('results').innerHTML = '<div class="empty" id="loadMsg">Loading glossary…</div>';
+    updateCounts();
+    var lessons = fetch('course/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (idx) {
+      if (!idx) return;
+      (idx.modules || []).forEach(function (m) { (m.lessons || []).forEach(function (l) { lessonTitles[l.id] = { title: l.title, module: m.title }; }); });
+    }).catch(function () { /* titles are optional */ });
+    var terms = G.load();
+    Promise.all([terms, lessons]).then(function () {
+      state.ready = true;
+      $('termCount').textContent = G.terms().length + ' terms';
+      renderCats();
+      renderBrowse();
+      updateCounts();
+      if (state.pendingTerm) { var pt = state.pendingTerm; state.pendingTerm = null; openTerm(pt, 'instant'); }
+      if (state.mode === 'flashcards') renderFcHome();
+    }, function (e) {
+      $('results').innerHTML = '<div class="empty"><b>Could not load the glossary.</b><br>' + esc(e.message) + '<br><br>The glossary reads <code>course/glossary.json</code> with fetch(), which browsers block on <code>file://</code>. Serve the folder over http (for example <code>python3 -m http.server</code>) and reload.</div>';
+      $('termCount').textContent = 'offline';
+    });
+    // warm the question bank in the background so Daily 5 opens instantly
+    G.daily.loadBank().then(function () { state.bankReady = true; updateCounts(); }, function () { /* reported when the tab opens */ });
+    route();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+
+  window.BT.glossaryPage = { state: state, openTerm: openTerm, setMode: setMode };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3298 @@
+{
+  "version": "0.3.0",
+  "note": "Broward Trading glossary. Each term has a plain-English definition, a worked example, related term ids and the course lesson that teaches it (learn.html#/lesson/<lesson>). Categories: markets, orders, charts, indicators, risk, psychology, portfolio, options, strategy.",
+  "categories": [
+    {
+      "id": "markets",
+      "label": "Markets & quotes"
+    },
+    {
+      "id": "orders",
+      "label": "Orders & execution"
+    },
+    {
+      "id": "charts",
+      "label": "Charts & price action"
+    },
+    {
+      "id": "indicators",
+      "label": "Indicators"
+    },
+    {
+      "id": "risk",
+      "label": "Risk management"
+    },
+    {
+      "id": "psychology",
+      "label": "Psychology"
+    },
+    {
+      "id": "portfolio",
+      "label": "Portfolio & P&L"
+    },
+    {
+      "id": "options",
+      "label": "Options"
+    },
+    {
+      "id": "strategy",
+      "label": "Strategy & backtesting"
+    }
+  ],
+  "terms": [
+    {
+      "id": "plus-di-minus-di",
+      "term": "+DI and -DI",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "The directional indicator lines that feed ADX. +DI measures upward movement, -DI downward; +DI above -DI is bullish and crosses between them are trend signals, best taken only when ADX is above 20-25.",
+      "example": "With ADX at 30, +DI crossing above -DI is a buy signal in a trending market.",
+      "related": [
+        "adx",
+        "crossover"
+      ]
+    },
+    {
+      "id": "after-hours",
+      "term": "After-hours session",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "Trading after the 4:00 p.m. close, usually until 8:00 p.m. New York time. Many companies release earnings in this window, and thin liquidity means moves are exaggerated.",
+      "example": "An earnings miss announced at 4:05 p.m. can push a stock down 10% after hours on a fraction of normal volume.",
+      "related": [
+        "market-hours",
+        "pre-market",
+        "earnings-report"
+      ]
+    },
+    {
+      "id": "american-style",
+      "term": "American vs European style",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "American-style options can be exercised any time before expiry; European-style only at expiry. US stock options are American; most index options (such as SPX) are European.",
+      "example": "A short call on a stock can be assigned early, especially before an ex-dividend date; a short SPX call cannot.",
+      "related": [
+        "exercise",
+        "assignment",
+        "expiration"
+      ]
+    },
+    {
+      "id": "ask",
+      "term": "Ask (offer)",
+      "aliases": [
+        "offer"
+      ],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The lowest price a seller is currently willing to accept. When you buy with a market order you pay (roughly) the ask.",
+      "example": "If the ask is $50.12 and you buy at market, you pay about $50.12 per share.",
+      "related": [
+        "bid",
+        "spread",
+        "market-order"
+      ]
+    },
+    {
+      "id": "assignment",
+      "term": "Assignment",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "What happens to an option seller when the buyer exercises: the seller must deliver shares (short call) or buy them (short put) at the strike. Assignment risk rises as expiry nears and for ITM options.",
+      "example": "Having sold a $100 put, you are assigned when the stock falls to $92 and must buy 100 shares at $100.",
+      "related": [
+        "exercise",
+        "covered-call",
+        "expiration",
+        "american-style"
+      ]
+    },
+    {
+      "id": "at-the-money",
+      "term": "At the money (ATM)",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "An option whose strike is at or very near the current stock price. ATM options have the most extrinsic value, a delta near 0.50 and the fastest time decay.",
+      "example": "With the stock at $100.40 the $100 strike is at the money.",
+      "related": [
+        "moneyness",
+        "theta",
+        "delta",
+        "straddle"
+      ]
+    },
+    {
+      "id": "adx",
+      "term": "Average Directional Index (ADX)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "A 0-100 reading of trend strength regardless of direction. Below 20 means no trend (ranges, whipsaws); above 25 means a trend worth following. The companion +DI and -DI lines show direction.",
+      "example": "ADX rising from 15 to 32 while +DI is above -DI says a real uptrend has started.",
+      "related": [
+        "plus-di-minus-di",
+        "trend",
+        "range",
+        "trend-following"
+      ]
+    },
+    {
+      "id": "atr",
+      "term": "Average True Range (ATR)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "The average over N bars (usually 14) of the true range: the greater of high minus low, high minus previous close, and previous close minus low. It measures volatility in price units and is the standard way to size stops.",
+      "example": "A stock with an ATR of $1.50 moves about $1.50 a day; a stop 2 ATR below entry sits $3.00 away.",
+      "related": [
+        "volatility",
+        "stop-loss",
+        "position-sizing"
+      ]
+    },
+    {
+      "id": "average-win-loss",
+      "term": "Average win / average loss",
+      "aliases": [
+        "payoff ratio"
+      ],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "The mean profit of winning trades and the mean loss of losing trades. Together with the win rate they determine expectancy; the ratio between them is the payoff ratio.",
+      "example": "Winners averaging $300 and losers averaging $100 give a payoff ratio of 3.0.",
+      "related": [
+        "expectancy",
+        "win-rate",
+        "profit-factor"
+      ]
+    },
+    {
+      "id": "backtest",
+      "term": "Backtest",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "Running a strategy's rules over historical bars to see how it would have performed. It tells you whether the idea ever worked and what its drawdowns felt like; it does not promise the future.",
+      "example": "The Backtest page runs an SMA cross on 500 daily bars and reports return, win rate, profit factor, max drawdown, Sharpe and the trade list.",
+      "related": [
+        "overfitting",
+        "look-ahead-bias",
+        "out-of-sample",
+        "max-drawdown"
+      ]
+    },
+    {
+      "id": "bear-put-spread",
+      "term": "Bear put spread",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "Buy a higher-strike put, sell a lower-strike put, same expiry. A defined-risk bet on a moderate decline: max loss is the debit, max profit is the strike difference minus the debit.",
+      "example": "Buy the $50 put at $3, sell the $45 put at $1: debit $2, max profit $3 if the stock is below $45 at expiry, breakeven $48.",
+      "related": [
+        "vertical-spread",
+        "bull-call-spread",
+        "put"
+      ]
+    },
+    {
+      "id": "bearish-engulfing",
+      "term": "Bearish engulfing",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A two-candle reversal pattern after a rally: a small green candle followed by a large red candle whose body completely covers the previous body.",
+      "example": "Day 1: open 60, close 61. Day 2: open 61.30, close 58.90. Sellers have engulfed the buyers.",
+      "related": [
+        "bullish-engulfing",
+        "candle-patterns",
+        "evening-star"
+      ]
+    },
+    {
+      "id": "benchmark",
+      "term": "Benchmark",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "The passive alternative you compare a strategy against, typically buy-and-hold on the same symbol or an index ETF such as SPY. Beating zero is easy; beating the benchmark is the real test.",
+      "example": "A stock-picking strategy that made 9% while SPY made 12% with less volatility has not added value.",
+      "related": [
+        "buy-and-hold",
+        "etf",
+        "relative-strength"
+      ]
+    },
+    {
+      "id": "beta",
+      "term": "Beta",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "How much a stock tends to move relative to the overall market. A beta of 1.5 means it typically rises or falls 1.5% when the market moves 1%; below 1 is less volatile than the market.",
+      "example": "A utility with beta 0.5 and a chipmaker with beta 1.8 react very differently to the same 2% index drop.",
+      "related": [
+        "correlation",
+        "volatility",
+        "index"
+      ]
+    },
+    {
+      "id": "bid",
+      "term": "Bid",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The highest price a buyer is currently willing to pay for a security. When you sell with a market order you receive (roughly) the bid.",
+      "example": "If the bid is $50.10 and you sell at market, you receive about $50.10 per share.",
+      "related": [
+        "ask",
+        "spread",
+        "market-order"
+      ]
+    },
+    {
+      "id": "spread",
+      "term": "Bid-ask spread",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The gap between the best ask and the best bid. It is an immediate cost of trading: buying at the ask and selling at the bid loses the spread. Liquid stocks have spreads of a cent or two; thin stocks can have spreads of 1% or more.",
+      "example": "With a bid of 50.10 and an ask of 50.12 the spread is $0.02, or 0.04% of the price.",
+      "related": [
+        "bid",
+        "ask",
+        "liquidity",
+        "slippage"
+      ]
+    },
+    {
+      "id": "black-scholes",
+      "term": "Black-Scholes model",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "The standard formula for pricing European options from the stock price, strike, time to expiry, interest rate and volatility. The options lab uses it for synthetic prices and Greeks.",
+      "example": "Plugging S = 100, K = 100, one year, 5% rate and 20% volatility into Black-Scholes gives a call price of about $10.45.",
+      "related": [
+        "implied-volatility",
+        "greeks",
+        "rho"
+      ]
+    },
+    {
+      "id": "bollinger-bands",
+      "term": "Bollinger Bands",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "A 20-period SMA with bands two standard deviations above and below it. The bands widen when volatility rises and contract when it falls; about 90-95% of closes fall inside them.",
+      "example": "With a 20-day SMA at 50 and a standard deviation of 2, the upper band is 54 and the lower 46.",
+      "related": [
+        "bollinger-squeeze",
+        "sma",
+        "volatility",
+        "bollinger-bounce"
+      ]
+    },
+    {
+      "id": "bollinger-bounce",
+      "term": "Bollinger bounce strategy",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "Buy when price touches or closes below the lower Bollinger Band and sell when it returns to the middle band or touches the upper band. A mean-reversion rule that assumes the range holds.",
+      "example": "The built-in bollingerBounce() buys a close below the lower band and exits at the 20-day SMA.",
+      "related": [
+        "bollinger-bands",
+        "mean-reversion",
+        "range"
+      ]
+    },
+    {
+      "id": "bollinger-squeeze",
+      "term": "Bollinger squeeze (bandwidth)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "When the Bollinger Bands narrow to an unusually tight bandwidth, meaning volatility has dried up. Squeezes often precede sharp moves, although they do not say in which direction.",
+      "example": "Bandwidth ((upper - lower) / middle) falling to a six-month low is a squeeze; the breakout that follows is the trade.",
+      "related": [
+        "bollinger-bands",
+        "volatility",
+        "triangle",
+        "breakout"
+      ]
+    },
+    {
+      "id": "borrow-fee",
+      "term": "Borrow fee",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "The interest short sellers pay to borrow shares, quoted as an annual rate. For liquid large caps it is near zero; for hard-to-borrow names it can exceed 50% a year, eating any gain.",
+      "example": "Shorting $10,000 of a stock with a 30% borrow rate costs about $250 a month just to hold the position.",
+      "related": [
+        "short-selling",
+        "transaction-costs"
+      ]
+    },
+    {
+      "id": "breakdown",
+      "term": "Breakdown",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "The bearish mirror of a breakout: a move below support that signals sellers have taken control. Long traders often place stops just below support to exit on a breakdown.",
+      "example": "A stock that held $48 support three times then closes at $46.20 has broken down; stops at $47.50 would have been triggered.",
+      "related": [
+        "support",
+        "breakout",
+        "stop-loss"
+      ]
+    },
+    {
+      "id": "breakeven",
+      "term": "Breakeven (options)",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "The stock price at expiry where an option position neither makes nor loses money. For a long call it is strike plus premium; for a long put, strike minus premium.",
+      "example": "A $50 call bought for $2 breaks even at $52; a $50 put bought for $1.50 breaks even at $48.50.",
+      "related": [
+        "max-profit-loss",
+        "premium",
+        "payoff-diagram"
+      ]
+    },
+    {
+      "id": "breakout",
+      "term": "Breakout",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A move through resistance (or out of a range) that signals buyers have overwhelmed the sellers who had been capping the price. Volume confirmation separates real breakouts from false ones.",
+      "example": "After a month between $50 and $55, a close at $56.50 on double the average volume is a breakout.",
+      "related": [
+        "resistance",
+        "false-breakout",
+        "volume-confirmation",
+        "breakout-strategy"
+      ]
+    },
+    {
+      "id": "breakout-strategy",
+      "term": "Breakout strategy",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "Buy when price closes above the highest high of the last N bars (and sell on a close below the lowest low). It catches new trends early and suffers many false breakouts.",
+      "example": "The built-in breakout(20) buys a close above the 20-bar high; the famous Turtle system used 20- and 55-day breakouts.",
+      "related": [
+        "breakout",
+        "false-breakout",
+        "trend-following",
+        "entry-rule"
+      ]
+    },
+    {
+      "id": "broker",
+      "term": "Broker",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "The licensed firm that holds your account and routes your orders to exchanges or market makers. Paper trading simulates a broker so you can practise with no money at risk.",
+      "example": "When you place a market order with your broker it is routed to an exchange and the fill is reported back to your account.",
+      "related": [
+        "paper-trading",
+        "commission",
+        "exchange"
+      ]
+    },
+    {
+      "id": "bull-call-spread",
+      "term": "Bull call spread",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "Buy a lower-strike call, sell a higher-strike call, same expiry. A cheaper, capped way to bet on a moderate rise: max loss is the net debit, max profit is the strike difference minus the debit.",
+      "example": "Buy the $50 call at $3, sell the $55 call at $1: debit $2, max profit $3 (if the stock is above $55 at expiry), breakeven $52.",
+      "related": [
+        "vertical-spread",
+        "bear-put-spread",
+        "breakeven",
+        "max-profit-loss"
+      ]
+    },
+    {
+      "id": "bullish-engulfing",
+      "term": "Bullish engulfing",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A two-candle reversal pattern after a decline: a small red candle followed by a large green candle whose body completely covers the previous body. It shows buyers overwhelming sellers.",
+      "example": "Day 1: open 50, close 49. Day 2: open 48.80, close 51.50. The second body engulfs the first, a bullish engulfing pattern.",
+      "related": [
+        "bearish-engulfing",
+        "candle-patterns",
+        "morning-star"
+      ]
+    },
+    {
+      "id": "buy-and-hold",
+      "term": "Buy and hold",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "Buying at the start of the period and never selling. It is the benchmark every active strategy must beat after costs; many backtests look good until compared with it.",
+      "example": "A strategy returning 18% over a period when buy-and-hold returned 25% has underperformed despite the positive number.",
+      "related": [
+        "benchmark",
+        "backtest",
+        "exposure"
+      ]
+    },
+    {
+      "id": "cagr",
+      "term": "CAGR",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "Compound annual growth rate: the steady yearly return that would turn the starting equity into the ending equity over the period. It lets you compare backtests of different lengths.",
+      "example": "Growing $100,000 to $150,000 over three years is a CAGR of (1.5)^(1/3) - 1, about 14.5% a year.",
+      "related": [
+        "backtest",
+        "equity-curve",
+        "sharpe-ratio"
+      ]
+    },
+    {
+      "id": "call",
+      "term": "Call option",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The right to buy 100 shares at the strike price before expiry. Calls gain value when the stock rises; the buyer's loss is limited to the premium paid.",
+      "example": "Buying a $50 call for $2.00 ($200 per contract) when the stock is $48 profits at expiry if the stock is above $52.",
+      "related": [
+        "put",
+        "strike",
+        "premium",
+        "intrinsic-value",
+        "breakeven"
+      ]
+    },
+    {
+      "id": "candle-body",
+      "term": "Candle body",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "The thick part of a candlestick between the open and the close. A long body shows strong conviction in one direction; a tiny body means buyers and sellers ended roughly where they started.",
+      "example": "A candle opening at 50 and closing at 56 has a six-point body; one opening at 50 and closing at 50.10 has almost none, like a doji.",
+      "related": [
+        "candlestick",
+        "wick",
+        "doji"
+      ]
+    },
+    {
+      "id": "candlestick",
+      "term": "Candlestick",
+      "aliases": [
+        "candle"
+      ],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "A chart bar that shows four prices for a period: open, high, low and close. The body spans open to close (green/up if the close is higher, red/down if lower); thin wicks show the high and low.",
+      "example": "A daily candle with open 100, high 106, low 99 and close 105 has a tall green body and a small upper wick.",
+      "related": [
+        "ohlc",
+        "candle-body",
+        "wick",
+        "timeframe"
+      ]
+    },
+    {
+      "id": "candle-patterns",
+      "term": "Candlestick patterns",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "Recognisable one-to-three-candle shapes that describe the battle between buyers and sellers. They work best at support or resistance and when confirmed by the next candle; alone they are weak signals.",
+      "example": "The dashboard detects doji, hammer, shooting star, engulfing, morning/evening star and three soldiers/crows and marks them on the chart.",
+      "related": [
+        "hammer",
+        "doji",
+        "bullish-engulfing",
+        "morning-star"
+      ]
+    },
+    {
+      "id": "catalyst",
+      "term": "Catalyst",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "A scheduled or surprise event that gives the market a reason to re-price a stock: earnings, an FDA decision, a rate announcement, a product launch, a lawsuit.",
+      "example": "A trader may buy a chart breakout but still check the calendar to avoid holding a position through the earnings catalyst three days later.",
+      "related": [
+        "earnings-report",
+        "gap",
+        "volatility"
+      ]
+    },
+    {
+      "id": "channel",
+      "term": "Channel",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l3",
+      "definition": "Two parallel trend lines that contain the price action. Traders buy near the lower line and sell near the upper line in a rising or sideways channel.",
+      "example": "A stock oscillating between a rising support line and a parallel resistance line is in an ascending channel.",
+      "related": [
+        "trend-line",
+        "range",
+        "bollinger-bands"
+      ]
+    },
+    {
+      "id": "chart-patterns",
+      "term": "Chart patterns",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "Multi-week shapes formed by swings in price, such as head and shoulders, double tops, flags and triangles. They are classified as reversal patterns (trend change) or continuation patterns (trend pause).",
+      "example": "Reversal: head and shoulders, double top/bottom. Continuation: flag, pennant, triangle, cup and handle.",
+      "related": [
+        "head-and-shoulders",
+        "double-top",
+        "flag",
+        "triangle"
+      ]
+    },
+    {
+      "id": "commission",
+      "term": "Commission",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l5",
+      "definition": "A fee the broker charges per trade. Many US brokers now charge zero commission on stocks, but spreads, slippage and options contract fees remain real costs.",
+      "example": "A $1 commission on a $200 trade costs 0.5% each way, which can wipe out a small edge.",
+      "related": [
+        "transaction-costs",
+        "broker",
+        "slippage"
+      ]
+    },
+    {
+      "id": "composite-signal",
+      "term": "Composite signal",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l5",
+      "definition": "The dashboard's BUY / SELL / HOLD badge, built by scoring several indicators (trend, momentum, volatility, volume, patterns) and adding up points for and against. Each reason is listed so you can see why, not just what.",
+      "example": "Price above the 50-day SMA (+2), MACD above signal (+1), RSI at 55 (0) and rising OBV (+1) might sum to a BUY with 4 of 8 points.",
+      "related": [
+        "sma",
+        "rsi",
+        "macd",
+        "confluence"
+      ]
+    },
+    {
+      "id": "confirmation-bias",
+      "term": "Confirmation bias",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l3",
+      "definition": "Seeking out and over-weighting information that agrees with a position you already hold while ignoring what contradicts it. Written exit rules exist to protect you from it.",
+      "example": "Owning a stock that breaks support and then searching for bullish articles rather than honouring the stop is confirmation bias.",
+      "related": [
+        "loss-aversion",
+        "trading-plan",
+        "discipline"
+      ]
+    },
+    {
+      "id": "confluence",
+      "term": "Confluence",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l5",
+      "definition": "When several independent signals agree at the same place and time, such as a pullback to support that coincides with the 50-day SMA, a 61.8% retracement and an oversold RSI. Confluence raises the odds; it does not guarantee anything.",
+      "example": "A hammer candle at prior support, on the rising 50-day SMA, with RSI bouncing from 32 is a confluence setup.",
+      "related": [
+        "composite-signal",
+        "support",
+        "fibonacci"
+      ]
+    },
+    {
+      "id": "contract-multiplier",
+      "term": "Contract multiplier",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "The number of shares one option contract controls, 100 for standard US equity options. Quoted premiums are per share, so multiply by 100 to get the dollar cost.",
+      "example": "A premium of $2.50 means one contract costs $250 and controls 100 shares.",
+      "related": [
+        "premium",
+        "options",
+        "occ-symbol"
+      ]
+    },
+    {
+      "id": "correlation",
+      "term": "Correlation",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "A number from -1 to +1 measuring how closely two assets move together. +1 means in lockstep, 0 means unrelated, -1 means opposite. The Compare page shows a correlation matrix for your symbols.",
+      "example": "Two large bank stocks might have a correlation of 0.85; a bank and a gold miner might be near 0.1.",
+      "related": [
+        "diversification",
+        "beta",
+        "relative-strength"
+      ]
+    },
+    {
+      "id": "covered-call",
+      "term": "Covered call",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "Owning 100 shares and selling one call against them. You collect the premium as income and keep the shares unless the stock rises above the strike, in which case they are called away at a capped gain.",
+      "example": "Owning shares at $50 and selling a $55 call for $1.50 earns $150; if the stock closes above $55 at expiry you sell at $55 and keep the premium.",
+      "related": [
+        "call",
+        "assignment",
+        "protective-put",
+        "defined-risk"
+      ]
+    },
+    {
+      "id": "crossover",
+      "term": "Crossover",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "When one line crosses another: price through a moving average, a fast average through a slow one, or MACD through its signal line. Crossovers are simple, objective signals, but they lag and whipsaw in ranges.",
+      "example": "A 20-day SMA crossing above the 50-day SMA is a bullish crossover; crossing back below is bearish.",
+      "related": [
+        "golden-cross",
+        "death-cross",
+        "sma-crossover",
+        "whipsaw"
+      ]
+    },
+    {
+      "id": "cup-and-handle",
+      "term": "Cup and handle",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A bullish continuation pattern: a rounded, U-shaped decline and recovery (the cup) followed by a small pullback (the handle), then a breakout above the cup's rim.",
+      "example": "A stock falls from 60 to 45 over three months, recovers to 59, dips to 55 for two weeks, then breaks 60: a cup and handle.",
+      "related": [
+        "chart-patterns",
+        "breakout",
+        "pullback"
+      ]
+    },
+    {
+      "id": "data-snooping",
+      "term": "Data snooping",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Testing many ideas on the same data until one looks good by chance. With enough tries, something will show a great backtest; the fix is fewer tests, out-of-sample checks and a reason the rule should work.",
+      "example": "Testing 500 indicator combinations and reporting the best one is data snooping; the top result is almost guaranteed to disappoint.",
+      "related": [
+        "overfitting",
+        "out-of-sample",
+        "parameter-optimization"
+      ]
+    },
+    {
+      "id": "death-cross",
+      "term": "Death cross",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "When the 50-day SMA crosses below the 200-day SMA, a widely followed sign of a long-term downtrend. Like the golden cross, it confirms rather than predicts.",
+      "example": "Many stocks printed death crosses in early 2022, months into that year's bear market.",
+      "related": [
+        "golden-cross",
+        "crossover",
+        "sma"
+      ]
+    },
+    {
+      "id": "defined-risk",
+      "term": "Defined risk",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "A position whose worst-case loss is known and limited when you enter it, such as a long option or a vertical spread. Naked short options and short stock are undefined risk.",
+      "example": "Buying a put spread risks exactly the debit paid; selling a naked put risks the whole strike price if the stock goes to zero.",
+      "related": [
+        "max-profit-loss",
+        "vertical-spread",
+        "iron-condor"
+      ]
+    },
+    {
+      "id": "delta",
+      "term": "Delta",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "How much an option's price changes for a $1 move in the stock, from 0 to 1 for calls and 0 to -1 for puts. It is also a rough probability of finishing in the money, and the share-equivalent of the position.",
+      "example": "A 0.40-delta call rises about $0.40 when the stock rises $1 and has roughly a 40% chance of expiring in the money.",
+      "related": [
+        "greeks",
+        "gamma",
+        "moneyness"
+      ]
+    },
+    {
+      "id": "demo-mode",
+      "term": "Demo mode",
+      "aliases": [],
+      "category": "portfolio",
+      "lesson": "m1-l5",
+      "definition": "Broward Trading's offline data source: a deterministic, seeded random walk per symbol, so every student sees the same bars and nothing depends on an API key. Prices in demo mode are simulated and are not real market data.",
+      "example": "With no API key configured the dashboard shows a DEMO pill; the same symbol always produces the same simulated history.",
+      "related": [
+        "paper-trading",
+        "market-replay"
+      ]
+    },
+    {
+      "id": "discipline",
+      "term": "Discipline",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l5",
+      "definition": "Following your trading plan when emotions argue against it. Discipline is a skill you build in paper trading by treating simulated rules as seriously as real ones.",
+      "example": "Taking a planned stop-loss on a stock you still \"believe in\" is discipline; moving the stop lower is not.",
+      "related": [
+        "trading-plan",
+        "revenge-trading",
+        "trading-journal"
+      ]
+    },
+    {
+      "id": "divergence",
+      "term": "Divergence",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "When price makes a new high (or low) but an oscillator such as RSI or MACD does not. Bearish divergence (higher price high, lower RSI high) warns that momentum is fading; bullish divergence is the mirror.",
+      "example": "Price rises from 60 to 65 but RSI falls from 75 to 68: bearish divergence that often precedes a pullback.",
+      "related": [
+        "rsi",
+        "macd",
+        "momentum"
+      ]
+    },
+    {
+      "id": "diversification",
+      "term": "Diversification",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "Spreading risk across positions that do not move together, so one bad outcome cannot sink the account. Five tech stocks are not diversified; five positions in different sectors and asset classes are closer.",
+      "example": "A portfolio of an index ETF, a bond ETF and two stocks in unrelated sectors is more diversified than four semiconductor stocks.",
+      "related": [
+        "correlation",
+        "sector",
+        "etf"
+      ]
+    },
+    {
+      "id": "dividend",
+      "term": "Dividend",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "A cash payment a company makes to shareholders out of its profits, usually quarterly in the US. On the ex-dividend date the share price typically drops by about the dividend amount.",
+      "example": "A $40 stock paying $0.30 each quarter returns $1.20 a year in dividends per share.",
+      "related": [
+        "dividend-yield",
+        "stock",
+        "eps"
+      ]
+    },
+    {
+      "id": "dividend-yield",
+      "term": "Dividend yield",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "Annual dividends per share divided by the share price, expressed as a percentage. It tells you the cash return you earn from holding the stock, before any price change.",
+      "example": "A $40 stock paying $1.20 a year has a dividend yield of 3%.",
+      "related": [
+        "dividend",
+        "stock"
+      ]
+    },
+    {
+      "id": "doji",
+      "term": "Doji",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A candle whose open and close are nearly equal, leaving almost no body. It signals indecision; after a strong run it hints the trend may be pausing or reversing.",
+      "example": "After five long green candles, a doji at a resistance level warns that buyers have lost their conviction.",
+      "related": [
+        "candle-body",
+        "candlestick",
+        "morning-star",
+        "evening-star"
+      ]
+    },
+    {
+      "id": "double-top",
+      "term": "Double top / double bottom",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A reversal pattern where price tests the same level twice and fails. A double top (an \"M\") turns bearish on a break of the trough between the peaks; a double bottom (a \"W\") turns bullish on a break of the peak between the lows.",
+      "example": "Two highs at $70 a month apart with a dip to $64 between them become a double top when price closes below $64.",
+      "related": [
+        "head-and-shoulders",
+        "resistance",
+        "support",
+        "chart-patterns"
+      ]
+    },
+    {
+      "id": "downtrend",
+      "term": "Downtrend",
+      "aliases": [
+        "bear trend"
+      ],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A sequence of lower swing highs and lower swing lows. Buying \"because it is cheap\" in a downtrend is one of the most common beginner mistakes.",
+      "example": "A stock falling from 80 to 60 with rallies that each stop below the previous peak is in a downtrend.",
+      "related": [
+        "trend",
+        "uptrend",
+        "short-selling"
+      ]
+    },
+    {
+      "id": "drawdown",
+      "term": "Drawdown",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l3",
+      "definition": "The decline from an equity peak to a subsequent trough, usually in percent. Max drawdown is the worst such fall in the record; it is the number that tells you whether you could emotionally survive the strategy.",
+      "example": "Equity rising to $120,000, falling to $96,000 and recovering is a 20% drawdown; recovering from it requires a 25% gain.",
+      "related": [
+        "max-drawdown",
+        "equity-curve",
+        "one-percent-rule",
+        "losing-streak"
+      ]
+    },
+    {
+      "id": "eps",
+      "term": "Earnings per share (EPS)",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "A company's net profit divided by its shares outstanding. It is the per-share number most earnings headlines compare against analyst estimates.",
+      "example": "Net income of $500 million across 250 million shares is EPS of $2.00.",
+      "related": [
+        "pe-ratio",
+        "earnings-report",
+        "shares-outstanding"
+      ]
+    },
+    {
+      "id": "earnings-report",
+      "term": "Earnings report",
+      "aliases": [
+        "earnings"
+      ],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "A company's quarterly release of revenue, profit and guidance. It is the most predictable catalyst for a big price gap, which is why options prices rise into earnings and many traders avoid holding through them.",
+      "example": "A company guiding next quarter's revenue below expectations can gap down 15% at the next open even if the quarter just reported was fine.",
+      "related": [
+        "catalyst",
+        "gap",
+        "eps",
+        "implied-volatility"
+      ]
+    },
+    {
+      "id": "entry-rule",
+      "term": "Entry rule",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "The objective condition that must be true to open a position, usually a combination of a setup (context) and a trigger (the exact bar). Objective means a computer could check it.",
+      "example": "Setup: price above the 200-day SMA and ADX above 25. Trigger: close above the 20-day high. Both must be true to buy.",
+      "related": [
+        "exit-rule",
+        "strategy",
+        "breakout-strategy"
+      ]
+    },
+    {
+      "id": "equity-curve",
+      "term": "Equity curve",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l3",
+      "definition": "A chart of account value over time. A smooth, rising curve means consistent returns; a jagged one means large swings. The portfolio page draws yours from the equity history.",
+      "example": "Two strategies with the same 30% return can have very different equity curves; the one with shallow drawdowns is easier to follow.",
+      "related": [
+        "drawdown",
+        "sharpe-ratio",
+        "mark-to-market"
+      ]
+    },
+    {
+      "id": "evening-star",
+      "term": "Evening star",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A three-candle bearish reversal at the end of a rally: a long green candle, a small-bodied candle, then a long red candle closing well into the first candle's body.",
+      "example": "A big up day, a doji at the high, then a big down day that erases most of the first gain form an evening star.",
+      "related": [
+        "morning-star",
+        "doji",
+        "candle-patterns"
+      ]
+    },
+    {
+      "id": "exchange",
+      "term": "Exchange",
+      "aliases": [
+        "stock exchange"
+      ],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "A regulated marketplace that matches buyers and sellers of securities and publishes the resulting prices, such as the NYSE or Nasdaq. Modern exchanges are electronic order-matching systems.",
+      "example": "An order to buy 100 shares at the market is routed to an exchange, which matches it against the best available sell orders.",
+      "related": [
+        "order-book",
+        "market-hours",
+        "ticker"
+      ]
+    },
+    {
+      "id": "etf",
+      "term": "Exchange-traded fund (ETF)",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "A fund that trades like a single stock but holds a whole basket, often tracking an index. ETFs offer instant diversification and are the usual benchmark for a stock-picking strategy.",
+      "example": "SPY holds the 500 stocks of the S&P 500; buying one share gives you a tiny piece of all of them.",
+      "related": [
+        "index",
+        "benchmark",
+        "diversification"
+      ]
+    },
+    {
+      "id": "exercise",
+      "term": "Exercise",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "Using the right an option gives you: buying the shares at the strike (call) or selling them at the strike (put). Most traders sell the option instead of exercising, because exercising forfeits remaining extrinsic value.",
+      "example": "Exercising a $50 call when the stock is $58 buys 100 shares at $50; selling the call for $8.30 instead captures $0.30 more.",
+      "related": [
+        "assignment",
+        "expiration",
+        "american-style"
+      ]
+    },
+    {
+      "id": "exit-rule",
+      "term": "Exit rule",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "The objective conditions that close a position: a stop-loss (the idea failed), a profit target or trailing stop (the idea worked) and often a time stop. Exits matter more than entries for most strategies.",
+      "example": "Exit on a close below the 20-day SMA or when the stop at 2 ATR below entry is hit, whichever comes first.",
+      "related": [
+        "entry-rule",
+        "stop-loss",
+        "trailing-stop",
+        "strategy"
+      ]
+    },
+    {
+      "id": "expectancy",
+      "term": "Expectancy",
+      "aliases": [
+        "edge"
+      ],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "The average amount you expect to make per trade over many trades: (win rate x average win) - (loss rate x average loss). Positive expectancy is the definition of an edge; a high win rate with negative expectancy still loses.",
+      "example": "Winning 40% of the time with $300 average wins and $100 average losses gives an expectancy of 0.4 x 300 - 0.6 x 100 = +$60 per trade.",
+      "related": [
+        "win-rate",
+        "average-win-loss",
+        "profit-factor",
+        "risk-reward"
+      ]
+    },
+    {
+      "id": "expiration",
+      "term": "Expiration",
+      "aliases": [
+        "expiry"
+      ],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The date after which an option ceases to exist. Options that are in the money at expiry are exercised (or auto-exercised); those out of the money expire worthless.",
+      "example": "A monthly option expiring 17 January 2026 is worthless at the close that Friday if it is out of the money.",
+      "related": [
+        "time-decay",
+        "theta",
+        "exercise",
+        "assignment"
+      ]
+    },
+    {
+      "id": "ema",
+      "term": "Exponential moving average (EMA)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "A moving average that weights recent closes more heavily, so it reacts to price changes faster than an SMA of the same length but is also whipsawed more often. MACD is built from EMAs.",
+      "example": "A 12-period EMA multiplies today's close by 2/(12+1) = 0.154 and the previous EMA by 0.846.",
+      "related": [
+        "sma",
+        "moving-average",
+        "macd"
+      ]
+    },
+    {
+      "id": "exposure",
+      "term": "Exposure",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "The percentage of time a strategy is in the market. A strategy with 40% exposure that matches buy-and-hold has done more with less risk; one with 100% exposure is just buy-and-hold with extra costs.",
+      "example": "A strategy that was long for 200 of 500 bars has 40% exposure.",
+      "related": [
+        "buy-and-hold",
+        "backtest"
+      ]
+    },
+    {
+      "id": "extrinsic-value",
+      "term": "Extrinsic (time) value",
+      "aliases": [
+        "time value"
+      ],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The part of an option's price above its intrinsic value, paid for the chance that it finishes further in the money. It depends on time to expiry and implied volatility and decays to zero at expiration.",
+      "example": "A $50 call priced at $3.20 with the stock at $52 has $1.20 of extrinsic value.",
+      "related": [
+        "intrinsic-value",
+        "time-decay",
+        "theta",
+        "implied-volatility"
+      ]
+    },
+    {
+      "id": "false-breakout",
+      "term": "False breakout",
+      "aliases": [
+        "fakeout",
+        "bull trap",
+        "bear trap"
+      ],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A move through support or resistance that quickly reverses back inside the range, trapping the traders who chased it. Low volume and an immediate close back inside the level are the warning signs.",
+      "example": "A stock pokes above $55 resistance to $55.60 intraday but closes at $54.40; the breakout failed and shorts take over.",
+      "related": [
+        "breakout",
+        "volume-confirmation",
+        "whipsaw"
+      ]
+    },
+    {
+      "id": "fibonacci",
+      "term": "Fibonacci retracement",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "Horizontal levels at 23.6%, 38.2%, 50%, 61.8% and 78.6% of a prior swing, used to anticipate where a pullback might stall. They are self-fulfilling to the extent that many traders watch them.",
+      "example": "After a rally from 40 to 50, the 61.8% retracement is 50 - 0.618 x 10 = 43.82.",
+      "related": [
+        "pullback",
+        "retracement",
+        "support"
+      ]
+    },
+    {
+      "id": "fill",
+      "term": "Fill (execution)",
+      "aliases": [
+        "execution"
+      ],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "The completion of an order: the moment shares actually change hands at a specific price. An order can be filled, partially filled, open (waiting) or rejected.",
+      "example": "Your limit buy of 200 shares at $49.50 is filled when a seller accepts $49.50 for 200 shares.",
+      "related": [
+        "partial-fill",
+        "market-order",
+        "limit-order"
+      ]
+    },
+    {
+      "id": "flag",
+      "term": "Flag / pennant",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A short continuation pattern: a sharp move (the pole) followed by a tight, drifting consolidation (the flag) that breaks out in the direction of the pole.",
+      "example": "A stock that rallies from 40 to 50 in four days, then drifts between 48 and 49.50 for a week before breaking higher, has formed a bull flag.",
+      "related": [
+        "chart-patterns",
+        "breakout",
+        "triangle"
+      ]
+    },
+    {
+      "id": "float",
+      "term": "Float",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "The portion of shares outstanding that is actually available to trade, excluding shares locked up by insiders and large strategic holders. A small float can make a stock move violently on modest volume.",
+      "example": "A company with 100 million shares outstanding where founders hold 60 million has a float of about 40 million shares.",
+      "related": [
+        "shares-outstanding",
+        "liquidity",
+        "short-squeeze"
+      ]
+    },
+    {
+      "id": "fomo",
+      "term": "FOMO (fear of missing out)",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l3",
+      "definition": "Buying because a stock is already up a lot and you cannot bear to watch it go higher without you. FOMO entries have poor risk/reward because the sensible stop is far below.",
+      "example": "Buying a stock up 35% on the day because social media is cheering it is a FOMO trade; the next day it gives half of that back.",
+      "related": [
+        "overtrading",
+        "discipline",
+        "risk-reward"
+      ]
+    },
+    {
+      "id": "forward-testing",
+      "term": "Forward testing (paper trading a strategy)",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l4",
+      "definition": "Running a finished strategy in real time with simulated money before risking capital. It catches the problems backtests hide: slippage, missed fills, discipline, and the gap between rules and behaviour.",
+      "example": "Trading the SMA cross on the paper account for three months and comparing the results to the backtest is forward testing.",
+      "related": [
+        "paper-trading",
+        "out-of-sample",
+        "market-replay"
+      ]
+    },
+    {
+      "id": "gamma",
+      "term": "Gamma",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "How much delta changes for a $1 move in the stock. Gamma is highest for at-the-money options close to expiry, which is why those options move so violently.",
+      "example": "A call with delta 0.50 and gamma 0.08 will have delta about 0.58 after the stock rises $1.",
+      "related": [
+        "delta",
+        "greeks",
+        "at-the-money"
+      ]
+    },
+    {
+      "id": "gap",
+      "term": "Gap",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m1-l5",
+      "definition": "A price jump between one bar's close and the next bar's open with no trading in between, usually caused by overnight news. Gaps make stop orders fill far from the stop price.",
+      "example": "A stock closing at $50 and opening at $44 the next morning after an earnings miss has gapped down $6; a $47 stop would fill near $44.",
+      "related": [
+        "stop-order",
+        "earnings-report",
+        "candlestick",
+        "stop-limit-order"
+      ]
+    },
+    {
+      "id": "golden-cross",
+      "term": "Golden cross",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "When the 50-day SMA crosses above the 200-day SMA, a widely followed sign that a long-term uptrend has begun. It lags a lot, so the signal arrives well after the low.",
+      "example": "A stock that bottomed in March may not print a golden cross until July, after a 30% rally.",
+      "related": [
+        "death-cross",
+        "crossover",
+        "sma",
+        "lagging-indicator"
+      ]
+    },
+    {
+      "id": "hammer",
+      "term": "Hammer",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A single-candle bullish reversal pattern after a decline: a small body near the top with a long lower wick at least twice the body's height. Sellers pushed price down and buyers took it all back.",
+      "example": "After a week of selling, a candle that opens at 45, drops to 42 and closes at 44.80 is a hammer; a higher close next day confirms it.",
+      "related": [
+        "wick",
+        "shooting-star",
+        "support",
+        "candle-patterns"
+      ]
+    },
+    {
+      "id": "head-and-shoulders",
+      "term": "Head and shoulders",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A reversal pattern made of three peaks: a higher middle peak (head) between two lower ones (shoulders), with a neckline under the troughs. A close below the neckline completes the pattern; the inverse version is bullish.",
+      "example": "Peaks at 58, 64 and 57 with troughs near 52 form a head and shoulders; a close under 52 targets roughly 52 - (64 - 52) = 40.",
+      "related": [
+        "double-top",
+        "resistance",
+        "chart-patterns"
+      ]
+    },
+    {
+      "id": "hedge",
+      "term": "Hedge",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "A position taken to reduce the risk of another, such as buying a put against shares you own or shorting an index ETF against a long stock portfolio. Hedges cost money and cap gains in exchange for protection.",
+      "example": "Owning 100 shares and buying one protective put hedges the downside below the strike for the life of the option.",
+      "related": [
+        "protective-put",
+        "short-selling",
+        "diversification"
+      ]
+    },
+    {
+      "id": "higher-high",
+      "term": "Higher high / higher low",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "Swing points that define an uptrend: each peak above the last peak and each trough above the last trough. The first lower low after a run of higher lows is an early warning that the trend may be changing.",
+      "example": "Swing lows of 40, 43 and 47 are higher lows; a later low at 45 would be the first lower low.",
+      "related": [
+        "uptrend",
+        "trend",
+        "pivot-points"
+      ]
+    },
+    {
+      "id": "historical-volatility",
+      "term": "Historical (realized) volatility",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "The volatility a stock has actually shown, measured as the annualised standard deviation of its past returns. Comparing it to implied volatility tells you whether options look cheap or expensive.",
+      "example": "A stock with 20% historical volatility whose options imply 40% is pricing in an event; the options are expensive by history.",
+      "related": [
+        "implied-volatility",
+        "volatility",
+        "atr"
+      ]
+    },
+    {
+      "id": "ichimoku",
+      "term": "Ichimoku Cloud",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "A five-line system: Tenkan (9-period midpoint), Kijun (26-period midpoint), Senkou A and B (projected forward to form the \"cloud\") and Chikou (close plotted 26 bars back). Price above a green cloud is a bullish picture at a glance.",
+      "example": "A stock trading above the cloud with Tenkan above Kijun is in an Ichimoku uptrend; a drop into the cloud is a warning.",
+      "related": [
+        "tenkan-kijun",
+        "trend",
+        "moving-average"
+      ]
+    },
+    {
+      "id": "implied-volatility",
+      "term": "Implied volatility (IV)",
+      "aliases": [
+        "IV",
+        "IV crush"
+      ],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "The volatility the market is pricing into an option, backed out of its premium with a model such as Black-Scholes. High IV means expensive options; it spikes before earnings and crashes right after (\"IV crush\").",
+      "example": "An option priced at $4 may imply 45% volatility while the stock has historically moved 25%: the market expects a bigger move than usual.",
+      "related": [
+        "historical-volatility",
+        "vega",
+        "black-scholes",
+        "earnings-report"
+      ]
+    },
+    {
+      "id": "in-the-money",
+      "term": "In the money (ITM)",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "An option with intrinsic value: a call whose strike is below the stock price or a put whose strike is above it. ITM options cost more and behave more like the stock (higher delta).",
+      "example": "With the stock at $105 a $100 call is $5 in the money.",
+      "related": [
+        "moneyness",
+        "out-of-the-money",
+        "delta",
+        "intrinsic-value"
+      ]
+    },
+    {
+      "id": "in-sample",
+      "term": "In-sample data",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "The portion of history used to design and tune a strategy. Results on in-sample data are always flattering because the rules were chosen to fit it.",
+      "example": "Tuning the SMA lengths on 2018-2022 bars makes those years the in-sample period.",
+      "related": [
+        "out-of-sample",
+        "overfitting",
+        "walk-forward"
+      ]
+    },
+    {
+      "id": "ipo",
+      "term": "Initial public offering (IPO)",
+      "aliases": [
+        "going public"
+      ],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "The first time a company sells shares to the public. It is the one moment when the company itself receives the money; every trade after that happens between investors on the secondary market.",
+      "example": "A company raising $500 million by selling 25 million new shares at $20 each is doing an IPO.",
+      "related": [
+        "primary-market",
+        "secondary-market",
+        "stock"
+      ]
+    },
+    {
+      "id": "intraday",
+      "term": "Intraday",
+      "aliases": [
+        "day trading"
+      ],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "Anything that happens within a single trading day. Intraday bars (1-minute to 1-hour) and intraday traders open and close positions before the market closes.",
+      "example": "A day trader using 5-minute bars will typically be flat by 4:00 p.m. to avoid overnight gap risk.",
+      "related": [
+        "timeframe",
+        "vwap",
+        "gap"
+      ]
+    },
+    {
+      "id": "intrinsic-value",
+      "term": "Intrinsic value",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The part of an option's price you could capture by exercising right now: stock price minus strike for a call, strike minus stock for a put, never less than zero.",
+      "example": "With the stock at $52, a $50 call has $2 of intrinsic value; a $55 call has none.",
+      "related": [
+        "extrinsic-value",
+        "premium",
+        "in-the-money"
+      ]
+    },
+    {
+      "id": "iron-condor",
+      "term": "Iron condor",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "Selling an OTM put spread and an OTM call spread at the same expiry, collecting a credit. It profits if the stock stays between the short strikes; the long wings cap the loss.",
+      "example": "Stock at $100: sell the $90 put and $110 call, buy the $85 put and $115 call for a $1.50 credit; max loss is $5 - $1.50 = $3.50 per share.",
+      "related": [
+        "strangle",
+        "vertical-spread",
+        "defined-risk",
+        "time-decay"
+      ]
+    },
+    {
+      "id": "lagging-indicator",
+      "term": "Lagging indicator",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l5",
+      "definition": "An indicator built from past prices that confirms a move after it has started, such as moving averages and MACD. Lag is the price of smoothness: fewer false signals, later entries.",
+      "example": "A 200-day SMA turns up months after a bottom; it is excellent at saying what the trend is and terrible at calling turns.",
+      "related": [
+        "leading-indicator",
+        "moving-average",
+        "macd"
+      ]
+    },
+    {
+      "id": "last-price",
+      "term": "Last price",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The price of the most recent trade. Charts are drawn from last prices; the bid and ask may already have moved on.",
+      "example": "A stock whose last trade printed at $50.11 may now be quoted 50.12 x 50.14 if buyers have stepped up.",
+      "related": [
+        "quote",
+        "bid",
+        "ask"
+      ]
+    },
+    {
+      "id": "leading-indicator",
+      "term": "Leading indicator",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l5",
+      "definition": "An indicator intended to signal before a price move, usually an oscillator such as RSI or stochastic, or a divergence. It fires earlier but also gives more false alarms.",
+      "example": "RSI divergence can warn of a top several bars before price turns down, but it also warns many times when price keeps climbing.",
+      "related": [
+        "lagging-indicator",
+        "rsi",
+        "divergence"
+      ]
+    },
+    {
+      "id": "leverage",
+      "term": "Leverage",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "Controlling a position larger than your capital, through margin, options or leveraged ETFs. It multiplies gains and losses equally and shortens the time you can be wrong.",
+      "example": "A 3x leveraged position turns a 10% move into a 30% gain or loss on your capital.",
+      "related": [
+        "margin",
+        "margin-call",
+        "options"
+      ]
+    },
+    {
+      "id": "limit-order",
+      "term": "Limit order",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "An instruction to buy at or below, or sell at or above, a price you specify. It guarantees the price but not the fill: if the market never reaches your limit the order stays open.",
+      "example": "A limit buy at $49.50 when the stock trades at $50.12 fills only if the price falls to $49.50 or lower.",
+      "related": [
+        "market-order",
+        "stop-order",
+        "stop-limit-order",
+        "time-in-force"
+      ]
+    },
+    {
+      "id": "liquidity",
+      "term": "Liquidity",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "How easily a security can be bought or sold in size without moving its price. High liquidity means tight spreads, deep order books and small slippage.",
+      "example": "A large-cap ETF trading 50 million shares a day is highly liquid; a micro-cap trading 20,000 shares is not.",
+      "related": [
+        "spread",
+        "volume",
+        "slippage",
+        "order-book"
+      ]
+    },
+    {
+      "id": "look-ahead-bias",
+      "term": "Look-ahead bias",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Using information in a backtest that would not have been available at the time, such as acting on a bar's close during that bar or using a revised data point. It silently inflates results.",
+      "example": "Buying at the open of a bar because that bar's close is above the SMA is look-ahead bias; the close is not known at the open.",
+      "related": [
+        "backtest",
+        "survivorship-bias",
+        "data-snooping"
+      ]
+    },
+    {
+      "id": "lookback-period",
+      "term": "Lookback period",
+      "aliases": [
+        "period",
+        "window"
+      ],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "The number of bars an indicator uses, such as the 14 in RSI(14) or the 20 in a 20-day SMA. Shorter lookbacks react faster and give more signals; longer ones are smoother and later.",
+      "example": "RSI(7) will hit overbought far more often than RSI(14) on the same chart.",
+      "related": [
+        "moving-average",
+        "rsi",
+        "parameter-optimization"
+      ]
+    },
+    {
+      "id": "losing-streak",
+      "term": "Losing streak",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l3",
+      "definition": "A run of consecutive losses. Even a strategy with a 50% win rate will have streaks of seven or more losses over a few hundred trades, so sizing must assume streaks will happen.",
+      "example": "With a 40% win rate, the chance of five straight losses is 0.6^5, about 7.8%, so it happens regularly.",
+      "related": [
+        "drawdown",
+        "one-percent-rule",
+        "revenge-trading"
+      ]
+    },
+    {
+      "id": "loss-aversion",
+      "term": "Loss aversion",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l3",
+      "definition": "The tendency to feel a loss roughly twice as strongly as an equal gain. It makes traders hold losers hoping to break even and sell winners too early, which is backwards for expectancy.",
+      "example": "Refusing to sell a stock down 15% \"until it gets back to my price\" while taking a 3% gain on another is loss aversion at work.",
+      "related": [
+        "unrealized-pnl",
+        "stop-loss",
+        "confirmation-bias",
+        "discipline"
+      ]
+    },
+    {
+      "id": "macd",
+      "term": "MACD",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "Moving Average Convergence Divergence: the 12-period EMA minus the 26-period EMA (the MACD line), its 9-period EMA (the signal line) and the difference between them (the histogram). It blends trend and momentum.",
+      "example": "When the MACD line crosses above the signal line the histogram turns positive; traders read that as momentum turning bullish.",
+      "related": [
+        "ema",
+        "signal-line",
+        "macd-histogram",
+        "crossover"
+      ]
+    },
+    {
+      "id": "macd-histogram",
+      "term": "MACD histogram",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "Bars showing MACD minus signal line. Growing bars mean momentum is accelerating; shrinking bars warn it is fading before any crossover happens.",
+      "example": "A histogram that peaks at +2.0 then prints +1.6, +1.1, +0.5 shows momentum rolling over even though MACD is still above the signal line.",
+      "related": [
+        "macd",
+        "signal-line",
+        "divergence"
+      ]
+    },
+    {
+      "id": "margin",
+      "term": "Margin",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "Money borrowed from your broker to buy securities, using the account as collateral. US rules let you borrow up to 50% of a purchase; interest accrues daily and losses are amplified.",
+      "example": "Buying $20,000 of stock with $10,000 cash and $10,000 margin means a 25% fall in the stock is a 50% loss of your own money.",
+      "related": [
+        "leverage",
+        "margin-call",
+        "short-selling"
+      ]
+    },
+    {
+      "id": "margin-call",
+      "term": "Margin call",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "A broker's demand to deposit cash or sell positions because the account's equity has fallen below the required maintenance level. If you do not act the broker liquidates for you, usually at the worst time.",
+      "example": "An account holding $20,000 of stock on $10,000 of equity gets a margin call when the stock falls enough that equity drops under the 25% maintenance requirement.",
+      "related": [
+        "margin",
+        "leverage",
+        "short-squeeze"
+      ]
+    },
+    {
+      "id": "mark-to-market",
+      "term": "Mark to market",
+      "aliases": [],
+      "category": "portfolio",
+      "lesson": "m4-l5",
+      "definition": "Revaluing every position at the current price so the account shows what it is worth now, not what you paid. The paper account marks to market on every tick to update equity and unrealized P&L.",
+      "example": "Holding 100 shares bought at $50 while the price is $53 marks the position at $5,300 with a $300 unrealized gain.",
+      "related": [
+        "unrealized-pnl",
+        "realized-pnl",
+        "equity-curve"
+      ]
+    },
+    {
+      "id": "market-cap",
+      "term": "Market capitalization",
+      "aliases": [
+        "market cap"
+      ],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "The market's running estimate of what a whole company is worth: share price multiplied by shares outstanding. Large caps are above roughly $10 billion, small caps below about $2 billion.",
+      "example": "A stock at $25 with 2,000,000 shares outstanding has a market cap of $50,000,000.",
+      "related": [
+        "stock",
+        "shares-outstanding",
+        "float"
+      ]
+    },
+    {
+      "id": "index",
+      "term": "Market index",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "A number that tracks a basket of stocks to summarise how a market or sector is doing. The S&P 500 (500 large US companies), the Dow Jones Industrial Average (30 stocks) and the Nasdaq-100 are the best known.",
+      "example": "If the S&P 500 is up 1% on the day, the average large US stock, weighted by size, rose about 1%.",
+      "related": [
+        "etf",
+        "benchmark",
+        "sector"
+      ]
+    },
+    {
+      "id": "market-maker",
+      "term": "Market maker",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "A firm that continuously quotes both a bid and an ask, earning the spread while providing liquidity. Market makers are why you can almost always trade a liquid stock instantly.",
+      "example": "A market maker quoting 50.10 x 50.12 earns two cents on every share it buys from a seller and sells to a buyer.",
+      "related": [
+        "spread",
+        "liquidity",
+        "order-book"
+      ]
+    },
+    {
+      "id": "market-order",
+      "term": "Market order",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "An instruction to buy or sell immediately at the best available price. It guarantees a fill but not a price: in a fast or thin market you may pay more than the quote you saw.",
+      "example": "A market buy for 100 shares when the ask is $50.12 fills right away at about $50.12, or slightly higher if the quote moves.",
+      "related": [
+        "limit-order",
+        "slippage",
+        "ask",
+        "fill"
+      ]
+    },
+    {
+      "id": "market-replay",
+      "term": "Market replay",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m7-l1",
+      "definition": "Stepping through historical bars one at a time with the future hidden and trading as you go. It compresses months of practice into an hour and shows how a rule feels in real time, whipsaws included.",
+      "example": "The Replay page hides every bar after the cursor; a trade placed on bar 120 fills at that bar's price and cannot see bar 121.",
+      "related": [
+        "paper-trading",
+        "forward-testing",
+        "backtest",
+        "trading-journal"
+      ]
+    },
+    {
+      "id": "max-drawdown",
+      "term": "Maximum drawdown",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l3",
+      "definition": "The largest peak-to-trough fall in an equity curve over the whole period. Backtests and the paper account both report it; expect live trading to produce a drawdown worse than the backtest showed.",
+      "example": "A backtest with +40% total return but a 35% max drawdown would have required sitting through a loss of more than a third of the account.",
+      "related": [
+        "drawdown",
+        "equity-curve",
+        "sharpe-ratio",
+        "backtest"
+      ]
+    },
+    {
+      "id": "max-profit-loss",
+      "term": "Maximum profit and loss",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "The best and worst outcome of an option position at expiry. Long options: loss capped at the premium, profit unlimited (call) or to zero (put). Spreads cap both sides.",
+      "example": "A bull call spread bought for $2 with strikes $5 apart has max loss $200 and max profit $300 per contract.",
+      "related": [
+        "breakeven",
+        "defined-risk",
+        "payoff-diagram"
+      ]
+    },
+    {
+      "id": "mean-reversion",
+      "term": "Mean reversion",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m3-l2",
+      "definition": "The idea that prices stretched far from their average tend to snap back toward it. Mean-reversion strategies buy oversold dips and sell overbought spikes, and work best in ranges.",
+      "example": "Buying when RSI drops below 30 and selling when it crosses back above 50 is a mean-reversion rule.",
+      "related": [
+        "rsi-reversion",
+        "bollinger-bounce",
+        "range",
+        "trend-following"
+      ]
+    },
+    {
+      "id": "momentum",
+      "term": "Momentum",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "The speed of price change. Momentum indicators (RSI, stochastic, MACD) measure whether moves are accelerating or fading, which often changes before the price direction does.",
+      "example": "A stock still rising but with smaller daily gains has falling momentum even though the trend is intact.",
+      "related": [
+        "rsi",
+        "macd",
+        "divergence",
+        "trend-following"
+      ]
+    },
+    {
+      "id": "moneyness",
+      "term": "Moneyness",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "Where the strike sits relative to the stock price: in the money (has intrinsic value), at the money (strike about equal to the stock) or out of the money (no intrinsic value).",
+      "example": "Stock at $100: a $90 call is ITM, a $100 call ATM and a $110 call OTM; for puts the order is reversed.",
+      "related": [
+        "in-the-money",
+        "at-the-money",
+        "out-of-the-money",
+        "strike"
+      ]
+    },
+    {
+      "id": "morning-star",
+      "term": "Morning star",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A three-candle bullish reversal at the end of a decline: a long red candle, a small-bodied candle (often a doji) showing indecision, then a long green candle closing well into the first candle's body.",
+      "example": "A big down day, a tiny-bodied day, then a big up day that recovers most of the first loss form a morning star.",
+      "related": [
+        "evening-star",
+        "doji",
+        "candle-patterns"
+      ]
+    },
+    {
+      "id": "moving-average",
+      "term": "Moving average",
+      "aliases": [
+        "MA"
+      ],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "The average closing price over the last N bars, recalculated every bar so it draws a smoothed line that follows the trend. Price above a rising average is the most basic definition of an uptrend.",
+      "example": "A 20-day moving average on the dashboard averages the last 20 closes; today's value drops the close from 21 days ago and adds today's.",
+      "related": [
+        "sma",
+        "ema",
+        "crossover",
+        "lagging-indicator"
+      ]
+    },
+    {
+      "id": "occ-symbol",
+      "term": "OCC option symbol",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "The standard 21-character identifier for an option: ticker (padded), expiry as YYMMDD, C or P, and the strike times 1000 as eight digits. The paper account keys option positions by it.",
+      "example": "AAPL260117C00200000 is an AAPL call expiring 17 January 2026 with a $200 strike.",
+      "related": [
+        "contract-multiplier",
+        "strike",
+        "expiration"
+      ]
+    },
+    {
+      "id": "ohlc",
+      "term": "OHLC (open, high, low, close)",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "The four prices that define any bar: the first trade of the period, the highest trade, the lowest trade and the last trade. Every indicator is calculated from one or more of these.",
+      "example": "Daily bars on the dashboard carry {time, open, high, low, close, volume}; a 14-period ATR uses the high, low and previous close.",
+      "related": [
+        "candlestick",
+        "timeframe",
+        "volume"
+      ]
+    },
+    {
+      "id": "obv",
+      "term": "On-balance volume (OBV)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "A running total that adds the day's volume on up closes and subtracts it on down closes. OBV rising with price confirms the move; OBV falling while price rises is a warning that volume is not behind it.",
+      "example": "Price flat for two weeks while OBV climbs suggests quiet accumulation before a breakout.",
+      "related": [
+        "volume",
+        "volume-confirmation",
+        "divergence"
+      ]
+    },
+    {
+      "id": "open-interest",
+      "term": "Open interest",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "The number of option contracts currently outstanding for a strike and expiry. High open interest means a liquid contract with tighter spreads; low open interest means you may struggle to exit at a fair price.",
+      "example": "A strike with 5,000 open interest and a two-cent spread is tradable; one with 12 contracts and a $0.60 spread is not.",
+      "related": [
+        "option-chain",
+        "liquidity",
+        "volume"
+      ]
+    },
+    {
+      "id": "options",
+      "term": "Option",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "A contract giving the buyer the right, not the obligation, to buy (call) or sell (put) 100 shares at a set strike price by an expiration date. The buyer pays a premium; the seller keeps it and takes on the obligation.",
+      "example": "One AAPL $200 call expiring in January gives its owner the right to buy 100 AAPL shares at $200 any time before expiry.",
+      "related": [
+        "call",
+        "put",
+        "strike",
+        "premium",
+        "expiration"
+      ]
+    },
+    {
+      "id": "option-chain",
+      "term": "Option chain",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "The table of all strikes and expirations for a stock, listing bid, ask, volume, open interest, implied volatility and the Greeks for each call and put. The portfolio page shows a synthetic chain for practice.",
+      "example": "Reading a chain, you see the $100 call quoted 3.10 x 3.30 with 1,200 open interest and 28% implied volatility.",
+      "related": [
+        "strike",
+        "open-interest",
+        "implied-volatility",
+        "greeks"
+      ]
+    },
+    {
+      "id": "order-book",
+      "term": "Order book",
+      "aliases": [
+        "depth of market",
+        "level 2"
+      ],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The list of all open buy (bid) and sell (ask) limit orders for a security, arranged by price. The top of the book is the best bid and best ask shown in the quote.",
+      "example": "If 2,000 shares are offered at $50.12 and 5,000 at $50.13, a market buy of 3,000 shares takes all of the first level and 1,000 of the next.",
+      "related": [
+        "bid",
+        "ask",
+        "limit-order",
+        "market-maker"
+      ]
+    },
+    {
+      "id": "out-of-the-money",
+      "term": "Out of the money (OTM)",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l2",
+      "definition": "An option with no intrinsic value: a call whose strike is above the stock price or a put whose strike is below it. OTM options are cheap and have a low probability of paying off.",
+      "example": "With the stock at $100 a $110 call is out of the money; it expires worthless unless the stock climbs above $110.",
+      "related": [
+        "moneyness",
+        "in-the-money",
+        "delta",
+        "extrinsic-value"
+      ]
+    },
+    {
+      "id": "out-of-sample",
+      "term": "Out-of-sample data",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "History the strategy never saw during design, held back to test it honestly. A strategy that collapses out of sample was fitted to noise.",
+      "example": "After tuning on 2018-2022, running the same rules unchanged on 2023-2024 is the out-of-sample test.",
+      "related": [
+        "in-sample",
+        "overfitting",
+        "walk-forward",
+        "forward-testing"
+      ]
+    },
+    {
+      "id": "overbought",
+      "term": "Overbought",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "An oscillator reading suggesting the price has risen too far, too fast (for example RSI above 70). It does not mean \"sell now\": strong uptrends stay overbought while climbing. It means the reward for chasing is shrinking.",
+      "example": "A stock with RSI at 78 after a 20% rally in two weeks is overbought; a pullback or pause is more likely than another 20% leg.",
+      "related": [
+        "rsi",
+        "oversold",
+        "stochastic",
+        "mean-reversion"
+      ]
+    },
+    {
+      "id": "overfitting",
+      "term": "Overfitting (curve fitting)",
+      "aliases": [
+        "curve fitting"
+      ],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Tuning a strategy so closely to past data that it captures noise instead of a real edge. Symptoms: many parameters, spectacular in-sample results, a collapse out of sample, and performance that changes sharply with small parameter tweaks.",
+      "example": "An SMA(23)/SMA(61) cross that returns 300% while SMA(20)/SMA(60) returns 40% is overfit: the edge lives in the exact numbers, not the idea.",
+      "related": [
+        "parameter-optimization",
+        "out-of-sample",
+        "robustness",
+        "data-snooping"
+      ]
+    },
+    {
+      "id": "oversold",
+      "term": "Oversold",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "An oscillator reading suggesting the price has fallen too far, too fast (for example RSI below 30). In a downtrend a stock can stay oversold for a long time, so look for a turn, not just the reading.",
+      "example": "A stock with RSI at 24 that then prints a hammer at support is an oversold bounce candidate.",
+      "related": [
+        "rsi",
+        "overbought",
+        "rsi-reversion"
+      ]
+    },
+    {
+      "id": "overtrading",
+      "term": "Overtrading",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l3",
+      "definition": "Trading too often or too large relative to your plan, usually from boredom, excitement or the urge to recover losses. Each extra trade pays the spread and slippage and adds a chance to break a rule.",
+      "example": "A plan that calls for two or three setups a week but a journal showing fifteen trades is evidence of overtrading.",
+      "related": [
+        "revenge-trading",
+        "fomo",
+        "transaction-costs",
+        "discipline"
+      ]
+    },
+    {
+      "id": "paper-trading",
+      "term": "Paper trading",
+      "aliases": [
+        "simulated trading"
+      ],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "Simulated trading with pretend money against real or demo prices. It lets you practise order types, sizing and discipline without risk, though it cannot reproduce the emotions of real losses.",
+      "example": "The Broward Trading portfolio starts with $100,000 of paper cash; fills and P&L are recorded exactly as a broker would, minus the stress.",
+      "related": [
+        "broker",
+        "market-replay",
+        "trading-journal"
+      ]
+    },
+    {
+      "id": "parameter-optimization",
+      "term": "Parameter optimization",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Searching combinations of a strategy's settings (lookbacks, thresholds) for the best historical result. Useful for understanding sensitivity; dangerous when you simply pick the winner.",
+      "example": "The Backtest page can grid-search SMA fast/slow pairs; a broad plateau of good results is reassuring, a single sharp peak is not.",
+      "related": [
+        "overfitting",
+        "robustness",
+        "walk-forward",
+        "lookback-period"
+      ]
+    },
+    {
+      "id": "partial-fill",
+      "term": "Partial fill",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "When only some of the shares in an order are executed because there was not enough volume at your price. The remainder stays open.",
+      "example": "A limit buy for 1,000 shares at $49.50 may fill 300 shares before the price bounces, leaving 700 open.",
+      "related": [
+        "fill",
+        "liquidity",
+        "limit-order"
+      ]
+    },
+    {
+      "id": "payoff-diagram",
+      "term": "Payoff diagram",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "A chart of profit or loss at expiry across a range of stock prices. The options lab draws one for every strategy so you can see breakevens, max profit and max loss at a glance.",
+      "example": "A long call's payoff is flat at minus the premium below the strike and rises one-for-one above it.",
+      "related": [
+        "breakeven",
+        "max-profit-loss",
+        "options"
+      ]
+    },
+    {
+      "id": "pivot-points",
+      "term": "Pivot points (swing highs and lows)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "Local turning points: a bar whose high is higher than the N bars on each side is a pivot high; the mirror is a pivot low. They mark swing structure and feed support and resistance levels.",
+      "example": "With 5 bars on each side, a bar at $58 flanked by lower highs for five bars in both directions is a pivot high.",
+      "related": [
+        "support",
+        "resistance",
+        "higher-high"
+      ]
+    },
+    {
+      "id": "position-sizing",
+      "term": "Position sizing",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "Deciding how many shares to trade so that a stop-loss hit costs a fixed, small fraction of your account. Size follows risk, not conviction: shares = dollars risked / (entry - stop).",
+      "example": "Risking $1,000 on a stock bought at $50 with a stop at $46 ($4 risk per share) means buying 250 shares.",
+      "related": [
+        "one-percent-rule",
+        "stop-loss",
+        "risk-per-trade",
+        "atr"
+      ]
+    },
+    {
+      "id": "pre-market",
+      "term": "Pre-market session",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "Trading before the 9:30 a.m. open, typically from 4:00 a.m. New York time. Volume is thin, spreads are wide and prices can jump on news, so most beginners should watch rather than trade it.",
+      "example": "A stock that reports strong earnings at 7:00 a.m. may gap up 8% in pre-market trading before the regular session begins.",
+      "related": [
+        "market-hours",
+        "after-hours",
+        "gap"
+      ]
+    },
+    {
+      "id": "premium",
+      "term": "Premium",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The price of an option, quoted per share and paid per contract (x100). It is made of intrinsic value (how far in the money) plus extrinsic value (time and volatility).",
+      "example": "A $50 call quoted at $3.20 costs $320 per contract; with the stock at $52 that is $2 intrinsic plus $1.20 extrinsic.",
+      "related": [
+        "intrinsic-value",
+        "extrinsic-value",
+        "implied-volatility"
+      ]
+    },
+    {
+      "id": "pe-ratio",
+      "term": "Price-to-earnings (P/E) ratio",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "Share price divided by annual earnings per share. It tells you how many years of current profit you are paying for; a high P/E means investors expect strong growth.",
+      "example": "A $60 stock earning $3.00 per share trades at a P/E of 20.",
+      "related": [
+        "eps",
+        "market-cap",
+        "earnings-report"
+      ]
+    },
+    {
+      "id": "primary-market",
+      "term": "Primary market",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "Where newly created securities are sold for the first time and the issuing company receives the proceeds, for example in an IPO or a follow-on offering.",
+      "example": "When a company issues 10 million new shares to fund a factory, those shares are sold in the primary market.",
+      "related": [
+        "ipo",
+        "secondary-market"
+      ]
+    },
+    {
+      "id": "profit-factor",
+      "term": "Profit factor",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "Gross profits divided by gross losses over a set of trades. Above 1.0 means the strategy made money; above 1.5 is respectable; well above 3 in a backtest is a warning sign of overfitting.",
+      "example": "Winning trades totalling $12,000 against losing trades totalling $8,000 give a profit factor of 1.5.",
+      "related": [
+        "expectancy",
+        "win-rate",
+        "backtest",
+        "overfitting"
+      ]
+    },
+    {
+      "id": "protective-put",
+      "term": "Protective put",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "Owning shares and buying a put as insurance. Losses below the strike are covered for the life of the option; the cost is the premium, which reduces returns if the stock does not fall.",
+      "example": "Owning 100 shares at $50 and buying a $45 put for $1.20 caps the loss at $6.20 per share for three months.",
+      "related": [
+        "put",
+        "hedge",
+        "covered-call"
+      ]
+    },
+    {
+      "id": "pullback",
+      "term": "Pullback",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A short counter-trend move within a larger trend: a dip in an uptrend or a bounce in a downtrend. Trend traders prefer to enter on pullbacks rather than chase extended moves.",
+      "example": "A stock rallying from 40 to 50 that eases back to 47 for a week before resuming higher has pulled back.",
+      "related": [
+        "trend",
+        "uptrend",
+        "retracement",
+        "fibonacci"
+      ]
+    },
+    {
+      "id": "put",
+      "term": "Put option",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The right to sell 100 shares at the strike price before expiry. Puts gain value when the stock falls, which makes them insurance for shareholders and a defined-risk way to bet on declines.",
+      "example": "Buying a $50 put for $1.50 when the stock is $52 profits at expiry if the stock is below $48.50.",
+      "related": [
+        "call",
+        "protective-put",
+        "strike",
+        "premium"
+      ]
+    },
+    {
+      "id": "quote",
+      "term": "Quote",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The current prices for a security: the highest bid, the lowest ask, the last traded price and usually the day's volume and change. The dashboard shows a quote for the selected symbol.",
+      "example": "A quote of 50.10 x 50.12 means a buyer will pay $50.10 and a seller is asking $50.12.",
+      "related": [
+        "bid",
+        "ask",
+        "spread",
+        "last-price"
+      ]
+    },
+    {
+      "id": "range",
+      "term": "Range (consolidation)",
+      "aliases": [
+        "consolidation",
+        "sideways market"
+      ],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A period when price moves sideways between support and resistance with no clear trend. Trend-following indicators whipsaw in a range; mean-reversion tools work better.",
+      "example": "A stock chopping between $50 and $55 for six weeks is range-bound; an SMA crossover system would likely lose money there.",
+      "related": [
+        "support",
+        "resistance",
+        "whipsaw",
+        "mean-reversion",
+        "adx"
+      ]
+    },
+    {
+      "id": "realized-pnl",
+      "term": "Realized P&L",
+      "aliases": [],
+      "category": "portfolio",
+      "lesson": "m4-l5",
+      "definition": "The gain or loss locked in by closing a position, after commissions. Realized P&L is what your statistics (win rate, expectancy, profit factor) are computed from.",
+      "example": "Selling the 100 shares bought at $50 for $53 realizes a $300 profit.",
+      "related": [
+        "unrealized-pnl",
+        "mark-to-market",
+        "win-rate"
+      ]
+    },
+    {
+      "id": "market-hours",
+      "term": "Regular market hours",
+      "aliases": [
+        "trading session"
+      ],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "The main US session runs 9:30 a.m. to 4:00 p.m. New York time, Monday to Friday, excluding exchange holidays. Liquidity is deepest and spreads tightest during these hours.",
+      "example": "An order placed at 8:00 a.m. New York time waits for the 9:30 open unless the broker offers pre-market trading.",
+      "related": [
+        "pre-market",
+        "after-hours",
+        "exchange",
+        "liquidity"
+      ]
+    },
+    {
+      "id": "relative-strength",
+      "term": "Relative strength",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "How a stock performs compared with a benchmark such as SPY over the same period (not the RSI oscillator). Stocks with strong relative strength are leading the market; the Compare page plots it.",
+      "example": "A stock up 12% while SPY is up 4% has strong relative strength; one up 2% in the same period is lagging.",
+      "related": [
+        "benchmark",
+        "correlation",
+        "momentum"
+      ]
+    },
+    {
+      "id": "rsi",
+      "term": "Relative Strength Index (RSI)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "A momentum oscillator from 0 to 100 that compares the size of recent gains to recent losses, usually over 14 bars. Above 70 is called overbought, below 30 oversold; in strong trends it can stay extreme for weeks.",
+      "example": "RSI = 100 - 100 / (1 + average gain / average loss). If the average gain is 2 and the average loss is 1, RSI is 66.7.",
+      "related": [
+        "overbought",
+        "oversold",
+        "divergence",
+        "stochastic",
+        "momentum"
+      ]
+    },
+    {
+      "id": "resistance",
+      "term": "Resistance",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A price area where rising prices have repeatedly stalled because sellers appear. Once broken, resistance often turns into support.",
+      "example": "A stock that was rejected at $55 four times has resistance there; a close at $57 on heavy volume is a breakout.",
+      "related": [
+        "support",
+        "breakout",
+        "retest"
+      ]
+    },
+    {
+      "id": "retest",
+      "term": "Retest",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "When price returns to a level it has just broken through and holds, confirming the break. A successful retest of old resistance as new support is a classic lower-risk entry.",
+      "example": "A stock that breaks out above $55, dips back to $55.20 and bounces has retested the breakout level.",
+      "related": [
+        "breakout",
+        "support",
+        "resistance"
+      ]
+    },
+    {
+      "id": "retracement",
+      "term": "Retracement",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m3-l4",
+      "definition": "A partial reversal of a prior move, measured as a percentage of that move. Shallow retracements (under 38%) show a strong trend; deep ones (over 62%) raise doubts about whether it continues.",
+      "example": "A stock that rallied from 40 to 50 and fell back to 45 has retraced 50% of the move.",
+      "related": [
+        "pullback",
+        "fibonacci",
+        "trend"
+      ]
+    },
+    {
+      "id": "revenge-trading",
+      "term": "Revenge trading",
+      "aliases": [],
+      "category": "psychology",
+      "lesson": "m4-l3",
+      "definition": "Taking an impulsive, oversized trade right after a loss to \"win it back\". It is the fastest way to turn a normal losing trade into a destroyed account, and the main reason to set a daily loss limit.",
+      "example": "After losing $500 on a planned trade, a trader doubles size on an unplanned setup minutes later and loses $1,400: a revenge trade.",
+      "related": [
+        "loss-aversion",
+        "overtrading",
+        "losing-streak",
+        "discipline"
+      ]
+    },
+    {
+      "id": "rho",
+      "term": "Rho",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "How much an option's price changes for a one-percentage-point change in interest rates. It matters little for short-dated options and is the least watched Greek.",
+      "example": "A long-dated call with rho 0.20 gains about $0.20 if rates rise from 4% to 5%.",
+      "related": [
+        "greeks",
+        "black-scholes"
+      ]
+    },
+    {
+      "id": "risk-per-trade",
+      "term": "Risk per trade",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "The dollar amount you lose if your stop is hit: (entry - stop) x shares, plus costs. It is the number position sizing is built to control, and it is not the same as the position's total value.",
+      "example": "A $12,500 position (250 shares at $50) with a stop at $46 has a risk per trade of $1,000, which is 1% of a $100,000 account.",
+      "related": [
+        "position-sizing",
+        "one-percent-rule",
+        "stop-loss",
+        "risk-reward"
+      ]
+    },
+    {
+      "id": "risk-reward",
+      "term": "Risk/reward ratio",
+      "aliases": [
+        "R multiple",
+        "reward-to-risk"
+      ],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "The potential profit of a trade divided by the potential loss, both measured from the entry to the target and to the stop. A 2:1 ratio means you aim to make twice what you risk; higher ratios let you be profitable with a win rate under 50%.",
+      "example": "Entry $50, stop $47, target $56: risking $3 to make $6 is a 2:1 risk/reward.",
+      "related": [
+        "expectancy",
+        "win-rate",
+        "stop-loss",
+        "risk-per-trade"
+      ]
+    },
+    {
+      "id": "robustness",
+      "term": "Robustness",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "A strategy's ability to keep working when conditions change slightly: different parameters, different symbols, different years, realistic costs. Robust strategies have modest results that hold up; fragile ones have great results that vanish.",
+      "example": "An SMA cross that is profitable with fast lengths of 15 through 30 and slow lengths of 40 through 80 is robust to its parameters.",
+      "related": [
+        "overfitting",
+        "parameter-optimization",
+        "out-of-sample"
+      ]
+    },
+    {
+      "id": "round-trip",
+      "term": "Round trip",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l2",
+      "definition": "A complete trade: the entry and the matching exit. Backtest statistics count round trips, and each one pays costs twice.",
+      "example": "Buying 100 shares on 3 March and selling them on 20 March is one round trip.",
+      "related": [
+        "backtest",
+        "transaction-costs",
+        "win-rate"
+      ]
+    },
+    {
+      "id": "rsi-reversion",
+      "term": "RSI mean-reversion strategy",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "Buy when RSI falls below an oversold level (such as 30) and sell when it rises above an upper level (such as 70 or 50). A mean-reversion rule that works in ranges and gets run over in strong downtrends.",
+      "example": "The built-in rsiReversion(30, 70) buys the first close with RSI under 30 and exits when RSI climbs above 70.",
+      "related": [
+        "rsi",
+        "mean-reversion",
+        "oversold",
+        "overbought"
+      ]
+    },
+    {
+      "id": "secondary-market",
+      "term": "Secondary market",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "Where existing shares change hands between investors through an exchange. The company receives nothing from these trades. Virtually all of your trading happens here.",
+      "example": "Buying 10 shares on the dashboard means another investor sold them to you; the company was not involved.",
+      "related": [
+        "primary-market",
+        "exchange",
+        "stock"
+      ]
+    },
+    {
+      "id": "sector",
+      "term": "Sector",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "A broad group of companies in similar businesses, such as Technology, Energy, Healthcare or Financials. Stocks in the same sector tend to move together, so holding five of them is less diversified than it looks.",
+      "example": "When oil prices fall, most Energy sector stocks drop together regardless of each company's own news.",
+      "related": [
+        "diversification",
+        "correlation",
+        "index"
+      ]
+    },
+    {
+      "id": "shares-outstanding",
+      "term": "Shares outstanding",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "The total number of shares a company has issued and that are held by all investors, including insiders. It is the share count used in market cap and earnings-per-share calculations.",
+      "example": "A company with $100 million of annual profit and 50 million shares outstanding earns $2.00 per share.",
+      "related": [
+        "market-cap",
+        "float",
+        "eps"
+      ]
+    },
+    {
+      "id": "sharpe-ratio",
+      "term": "Sharpe ratio",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l3",
+      "definition": "Return earned above the risk-free rate per unit of volatility, annualised. It rewards steady returns and penalises wild swings; above 1 is good for a stock strategy, above 2 is excellent and should make you suspicious in a backtest.",
+      "example": "Two strategies both return 15%; the one whose returns swing half as much has twice the Sharpe ratio.",
+      "related": [
+        "volatility",
+        "max-drawdown",
+        "equity-curve",
+        "backtest"
+      ]
+    },
+    {
+      "id": "shooting-star",
+      "term": "Shooting star",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "A single-candle bearish reversal pattern after a rally: a small body near the low with a long upper wick. Buyers pushed price up and sellers rejected it.",
+      "example": "After a strong rally, a candle that opens at 58, spikes to 62 and closes at 57.80 is a shooting star.",
+      "related": [
+        "wick",
+        "hammer",
+        "resistance",
+        "candle-patterns"
+      ]
+    },
+    {
+      "id": "short-selling",
+      "term": "Short selling",
+      "aliases": [
+        "shorting",
+        "going short"
+      ],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "Selling borrowed shares in the hope of buying them back cheaper. Profit is capped at the sale price (the stock can only fall to zero), loss is theoretically unlimited, and you pay borrow fees and any dividends.",
+      "example": "Shorting 100 shares at $50 and covering at $40 makes $1,000; if the stock instead rises to $75 the loss is $2,500 and growing.",
+      "related": [
+        "short-squeeze",
+        "margin",
+        "borrow-fee",
+        "downtrend"
+      ]
+    },
+    {
+      "id": "short-squeeze",
+      "term": "Short squeeze",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l4",
+      "definition": "A sharp rally driven by short sellers being forced to buy back shares to cut losses, which pushes the price higher and forces more shorts to cover. Heavily shorted, low-float stocks are the usual victims.",
+      "example": "A stock with 40% of its float sold short rises 20% on news; margin calls force shorts to buy and it closes up 80%.",
+      "related": [
+        "short-selling",
+        "float",
+        "margin-call"
+      ]
+    },
+    {
+      "id": "signal-line",
+      "term": "Signal line",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l3",
+      "definition": "The 9-period EMA of the MACD line. Crosses of the MACD line through the signal line are the standard MACD buy and sell triggers.",
+      "example": "MACD at 1.2 crossing above a signal line at 1.0 is a bullish signal-line crossover.",
+      "related": [
+        "macd",
+        "macd-histogram",
+        "crossover"
+      ]
+    },
+    {
+      "id": "sma",
+      "term": "Simple moving average (SMA)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "The plain arithmetic mean of the last N closes, each weighted equally. It is smooth and slow: the 50-day and 200-day SMAs are the most watched trend lines in the market.",
+      "example": "Closes of 10, 11, 12, 13 and 14 give a 5-period SMA of 12.",
+      "related": [
+        "moving-average",
+        "ema",
+        "golden-cross",
+        "sma-crossover"
+      ]
+    },
+    {
+      "id": "slippage",
+      "term": "Slippage",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "The difference between the price you expected and the price you actually got. It comes from the spread, from thin order books and from fast moves between seeing a quote and getting filled.",
+      "example": "You saw $50.12 but your market order filled at $50.18: six cents of slippage per share, or $6 on 100 shares.",
+      "related": [
+        "spread",
+        "market-order",
+        "transaction-costs",
+        "liquidity"
+      ]
+    },
+    {
+      "id": "sma-crossover",
+      "term": "SMA crossover strategy",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "Buy when a fast SMA crosses above a slow SMA; sell (or short) when it crosses back below. The oldest trend-following system; it earns its keep in long trends and bleeds in ranges.",
+      "example": "The dashboard's built-in strategy smaCross(20, 50) buys the golden cross of the 20- and 50-day averages and sells the death cross.",
+      "related": [
+        "sma",
+        "crossover",
+        "trend-following",
+        "whipsaw"
+      ]
+    },
+    {
+      "id": "stochastic",
+      "term": "Stochastic oscillator",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l2",
+      "definition": "A momentum oscillator (0-100) showing where the close sits within the recent high-low range. %K is the raw value, %D is its 3-period average; readings above 80 are overbought and below 20 oversold.",
+      "example": "If the 14-bar range is 40 to 50 and the close is 48, %K is (48 - 40) / (50 - 40) x 100 = 80.",
+      "related": [
+        "rsi",
+        "overbought",
+        "oversold",
+        "momentum"
+      ]
+    },
+    {
+      "id": "stock",
+      "term": "Stock (share)",
+      "aliases": [
+        "share",
+        "equity"
+      ],
+      "category": "markets",
+      "lesson": "m1-l1",
+      "definition": "A share is a unit of ownership in a company. Owning shares gives you a claim on a slice of the company's profits (through dividends) and a vote at shareholder meetings. Its price is set by what other investors will pay, not by the company.",
+      "example": "If a company has 1,000,000 shares and you own 100, you own 0.01% of the business and are entitled to 0.01% of any dividend it pays.",
+      "related": [
+        "market-cap",
+        "dividend",
+        "ipo",
+        "secondary-market"
+      ]
+    },
+    {
+      "id": "stop-order",
+      "term": "Stop order (stop-loss)",
+      "aliases": [
+        "stop",
+        "stop-loss order"
+      ],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "A dormant order that becomes a market order once the price touches the stop level. Sell stops below the market protect long positions; buy stops above it protect shorts or enter breakouts.",
+      "example": "Owning shares at $50 with a sell stop at $47 means a drop to $47 triggers a market sell, limiting the loss to roughly $3 per share.",
+      "related": [
+        "stop-loss",
+        "stop-limit-order",
+        "market-order",
+        "gap"
+      ]
+    },
+    {
+      "id": "stop-limit-order",
+      "term": "Stop-limit order",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "A stop order that becomes a limit order (not a market order) when triggered. It avoids a bad fill in a gap but can leave you with no fill at all if the price races through the limit.",
+      "example": "A sell stop at $47 with a limit at $46.50 will not sell below $46.50; if the stock gaps to $44 the order stays unfilled.",
+      "related": [
+        "stop-order",
+        "limit-order",
+        "gap"
+      ]
+    },
+    {
+      "id": "stop-loss",
+      "term": "Stop-loss",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "A predefined exit price that caps the loss on a trade, placed where the trade idea is proven wrong (below support, below a swing low, or a multiple of ATR away), not at a round dollar amount you can afford.",
+      "example": "Buying a bounce from $48 support, the stop belongs just below support at about $47.40, because a break of $48 invalidates the idea.",
+      "related": [
+        "stop-order",
+        "position-sizing",
+        "risk-reward",
+        "trailing-stop"
+      ]
+    },
+    {
+      "id": "straddle",
+      "term": "Straddle",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "Buying a call and a put at the same strike and expiry, usually at the money. It profits from a large move in either direction and loses to time decay if the stock sits still. Expensive before earnings because IV is high.",
+      "example": "With the stock at $100, buying the $100 call for $4 and the $100 put for $4 costs $8; breakevens are $92 and $108.",
+      "related": [
+        "strangle",
+        "implied-volatility",
+        "vega",
+        "breakeven"
+      ]
+    },
+    {
+      "id": "strangle",
+      "term": "Strangle",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l5",
+      "definition": "Buying an out-of-the-money call and an out-of-the-money put with the same expiry. Cheaper than a straddle but needs a bigger move to profit.",
+      "example": "Stock at $100: buy the $105 call for $2 and the $95 put for $2; cost $4, breakevens $91 and $109.",
+      "related": [
+        "straddle",
+        "out-of-the-money",
+        "iron-condor"
+      ]
+    },
+    {
+      "id": "strike",
+      "term": "Strike price",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l1",
+      "definition": "The fixed price at which an option lets you buy (call) or sell (put) the shares. Strikes are listed at set increments around the current price; the choice of strike sets the trade-off between cost and probability.",
+      "example": "With the stock at $100, the $95 call is in the money, the $100 call at the money and the $110 call out of the money.",
+      "related": [
+        "moneyness",
+        "in-the-money",
+        "out-of-the-money",
+        "option-chain"
+      ]
+    },
+    {
+      "id": "support",
+      "term": "Support",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A price area where falling prices have repeatedly stopped and bounced because buyers step in. Support is a zone, not a line, and once broken it often becomes resistance.",
+      "example": "A stock that bounced from $48-$49 three times has support there; a close at $46 would be a breakdown.",
+      "related": [
+        "resistance",
+        "breakdown",
+        "retest",
+        "pivot-points"
+      ]
+    },
+    {
+      "id": "survivorship-bias",
+      "term": "Survivorship bias",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Testing only on stocks that still exist today, which excludes the ones that went bankrupt or were delisted. The surviving set looks healthier than the real universe a trader faced.",
+      "example": "A \"buy the dip\" strategy tested on today's S&P 500 members never meets the companies the dip took to zero.",
+      "related": [
+        "look-ahead-bias",
+        "backtest",
+        "data-snooping"
+      ]
+    },
+    {
+      "id": "tenkan-kijun",
+      "term": "Tenkan-sen and Kijun-sen",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "The two fastest Ichimoku lines: Tenkan is the midpoint of the last 9 bars' high and low; Kijun is the midpoint of the last 26. Their crossover works like a fast/slow moving-average cross.",
+      "example": "Tenkan crossing above Kijun while price is above the cloud is a strong Ichimoku buy signal.",
+      "related": [
+        "ichimoku",
+        "crossover"
+      ]
+    },
+    {
+      "id": "one-percent-rule",
+      "term": "The 1% rule",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l1",
+      "definition": "Never risk more than about 1% of your account on a single trade (2% at most for small accounts). It makes a string of losses survivable: ten losses in a row costs about 10%, not the account.",
+      "example": "On a $100,000 paper account the 1% rule caps the loss on any one trade at $1,000.",
+      "related": [
+        "position-sizing",
+        "risk-per-trade",
+        "drawdown"
+      ]
+    },
+    {
+      "id": "greeks",
+      "term": "The Greeks",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "Sensitivities that describe how an option's price changes: delta (to the stock price), gamma (to delta), theta (to time), vega (to implied volatility) and rho (to interest rates).",
+      "example": "A call with delta 0.45, theta -0.04 and vega 0.12 gains about $0.45 for a $1 stock rise, loses $0.04 a day and gains $0.12 per 1-point rise in IV.",
+      "related": [
+        "delta",
+        "gamma",
+        "theta",
+        "vega",
+        "rho"
+      ]
+    },
+    {
+      "id": "theta",
+      "term": "Theta",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "How much an option loses per day from the passage of time, all else equal. It is negative for option buyers and positive for sellers, and accelerates in the last weeks before expiry.",
+      "example": "An option with theta -0.05 loses about $5 per contract each day the stock does nothing.",
+      "related": [
+        "time-decay",
+        "greeks",
+        "extrinsic-value"
+      ]
+    },
+    {
+      "id": "three-black-crows",
+      "term": "Three black crows",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "Three consecutive long red candles, each opening within the previous body and closing near its low. The bearish mirror of three white soldiers.",
+      "example": "Closes of 60, 57.5 and 55 on three successive days with small wicks form three black crows.",
+      "related": [
+        "three-white-soldiers",
+        "candle-patterns",
+        "downtrend"
+      ]
+    },
+    {
+      "id": "three-white-soldiers",
+      "term": "Three white soldiers",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l4",
+      "definition": "Three consecutive long green candles, each opening within the previous body and closing near its high. It signals a strong, steady shift to buying after a decline.",
+      "example": "Closes of 42, 44.5 and 47 on three successive days, each with small wicks, form three white soldiers.",
+      "related": [
+        "three-black-crows",
+        "candle-patterns",
+        "uptrend"
+      ]
+    },
+    {
+      "id": "ticker",
+      "term": "Ticker symbol",
+      "aliases": [
+        "symbol"
+      ],
+      "category": "markets",
+      "lesson": "m1-l2",
+      "definition": "The short code that identifies a listed security, usually one to five letters on US exchanges. Every quote, chart and order refers to a ticker.",
+      "example": "AAPL is the ticker for Apple; SPY is the ticker for the largest S&P 500 ETF.",
+      "related": [
+        "exchange",
+        "quote",
+        "etf"
+      ]
+    },
+    {
+      "id": "time-decay",
+      "term": "Time decay",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "The steady loss of an option's extrinsic value as expiry approaches, measured by theta. It is the option seller's income and the option buyer's headwind; a stock that goes nowhere still costs the buyer money.",
+      "example": "An at-the-money option with 30 days left may lose a third of its value in the last 10 days if the stock sits still.",
+      "related": [
+        "theta",
+        "extrinsic-value",
+        "expiration"
+      ]
+    },
+    {
+      "id": "time-in-force",
+      "term": "Time in force (Day / GTC)",
+      "aliases": [],
+      "category": "orders",
+      "lesson": "m1-l4",
+      "definition": "How long an open order stays alive. Day orders are cancelled at the close if unfilled; good-till-cancelled (GTC) orders persist until filled or cancelled (brokers often cap them at 60-90 days).",
+      "example": "A GTC limit buy at $45 placed in January can still fill in March if the stock finally dips there.",
+      "related": [
+        "limit-order",
+        "stop-order"
+      ]
+    },
+    {
+      "id": "timeframe",
+      "term": "Timeframe",
+      "aliases": [
+        "interval"
+      ],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "The period each bar represents: 1 minute, 5 minutes, 1 hour, 1 day and so on. Shorter timeframes show more detail and more noise; longer ones show the trend that short-term traders are swimming in.",
+      "example": "A stock in a clear uptrend on the daily chart can be in a sharp downtrend on the 5-minute chart; the daily trend usually matters more.",
+      "related": [
+        "candlestick",
+        "intraday",
+        "trend",
+        "lookback-period"
+      ]
+    },
+    {
+      "id": "trading-journal",
+      "term": "Trading journal",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l5",
+      "definition": "A record of every trade with the setup, reasoning, emotion, outcome and lesson. Reviewing it is how traders discover that, say, their revenge trades lose and their Tuesday breakouts win.",
+      "example": "The Journal page auto-creates an entry for each paper trade and lets you tag the setup, rate your discipline and note what you learned.",
+      "related": [
+        "trading-plan",
+        "revenge-trading",
+        "expectancy",
+        "weekly-review"
+      ]
+    },
+    {
+      "id": "trading-plan",
+      "term": "Trading plan",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l5",
+      "definition": "A written document stating what you trade, the exact entry and exit rules, how you size positions, the maximum risk per trade and per day, and when you review. Its job is to make decisions before emotions do.",
+      "example": "A plan might read: daily charts of S&P 500 stocks; buy pullbacks to the 20-day SMA in uptrends with ADX > 25; stop 2 ATR; risk 1%; review every Sunday.",
+      "related": [
+        "trading-journal",
+        "one-percent-rule",
+        "strategy",
+        "discipline"
+      ]
+    },
+    {
+      "id": "strategy",
+      "term": "Trading strategy",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l1",
+      "definition": "A complete, written set of rules that says what to trade, exactly when to enter, exactly when to exit (both at a profit and at a loss) and how much to risk. If two people reading it would take different trades, it is not yet a strategy.",
+      "example": "\"Buy when the 20-day SMA crosses above the 50-day, sell when it crosses back, risk 1% per trade\" is a strategy; \"buy strong stocks\" is not.",
+      "related": [
+        "entry-rule",
+        "exit-rule",
+        "backtest",
+        "trading-plan"
+      ]
+    },
+    {
+      "id": "trailing-stop",
+      "term": "Trailing stop",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "A stop-loss that moves up as the price rises (for a long) but never down, locking in gains while letting the trend run. It can trail by a dollar amount, a percentage, an ATR multiple or a moving average.",
+      "example": "A 2-ATR trailing stop on a stock with ATR $1.50 sits $3 below the highest close since entry and rises as new highs print.",
+      "related": [
+        "stop-loss",
+        "atr",
+        "trend-following"
+      ]
+    },
+    {
+      "id": "transaction-costs",
+      "term": "Transaction costs",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l4",
+      "definition": "Everything that leaks from a trade: commissions, the bid-ask spread, slippage, borrow fees and taxes. High-frequency strategies that look great before costs often lose after them.",
+      "example": "A strategy making 0.3% per trade before costs loses money if each round trip costs 0.1% spread, 0.1% slippage and 0.15% commission.",
+      "related": [
+        "commission",
+        "spread",
+        "slippage",
+        "borrow-fee"
+      ]
+    },
+    {
+      "id": "trend",
+      "term": "Trend",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "The general direction of prices over a chosen timeframe. An uptrend makes higher highs and higher lows; a downtrend makes lower highs and lower lows; a range makes neither.",
+      "example": "If the last three swing lows were 40, 43 and 47 and the swing highs 46, 50 and 54, the stock is in an uptrend.",
+      "related": [
+        "uptrend",
+        "downtrend",
+        "higher-high",
+        "trend-line",
+        "trend-following"
+      ]
+    },
+    {
+      "id": "trend-following",
+      "term": "Trend following",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m3-l1",
+      "definition": "Strategies that buy strength and sell weakness, aiming to catch a few large moves while taking many small losses. They lose in ranges and win in sustained trends.",
+      "example": "Buying the 20/50 SMA golden cross and holding until the death cross is a pure trend-following rule.",
+      "related": [
+        "sma-crossover",
+        "breakout-strategy",
+        "mean-reversion",
+        "whipsaw"
+      ]
+    },
+    {
+      "id": "trend-line",
+      "term": "Trend line",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l3",
+      "definition": "A straight line drawn under the swing lows of an uptrend or over the swing highs of a downtrend. The more times price touches and respects it, the more traders watch it; a break of the line is an early trend warning.",
+      "example": "Connecting swing lows at 40, 43 and 47 gives a rising trend line; a close well below it after a long run suggests the uptrend is tiring.",
+      "related": [
+        "trend",
+        "channel",
+        "support"
+      ]
+    },
+    {
+      "id": "triangle",
+      "term": "Triangle",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l5",
+      "definition": "A consolidation where the swings get smaller, forming converging trend lines. Ascending and descending triangles usually break in the direction of the flat side; symmetrical triangles continue the prior trend more often than not.",
+      "example": "Lows rising from 45 to 48 while highs stay flat at 50 form an ascending triangle; a break above 50 is the signal.",
+      "related": [
+        "chart-patterns",
+        "flag",
+        "breakout",
+        "bollinger-squeeze"
+      ]
+    },
+    {
+      "id": "unrealized-pnl",
+      "term": "Unrealized P&L",
+      "aliases": [
+        "open P&L",
+        "paper gain"
+      ],
+      "category": "portfolio",
+      "lesson": "m4-l5",
+      "definition": "The paper gain or loss on positions you still hold, which changes with every price tick. It is not yours until you close the trade, and it is where most emotional mistakes happen.",
+      "example": "100 shares bought at $50 trading at $47 show an unrealized loss of $300; nothing is locked in until you sell.",
+      "related": [
+        "realized-pnl",
+        "mark-to-market",
+        "loss-aversion"
+      ]
+    },
+    {
+      "id": "uptrend",
+      "term": "Uptrend",
+      "aliases": [
+        "bull trend"
+      ],
+      "category": "charts",
+      "lesson": "m2-l2",
+      "definition": "A sequence of higher swing highs and higher swing lows. Trend followers buy pullbacks in an uptrend and stay in until the pattern breaks.",
+      "example": "A moving average rising with the price above it is the simplest picture of an uptrend.",
+      "related": [
+        "trend",
+        "downtrend",
+        "higher-high",
+        "pullback"
+      ]
+    },
+    {
+      "id": "vega",
+      "term": "Vega",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l3",
+      "definition": "How much an option's price changes for a one-percentage-point change in implied volatility. Long options have positive vega (they gain when fear rises); short options lose.",
+      "example": "A call with vega 0.15 gains $0.15 per share ($15 per contract) if IV rises from 30% to 31%.",
+      "related": [
+        "implied-volatility",
+        "greeks",
+        "straddle"
+      ]
+    },
+    {
+      "id": "vertical-spread",
+      "term": "Vertical spread",
+      "aliases": [],
+      "category": "options",
+      "lesson": "m5-l4",
+      "definition": "Buying one option and selling another of the same type and expiry at a different strike. The sold option reduces cost and caps profit; both risk and reward are known in advance.",
+      "example": "Buying the $50 call for $3 and selling the $55 call for $1 creates a bull call spread costing $2 with a maximum gain of $3.",
+      "related": [
+        "bull-call-spread",
+        "bear-put-spread",
+        "defined-risk"
+      ]
+    },
+    {
+      "id": "volatility",
+      "term": "Volatility",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l5",
+      "definition": "How much and how fast a price moves, usually measured as the standard deviation of returns. High volatility means bigger swings in both directions, larger potential gains and larger potential losses.",
+      "example": "A stock that routinely moves 4% a day is far more volatile than one that moves 0.5%, so the same dollar risk requires a smaller position.",
+      "related": [
+        "atr",
+        "implied-volatility",
+        "historical-volatility",
+        "position-sizing"
+      ]
+    },
+    {
+      "id": "volume",
+      "term": "Volume",
+      "aliases": [],
+      "category": "markets",
+      "lesson": "m1-l3",
+      "definition": "The number of shares traded over a period, shown as bars under a price chart. High volume means many participants agree a move matters; low volume moves are easier to reverse.",
+      "example": "A breakout above resistance on three times average volume is more trustworthy than one on half the usual volume.",
+      "related": [
+        "liquidity",
+        "volume-confirmation",
+        "obv"
+      ]
+    },
+    {
+      "id": "volume-confirmation",
+      "term": "Volume confirmation",
+      "aliases": [],
+      "category": "charts",
+      "lesson": "m2-l3",
+      "definition": "The principle that a price move accompanied by above-average volume is more meaningful than the same move on light volume. Breakouts and reversals are more reliable when volume agrees.",
+      "example": "A breakout on 2.5x average volume is confirmed; one on 0.6x average volume is suspect and often fails.",
+      "related": [
+        "volume",
+        "breakout",
+        "false-breakout",
+        "obv"
+      ]
+    },
+    {
+      "id": "vwap",
+      "term": "Volume-weighted average price (VWAP)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l4",
+      "definition": "The average price of the day so far, weighted by the volume at each price. Institutions benchmark fills against it; intraday traders treat price above VWAP as bullish and below as bearish. It resets every session.",
+      "example": "If 1,000 shares traded at 50 and 3,000 at 52, VWAP is (50x1000 + 52x3000) / 4000 = 51.50.",
+      "related": [
+        "volume",
+        "intraday",
+        "moving-average"
+      ]
+    },
+    {
+      "id": "walk-forward",
+      "term": "Walk-forward testing",
+      "aliases": [],
+      "category": "strategy",
+      "lesson": "m6-l3",
+      "definition": "Repeatedly optimising on one window of data and testing on the next, rolling forward through history. It simulates how you would actually have re-tuned over time and exposes fragile parameters.",
+      "example": "Optimise on 2016-2018, test 2019; optimise on 2017-2019, test 2020; and so on. The stitched test results are the honest record.",
+      "related": [
+        "in-sample",
+        "out-of-sample",
+        "parameter-optimization"
+      ]
+    },
+    {
+      "id": "weekly-review",
+      "term": "Weekly review",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l5",
+      "definition": "A fixed appointment to go through the journal: which setups made money, which rules were broken, what the equity curve did and what one thing to change next week. Consistency matters more than depth.",
+      "example": "A Sunday review that finds four of five rule-breaking trades lost money is worth more than any new indicator.",
+      "related": [
+        "trading-journal",
+        "trading-plan"
+      ]
+    },
+    {
+      "id": "wma",
+      "term": "Weighted moving average (WMA)",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "A moving average that gives the most recent close weight N, the one before N-1, and so on down to 1. It sits between the SMA and EMA in responsiveness.",
+      "example": "A 3-period WMA of closes 10, 11, 12 is (10x1 + 11x2 + 12x3) / 6 = 11.33.",
+      "related": [
+        "sma",
+        "ema",
+        "moving-average"
+      ]
+    },
+    {
+      "id": "whipsaw",
+      "term": "Whipsaw",
+      "aliases": [],
+      "category": "indicators",
+      "lesson": "m3-l1",
+      "definition": "A signal that reverses almost immediately, so you buy, get stopped out, and the price goes back where it was. Trend-following rules whipsaw in sideways markets; the only cures are filters (such as ADX) or accepting the losses as the cost of catching trends.",
+      "example": "The 20/50 SMA cross flips bullish, bearish and bullish again within three weeks of a range: three small losses.",
+      "related": [
+        "crossover",
+        "range",
+        "adx",
+        "false-breakout"
+      ]
+    },
+    {
+      "id": "wick",
+      "term": "Wick (shadow)",
+      "aliases": [
+        "shadow",
+        "tail"
+      ],
+      "category": "charts",
+      "lesson": "m2-l1",
+      "definition": "The thin lines above and below a candle body, showing the high and low of the period. Long wicks mean the price went there and was rejected.",
+      "example": "A candle with a long upper wick and small body near the low means buyers pushed prices up during the session but sellers won by the close.",
+      "related": [
+        "candlestick",
+        "candle-body",
+        "shooting-star",
+        "hammer"
+      ]
+    },
+    {
+      "id": "win-rate",
+      "term": "Win rate",
+      "aliases": [],
+      "category": "risk",
+      "lesson": "m4-l2",
+      "definition": "The percentage of trades that close at a profit. On its own it says little: a 90% win rate with occasional huge losses can lose money, and a 35% win rate with big winners can be very profitable.",
+      "example": "14 winning trades out of 40 is a 35% win rate.",
+      "related": [
+        "expectancy",
+        "average-win-loss",
+        "profit-factor"
+      ]
+    }
+  ]
+}

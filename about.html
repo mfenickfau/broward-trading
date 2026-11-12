@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Broward Trading is a free educational paper-trading and technical-analysis simulator built for Broward College students and anyone learning how markets work. No real money, no real orders.">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#0f1319">
@@ -24,21 +24,10 @@
 </style>
 </head>
 <body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
 <div class="page">
 
-<nav class="topnav" aria-label="Main">
-  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
-  <div class="links">
-    <a href="index.html">Dashboard</a>
-    <a href="learn.html">Learn</a>
-    <a href="portfolio.html">Portfolio</a>
-    <a href="backtest.html">Backtest</a>
-    <a href="about.html" class="active" aria-current="page">About</a>
-  </div>
-  <div class="right">
-    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
-  </div>
-</nav>
 
   <!-- ============================ HERO ============================ -->
   <header class="hero about-hero" style="border-bottom:0">
@@ -315,44 +304,8 @@
     </div>
   </section>
 
-  <footer class="footer disclaimer-footer">
-  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
-  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
-</footer>
+  <div id="footer"></div>
 </div>
 
-<script>
-(function(){
-  'use strict';
-  // Theme toggle: remembers an explicit choice in localStorage ('bt.theme'); otherwise follows the OS.
-  var root = document.documentElement;
-  var btn = document.getElementById('themeToggle');
-  function stored(){ try { return localStorage.getItem('bt.theme') || ''; } catch (e) { return ''; } }
-  function apply(t){
-    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
-    var isLight = t === 'light' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-    if (btn) btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', isLight ? '#f3f5f8' : '#0f1319');
-  }
-  apply(stored());
-  if (btn) btn.addEventListener('click', function(){
-    var cur = root.getAttribute('data-theme');
-    var osLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    var effective = cur || (osLight ? 'light' : 'dark');
-    var next = effective === 'light' ? 'dark' : 'light';
-    try { localStorage.setItem('bt.theme', next); } catch (e) { /* storage unavailable: still toggle for this view */ }
-    apply(next);
-  });
-  // Mark the current page in the nav even if this file is copied under another name.
-  var here = location.pathname.split('/').pop() || 'index.html';
-  document.querySelectorAll('.topnav .links a').forEach(function(a){
-    var target = (a.getAttribute('href') || '').split('#')[0];
-    var on = target === here;
-    a.classList.toggle('active', on);
-    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
-})();
-</script>
 </body>
 </html>

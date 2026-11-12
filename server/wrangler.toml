@@ -1,0 +1,129 @@
+# Broward Trading — membership API (Cloudflare Worker)
+# Deploy from the server/ folder:  npx wrangler deploy
+# Step-by-step for non-developers: ../docs/MEMBERSHIP_SETUP.md
+
+name = "broward-trading-api"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+# ---------------------------------------------------------------------------
+# Public, non-secret settings. Edit these.
+# ---------------------------------------------------------------------------
+[vars]
+# Where the static site lives (no trailing slash). Magic links and Stripe
+# redirect back here. For GitHub Pages this is https://<user>.github.io/broward-trading
+SITE_URL = "https://YOUR-USER.github.io/broward-trading"
+# Comma-separated list of origins allowed to call the API from a browser.
+# Include http://localhost:8080 while testing locally; remove it for production.
+ALLOWED_ORIGINS = "https://YOUR-USER.github.io,http://localhost:8080"
+# Sender for magic-link emails. Must be on a domain verified in Resend;
+# "onboarding@resend.dev" only delivers to your own Resend account email.
+EMAIL_FROM = "Broward Trading <sign-in@YOUR-DOMAIN.com>"
+# "true" makes POST /certificates require an active Pro membership.
+# Keep "false" while everything is free (any signed-in student gets a verified id).
+CERT_REQUIRE_PRO = "false"
+# "true" returns error details in responses. Keep "false" in production.
+DEBUG = "false"
+
+# ---------------------------------------------------------------------------
+# KV namespaces. Create each one with:
+#   npx wrangler kv namespace create MEMBERS
+#   npx wrangler kv namespace create CERTS
+#   npx wrangler kv namespace create TOKENS
+#   npx wrangler kv namespace create LEADERBOARD
+# and paste the printed id into the matching block below.
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "MEMBERS"
+id = "PASTE_MEMBERS_ID"
+
+[[kv_namespaces]]
+binding = "CERTS"
+id = "PASTE_CERTS_ID"
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "PASTE_TOKENS_ID"
+
+[[kv_namespaces]]
+binding = "LEADERBOARD"
+id = "PASTE_LEADERBOARD_ID"
+
+# ---------------------------------------------------------------------------
+# Secrets are NEVER written in this file. Set each one with
+#   npx wrangler secret put NAME
+# and paste the value when prompted:
+#   HMAC_SECRET            long random string (openssl rand -hex 32)
+#   RESEND_API_KEY         from resend.com → API Keys
+#   STRIPE_SECRET_KEY      sk_live_… or sk_test_… from Stripe → Developers → API keys
+#   STRIPE_WEBHOOK_SECRET  whsec_… from the webhook endpoint you create in Stripe
+#   STRIPE_PRICE_MONTHLY   price_… id of the monthly Price
+#   STRIPE_PRICE_ANNUAL    price_… id of the annual Price
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# OPTIONAL hardening. The Worker runs unchanged without these (it falls back
+# to KV). Uncomment once the basics work.
+#
+# 1. Durable Object lock so a magic link can be claimed exactly once even when
+#    two clicks land on different edges within a second (KV alone has a small
+#    race window). Requires a paid-plan-free SQLite-backed DO (free tier OK).
+# ---------------------------------------------------------------------------
+# [[durable_objects.bindings]]
+# name = "MAGIC_LOCK"
+# class_name = "MagicLock"
+#
+# [[migrations]]
+# tag = "v1"
+# new_sqlite_classes = ["MagicLock"]
+
+# ---------------------------------------------------------------------------
+# 2. Workers Rate Limiting bindings: atomic per-edge counters instead of the
+#    sharded KV counters. Binding name = RL_<BUCKET>; namespace_id is any
+#    integer unique within this Worker. Limits mirror the KV defaults.
+# ---------------------------------------------------------------------------
+# [[unsafe.bindings]]
+# name = "RL_MAGIC"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 5, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_MAGIC_EMAIL"
+# type = "ratelimit"
+# namespace_id = "1002"
+# simple = { limit = 3, period = 600 }
+#
+# [[unsafe.bindings]]
+# name = "RL_EXCHANGE"
+# type = "ratelimit"
+# namespace_id = "1003"
+# simple = { limit = 20, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_CERT"
+# type = "ratelimit"
+# namespace_id = "1004"
+# simple = { limit = 10, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_VERIFY"
+# type = "ratelimit"
+# namespace_id = "1005"
+# simple = { limit = 60, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_LB"
+# type = "ratelimit"
+# namespace_id = "1006"
+# simple = { limit = 20, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_LB_READ"
+# type = "ratelimit"
+# namespace_id = "1007"
+# simple = { limit = 120, period = 60 }
+
+[observability]
+enabled = true

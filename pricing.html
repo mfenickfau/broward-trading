@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Broward Trading is free: the simulator, the course and the certificate. Pro is a planned membership that adds a verified certificate, instructor tools, lesson PDFs and priority support. See what is included and what is coming.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Pro — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and fonts come from css/style.css tokens */
+  .pr{max-width:1000px}
+  .pr-head{padding-block:var(--sp-5) var(--sp-3);border-bottom:0}
+  .pr-head h1{margin:0 0 6px;font-size:var(--fs-2xl);line-height:1.15}
+  .pr-head .lede{margin:0;color:var(--muted);font-size:var(--fs-md);max-width:60ch}
+  .pr-head .pills{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 var(--sp-3)}
+
+  /* phone first: every control is at least 44px tall */
+  .pr button,.pr input:not([type=checkbox]),.pr .btn{min-height:44px}
+  .pr button.sm{min-height:36px}
+
+  /* account card */
+  .acct{display:grid;gap:var(--sp-3)}
+  .acct .who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+  .acct .who .email{font-family:var(--mono);font-size:var(--fs-sm);overflow-wrap:anywhere}
+  .acct form{display:grid;gap:8px}
+  .acct .input-group{display:flex;gap:0}
+  .acct .input-group input{flex:1;min-width:0;border-radius:var(--r) 0 0 var(--r);font-size:var(--fs-md)}
+  .acct .input-group button{border-radius:0 var(--r) var(--r) 0;white-space:nowrap}
+  @media (max-width:420px){ .acct .input-group{flex-direction:column} .acct .input-group input,.acct .input-group button{border-radius:var(--r)} }
+  .acct .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* billing toggle */
+  .billing{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin:var(--sp-4) 0 var(--sp-3)}
+  .billing .btn-group{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:360px}
+  .billing .btn-group button{padding:10px 12px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
+  .billing .btn-group button small{font-weight:400;font-size:var(--fs-xs);opacity:.85}
+  .billing .note{color:var(--muted);font-size:var(--fs-sm)}
+
+  /* plans */
+  .plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3);align-items:stretch}
+  @media (max-width:640px){ .plans{grid-template-columns:1fr} }
+  .plan{position:relative}
+  .plan h3{margin:0;font-size:var(--fs-lg);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .plan .price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .plan .price .was{font-size:var(--fs-sm);color:var(--muted);text-decoration:line-through;font-weight:400}
+  .plan .fine{color:var(--muted);font-size:var(--fs-sm);margin:0}
+  .plan ul li{display:flex;gap:8px;align-items:flex-start;line-height:1.4}
+  .plan ul li::before{flex:0 0 auto}
+  .plan ul li .soon{margin-left:auto;flex:0 0 auto}
+  .pill.soon{color:var(--warn-text,var(--warn));border-color:var(--warn)}
+  .pill.planned{color:var(--purple);border-color:var(--purple)}
+
+  /* comparison */
+  .cmp{display:grid;grid-template-columns:1fr 64px 64px;gap:0;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--panel)}
+  .cmp > div{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;min-height:44px;font-size:var(--fs-sm)}
+  .cmp > div:nth-last-child(-n+3){border-bottom:0}
+  .cmp .h{background:var(--panel2);text-transform:uppercase;letter-spacing:.5px;font-size:var(--fs-xs);color:var(--muted);font-weight:500}
+  .cmp .c{justify-content:center;font-family:var(--mono);border-left:1px solid var(--line)}
+  .cmp .yes{color:var(--up)} .cmp .no{color:var(--faint)} .cmp .partial{color:var(--warn)}
+  .cmp .f{flex-direction:column;align-items:flex-start;gap:2px}
+  .cmp .f small{color:var(--muted)}
+  .cmp .group{grid-column:1 / -1;background:var(--panel2);color:var(--fg);font-weight:500;min-height:36px;padding-block:6px}
+
+  /* faq */
+  .faq details{padding:0}
+  .faq details summary{padding:12px 14px;min-height:48px;color:var(--fg);font-weight:500}
+  .faq details > *:not(summary){margin:0;padding:0 14px 14px;color:var(--muted);line-height:1.55}
+  .faq details > p + p{padding-top:0}
+
+  .legal{color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .legal h2{margin-top:0}
+  section.card{margin-top:var(--sp-4)}
+  .section-title{margin:var(--sp-5) 0 var(--sp-2);font-size:var(--fs-lg)}
+  .section-title + p{margin:0 0 var(--sp-3);color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page pr">
+  <header class="pr-head">
+    <div class="pills"><span class="pill up"><span class="dot"></span>Everything is free today</span><span class="pill planned">Pro: planned</span></div>
+    <h1>Free for every student. Pro, when it arrives, pays for proof and people.</h1>
+    <p class="lede">The simulator, the full course, the quizzes and your completion certificate are free and stay free. The Pro membership below is a plan, not a product you can buy yet. Prices are placeholders until payments go live.</p>
+  </header>
+
+  <!-- Account / sign-in -->
+  <section class="card pad acct" id="account" aria-labelledby="acctTitle">
+    <h2 id="acctTitle">Account <span class="pill" id="acctPill">signed out</span></h2>
+    <div id="acctBody"><!-- rendered by script --></div>
+  </section>
+
+  <!-- Billing toggle + plans -->
+  <h2 class="section-title">Plans</h2>
+  <p>Choose how you would pay once Pro launches. The toggle only changes the planned price shown.</p>
+  <div class="billing">
+    <div class="btn-group" role="radiogroup" aria-label="Billing period">
+      <button type="button" role="radio" aria-checked="true" class="on" data-period="monthly" id="perMonthly">Monthly <small id="perMonthlyPrice">$9 / month</small></button>
+      <button type="button" role="radio" aria-checked="false" data-period="annual" id="perAnnual">Annual <small id="perAnnualPrice">$79 / year · save 27%</small></button>
+    </div>
+    <span class="note" id="billingNote">Planned prices in USD. Nothing is charged today.</span>
+  </div>
+
+  <div class="plans">
+    <div class="card pad plan" id="planFree">
+      <h3>Free <span class="pill up">current</span></h3>
+      <div class="price num">$0 <small>forever</small></div>
+      <p class="fine">No account needed. Everything runs in your browser; your progress and paper account live on your device.</p>
+      <ul>
+        <li>Dashboard with 20+ indicators, drawings and the composite signal</li>
+        <li>Paper trading: stocks, options chain, limit and stop orders</li>
+        <li>Market Replay, backtester, journal, compare, glossary and flashcards</li>
+        <li>The full course: all modules, every quiz</li>
+        <li>Self-issued completion certificate (PNG), downloadable</li>
+        <li>Live prices with your own free data-provider key</li>
+        <li>Community support via the public issue tracker</li>
+      </ul>
+      <div class="cta"><a class="btn" href="learn.html" style="display:flex;align-items:center;justify-content:center">Start the course</a></div>
+    </div>
+
+    <div class="card pad plan accent" id="planPro">
+      <h3>Pro <span class="pill planned">planned</span></h3>
+      <div class="price num"><span id="proPrice">$9</span> <small id="proPer">/ month</small></div>
+      <p class="fine" id="proFine">Placeholder price. The final amount is set when payments launch and will be shown here before anything is charged.</p>
+      <ul>
+        <li>Everything in Free, always</li>
+        <li>Verified certificate with a public verification link <span class="pill soon">coming soon</span></li>
+        <li>Instructor dashboard and opt-in classroom leaderboard <span class="pill soon">coming soon</span></li>
+        <li>Downloadable lesson PDFs for offline study <span class="pill soon">coming soon</span></li>
+        <li>Priority support by email <span class="pill soon">coming soon</span></li>
+        <li>Cloud sync of progress and paper account across devices <span class="pill soon">planned</span></li>
+      </ul>
+      <div class="cta">
+        <button type="button" class="primary" id="btnUpgrade" style="width:100%">Upgrade to Pro</button>
+        <p class="fine" id="upgradeHint" style="margin-top:8px"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <h2 class="section-title">What is included</h2>
+  <p>Honest status for every feature. "Soon" means it is designed and on the roadmap but not built; "planned" means it is a goal, not a promise.</p>
+  <div class="cmp" role="table" aria-label="Free versus Pro comparison">
+    <div class="h" role="columnheader">Feature</div><div class="h c" role="columnheader">Free</div><div class="h c" role="columnheader">Pro</div>
+
+    <div class="group">Learning</div>
+    <div class="f">Full course and every quiz<small>8 modules including Replay drills and the Capstone</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Glossary, flashcards, Daily 5</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Self-issued certificate<small>PNG drawn in your browser, id starts BT-YYYY-L…</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Verified certificate<small>Stored on our server, checkable at verify.html</small></div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
+    <div class="f">Lesson PDFs</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
+
+    <div class="group">Trading tools</div>
+    <div class="f">Dashboard, indicators, signals, drawings</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Paper account, options lab, alerts, journal</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Market Replay and backtester</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Live data<small>Bring your own free API key (Twelve Data, Finnhub, Alpha Vantage)</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Cloud sync across devices</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="planned">planned</div>
+
+    <div class="group">Classrooms</div>
+    <div class="f">Opt-in leaderboard by class code<small>Nicknames only, no emails shown</small></div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
+    <div class="f">Instructor dashboard</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
+
+    <div class="group">Support</div>
+    <div class="f">Public issue tracker</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
+    <div class="f">Priority email support</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
+  </div>
+
+  <!-- FAQ -->
+  <h2 class="section-title">Questions</h2>
+  <div class="faq">
+    <details>
+      <summary>Is anything locked behind Pro right now?</summary>
+      <p>No. Every page, lesson, quiz and tool is free and works without an account. The code is open source under the MIT licence. If we ever add Pro-only lessons they will be new material, not things you can use today.</p>
+    </details>
+    <details>
+      <summary>Why would I pay, then?</summary>
+      <p>For proof and people. A verified certificate is one an employer, scholarship committee or transfer office can check on this site by id. Instructor tools let a class run a leaderboard and see progress. Priority support means a human answers. The membership also pays the hosting and email bills.</p>
+    </details>
+    <details>
+      <summary>What is the difference between a self-issued and a verified certificate?</summary>
+      <p>Both show the same course and the same requirements (every lesson done, 80% quiz average per module). A <b>self-issued</b> certificate is drawn in your browser from progress saved on your device; anyone could edit that storage, so it is proof for you, not for others. Its id starts with <span class="num">BT-YYYY-L</span>. A <b>verified</b> certificate is issued by our server to a signed-in account and anyone can look it up on the <a href="verify.html">Verify page</a>.</p>
+    </details>
+    <details>
+      <summary>How does sign-in work? Do I need a password?</summary>
+      <p>No passwords. You enter your email and we send a link that signs you in on that device for 30 days. The link expires after 15 minutes and works once. We store your email, whether you are a member, and the names on your certificates; nothing else.</p>
+    </details>
+    <details>
+      <summary>Can I cancel? Can I get a refund?</summary>
+      <p>Planned policy: cancel any time from the billing portal and keep access until the end of the period you paid for. Full refund within 14 days of your first payment if you have not issued a verified certificate. Once payments launch, the final policy will be published here before the first charge.</p>
+    </details>
+    <details>
+      <summary>Is Pro connected to any school?</summary>
+      <p>No. Broward Trading is an independent educational project and is not affiliated with Broward College or any institution. Instructors may use the free tools in class; the planned classroom features are opt-in and use nicknames rather than names.</p>
+    </details>
+    <details>
+      <summary>Will Pro give me better signals or make me money?</summary>
+      <p>No. Pro changes nothing about the indicators or the simulator. Signals describe what indicators say right now, not what will happen next. No tier of this site is investment advice, and no real orders are ever placed.</p>
+    </details>
+  </div>
+
+  <!-- Legal -->
+  <section class="card pad legal" aria-labelledby="legalTitle">
+    <h2 id="legalTitle">Refunds, billing and disclaimer</h2>
+    <p><b>Billing (planned).</b> Pro would be a recurring subscription billed monthly or yearly through Stripe. You would see the exact price, currency and renewal date on the checkout page before confirming. Cancelling stops future charges; access continues to the end of the paid period.</p>
+    <p><b>Refunds (planned).</b> Full refund within 14 days of the first payment on request, provided no verified certificate has been issued on the account. Renewals are refundable within 7 days if the account was not used in that period. Requests go to the support address shown after sign-in.</p>
+    <p><b>Certificates.</b> A certificate, verified or self-issued, recognises completion of a free online course. It is not a licence, qualification, or endorsement of any kind and does not certify competence to trade or advise.</p>
+    <p><b>Disclaimer.</b> Broward Trading is a free educational simulator. No real orders are placed and no money changes hands in the simulator. Demo prices are generated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test and replay results, does not predict future results. Nothing on this site is investment, tax or legal advice.</p>
+  </section>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.BT.auth;
+  var nav = window.BT.nav || {};
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(msg, kind, title) { if (nav.toast) nav.toast(msg, kind, title); }
+  var cfg = A.config || {};
+  var prices = cfg.prices || { monthly: 9, annual: 79, currency: 'USD' };
+  var period = 'monthly';
+  try { period = localStorage.getItem('bt.pricing.period') === 'annual' ? 'annual' : 'monthly'; } catch (e) { /* ignore */ }
+
+  function money(n) { return '$' + (Math.round(n * 100) / 100).toString().replace(/\.0+$/, ''); }
+  function savePct() { return Math.max(0, Math.round((1 - prices.annual / (prices.monthly * 12)) * 100)); }
+
+  /* ---------------- billing toggle ---------------- */
+  function renderPeriod() {
+    $('perMonthlyPrice').textContent = money(prices.monthly) + ' / month';
+    $('perAnnualPrice').textContent = money(prices.annual) + ' / year · save ' + savePct() + '%';
+    [$('perMonthly'), $('perAnnual')].forEach(function (b) {
+      var on = b.dataset.period === period;
+      b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    if (period === 'annual') {
+      $('proPrice').textContent = money(prices.annual);
+      $('proPer').textContent = '/ year';
+      $('proFine').textContent = 'Placeholder price: about ' + money(prices.annual / 12) + ' per month, billed once a year. The final amount is set when payments launch and will be shown here before anything is charged.';
+    } else {
+      $('proPrice').textContent = money(prices.monthly);
+      $('proPer').textContent = '/ month';
+      $('proFine').textContent = 'Placeholder price. The final amount is set when payments launch and will be shown here before anything is charged.';
+    }
+    $('billingNote').textContent = 'Planned prices in ' + (prices.currency || 'USD') + '. Nothing is charged today.';
+  }
+  [$('perMonthly'), $('perAnnual')].forEach(function (b) {
+    b.addEventListener('click', function () {
+      period = b.dataset.period;
+      try { localStorage.setItem('bt.pricing.period', period); } catch (e) { /* ignore */ }
+      renderPeriod();
+    });
+  });
+
+  /* ---------------- account card ---------------- */
+  var busy = false;
+  function renderAccount() {
+    var body = $('acctBody'), pill = $('acctPill'), s = A.session();
+    var up = $('btnUpgrade'), hint = $('upgradeHint');
+    if (!A.configured()) {
+      pill.textContent = 'not configured'; pill.className = 'pill demo';
+      body.innerHTML =
+        '<div class="callout warn compact"><span class="title">Backend not configured yet</span>' +
+        'Sign-in and payments need the optional membership server. Until a site owner deploys it, there is nothing to sign in to — and nothing to miss, because everything here is free. ' +
+        'Owners: see <code>docs/MEMBERSHIP_SETUP.md</code>.</div>' +
+        '<form id="signinForm" novalidate>' +
+          '<label for="email" class="muted" style="font-size:var(--fs-sm)">Email sign-in (preview of the form)</label>' +
+          '<div class="input-group"><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.edu" disabled aria-disabled="true"><button type="submit" disabled>Send sign-in link</button></div>' +
+        '</form>' +
+        '<p class="muted" style="margin:0;font-size:var(--fs-sm)">Your course progress, paper account and self-issued certificate are saved on this device and need no account.</p>';
+      up.disabled = true; up.textContent = 'Upgrade to Pro (not available yet)';
+      hint.textContent = 'Payments are not switched on. This button will open Stripe Checkout once the backend is configured.';
+      return;
+    }
+    if (s) {
+      pill.textContent = s.pro ? 'pro' : 'free account'; pill.className = 'pill ' + (s.pro ? 'accent' : 'solid');
+      body.innerHTML =
+        '<div class="who"><span class="pill ' + (s.pro ? 'accent' : '') + '">' + (s.pro ? 'Pro member' : 'Signed in') + '</span><span class="email">' + esc(s.email) + '</span></div>' +
+        (s.pro && s.proUntil ? '<p class="muted" style="margin:0;font-size:var(--fs-sm)">Membership renews or ends ' + esc(new Date(s.proUntil).toLocaleDateString()) + '.</p>' : '') +
+        '<p class="muted" style="margin:0;font-size:var(--fs-sm)">Signed in on this device until ' + esc(new Date(s.expires).toLocaleDateString()) + '. ' +
+        (s.pro ? 'Your certificate on the <a href="learn.html#/certificate">Learn page</a> is issued as verified.' : 'Finish the course and your certificate is stored on the server, so anyone can check it on the <a href="verify.html">Verify page</a>.') + '</p>' +
+        '<div class="actions"><button type="button" id="btnRefresh">Refresh status</button><button type="button" class="ghost" id="btnSignOut">Sign out</button></div>';
+      $('btnSignOut').addEventListener('click', function () { A.signOut().then(function () { toast('Signed out on this device.', 'ok'); renderAccount(); }); });
+      $('btnRefresh').addEventListener('click', function () { A.refresh().then(function () { toast('Status refreshed.', 'ok'); renderAccount(); }); });
+      if (s.pro) { up.disabled = true; up.textContent = 'You are a Pro member'; hint.textContent = 'Thank you for supporting free trading education.'; }
+      else { up.disabled = false; up.textContent = 'Upgrade to Pro'; hint.textContent = 'Opens Stripe Checkout for the ' + period + ' plan. You will see the exact price before paying.'; }
+      return;
+    }
+    pill.textContent = 'signed out'; pill.className = 'pill';
+    var pending = null; try { pending = JSON.parse(localStorage.getItem('bt.auth.pending') || 'null'); } catch (e) { /* ignore */ }
+    body.innerHTML =
+      '<p class="muted" style="margin:0">Sign in with your email to issue verified certificates and, once Pro launches, to upgrade. No password: we email you a link.</p>' +
+      '<form id="signinForm" novalidate>' +
+        '<label for="email" style="font-weight:500">Email</label>' +
+        '<div class="input-group"><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.edu" required value="' + esc(pending && pending.email || '') + '"><button type="submit" class="primary" id="btnSend">Send sign-in link</button></div>' +
+        '<div class="msg" id="signinMsg" role="status" aria-live="polite"></div>' +
+      '</form>' +
+      '<p class="muted" style="margin:0;font-size:var(--fs-sm)">The link expires in 15 minutes and signs you in on this device for 30 days. We store your email and membership status only.</p>';
+    $('signinForm').addEventListener('submit', onSignIn);
+    up.disabled = true; up.textContent = 'Sign in to upgrade';
+    hint.textContent = 'Pro is planned. Signing in now only creates a free account.';
+  }
+  function onSignIn(ev) {
+    ev.preventDefault();
+    if (busy) return;
+    var input = $('email'), msg = $('signinMsg'), btn = $('btnSend');
+    var email = input.value.trim();
+    msg.className = 'msg'; msg.textContent = '';
+    if (!A.isEmail(email)) { msg.className = 'msg err'; msg.textContent = 'Enter a valid email address.'; input.focus(); return; }
+    busy = true; btn.disabled = true; btn.textContent = 'Sending…';
+    A.signIn(email).then(function (r) {
+      busy = false; btn.disabled = false; btn.textContent = 'Send sign-in link';
+      if (r.sent) { msg.className = 'msg ok'; msg.textContent = r.message; toast('Sign-in link sent to ' + email, 'ok'); }
+      else if (r.notConfigured) { msg.className = 'msg'; msg.textContent = r.message; }
+      else { msg.className = 'msg err'; msg.textContent = r.error || 'Could not send the link.'; }
+    });
+  }
+  $('btnUpgrade').addEventListener('click', function () {
+    if (busy) return;
+    var up = $('btnUpgrade'); busy = true; up.disabled = true; up.textContent = 'Opening checkout…';
+    A.checkout(period).then(function (r) {
+      busy = false;
+      if (!r.ok) { up.disabled = false; up.textContent = 'Upgrade to Pro'; toast(r.error || r.message || 'Checkout is not available yet.', 'warn'); }
+    });
+  });
+
+  /* ---------------- boot ---------------- */
+  renderPeriod();
+  renderAccount();
+  A.handleCallback().then(function (r) {
+    if (!r.handled) return;
+    if (r.error) toast(r.error, (r.reason === 'wrong-account' || r.reason === 'declined' || r.reason === 'unconfirmed') ? 'warn' : 'err', r.reason === 'wrong-account' ? 'Sign-in refused' : r.reason === 'declined' ? 'Sign-in cancelled' : 'Sign-in');
+    else if (r.signedIn) toast('Signed in as ' + (r.session && r.session.email), 'ok', 'Welcome');
+    if (r.checkout === 'success') toast('Payment received. Your membership is active as soon as Stripe confirms it (usually seconds). Use "Refresh status" if the badge has not changed.', 'ok', 'Thank you', 8000);
+    else if (r.checkout === 'cancel') toast('Checkout cancelled. Nothing was charged.', 'warn');
+    renderAccount();
+  });
+  if (A.configured() && A.session()) A.refresh().then(renderAccount);
+  window.addEventListener('bt:auth', renderAccount);
+})();
+</script>
+</body>
+</html>

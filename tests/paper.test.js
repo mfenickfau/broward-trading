@@ -728,5 +728,110 @@ test('describeOrder and glossary give human-readable copy', () => {
   assert.strictEqual(P.money(-1234.5), '-$1,234.50');
 });
 
+/* ---------------- multiple accounts (v0.3) -------------------------- */
+test('use() switches accounts: main keeps bt.portfolio, others use bt.portfolio.<id>', () => {
+  fresh();
+  assert.strictEqual(typeof P.use, 'function');
+  assert.strictEqual(typeof P.accounts, 'function');
+  assert.strictEqual(P.account(), 'main');
+  P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+  const replay = P.use('replay');
+  assert.strictEqual(P.account(), 'replay');
+  assert.strictEqual(replay.cash, 100000, 'a never-used account starts fresh');
+  assert.deepStrictEqual(replay.positions, {});
+  P.placeOrder({ symbol: 'MSFT', side: 'buy', qty: 5, type: 'market' }, 200);
+  assert.ok(localStorage.getItem('bt.portfolio.replay'), 'replay account persisted under its own key');
+  const mainSaved = JSON.parse(localStorage.getItem('bt.portfolio'));
+  assert.strictEqual(mainSaved.positions.AAPL.qty, 10, 'main account untouched on disk');
+  assert.strictEqual(mainSaved.positions.MSFT, undefined);
+  const back = P.use('main');
+  assert.strictEqual(back.positions.AAPL.qty, 10);
+  assert.strictEqual(back.positions.MSFT, undefined);
+  assert.strictEqual(back.cash, 100000 - 1000);
+  P.use('replay');
+  assert.strictEqual(P.getState().positions.MSFT.qty, 5, 'switching back restores the replay state');
+  P.use('main');
+});
+
+test('use() does not clobber fills another tab persisted on the outgoing account', () => {
+  fresh();
+  P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+  assert.strictEqual(P.getState().cash, 99000);
+  // "Another tab" trades on main: storage moves on while this page's memory is stale.
+  const other = JSON.parse(localStorage.getItem('bt.portfolio'));
+  other.cash = 1; other.positions.TSLA = { qty: 3, avg: 200, last: 200 };
+  localStorage.setItem('bt.portfolio', JSON.stringify(other));
+  P.use('replay');
+  assert.strictEqual(JSON.parse(localStorage.getItem('bt.portfolio')).cash, 1, 'switching away must not write the stale snapshot');
+  const back = P.use('main');
+  assert.strictEqual(back.cash, 1, 'switching back reads what the other tab stored');
+  assert.strictEqual(back.positions.TSLA.qty, 3);
+});
+
+test('use() still persists a never-stored outgoing account so other tabs can list it', () => {
+  fresh();
+  localStorage.removeItem('bt.portfolio');
+  P.load();                                   // fresh in-memory main, nothing on disk
+  assert.strictEqual(localStorage.getItem('bt.portfolio'), null);
+  P.use('scratch');
+  assert.ok(localStorage.getItem('bt.portfolio'), 'empty key gets the fresh state written once');
+  assert.strictEqual(JSON.parse(localStorage.getItem('bt.portfolio')).cash, 100000);
+  P.use('main');
+});
+
+test('use() with the active id is a no-op; ids are normalised; reset() only resets the active account', () => {
+  fresh();
+  const s1 = P.use('main');
+  assert.strictEqual(s1, P.getState());
+  P.use(' Replay ');
+  assert.strictEqual(P.account(), 'replay');
+  P.placeOrder({ symbol: 'TSLA', side: 'buy', qty: 1, type: 'market' }, 50);
+  P.reset(5000);
+  assert.strictEqual(P.getState().cash, 5000);
+  assert.strictEqual(P.getState().startingCash, 5000);
+  P.use('main');
+  assert.strictEqual(P.getState().cash, 100000, 'main was not reset');
+  assert.strictEqual(P.storageKeyFor('main'), 'bt.portfolio');
+  assert.strictEqual(P.storageKeyFor('replay'), 'bt.portfolio.replay');
+});
+
+test('accounts() lists every account with equity at last marks, main first, active flagged', () => {
+  fresh();
+  P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+  P.markToMarket({ AAPL: 120 });
+  P.use('replay');
+  P.reset(50000);
+  P.placeOrder({ symbol: 'MSFT', side: 'buy', qty: 10, type: 'market' }, 100);
+  P.processOrders('MSFT', bar(100, 110, 95, 90));      // marks MSFT at the close
+  const list = P.accounts();
+  assert.strictEqual(list[0].id, 'main');
+  const main = list.find(a => a.id === 'main'), rep = list.find(a => a.id === 'replay');
+  assert.ok(main && rep, 'both accounts listed: ' + JSON.stringify(list.map(a => a.id)));
+  near(main.equity, 100000 - 1000 + 10 * 120);           // 100,200 valued at the $120 mark
+  assert.strictEqual(main.active, false);
+  near(rep.equity, 50000 - 1000 + 10 * 90);               // 49,900
+  assert.strictEqual(rep.active, true);
+  assert.strictEqual(rep.startingCash, 50000);
+  assert.strictEqual(rep.positions, 1);
+  assert.strictEqual(rep.storageKey, 'bt.portfolio.replay');
+  // the listing never changes the active account or its state
+  assert.strictEqual(P.account(), 'replay');
+  assert.strictEqual(P.getState().positions.MSFT.qty, 10);
+  P.use('main');
+  assert.strictEqual(P.getState().positions.AAPL.qty, 10);
+});
+
+test('deleteAccount() removes a non-main account and refuses to delete main', () => {
+  fresh();
+  P.use('scratch');
+  P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 1, type: 'market' }, 10);
+  assert.ok(localStorage.getItem('bt.portfolio.scratch'));
+  assert.strictEqual(P.deleteAccount('main'), false);
+  assert.strictEqual(P.deleteAccount('scratch'), true);
+  assert.strictEqual(P.account(), 'main', 'deleting the active account falls back to main');
+  assert.strictEqual(localStorage.getItem('bt.portfolio.scratch'), null);
+  assert.ok(!P.accounts().some(a => a.id === 'scratch'));
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

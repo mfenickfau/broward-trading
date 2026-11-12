@@ -1,0 +1,591 @@
+{
+  "id": "m7-replay",
+  "title": "Practice Drills: Market Replay",
+  "level": "intermediate",
+  "minutes": 57,
+  "summary": "Replay historical bars with the future hidden and run graded drills on trends, reversals, gaps, bear markets, stops and sizing, then review every session in the journal.",
+  "lessons": [
+    {
+      "id": "m7-l1",
+      "title": "How to use Market Replay honestly",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Why a static chart teaches the wrong lesson\n\nOpen any daily chart and the trades look obvious. The bottom in the spring is right there; the top in the summer is right there; of course you would have bought the one and sold the other. That feeling has a name, **hindsight bias**, and it is the single biggest reason people who have read about trading still lose money when they start doing it. On a finished chart you can see the right-hand side. A trader never can.\n\n[[Market replay]] fixes that by hiding the future. You pick a symbol, an interval and a start date; the engine loads the whole series but only ever shows you the bars up to a moving cursor. You decide with exactly the information a trader had on that day, press *step*, and find out what happened next. Indicators are computed from the revealed bars only, so a [[Crossover|crossover]] or an [[Oversold|oversold]] reading appears on the chart at the same moment a real trader would have seen it, not a moment earlier.\n\nThis module is a set of **drills**: short replay sessions with a stated objective and pass/fail criteria, each attached to a lesson you have already taken. Think of them as the flight simulator for the rest of the course. Modules 2 to 4 told you what a trend, a stop and a position size are. Here you find out what you actually do when the bar closes against you."
+        },
+        {
+          "type": "text",
+          "md": "### What the replay page gives you\n\n- **Step, play, pause.** *Step* reveals one bar. *Play* reveals bars at a chosen speed. You can pause at any time to think, draw a line or place an order.\n- **Intrabar ticks.** With ticks on, each bar is revealed in four sub-steps (open, first extreme, second extreme, close) so that a [[Stop order (stop-loss)|stop]] or [[Limit order|limit order]] fills *inside* the bar the way it would have in a live session. With ticks off, a whole bar appears at once and resting orders are checked against it.\n- **A separate paper account.** Replay trades go through the same paper engine as the dashboard, but into an account called *replay* that starts at the drill's cash (usually $100,000) and is reset for every session. Your main paper portfolio is never touched.\n- **Resting orders.** Market orders fill at the price currently visible. Limit, stop and stop-limit orders wait and are processed on every step, exactly as on the dashboard.\n- **A scorecard.** When the session ends you see your return against [[Buy and hold|buy-and-hold]] over the same bars, number of trades, [[Win rate|win rate]], [[Profit factor|profit factor]] and [[Maximum drawdown|maximum drawdown]], plus a pass or fail against the drill's criteria.\n- **A session history and a journal link.** Every finished session is saved in the replay history, and one tap writes it to your trading journal with tags and notes. Lesson 5 is about using that well.\n\nThe dates you see in drill titles are labels for *scenarios*. In demo mode the price series is simulated and deterministic: every learner replays the same bars, so you can compare notes with a classmate. If you have connected a market-data key, the engine replays the provider's real historical bars for that range instead, and the shapes will differ from the drill descriptions. Either way the rules of the drill are the same."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**The future is hidden from the chart, not from you.** Replay only works if you refuse to look up what the stock did. Do not open the dashboard on the same symbol, do not search the real chart for that year, and do not replay a session twice to \"fix\" the result unless you have changed a written rule. The engine cannot stop you peeking. Only you can, and that is the first discipline the drills test.",
+          "title": "The one rule"
+        },
+        {
+          "type": "text",
+          "md": "### Six habits that make replay honest\n\n1. **Decide before you step.** Before each step, say (or write) what you will do if the next bar closes up, down, or through a level. Then step. Deciding after the bar prints is just a slower way of reading a finished chart.\n2. **Write the rule first.** Every drill names its rule: a crossover, an RSI level, a stop above resistance. Put it in the session notes before pressing play. A rule you can state is a rule you can be caught breaking.\n3. **Fill at the visible price and accept it.** A market order fills at the last revealed price; with ticks off that is the close of the latest bar, which a real trader could only get at the *next* open. If that bothers you, step one bar after a signal before entering. Do not pretend you bought the low of a bar you could not have seen.\n4. **Use resting orders for stops.** Place the stop as an order, not as an intention. The scorecard counts stop orders because a stop in your head is a stop that moves.\n5. **Finish the session.** Quitting halfway through a losing drill erases the lesson. The scorecard only exists for finished sessions, and the drawdown you were avoiding is the number you most need to see.\n6. **Repeat with a reason.** Replaying the same drill is useful when you have changed one thing: a wider stop, a slower moving average, a smaller size. Replaying to erase a loss teaches you that losses can be erased, which is the opposite of what a live account will teach you."
+        },
+        {
+          "type": "text",
+          "md": "### Ticks, gaps and the speed you choose\n\nOn a daily chart with ticks off, each step is one trading day and your stop is checked against that day's high and low. If the low is below your stop, you are filled at the stop price unless the bar *opened* below it, in which case you are filled at the open. That is the honest treatment of a [[Gap|gap]]: a stop cannot fill at a price the market skipped.\n\nWith ticks on, the same bar is revealed as four prices in order, and your stop fills when the path crosses it. Because a bar's path is approximated (open, then the extreme nearer the open, then the other extreme, then the close), it is a model, not a tape. It is close enough to make the point every risk lesson has made: stops protect you from most outcomes, not all, and the ones they miss are the ones that hurt.\n\nSpeed is a tool, not a race. Step slowly near your levels and let the chart play faster through the uneventful middle. Several of the drills are a year long; at one bar per second that is about four minutes of playing, which leaves time to actually think when it matters."
+        },
+        {
+          "type": "drill",
+          "drillId": "sma-cross-msft-2024",
+          "md": "**Warm-up.** Replay MSFT for a year on the daily chart with one rule: long when the 20-day SMA crosses above the 50, flat when it crosses back below. Turn the two overlays on before you press play, write the rule in the notes, and act on every crossover at the next open. You will finish with between two and eight round trips. The point of the warm-up is not the return; it is to feel how long a quiet month lasts when you are waiting for a rule to fire, and how tempting it is to \"help\" it."
+        },
+        {
+          "type": "exercise",
+          "md": "Run your first honest session and read the scorecard.\n\n- Open Market Replay, choose the warm-up drill above, and before pressing play write one sentence in the notes: the entry rule, the exit rule, and the size (use 50% of cash per entry so a single rule drives the result).\n- Play at a slow speed. Pause at each crossover, step one more bar, then place a **market** order at that open. Do not place any order that the rule did not ask for.\n- Finish the year, close any open position when the engine tells you the session has ended, and read the scorecard: your return, buy-and-hold's return, your trades and your maximum drawdown.\n- Save the session to the journal and tag it `replay`, `trend`. Write one honest line under *lessons*: the moment you most wanted to break the rule, and what you did.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=sma-cross-msft-2024",
+            "label": "Open the warm-up drill in Market Replay"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What is the main thing Market Replay does that a normal chart cannot?",
+              "choices": [
+                "It shows more indicators at once",
+                "It hides the bars to the right of the cursor so you decide without hindsight",
+                "It uses faster data than the dashboard",
+                "It guarantees that stop orders fill at their price"
+              ],
+              "answer": 1,
+              "explain": "A finished chart shows the future; replay reveals one bar at a time, so your decisions are made with only the information a trader had on that day. Indicators are computed from revealed bars only, for the same reason."
+            },
+            {
+              "q": "Which account do replay trades go into?",
+              "choices": [
+                "Your main paper portfolio, the same as the dashboard",
+                "A separate 'replay' paper account that is reset for every session",
+                "A live brokerage account",
+                "No account; replay only draws trades on the chart"
+              ],
+              "answer": 1,
+              "explain": "Replay uses the same paper engine but a separate account called 'replay', so drills never disturb the record you are building in your main paper portfolio."
+            },
+            {
+              "q": "With intrabar ticks off, a daily bar opens below your resting sell stop. Where does the stop fill?",
+              "choices": [
+                "At the stop price",
+                "At the bar's open, because the market skipped the stop price",
+                "At the bar's low",
+                "It does not fill; stops only work with ticks on"
+              ],
+              "answer": 1,
+              "explain": "A stop becomes a market order when price trades through it. If the bar gaps past the stop at the open, the first available price is the open, which is the honest treatment of a gap and the reason stops are not guarantees."
+            },
+            {
+              "q": "You finish a drill with a losing scorecard. According to the lesson, when is replaying the same drill a good idea?",
+              "choices": [
+                "Whenever you lose; the goal is a winning scorecard",
+                "Never; each drill may only be run once",
+                "When you have changed one written rule, so the second run tests the change",
+                "Only if you look up the real chart first to see what went wrong"
+              ],
+              "answer": 2,
+              "explain": "Repeating with a changed rule is an experiment. Repeating to erase a loss teaches you that losses can be undone, which a live account will never do, and peeking at the real chart defeats the purpose of hiding the future."
+            },
+            {
+              "q": "What do the years in drill titles such as 'MSFT 2024' refer to in demo mode?",
+              "choices": [
+                "The exact real prices of that calendar year",
+                "Scenario labels for a simulated, deterministic price series that every learner sees identically",
+                "Random prices generated fresh each time you open the drill",
+                "Live prices delayed by one year"
+              ],
+              "answer": 1,
+              "explain": "Demo data is simulated and deterministic, so every learner replays the same bars and can compare results. With a market-data key connected, the engine replays real historical bars for the range instead."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l2",
+      "title": "Trend drills: holding on and following the rule",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Trend following is a patience problem, not a prediction problem\n\nModule 2 defined an [[Uptrend|uptrend]] as a sequence of higher highs and higher lows, and Module 3 showed the moving-average tools that keep you on the right side of one. Neither module could show you the hard part, because the hard part is not on the chart. It is the eight weeks in the middle of a trending year when the stock falls 20%, your open profit halves, the indicators look tired, and every instinct says *take it while you can*.\n\nIn most trending years the majority of the return arrives in a handful of bars, and nobody knows in advance which ones. The trader who sells on every scary pullback and buys back after the recovery captures the chop and misses the move. [[Trend following]] therefore has a low win rate and a high payoff ratio: many small losses from false starts, a few large wins from the trends that run. If you cannot sit through the drawdowns inside the winners, you never collect the wins, and the strategy's maths stops working for you even though it works on paper.\n\nThe three drills in this lesson attack that from three angles: holding a position through pullbacks, obeying a mechanical crossover rule through whipsaws, and entering breakouts with orders instead of nerve."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Nvidia, daily bars with 20- and 50-day SMAs. On a finished chart the trend is obvious and the pullbacks look harmless. In replay you meet each pullback without knowing whether it is the one that ends the trend. That uncertainty, not the chart, is what the drill trains."
+        },
+        {
+          "type": "text",
+          "md": "### Drill one: ride the trend\n\nThe first drill is a strong simulated uptrend with pullbacks of 10% to 30% along the way. The criteria are deliberately strict about *activity*: three round trips or fewer, no shorts, and at least 20% of the move captured. Churning fails the drill even if it makes money.\n\nA plan that passes looks like this:\n\n- **Entry.** Buy on the first close above the 50-day SMA with the 20 above the 50, or on the first [[Higher high / higher low|higher low]] you can identify. Do not wait for certainty; a trend-follower is always early or late and chooses early.\n- **Stop.** A resting sell stop under the most recent swing low, or under the 50-day SMA. Decide which *before* entering, because afterwards you will choose whichever one keeps you in.\n- **Trail.** After each pullback resolves into a new high, move the stop up under the new swing low. Never move it down. A [[Trailing stop|trailing stop]] is how a trend trade exits without you having to call the top.\n- **Add once, at most.** If you must do something during a pullback, the one constructive act is to add a small amount on the first higher low after it, never to sell.\n\nExpect the stop to be hit once, probably in the deepest pullback. Re-entering on the next higher high costs one of your three round trips. That is why the limit exists: it forces you to size the stop so that normal pullbacks do not take you out."
+        },
+        {
+          "type": "drill",
+          "drillId": "ride-the-trend-nvda-2023",
+          "md": "**Hold through the pullbacks.** Enter early with a clear stop under the last swing low, trail it up under each new base and otherwise do nothing. Three round trips or fewer, no shorts, capture at least 20% of the move. Before you start, write down the pullback size that would make you *want* to sell, then watch what you actually do when it arrives."
+        },
+        {
+          "type": "text",
+          "md": "### Drill two: the crossover rule and the whipsaw tax\n\nThe warm-up in Lesson 1 was also the second trend drill, and now you know what it was testing. The [[SMA crossover strategy|SMA crossover]] is the simplest trend rule there is and it has a well-known cost: in sideways markets the averages braid around each other and every crossover reverses a few bars later. Each one of those is a [[Whipsaw|whipsaw]], a small loss plus the spread, and they come in clusters.\n\nThe drill's criteria (between two and eight round trips, flat at the end, no shorts) force you to take *every* crossover, which is the only way to learn the real distribution of outcomes. Taken selectively, the rule is not a rule; it is you, with a chart as an alibi. Taken mechanically, you will see a pattern repeated in every backtest in Module 6: a few whipsaws, then one crossover that catches a long move and pays for all of them. If you skipped that one because the last three had failed, the system still worked and you did not.\n\nTwo refinements are worth testing on a second run, one at a time: requiring a close *beyond* the slow average before acting on a cross, or using a slower pair (50/200). Both reduce whipsaws and both delay entries. There is no setting that does neither, which is the trade-off this drill exists to make you feel."
+        },
+        {
+          "type": "text",
+          "md": "### Drill three: breakouts with orders, not nerve\n\nA [[Breakout|breakout]] is a close beyond a level that held several times. Module 2 showed the patterns ([[Range (consolidation)|bases]], flags, triangles) and Module 3 added volume confirmation. The execution problem is psychological: by the time a breakout is obvious the stock is already up, and the instinct is either to chase it or to wait for a pullback that may never come.\n\nThe drill solves this with order placement. Identify the resistance of the current base and put a **buy stop** a little above it. If the stock breaks out, the market pulls you in at roughly the breakout price while you are doing nothing. If it never breaks out, you never own it. Then protect the position with a **sell stop** under the base you just bought out of, and as each new base forms higher, move the sell stop under it.\n\nExpect a [[False breakout|false breakout]] or two: price pops above resistance, triggers your buy stop, and falls back into the base, taking your sell stop with it. That is the breakout trader's whipsaw, and it costs about the height of the base. The drill's return target (+30%) and drawdown limit (under 25%) are reachable only if you keep the false breakouts small and let the true ones run, which is exactly the trend-follower's payoff shape again from a different entry."
+        },
+        {
+          "type": "drill",
+          "drillId": "breakout-meta-2023",
+          "md": "**Let the market pull you in.** Enter with buy stop orders a little above each base's resistance and protect each entry with a sell stop under the base; trail that stop under every new base. At least two stop orders, no shorts, +30% or better with a drawdown under 25%. If a breakout fails and stops you out, note it and place the next buy stop above the next base. One false breakout is the price of admission, not a reason to change the rule."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Moving a stop down is the only unforgivable act in a trend drill.** A stop that moves away from price as the trade goes against you is not a stop; it is a decision to take a bigger loss later. The engine will let you cancel and re-place an order lower. The scorecard's drawdown number will remember that you did.",
+          "title": "Watch for this"
+        },
+        {
+          "type": "exercise",
+          "md": "Run the three trend drills and compare their shapes.\n\n- Run **Ride the trend** first. Before each step through a pullback, say aloud what your stop is and whether you will move it. Finish and save the session to the journal with tags `replay`, `trend`, `hold`.\n- Run the **SMA crossover** drill again if you did the warm-up in Lesson 1, this time requiring a close beyond the slow average before you act. Note how many trades you took compared with the first run.\n- Run **Breakout entries**. Count your false breakouts and write down what each one cost as a percentage of the account.\n- In the replay history, line up the three scorecards. Which drill had the highest win rate? Which had the highest return? Write one sentence on why those are not the same drill.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=ride-the-trend-nvda-2023",
+            "label": "Start with Ride the trend"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "The 'Ride the trend' drill fails if you make more than three round trips, even if the session is profitable. What is that limit teaching?",
+              "choices": [
+                "That trading costs are the main problem",
+                "That most of a trending year's return comes from holding, so churning through pullbacks is the mistake even when it happens to work",
+                "That the engine cannot process more than three trades",
+                "That you should always use buy-and-hold"
+              ],
+              "answer": 1,
+              "explain": "Trend following earns its return in a handful of bars nobody can pick in advance. Selling on each scary pullback captures the chop and misses the move; the activity limit forces you to size a stop that survives normal pullbacks instead."
+            },
+            {
+              "q": "In a trend drill, which action does the lesson call the one unforgivable act?",
+              "choices": [
+                "Adding a small amount on a higher low",
+                "Trailing the stop up under a new swing low",
+                "Moving a stop down, away from price, as the trade goes against you",
+                "Letting the trend run without taking profit"
+              ],
+              "answer": 2,
+              "explain": "A stop that moves away from price is a decision to take a bigger loss later. Trailing a stop up locks in gains; adding on a higher low is constructive. Lowering a stop undermines the only risk control that always works."
+            },
+            {
+              "q": "Why does the SMA crossover drill require you to take every crossover, including the ones that follow three losers?",
+              "choices": [
+                "Because taking every signal is the only way to learn the rule's real distribution of outcomes, and the one big winner that pays for the whipsaws often follows a cluster of losses",
+                "Because crossovers are always profitable in the long run",
+                "Because the engine will not let you skip a signal",
+                "Because skipping signals increases the win rate"
+              ],
+              "answer": 0,
+              "explain": "Taken selectively, a rule is not a rule. Mechanical execution shows the pattern every backtest shows: several whipsaws, then a crossover that catches a long move. Skipping that one means the system worked and you did not."
+            },
+            {
+              "q": "How does the breakout drill ask you to enter a position?",
+              "choices": [
+                "With a market order as soon as the breakout is obvious",
+                "With a limit order below the base, hoping for a pullback",
+                "With a buy stop placed a little above the base's resistance, so the market pulls you in only if it breaks out",
+                "By shorting the resistance level"
+              ],
+              "answer": 2,
+              "explain": "A buy stop above resistance removes the chase-or-wait dilemma: you are filled at roughly the breakout price while doing nothing, and never own the stock if it fails to break out. A sell stop under the base then protects the entry."
+            },
+            {
+              "q": "What does a false breakout typically cost a trader using the buy-stop-above-resistance, sell-stop-under-base method?",
+              "choices": [
+                "Nothing, because the buy stop never fills",
+                "Roughly the height of the base, as the buy stop fills above resistance and the sell stop fills under the base",
+                "The entire position, because there is no exit",
+                "Half of the account, because of leverage"
+              ],
+              "answer": 1,
+              "explain": "The entry is just above the top of the base and the protective stop just below its bottom, so a failed breakout loses about the base's height plus slippage. Keeping those small while letting true breakouts run is the whole method."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l3",
+      "title": "Reversal and range drills: mean reversion, gaps and intraday",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### The other half of the market\n\nMarkets trend perhaps a third of the time. The rest of the time they range, and a trend rule fed a ranging market produces nothing but whipsaws. [[Mean reversion]] is the opposite bet: that a stock stretched far from its recent average will come back towards it. It has the opposite statistical shape too. Win rates are high, because prices usually do snap back a little; payoffs are small, because you are selling into a move rather than riding one; and the losses, when they come, are the ones where the stretch kept stretching, which is what a new trend looks like from the inside.\n\nReversal trading therefore demands two things trend trading does not: a precise entry (the whole edge is buying a little lower and selling a little higher than the crowd) and an iron stop (the one trade that does not revert can erase ten that did). The drills here train both, then add the two conditions that break stops most often, gaps and intraday noise."
+        },
+        {
+          "type": "text",
+          "md": "### Drill one: range trading with RSI and limit orders\n\nThe first drill is seven simulated months that end roughly where they began. Buy-and-hold earns nothing, which is why the criteria ask you to beat it, to win at least half of your trades, and to use at least two limit orders.\n\nThe rule comes from Module 3: buy when [[Relative Strength Index (RSI)|RSI(14)]] drops below 30 with price near the bottom of the range, sell when it rises above 70. The order type is the lesson. A reversal trader who enters with market orders pays the spread and chases; the edge is a few percent per trade and chasing gives half of it away. Instead, when RSI is approaching 30, place a **buy limit** at or just above the range's support. Either the market comes to your price or it does not, and if it does not, there was no trade. On the way out, place a **sell limit** near resistance before RSI gets to 70, so the exit is waiting when the crowd is finally excited.\n\nThe failure mode to watch for is the range breaking. Three or four oscillations teach you the range is reliable; the fifth time price breaks out below support, RSI reads 25, and your rule says buy. Your stop, a little below the lowest low of the range, says otherwise. Place it as an order every time, and when it fires, do not immediately buy again lower because RSI is \"even more oversold\". [[Oversold]] is a description, not a floor."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sr"
+          ],
+          "caption": "S&P 500 ETF, daily bars with support and resistance levels drawn from swing points. A range is two of these levels holding several times each. Mean reversion trades the inside of the box with limit orders; the stop goes just outside it."
+        },
+        {
+          "type": "drill",
+          "drillId": "range-trading-spy-2018",
+          "md": "**Buy fear, sell greed, with limit orders.** Place buy limits near support when RSI(14) is falling towards 30 and sell limits near resistance before RSI reaches 70. Put a resting stop a little under the range low each time you are long. At least three trades, at least two limit fills, a win rate of 50% or better and a result ahead of buy-and-hold. Make a note each time the fill came at a better price than a market order would have."
+        },
+        {
+          "type": "text",
+          "md": "### Drill two: crash and recovery, with ticks on\n\nThe second drill is where theory meets the tape. A fast simulated crash of roughly 40% followed by a choppy recovery, replayed with intrabar ticks turned on so that your orders fill along the path inside each bar. The criteria are modest (finish positive, drawdown under 20%, at least two stop or stop-limit orders) and most learners fail them the first time. That is the point.\n\nWhat goes wrong, in order:\n\n- **Gaps through stops.** A bar opens 8% below your stop. Your stop fills at the open, not at your price. The loss is three or four times what you sized for. Module 4 warned you; now you have felt it. The only fix that always works is position size.\n- **Wide ranges hit everything.** In a crash a daily range can be 10%. A stop that was a sensible 3% below price is inside the noise and fires on the first tick down, after which the bar closes up. [[Average True Range (ATR)|ATR]] roughly triples in a panic; stops set in dollars should widen with it, and sizes should shrink to match.\n- **Catching knives.** The stock is down 30% and *must* be cheap. In a crash, cheap is a story, not a level. Mean-reversion entries work when the range is intact; when the range has broken, wait for a higher low before you buy any pullback.\n- **The recovery whipsaw.** The bottom is a V, the first bounce is 15% in four days, and you missed it. Do not chase the fourth day. The recovery that follows is choppy, and limit orders on pullbacks will fill you in at better prices than the panic buys did.\n\nTry a [[Stop-limit order|stop-limit]] on this drill as well as a plain stop. A stop-limit protects you from a terrible fill but can leave you in the position if the gap is larger than its limit. Neither is right in every case. Learning when each fails is worth more than any one scorecard."
+        },
+        {
+          "type": "text",
+          "md": "### Earnings gaps: the scheduled version of the same lesson\n\nDemo data does not simulate individual [[Earnings report|earnings reports]], but every real stock has four a year and they are the most common cause of the overnight gap that just blew through your stop. A company reports after the close, the stock reopens 10% away from where it closed, and every resting order between those two prices fills at the open. With a real-data key connected you can replay a stock across an earnings date (the News page lists upcoming ones) and feel exactly that.\n\nThe rules that fall out are simple and widely ignored. Know the date before you enter; the News page and most quote pages show it. Decide in advance whether the position should be held through it, and if so, size it so that a two-ATR gap against you is a loss you can shrug at. A stop does not protect you overnight. Size does."
+        },
+        {
+          "type": "drill",
+          "drillId": "crash-and-recovery-xom-2020",
+          "md": "**Survive the gap.** Ticks are on. Protect every position with a stop or stop-limit order, size so that a gap twice your stop distance is still only a small loss, and do not buy the first bounce with everything. At least two stop orders, a positive return, drawdown under 20%. On your first run, write down the fill price of every stop that triggered next to the stop price you set; the gap between those two columns is the lesson."
+        },
+        {
+          "type": "text",
+          "md": "### Drill three: one intraday session with VWAP\n\nThe last drill changes timeframe. One simulated trading day of 78 five-minute bars with ticks on, traded around [[Volume-weighted average price (VWAP)|VWAP]] as Module 3 described: look for long entries when price pulls back to a rising VWAP in an up-trending morning, or shorts when it fails below it. Four round trips at most, no position at the close, and an intraday drawdown under 2% of equity.\n\nThe drill is in this lesson because intraday trading is mean reversion at a faster clock, and everything that is hard about reversal trading is harder here. The spread is a larger share of the move. The noise is larger relative to the signal, so stops are hit by ticks that mean nothing. The temptation to take one more trade to get back to even is constant, and the drill's four-trade cap exists to make [[Overtrading|overtrading]] a fail rather than a feeling. Being flat at the close is the day trader's only inviolable rule: an overnight gap on a leveraged intraday position is how small accounts end.\n\nIf you finish the day with one or two trades, a tiny profit and a drawdown under 1%, you have done well. If you finish with four trades, a loss and a strong wish for a fifth, you have met the reason most people should not day trade, and met it for free."
+        },
+        {
+          "type": "drill",
+          "drillId": "intraday-aapl-5min",
+          "md": "**Trade one day around VWAP and go home flat.** Long on pullbacks to a rising VWAP in an up-trending morning, short on failures below it, with a resting stop on every position. At most four round trips, at least one, flat by the closing bell, and an intraday drawdown under 2%. Before you start, write down the time of day after which you will take no new trades."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Reversal trades are won at the entry.** Trend trades forgive a sloppy entry because the move is large; reversal trades do not, because the move is small. If you cannot get your price with a limit order, there was no trade. Chasing a reversal is how a 60% win-rate method ends up with negative expectancy.",
+          "title": "Rule of thumb"
+        },
+        {
+          "type": "exercise",
+          "md": "Measure what gaps and ticks do to your stops.\n\n- Run **Crash and recovery** with ticks on. For every stop that triggered, record the stop price and the fill price. Compute the average slippage in percent.\n- Run it again with ticks off and the same rules. Compare the two scorecards: the drawdown numbers differ because fills happen in different places, not because the market did.\n- Run **Range trading** and count how many of your fills were limit fills. Estimate how much each limit fill saved versus a market order at the bar's close.\n- Run the **Intraday session** once. In the journal, record your emotion and confidence for each trade. Is the fourth trade's confidence higher or lower than the first's? Which one went better?",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=crash-and-recovery-xom-2020",
+            "label": "Open Crash and recovery"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which statistical shape does a mean-reversion method usually have, compared with trend following?",
+              "choices": [
+                "Low win rate and large average winners",
+                "High win rate and small average winners, with occasional large losses when the stretch keeps stretching",
+                "Both win rate and average winner are higher than trend following",
+                "It has no losses because prices always revert"
+              ],
+              "answer": 1,
+              "explain": "Prices usually snap back a little, so reversal trades win often; but you are selling into a move rather than riding one, so the wins are small, and the trade that does not revert is the start of a new trend and can erase many winners. That is why precise entries and hard stops matter more here."
+            },
+            {
+              "q": "Why does the range-trading drill require at least two limit orders?",
+              "choices": [
+                "Limit orders are the only orders the replay engine supports",
+                "The edge in a reversal trade is only a few percent, and chasing with market orders gives much of it away; a limit order gets your price or no trade",
+                "Limit orders always fill",
+                "Market orders are not allowed in ranging markets"
+              ],
+              "answer": 1,
+              "explain": "A reversal trader's edge is buying a little lower and selling a little higher than the crowd. Limit orders near support and resistance capture that; if the market does not come to your price, there was no trade."
+            },
+            {
+              "q": "In the crash drill with ticks on, a daily bar opens 8% below your resting sell stop. What happens, and what is the only fix that always works?",
+              "choices": [
+                "The stop fills at the stop price; nothing needs fixing",
+                "The stop fills at the open, far below your stop price; the only reliable protection is position size",
+                "The stop is cancelled automatically; use a stop-limit instead",
+                "The stop fills at the previous close; use a wider stop"
+              ],
+              "answer": 1,
+              "explain": "A gap skips the stop price, so the stop becomes a market order filled at the first available price, the open. Stop-limits avoid a bad fill but may leave you in. Sizing so that a gap twice your stop distance is still a small loss is the protection that always works."
+            },
+            {
+              "q": "ATR roughly triples during a panic. What does the lesson say that implies for your stops and position sizes?",
+              "choices": [
+                "Tighten stops and increase size, because the moves are bigger",
+                "Keep both the same; rules should never change",
+                "Widen stops with ATR so they sit outside the noise, and shrink size to match so the dollar risk stays constant",
+                "Remove stops entirely until the volatility passes"
+              ],
+              "answer": 2,
+              "explain": "A stop that was a sensible 3% below price is inside a 10% daily range and fires on noise. Widening the stop with ATR keeps it meaningful, and shrinking size keeps the risk per trade at 1% of equity despite the wider stop."
+            },
+            {
+              "q": "Why does the intraday drill cap you at four round trips and require you to be flat at the close?",
+              "choices": [
+                "Because the engine only has four trades of data",
+                "Because overtrading to get back to even is the classic intraday failure, and an overnight gap on an intraday position is how small accounts end",
+                "Because day traders are not allowed to short",
+                "Because VWAP resets after four trades"
+              ],
+              "answer": 1,
+              "explain": "The trade cap makes overtrading a fail rather than a feeling. Going home flat is the day trader's one inviolable rule: a position sized for a 2% intraday drawdown can lose many times that in an overnight gap."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l4",
+      "title": "Risk drills: bear markets, stop discipline and sizing",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### The drills that decide whether you survive\n\nEverything in Module 4 came down to three numbers: the percentage of equity you risk on a trade, the distance to your stop, and the drawdown that follows a losing streak. These drills put those numbers under pressure. The scenarios are ugly on purpose: a year that loses more than a third, a stock that halves and then recovers, a collapse of three quarters. Nobody is asked to predict them. You are asked to come out the other side with an account.\n\nA useful frame: in a bull market the trader who takes the most risk looks the smartest; in a bear market the trader who took the least is the only one still trading. You cannot know which market you are in until later. So the question in every drill is not *how much can I make?* but *how much do I lose if I am wrong, and can I survive being wrong five times in a row?*"
+        },
+        {
+          "type": "text",
+          "md": "### Drill one: bear-market survival\n\nThe first scenario loses more than a third of its value with brutal rallies on the way down. The criteria: keep your equity [[Drawdown|drawdown]] under 15%, finish ahead of buy-and-hold, and protect every position with a stop. Note what is *not* required. You do not have to make money. You do not have to short. Cash is a position, and in this drill it is a good one.\n\nThe traps, in the order you will meet them:\n\n- **Buying the first dip.** A 10% fall in a stock that has only gone up looks like the pullbacks you learned to buy in Lesson 2. Sometimes it is. The difference in a bear market is that each bounce fails to make a new high. Once you see a lower high followed by a lower low, treat the trend rules from Lesson 2 in reverse: the burden of proof is on the longs.\n- **Bear-market rallies.** They are violent, 15% to 25% in a couple of weeks, and they are the most convincing bottoms you will ever see. If you are short, your stop must be above the rally's likely reach; if you are long, the rally is where you reduce, not add. The drill's rallies are built to fool you at least once.\n- **Averaging down.** The stock is down 40%, so it is cheap, so you buy more. Your average cost improves and your exposure doubles. Averaging down converts a small loss into a large one with a better-sounding story. The drawdown criterion is there to make it fail.\n- **Doing nothing because you have no view.** That is allowed. Sitting in cash through a year that buy-and-hold loses badly passes the first two criteria. You will still need one protected position to pass the third, which is the drill's way of making you take at least one well-sized trade in a hostile market."
+        },
+        {
+          "type": "drill",
+          "drillId": "bear-market-survival-2022",
+          "md": "**Survive, don't predict.** Keep your equity drawdown under 15% through a year that loses more than a third, finish ahead of buy-and-hold, and protect every position with a stop. Shorts are allowed but not required; cash is a legitimate position. When a 20% rally arrives, decide before you step whether it is the bottom or a bear-market rally, and write down why. Then step."
+        },
+        {
+          "type": "text",
+          "md": "### Drill two: stop-loss discipline and the 1% rule\n\nThe second scenario is a violent year: a stock loses more than half its value at one point and still ends higher. You may trade it any way you like with one constraint from [[The 1% rule|Module 4]]: never risk more than 1% of equity on a trade. Every position is sized from the distance to its stop, and the stop is placed as an order. The criteria check your drawdown (under 10%), your stop count (at least three) and a minimum of three trades, so you cannot pass by sitting out.\n\nThe arithmetic, once more, because you will do it a dozen times in this drill:\n\n- Risk budget = 1% × equity. On $100,000, that is $1,000.\n- Stop distance = entry price − stop price, in dollars per share. Use a level (under the swing low, or 2 × ATR), not a round number.\n- Shares = risk budget ÷ stop distance, rounded down.\n\nA $200 stock with a stop $16 away gets 62 shares, a position of about $12,400. The same stock in a calmer month with a stop $6 away gets 166 shares, about $33,000. The position size is an *output* of the stop, never an input, and it changes by a factor of three between those two months while the dollar risk stays the same. Learners who fail this drill almost always fail it by picking a share count first and a stop second.\n\nWatch too for the slow leak: five losses in a row at 1% is a 5% drawdown, which feels much worse than it sounds. The 10% limit allows roughly ten straight losses. If you find yourself at six, the right response is not a bigger trade to catch up; it is to check whether your stops are inside the noise, and widen them (with a smaller size) if they are."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "sma50"
+          ],
+          "caption": "Tesla, daily bars. Notice how far a single day's range can travel. A stop placed a few percent away in a stock like this is inside the noise, and the 1% rule then dictates a small position. That is the rule doing its job, not a reason to abandon it."
+        },
+        {
+          "type": "drill",
+          "drillId": "stop-discipline-tsla-2024",
+          "md": "**Size from the stop, every time.** Before each entry, compute 1% of current equity, divide by the distance to your stop, and buy that many shares (rounded down). Place the stop as a resting order immediately. At least three trades, at least three stop orders, and a maximum drawdown under 10%. If you are tempted to pick the share count first, stop and do the division."
+        },
+        {
+          "type": "text",
+          "md": "### Drill three: short selling with a buy stop\n\nThe last risk drill is a simulated collapse of roughly 75%, and it asks you to do the thing Module 4 told beginners to treat with great care: sell short. Open at least one short, protect it with a buy stop above the entry, finish with a positive return, and cover everything before the session ends.\n\nThree things make shorting different in practice, and the drill exposes each one:\n\n- **Margin.** The paper engine requires that your cash after the sale, your own money plus the short proceeds, equals at least 150% of the short's value, as Module 4 described. In a $100,000 account that caps a short at $200,000: cash plus proceeds would be $300,000, exactly 1.5 × $200,000. If you try to short $250,000 of stock in a $100,000 account the order is rejected, because $350,000 is less than the $375,000 the rule demands. Read the reason, reduce the size, and notice that the rule has just done your risk management for you.\n- **Unlimited loss.** A long can lose 100%. A short can lose more than 100%, and bear-market rallies of 20% to 30% are exactly the moves that do it. The buy stop is not optional. Place it above the most recent lower high, and size the short from the distance to it with the same 1% arithmetic, perhaps 0.5% as Module 4 suggested for shorts.\n- **Covering.** Shorts feel wonderful on the way down and most short sellers give back half of it by holding for zero. The drill makes you cover by the end; a better plan covers at a target or trails the buy stop down behind each lower high so that the first real rally takes you out with most of the move banked."
+        },
+        {
+          "type": "drill",
+          "drillId": "short-selling-nvda-2022",
+          "md": "**Short with a stop above, and cover.** Open at least one short, sized from the distance to a buy stop placed above the last lower high, and place that buy stop immediately. After the sale your cash (your own money plus the short proceeds) must equal at least 150% of the short's value. Finish positive and flat. Trail the buy stop down behind each lower high rather than hoping to cover at the bottom."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Position size is the only risk control that works on every bar.** Stops fail on gaps. Indicators fail at turning points. Judgement fails under stress. A position sized so that the worst plausible outcome is a small percentage of equity works whether or not anything else does. The three drills in this lesson can all be passed by someone with no market view at all and perfect sizing. None of them can be passed by someone with a brilliant view and no sizing.",
+          "title": "The idea behind all three drills"
+        },
+        {
+          "type": "exercise",
+          "md": "Put a dollar figure on your discipline.\n\n- Run **Stop-loss discipline**. For every trade, write the risk budget, stop distance and share count in the notes *before* placing the order. After the session, check whether any trade lost more than 1% of equity and, if so, why: a gap, a moved stop, or arithmetic done after the order.\n- Run **Bear-market survival** twice: once allowing yourself shorts and once long-or-cash only. Compare the drawdowns. Did the extra freedom help or hurt?\n- Run **Short selling practice** and let the engine reject one oversized short on purpose. Read the rejection message and compute the largest short your cash would have allowed.\n- Save all four sessions to the journal with the tag `risk`. In the journal's stats, compare the average rating you gave yourself on sessions where you followed the sizing rule against those where you did not.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=stop-discipline-tsla-2024",
+            "label": "Open Stop-loss discipline"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "The bear-market survival drill does not require a positive return, only a drawdown under 15%, a result ahead of buy-and-hold, and at least one stop order. What is the lesson behind those criteria?",
+              "choices": [
+                "That shorting is mandatory in a bear market",
+                "That cash is a legitimate position and survival, not prediction, is the goal; the stop requirement makes you take at least one well-sized trade",
+                "That buy-and-hold always wins",
+                "That drawdown does not matter if the year ends positive"
+              ],
+              "answer": 1,
+              "explain": "You cannot know in advance which market you are in, so the question is how much you lose if wrong. Sitting mostly in cash passes the first two criteria; the stop requirement ensures you practise one protected position in a hostile market."
+            },
+            {
+              "q": "You have $100,000 of equity and want to buy a $200 stock with a stop $16 below your entry. Under the 1% rule, how many shares do you buy?",
+              "choices": [
+                "500 shares, so the position is $100,000",
+                "100 shares, a round number",
+                "62 shares, because $1,000 of risk divided by $16 of stop distance is 62.5, rounded down",
+                "16 shares, one per dollar of stop distance"
+              ],
+              "answer": 2,
+              "explain": "Risk budget is 1% of equity, $1,000. Divide by the stop distance of $16 per share and round down: 62 shares, a position of about $12,400. The share count is an output of the stop, never an input."
+            },
+            {
+              "q": "Why does averaging down fail the bear-market drill's drawdown criterion so reliably?",
+              "choices": [
+                "Because the engine forbids buying the same stock twice",
+                "Because it doubles your exposure to a falling position while improving only the story, converting a small loss into a large one",
+                "Because it increases commission",
+                "Because it only works for short positions"
+              ],
+              "answer": 1,
+              "explain": "Buying more of a position that is down 40% lowers your average cost and doubles your exposure. In a continuing decline the loss grows faster than the improved average helps, and the drawdown limit catches it."
+            },
+            {
+              "q": "In the short-selling drill, you try to short $250,000 of stock in a $100,000 account and the order is rejected. Why?",
+              "choices": [
+                "Short selling is disabled in replay",
+                "The paper engine requires cash after the sale equal to 150% of the short's value, and $100,000 + $250,000 is less than $250,000 × 1.5",
+                "You can only short after a buy stop is placed",
+                "The stock is on a hard-to-borrow list"
+              ],
+              "answer": 1,
+              "explain": "The margin rule from Module 4 is enforced by the engine: cash after the sale must equal at least 150% of the short's value. After the sale you would hold $350,000 in cash, but 150% of $250,000 is $375,000, so the order is rejected. The largest short the rule allows in a $100,000 account is $200,000 (cash + proceeds = 1.5 × short value). The rejection is doing your risk management for you; reduce the size until the rule is satisfied."
+            },
+            {
+              "q": "Why does the lesson call position size the only risk control that works on every bar?",
+              "choices": [
+                "Because stops never fail",
+                "Because indicators are always right at turning points",
+                "Because stops fail on gaps, indicators fail at turns and judgement fails under stress, while a small position caps the worst plausible loss regardless",
+                "Because the engine forces a maximum position size"
+              ],
+              "answer": 2,
+              "explain": "Every other control depends on something cooperating: the market trading through your stop, the indicator being right, you staying calm. A position sized so the worst plausible outcome is a small percentage of equity needs none of that."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l5",
+      "title": "Self-review: the scorecard, the journal and the weekly check",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### A drill you do not review is a game you played\n\nReplay gives you something a live account cannot: fifty trades' worth of experience in an afternoon, with the outcome of every decision recorded. The value is in the review, not in the playing. Module 4 introduced the [[Trading journal|trading journal]] as a spreadsheet; v0.3 of this site gives you a Journal page that is wired directly to the paper engine and to Market Replay. This lesson is about using it so that each drill changes the next one.\n\nThe order of operations after every session: read the scorecard, save it to the journal, fill in the three fields the engine cannot (emotion, confidence, lessons), and once a week compare entries against each other rather than against the market."
+        },
+        {
+          "type": "text",
+          "md": "### Reading the scorecard\n\nThe end-of-session card has a small number of lines and each one answers a different question.\n\n- **Return vs buy-and-hold.** Your percentage return on the drill's cash against what simply holding the symbol over the same bars would have made. The difference is your *alpha* for the session. A positive return in a trending year that loses to buy-and-hold is a pass on money and a fail on method: you paid for activity that did not help.\n- **Trades and win rate.** The count of completed round trips and the share that were profitable. A high win rate is not a goal; Lesson 2 and Lesson 3 showed that trend methods are *supposed* to win less often than reversal methods. Compare win rate with the method, not with 50%.\n- **Profit factor.** Gross profit divided by gross loss. Above 1 means winners paid for losers. Combined with win rate it tells you the payoff shape: a 40% win rate with a profit factor of 1.8 means your winners were far larger than your losers, which is what a trend drill should look like.\n- **Maximum drawdown.** The largest peak-to-trough fall in equity during the session. This is the number the risk drills care about and the one to watch across *all* drills. If your drawdown is routinely larger than your return, you are taking more pain than you are being paid for.\n- **Criteria.** Each drill criterion shows pass or fail. A failed criterion on a profitable session is information: it says the result came from something other than the rule you were practising.\n\nTwo sessions with the same return can be completely different trades. The one with half the drawdown and a third of the trades is the better one, and nothing but the scorecard will tell you so."
+        },
+        {
+          "type": "text",
+          "md": "### Saving to the journal, and the three fields that matter\n\nOne tap on *Save to journal* writes an entry with the symbol, dates, scorecard and the drill's id and tags. The engine fills in what it knows. You fill in what it cannot:\n\n- **Emotion.** One word for how you felt during the session: calm, anxious, bored, greedy, vengeful. Over twenty sessions this column predicts your results better than any indicator.\n- **Confidence (1 to 5).** How sure you were, *before the outcome*, that the plan was right. Later you will compare confidence with results. Most learners find their confidence has no relationship to their outcomes, which is humbling and useful.\n- **Rating (1 to 5).** How well you followed the plan, regardless of profit. A losing session where you followed every rule is a 5. A winning session where you abandoned the stop and got lucky is a 1 or a 2. This column is the one Module 4 called the most valuable in the journal, and the drills are designed to fill it with honest data.\n\nAlso add **tags**: the drill's own (`trend`, `risk`, `mean-reversion`) plus any of your own (`gap`, `broke-rule`, `moved-stop`). Tags are what make the stats page useful. Finally, **lessons**: one or two sentences, written within a minute of finishing, about the single moment that decided the session. Write it as an instruction to your future self (\"when the stop is three bars away, do nothing\"), not as a story."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Rate the process, not the result.** The replay account is reset every session; the only thing that carries over is you. A journal that grades you on profit teaches you to chase profit. A journal that grades you on rule-following teaches you the one thing that transfers to a live account.",
+          "title": "What to grade"
+        },
+        {
+          "type": "text",
+          "md": "### The weekly review\n\nThe Journal page has a weekly review checklist. The questions it asks, and why:\n\n1. **How many sessions did I run, and how many did I finish?** Abandoned sessions are rule breaks that left no scorecard.\n2. **Which rule did I break most often?** Sort by the `broke-rule` tag or by low ratings. One rule usually accounts for most of the damage; the fix is to make that rule mechanical (a resting order, a written checklist) rather than to try harder.\n3. **Expectancy in two columns.** Average result of sessions rated 4 or 5 against sessions rated 1 to 3. If the high-rated column is better, your method works and your discipline is the problem, which is good news because discipline can be drilled. If the low-rated column is better, your rules are wrong and following them more carefully will not help; go back to the backtester.\n4. **Drawdown versus return.** Across the week's sessions, is maximum drawdown consistently smaller than return? If not, sizes are too large or stops too tight for the method.\n5. **Confidence versus outcome.** Did your 5-confidence sessions do better than your 2s? If there is no relationship, stop sizing up on confident trades.\n6. **One change for next week.** One. Written as a rule. Then run the same drill again with that change, which is the only kind of repeat Lesson 1 allows.\n\nThe Journal page can export your entries as CSV if you want to go deeper in a spreadsheet. Most of the value, though, is in the questions above, answered honestly, every week."
+        },
+        {
+          "type": "text",
+          "md": "### Repeating a drill as an experiment\n\nBecause demo bars are deterministic, a repeated drill is a controlled experiment: same market, one changed rule, two scorecards. That is powerful, and it has one trap. After the first run you *know* where the big moves are, and your second run is contaminated by that knowledge whether or not you mean it to be. The honest repeat changes a rule that would apply on *any* chart (stop distance, moving-average length, size), not one that happens to fit this chart (\"don't trade in May\"). If a second run only works because you remembered the bars, the result is [[Look-ahead bias|look-ahead bias]] with extra steps, the same disease Module 6 warned about in backtests.\n\nWhen you want fresh bars without hindsight, change the symbol, the interval or the start date in the replay settings and run a free session with the same rule. The scorecard works there too, without criteria, and the journal entry will carry the settings so you can compare."
+        },
+        {
+          "type": "drill",
+          "drillId": "hourly-swing-msft-2024",
+          "md": "**Write the plan, then obey it.** Ten simulated sessions of hourly bars. Before pressing play, write your entry rule, your stop and your target in the notes. One or two planned trades, each protected by a stop, finishing with a profit factor of at least 1. After the session, rate yourself only on whether you did what the notes said. This is the drill to repeat weekly as a discipline check, with a different start date each time."
+        },
+        {
+          "type": "exercise",
+          "md": "Turn your replay history into a review.\n\n- Open the Journal page. Confirm that your replay sessions appear with their scorecards, tags and drill ids. For any session you finished without saving, open the replay history and save it now.\n- Fill in emotion, confidence and rating for every replay entry that lacks them. Be harsh on the rating: did you do what the notes said?\n- Run the weekly review checklist and compute the two-column expectancy: average return of sessions rated 4 or 5 versus 1 to 3.\n- Write one rule change for next week in the review notes, then choose one drill from Lessons 2 to 4 to repeat with that single change.\n- Export the journal as CSV and keep a copy. In a month, compare this week's two columns against that week's. The direction of that comparison is the only progress metric in this course that matters.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=review",
+            "label": "Open the Journal's weekly review"
+          }
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Module complete.** You have practised trends, reversals, gaps, bear markets, sizing and shorts with the future hidden, and you have a journal with honest ratings in it. The capstone module turns that record into a written trading plan: the rules you have proven you can follow, the sizes you have proven you can hold, and the drawdown at which you have promised yourself to stop and review.",
+          "title": "Where this leads"
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Two replay sessions both return +12%. One made 3 trades with a 6% maximum drawdown; the other made 14 trades with a 15% drawdown. What does the lesson say about them?",
+              "choices": [
+                "They are equally good; the return is the same",
+                "The 14-trade session is better because more trades means more practice",
+                "The 3-trade session is the better one: same return with less pain and less activity, which only the scorecard reveals",
+                "Neither counts unless the return beats 20%"
+              ],
+              "answer": 2,
+              "explain": "Return alone hides how a result was achieved. Smaller drawdown and fewer trades for the same return means more return per unit of risk and less activity that did not help. Comparing drawdown with return across all drills is the habit to build."
+            },
+            {
+              "q": "A trend drill ends with a 40% win rate and a profit factor of 1.8. How should you read that?",
+              "choices": [
+                "As a failure, because the win rate is below 50%",
+                "As the expected shape of a trend method: winners much larger than losers, which is what profit factor above 1 with a low win rate means",
+                "As a sign that the stop was too tight",
+                "As meaningless, because profit factor only matters for reversal trades"
+              ],
+              "answer": 1,
+              "explain": "Win rate must be compared with the method, not with 50%. Trend following wins less often and wins bigger; a profit factor of 1.8 says gross profits were 1.8 times gross losses despite losing most trades."
+            },
+            {
+              "q": "Which journal field does the lesson say to use for grading yourself, and on what basis?",
+              "choices": [
+                "Return, on whether the session made money",
+                "Rating 1 to 5, on how well you followed the plan regardless of profit",
+                "Confidence, on how sure you felt",
+                "Win rate, against 50%"
+              ],
+              "answer": 1,
+              "explain": "The replay account resets every session; only you carry over. Grading on rule-following produces the data for the two-column expectancy test and trains the one skill that transfers to a live account. A losing session with every rule followed is a 5."
+            },
+            {
+              "q": "In the weekly review, sessions you rated 4 or 5 average −1% and sessions rated 1 to 3 average +3%. What does that mean?",
+              "choices": [
+                "Your discipline is the problem; follow the rules more carefully",
+                "Your rules are wrong, so following them more carefully will not help; return to the backtester",
+                "You should trade only when you feel like breaking the rules",
+                "The journal has a bug"
+              ],
+              "answer": 1,
+              "explain": "If following the plan loses and breaking it wins, the plan is the problem, not the discipline. That is a signal to revisit the method's rules in the strategy lab, not to try harder at obeying rules that lose."
+            },
+            {
+              "q": "Why is 'don't trade in May' a bad rule change for repeating a demo drill, while 'use a 2 × ATR stop instead of a fixed 3%' is a good one?",
+              "choices": [
+                "Because May is always a profitable month",
+                "Because the first fits the bars you now remember from the first run (look-ahead bias), while the second would apply on any chart and is a genuine experiment",
+                "Because the engine does not allow date-based rules",
+                "Because ATR stops always make more money"
+              ],
+              "answer": 1,
+              "explain": "Demo bars are deterministic, so a repeat is only an honest experiment if the changed rule is one you could apply to a chart you have never seen. A rule that happens to fit the remembered bars is hindsight dressed as a rule, the same disease as look-ahead bias in backtests."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

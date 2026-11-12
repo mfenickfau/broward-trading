@@ -1,0 +1,636 @@
+{
+  "id": "m8-capstone",
+  "title": "Capstone: Your Trading Plan",
+  "level": "advanced",
+  "minutes": 62,
+  "summary": "Turn everything in the course into one written trading plan: goals and constraints, universe and timeframe, entry, exit and risk rules, three validation gates (backtest, replay, 30 paper trades), a review cadence, a fill-in template and a final exam covering all modules.",
+  "lessons": [
+    {
+      "id": "m8-l1",
+      "title": "Goals, constraints and an honest self-audit",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What this module produces\n\nEvery earlier module left you with a skill: reading a chart, sizing a position, pricing an option, running a backtest, surviving a replay drill. This module turns those skills into one document, a written [[Trading plan|trading plan]] that you could hand to a stranger and have them trade exactly the way you intend. Lesson 5 contains the template. Lessons 1 to 4 fill in the thinking behind each section, and the final lesson ends with a ten-question exam drawn from the whole course.\n\nA plan is not a prediction about the market. It is a set of decisions about *you*: what you will trade, when you will look at it, how much you will risk, what has to be true before you enter, what forces you out, and how you will judge yourself afterwards. Module 4 introduced the idea and the eight questions. The capstone goes slower and deeper, because the difference between a plan that is followed and one that is abandoned in the first losing week is almost always in the details that seemed too obvious to write down.\n\nStart with goals and constraints, because every other section depends on them. A rule set that needs you at the screen at 9:31 am is useless to someone in class at 9:31 am. A target of 30% a year is a fantasy for someone who can tolerate a 10% [[Drawdown|drawdown]]. Writing the constraints first stops you from building a plan you cannot live inside."
+        },
+        {
+          "type": "text",
+          "md": "### Goals: process first, then outcomes\n\nBeginners write outcome goals: *make 20% this year*, *turn $5,000 into $10,000*. Markets do not take instructions, so an outcome goal is a wish, and wishes make people do dangerous things in December when they are behind. The goals in your plan should be mostly about process, with the outcome goal stated once, modestly, as a check on whether the process is worth continuing.\n\nA useful split:\n\n- **Process goals** you fully control: *every trade has a stop placed with the entry*; *every trade is journaled before the fill*; *the weekly review happens every Sunday*; *I take every valid signal in my universe, or log the reason I skipped it*. Score these as a percentage each month. A plan adherence rate above 90% is the first thing to achieve. Nothing else can be evaluated until it is.\n- **Learning goals** for the next quarter: *finish 30 paper trades of one setup*; *complete the three risk drills in Module 7 with a profit factor above 1*; *understand why my losers are larger than my winners*.\n- **One outcome goal**, with a time frame long enough to mean something: *positive [[Expectancy|expectancy]] after costs over the first 30 trades*, or *beat buy-and-hold on my universe over 12 months with a smaller maximum drawdown*. A year is the shortest period over which a swing-trading result says much; Lesson 4 explains why 30 trades is a floor, not a verdict.\n\nWrite the outcome goal in terms of the yardstick from Module 1: the index ETF you could have bought instead. Beating a savings account while an index fund made 15% is not a success, and the backtest page prints the buy-and-hold comparison next to every result for exactly this reason."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**A goal you cannot measure from your journal is not a goal.** For every line in the goals section, ask: which column in the journal export, or which number on the Journal page's stats, tells me whether I hit this? If there is no such number, rewrite the goal until there is."
+        },
+        {
+          "type": "text",
+          "md": "### Constraints: the facts about your life that the plan must respect\n\nConstraints are not weaknesses; they are the walls of the room you are designing in. Write every one of these down.\n\n**Time.** When, honestly, can you look at a chart? Ten minutes after the 4:00 pm close? An hour on Sunday? If you cannot watch the regular session, intraday trading is out, and your plan belongs on the daily [[Timeframe|timeframe]] with orders placed in the evening and checked once a day. Module 1 covered the hours; Module 2 covered how holding period follows from timeframe. Most students fit a daily swing plan and nothing else, and that is a perfectly good place to spend the first year.\n\n**Capital.** The real amount you will trade with when you go live, not the paper account's $100,000. If it is $3,000, a 1% risk per trade is $30, which with a stop 5% away buys about 12 shares of a $50 stock. Reset the paper account to that number (Portfolio settings) so your paper habits are formed at the right scale. Under $25,000 in a US margin account the pattern day trader rule caps you at three day trades in five business days, another reason the daily timeframe fits.\n\n**Account type.** Cash, not margin, until the plan has a year of records. No leverage, no short selling unless a specific, tested rule in the plan calls for it (Module 4, Lesson 4). Options only in the defined-risk forms from Module 5 (long calls and puts, verticals, covered calls on stock you own) and only if the plan has a separate section for them.\n\n**Risk tolerance, measured.** How large a drawdown can you sit through without changing the rules? Not the number you like the sound of: the number you have evidence for. Your replay sessions and paper equity curve already show how you behaved at minus 8% or minus 15%. Pick the deepest drawdown you have actually tolerated calmly and make that, or less, the plan's maximum. If your rules produce drawdowns beyond it in backtest, the rules change, not the tolerance.\n\n**Knowledge boundary.** List what you will *not* trade because you have not studied it: penny stocks, futures, crypto, earnings gambles, naked options. The list shrinks as you learn. A plan with no exclusions is a plan that will be improvised."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200"
+          ],
+          "caption": "The S&P 500 ETF, daily, with 50- and 200-day moving averages: your yardstick. Whatever your plan earns has to be compared with simply owning this line. Note the depth of its worst drawdowns on screen; if the thought of your account falling that far makes you want to sell everything, your plan's drawdown limit must be tighter than the index's, which usually means smaller positions, not cleverer entries. If the pill says *demo*, the shape is simulated."
+        },
+        {
+          "type": "text",
+          "md": "### The self-audit: what your records already say\n\nBefore writing a single rule, read your own history. The Journal page holds every paper trade and replay session with their tags, emotions and ratings; the Portfolio page holds the stats; the Replay page keeps session scorecards. Spend twenty minutes answering these questions from the data, not from memory:\n\n- What is my plan adherence so far? Count trades where you did what the notes said versus trades where you did not. Module 4's two-column test: expectancy of the \"followed\" column versus the \"broke\" column.\n- Which setups made money and which lost? The Journal's stats by setup and by tag answer this in one view.\n- When do I break rules? After a loss (revenge), after a win (overconfidence), on Fridays, in the first fifteen minutes of a session? The emotion field was for this.\n- Are my losses larger than planned? Compare the planned risk (1R) to the actual loss on every losing trade. A pattern of 1.5R and 2R losses means stops are being moved or placed where gaps hit them.\n- How deep was my worst drawdown, and what did I do during it?\n\nWrite the answers as a short paragraph at the top of your plan under the heading *Where I start from*. It is the baseline the quarterly review in Lesson 5 compares against. Students who skip this step write plans for the trader they imagine; students who do it write plans for the trader they are, which is the one who will be executing."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**If the records are thin, that is the first finding.** Fewer than 20 journaled paper trades means your plan's first goal is simply to produce 30 of them under written rules (Lesson 4). Do not write elaborate entry filters on top of no evidence."
+        },
+        {
+          "type": "exercise",
+          "md": "Start your plan document now, in any notes app, with two headings.\n\n- Under **Goals**, write three process goals, one learning goal for the next 90 days, and one outcome goal stated against the SPY (or your index ETF) benchmark. Check each against the Journal page: name the number that will measure it.\n- Under **Constraints**, write your real trading hours, your real starting capital, your account type, your maximum tolerable drawdown with the evidence for it, and your exclusion list.\n- Open the Journal page and run the stats by setup, tag and emotion. Write the *Where I start from* paragraph: adherence so far, best and worst setups, when you break rules, how your actual losses compare with planned 1R.\n- If your real starting capital differs from the paper account, reset the paper account to it on the Portfolio settings tab, with a $1 commission, so every trade from here on is at true scale.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=stats",
+            "label": "Open the Journal stats"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which of these is a process goal rather than an outcome goal?",
+              "choices": [
+                "Make 15% this year",
+                "Every trade has a stop order placed at the same time as the entry",
+                "Double the account in 18 months",
+                "Beat the S&P 500 by five percentage points"
+              ],
+              "answer": 1,
+              "explain": "A process goal is something you fully control and can score as a percentage of trades. The other three depend on what the market does, which no plan can guarantee."
+            },
+            {
+              "q": "A student can look at charts only after 5 pm on weekdays and for an hour on Sunday. Which timeframe does that constraint point to?",
+              "choices": [
+                "5-minute bars with trades during the open",
+                "Hourly bars managed through the session",
+                "Daily bars with orders placed in the evening and checked once a day",
+                "It makes no difference; any timeframe can be traded from a phone"
+              ],
+              "answer": 2,
+              "explain": "If you cannot watch the regular session, intraday rules cannot be executed as written. Daily bars with resting limit and stop orders fit the schedule."
+            },
+            {
+              "q": "How should the plan's maximum drawdown limit be chosen?",
+              "choices": [
+                "Pick the deepest drawdown you have actually tolerated calmly in paper or replay, or less",
+                "Use the index's historical worst drawdown",
+                "Pick a round number that sounds disciplined, such as 50%",
+                "There should be no limit; drawdowns are part of trading"
+              ],
+              "answer": 0,
+              "explain": "Tolerance is a fact about you, measured from how you behaved in past drawdowns. If the rules produce deeper drawdowns than that in testing, the rules change, not the limit."
+            },
+            {
+              "q": "Your real trading capital will be $3,000 but your paper account is $100,000. What does the lesson recommend?",
+              "choices": [
+                "Keep $100,000 so the statistics are smoother",
+                "Reset the paper account to $3,000 with a realistic commission so habits form at true scale",
+                "Trade the paper account at 30 times normal size to compensate",
+                "Switch to options, which need less capital"
+              ],
+              "answer": 1,
+              "explain": "Position-sizing habits only transfer if the paper account is the size of the real one. A 1% risk on $3,000 is $30, and learning what that buys is part of the plan."
+            },
+            {
+              "q": "What is the point of the \"Where I start from\" self-audit paragraph?",
+              "choices": [
+                "To impress a future employer",
+                "To record the baseline (adherence, best and worst setups, when rules get broken) that later reviews are compared against",
+                "To estimate next year's return",
+                "To decide which indicator is the most accurate"
+              ],
+              "answer": 1,
+              "explain": "The audit forces the plan to be written for the trader you actually are, and it gives the quarterly review in Lesson 5 something concrete to measure progress against."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l2",
+      "title": "Choosing your market, universe and timeframe",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Instrument: stocks, ETFs, options\n\nThe plan names exactly what you trade. For almost every student finishing this course the right answer is **liquid US stocks and index ETFs**, for three reasons you already know. They are the instruments the dashboard, replay and backtest engines model best. Their costs are tiny: a cent or two of spread on a $200 stock, zero commission at most brokers. And they have no expiry, so a thesis that is early is not automatically wrong.\n\nETFs deserve a sentence of their own. SPY, QQQ and a sector ETF or two give you the market's trend without single-company earnings risk. A plan that trades only ETFs on the daily chart is slower and duller than one that trades individual names, and over the first year it is very often the more profitable of the two for a learner, because there are fewer ways to get hurt.\n\nOptions belong in the plan only as a separate section with its own rules, and only the defined-risk forms from Module 5: long calls or puts sized so that the whole premium is the 1% risk, [[Vertical spread|vertical spreads]], [[Covered call|covered calls]] on stock you already hold, [[Protective put|protective puts]] around an earnings date. Write the maximum premium at risk per trade and the rule for choosing expiry (for example, at least 45 days, so [[Theta|theta]] is not the main driver). If you cannot state why an option is better than the stock for a specific setup, the setup is a stock trade.\n\nEverything else, futures, forex, crypto, penny stocks, leveraged ETFs, goes on the exclusion list from Lesson 1 until it has its own module of study and its own tested rules."
+        },
+        {
+          "type": "text",
+          "md": "### Universe: a watchlist you actually know\n\nThe universe is the set of symbols your rules may be applied to. Smaller and better known beats larger and anonymous. A student trading daily bars after work can follow 15 to 30 names properly; 200 names means the signals you take are the ones that happened to catch your eye, which is not a rule.\n\nBuild it with filters you can write down and check:\n\n- **Liquidity.** Module 1's test: average volume above one million shares a day and a quoted spread below 0.1% of price. Every name in the demo universe passes; many real small caps do not.\n- **Price.** Above $20 or so. Lower-priced stocks have proportionally wider spreads and more erratic gaps, and fixed stops in dollars become huge in percentage terms.\n- **Behaviour that fits the setup.** Trend-following rules want names that trend (compare the 200-day slope and the [[Average Directional Index (ADX)|ADX]] across candidates); mean-reversion rules want names that oscillate in a range. The Compare page's normalized performance lines show this at a glance.\n- **Diversity.** Six semiconductor stocks are one position wearing six hats. Use the Compare page's correlation matrix and keep highly correlated pairs (above roughly 0.8) to one or two per sector, or write a rule that limits open positions per sector.\n- **Known calendar.** You should know each name's earnings month. The News page shows the next earnings date when a key is connected; otherwise look it up and write it in the watchlist.\n\nReview the universe quarterly, not weekly. Adding a stock because it was on the news yesterday is how plans drift."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Universe before signals.** A rule that works on your universe and is never tested elsewhere might be curve-fitted to those names (Module 6, Lesson 3). A rule that is tested on names outside the universe and still works has earned the right to be traded on the ones you watch."
+        },
+        {
+          "type": "chart",
+          "symbol": "QQQ",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "The Nasdaq-100 ETF with 20-, 50- and 200-day moving averages. Three averages on one chart show three timeframes at once: the 200-day slope is the trend a swing trader trades *with*, the 50-day is the pullback zone, the 20-day is where short-term entries cluster. A plan states which average defines \"the trend\" and which defines \"the entry\", so that two readers of the plan see the same thing."
+        },
+        {
+          "type": "text",
+          "md": "### Timeframe: choose from your constraints, then stay there\n\nModule 2 explained that the timeframe sets the holding period, the size of a sensible stop and the number of signals per month. The plan picks one *trading* timeframe and, usually, one *higher* timeframe for context, and names both.\n\n- **Daily bars, held for days to weeks**: the default for anyone with a job or classes. Signals arrive a few times a month per name, orders can rest overnight, the pattern day trader rule never applies. Context from the weekly chart or the 200-day average.\n- **Hourly bars, held for days**: for someone who can check in two or three times during the session. More signals, tighter stops, more noise. Context from the daily chart.\n- **5- and 15-minute bars, held for minutes to hours**: for someone at the screen during the whole session, with a fast connection, who has already passed the slower plan. Everything is faster, including the mistakes. Module 7's intraday drill is the place to find out whether this suits you before any real money does.\n\nThe standard combination is **trade on one timeframe, filter on the one above it**: for example, take daily breakout entries only when the weekly trend (or the 200-day average's slope) agrees. This single rule removes a large share of the [[Whipsaw|whipsaws]] that destroy trend-following results in ranges, and it is easy to test in the lab by comparing results with and without the filter.\n\nWhatever you choose, write the bar interval exactly as the app spells it (1day, 1h, 15min, 5min) and the hours during which you will act. Changing timeframe mid-trade, usually dropping to a lower one to find a reason not to take a stop, is one of the most common rule breaks in journals. The plan should forbid it in one sentence."
+        },
+        {
+          "type": "text",
+          "md": "### Benchmark and comparison set\n\nFinally, the plan names the benchmark the outcome goal is measured against, almost always the index ETF that best matches the universe: SPY for a broad large-cap list, QQQ for a technology-heavy one. It also names a **comparison set**: two or three symbols *outside* the universe that every rule will be tested on before it is adopted. Module 6 made the case for testing on at least three unrelated names; writing those names into the plan stops you choosing convenient ones later.\n\nRecord both on the Compare page as a saved group if you like, and look at the relative-strength line of your universe against SPY once a month. If the names you trade are persistently weaker than the index, a long-only plan is fighting the tide, and the quarterly review should ask why."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Market replay and the demo feed share one simulated price history.** It is deterministic and realistic in shape, but its symbols are labels, not the real companies. Choose your universe from real liquidity and sector data once a key is connected; use the demo universe to practise the rules, not to judge which stocks are \"good\"."
+        },
+        {
+          "type": "exercise",
+          "md": "Build the universe section of your plan.\n\n- Open the Compare page with SPY plus five candidate names from your watchlist (six symbols is the page maximum; run it again for the rest). Look at normalized performance over a year and the correlation matrix. Drop or pair up anything correlated above about 0.8 with another name in the list.\n- For each surviving name write: sector, typical daily range (ATR as a percent of price from the dashboard's ATR pane), earnings month, and whether it has been trending or ranging over the last 200 bars.\n- Write your trading timeframe, your filter timeframe, the exact bar interval string, the hours you will act, and the sentence forbidding timeframe changes mid-trade.\n- Name your benchmark ETF and three comparison symbols outside the universe.\n- Finish with the instrument section: stocks and ETFs only, or stocks plus a defined-risk options section with maximum premium per trade and minimum days to expiry.",
+          "action": {
+            "page": "compare.html",
+            "hash": "SPY,AAPL,MSFT,NVDA,JPM,XOM",
+            "label": "Open the Compare page"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Why does the lesson recommend liquid US stocks and index ETFs as the default instruments for a first trading plan?",
+              "choices": [
+                "They always go up",
+                "Costs are tiny, there is no expiry, and the app's engines model them best",
+                "Regulators require beginners to trade them",
+                "They are the only instruments with charts"
+              ],
+              "answer": 1,
+              "explain": "Narrow spreads and no commission keep the cost hurdle low, no expiry means an early thesis is not automatically a loss, and the paper, replay and backtest engines were built around them."
+            },
+            {
+              "q": "Six of the eight names in a watchlist are semiconductor stocks with pairwise correlations near 0.9. What is the problem?",
+              "choices": [
+                "The watchlist is too small",
+                "They are effectively one position; a sector move hits all six at once, so diversification is an illusion",
+                "Semiconductors cannot be charted",
+                "Correlation only matters for options"
+              ],
+              "answer": 1,
+              "explain": "Highly correlated names move together. Six positions in them carry roughly the risk of one large position, which breaks the per-trade and total-heat limits in spirit. Cap positions per sector or thin the list."
+            },
+            {
+              "q": "What does \"trade on one timeframe, filter on the one above it\" mean in practice?",
+              "choices": [
+                "Use two charts of the same interval",
+                "Take entries from the trading timeframe only when the higher timeframe's trend agrees, for example daily breakouts only when the 200-day slope is up",
+                "Switch to a lower timeframe when a stop is near",
+                "Average the two timeframes' prices"
+              ],
+              "answer": 1,
+              "explain": "The higher timeframe defines the trend; the lower one times the entry. The filter removes many whipsaws in ranges and is easy to test in the lab by comparing with and without it."
+            },
+            {
+              "q": "Under what condition does the lesson allow options in the plan?",
+              "choices": [
+                "Whenever a stock is too expensive to buy 100 shares",
+                "Never",
+                "Only defined-risk forms in a separate section with their own rules, including maximum premium per trade and a minimum days-to-expiry rule",
+                "Only naked short options, which have the highest win rate"
+              ],
+              "answer": 2,
+              "explain": "Long calls and puts, vertical spreads, covered calls and protective puts have known maximum losses. The plan must state why an option beats the stock for a specific setup and how it is sized; otherwise the setup is a stock trade."
+            },
+            {
+              "q": "Why write three comparison symbols outside the universe into the plan?",
+              "choices": [
+                "To have more charts to look at",
+                "So every new rule is tested on names you did not pick for their convenience, guarding against curve-fitting to the watchlist",
+                "Because the backtest engine requires at least four symbols",
+                "To diversify the paper account"
+              ],
+              "answer": 1,
+              "explain": "A rule that only works on the names you chose may have found stories about those stocks. Pre-committing to outside test symbols makes the out-of-sample check honest."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l3",
+      "title": "Writing your rules: entry, exit, risk and management",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### The stranger test\n\nA rule is a sentence that two people reading it would execute identically on the same chart. *Buy when the trend looks strong* fails: strong to whom? *Buy at the next open when yesterday's close is above the 20-day SMA, the 50-day SMA is above the 200-day SMA, and yesterday's close is the highest close of the last 20 days* passes: anyone with the dashboard can check every clause. Module 6 called this a strategy definition; the backtest engine's built-ins are written this way, which is why they can be tested at all.\n\nEvery rule in the plan has to pass the stranger test, and the easiest way to know is to try to express it as something the strategy lab could run. If you cannot imagine the condition as a comparison between numbers on the chart (a close against an average, an [[Relative Strength Index (RSI)|RSI]] against a level, a high against the last 20 highs, an ATR multiple), it is a feeling, not a rule. Feelings can stay in the plan as a *discretionary veto*, a right to skip a signal, as long as every skipped signal is logged with its reason. They may never be a reason to enter.\n\nThe plan has four rule groups: **setup and entry**, **exit**, **risk**, and **management**. Write them in that order."
+        },
+        {
+          "type": "text",
+          "md": "### Setup and entry rules\n\nA setup is the market condition that makes a trade worth considering; the entry is the exact trigger. Pick one setup family from Module 6 and write it fully before considering a second. The three families, with the shape of the rules:\n\n- **Trend following**, such as the [[SMA crossover strategy|SMA crossover]] or a pullback to the 20-day average in an uptrend. *Setup:* 50-day above 200-day, both rising. *Entry:* close back above the 20-day after at least three closes below it. Fewer signals, lower win rate, larger winners.\n- **Breakout**, such as the lab's 20-day high rule. *Setup:* price in a base at least 15 bars long, ATR contracting. *Entry:* close above the base high on volume above the 20-day average. Sensitive to [[False breakout|false breakouts]]; the higher-timeframe filter from Lesson 2 matters most here.\n- **Mean reversion**, such as the lab's RSI rule or the [[Bollinger bounce strategy|Bollinger bounce]]. *Setup:* a stock that has been ranging, RSI(14) below 30, price at the lower band. *Entry:* first close back above the lower band. Higher win rate, smaller winners, and it must never be applied to a stock in a steep downtrend.\n\nEach entry rule also specifies *how* you enter: market at the next open, a limit at a stated level with a stated time in force, or a buy stop above a level for breakouts (Module 1, Lesson 4). State what happens if a limit does not fill: cancelled at the close, or carried one more day.\n\nAdd the **filters** that veto an entry even when the trigger fires: no entries within two days before earnings; no entries on half-day sessions; no new entries when total heat (below) is at its cap; no entries in a name already held. Then write the discretionary veto clause and move on. Beginners spend ninety percent of their effort here and it is the least important group; the exits and the sizing decide the result."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**One setup, written completely, beats three setups written vaguely.** Every setup needs its own backtest, its own 30 paper trades and its own row in the journal stats. Add the second setup when the first has passed all three gates in Lesson 4, not before."
+        },
+        {
+          "type": "text",
+          "md": "### Exit rules: the stop, the target, the time limit and the trail\n\nModule 4 made the case that where you get out matters more than where you get in. The plan defines every way a trade can end, and the first one is written before the entry order is placed.\n\n**Initial stop.** Two sound methods, pick one per setup. *Structure:* just below the most recent swing low (for a long), far enough that normal noise does not touch it. *Volatility:* a multiple of [[Average True Range (ATR)|ATR]], typically 1.5 to 3 times the 14-day ATR below the entry. The ATR method adapts automatically to how much a stock moves and is easy to backtest. Whichever you choose, the stop is placed as an actual order the moment the entry fills, not kept in your head, and it is never moved further from price.\n\n**Target.** Options: a fixed multiple of the initial risk (2R or 3R), a structural level such as the prior high or an upper Bollinger Band, or no target at all, with the trail doing the work. State one. A trend-following plan often has no fixed target; a mean-reversion plan nearly always does (the middle band, the 20-day average).\n\n**Time stop.** If the trade has gone nowhere after N bars, exit. Capital sitting in a dead trade is capital not available for a live signal, and journals show stale trades often turn into losses. Ten bars is a common default for daily swing setups.\n\n**Trailing stop.** Once the trade is up a stated amount (1R is typical), move the stop to breakeven; thereafter trail it below each new swing low or at an ATR multiple below the highest close. The [[Trailing stop|trail]] converts a winner into a winner that cannot become a loser, at the cost of sometimes being shaken out early. Test both versions in the lab.\n\n**Event exits.** Earnings inside the holding period: either exit the day before or reduce to half size and accept the gap, decided now, not the night before. A stock halted or a position that has lost more than planned because of a gap: exit at the open, log it, no averaging down."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "Apple, daily, with the 20-, 50- and 200-day averages. Imagine the plan's trend-pullback rule applied here: setup when the 50-day is above the 200-day, entry on a close back above the 20-day, initial stop 2 x ATR below the entry, trail below each higher swing low once up 1R. Every one of those phrases is checkable by a stranger with this chart and the dashboard's ATR pane. Switch on the pane and measure a few trades by hand before you trust the lab to do it."
+        },
+        {
+          "type": "text",
+          "md": "### Risk rules: the numbers that keep you in the game\n\nThese are the rules that let you survive the losing streak that every method has. They are arithmetic, they are non-negotiable, and they are the first thing the weekly review checks.\n\n- **Risk per trade.** A fixed fraction of current account equity, lost if the initial stop is hit: 1% is the course default (Module 4, Lesson 1); 0.5% while a setup is in its first 30 paper trades. Shares = (equity x risk%) / (entry minus stop). This formula is the plan; write it out.\n- **Total heat.** The sum of open risk across all positions, capped at 4% to 6% of equity. When the cap is reached, no new entries, even valid ones. Log them as skipped.\n- **Maximum positions**, and **maximum per sector**: for example six open positions, two per sector, using the correlation work from Lesson 2.\n- **Daily and weekly loss limits.** If closed plus open losses reach 3% in a week, no new entries until the following Monday; manage the open ones by their rules only. This is the circuit breaker against revenge trading (Module 4, Lesson 3), and the journal's emotion column will show you whether you needed it.\n- **Drawdown response.** At minus 10% from equity peak (or whatever Lesson 1's audit said you can tolerate), halve the risk per trade. At the plan's maximum drawdown, stop trading live or paper, review, and restart only after a written diagnosis. Risk is restored to normal only after equity makes a new high.\n- **Leverage and shorting.** None, unless a specific tested rule in the plan says otherwise. If shorting is allowed, a hard stop is mandatory and the position size is halved.\n- **Costs assumed.** The commission and slippage used in every test and expected live: $1 per fill and 10 basis points is the course default. If live costs turn out higher, the backtests are rerun with the real numbers."
+        },
+        {
+          "type": "text",
+          "md": "### Management rules and the list of things you will not do\n\nManagement covers what you do between entry and exit, and it is where most discretionary damage happens. Keep it short and strict.\n\n- **Scaling.** Either you enter at full size or you scale in by a fixed rule (half at the trigger, half on the first higher low). No adding to losers; no adding beyond the planned total size.\n- **Checking frequency.** For a daily plan: once, after the close, for ten to fifteen minutes. The plan names the time. Checking a daily trade every hour is how five-minute decisions get made about daily positions.\n- **Order placement.** Stop placed with the fill; target or trail updated at the daily check; day orders cancelled at the close, GTC orders reviewed weekly.\n- **Record keeping.** Journal row created before the fill with setup, entry, stop, target, size, planned R, confidence and emotion; completed at exit with result in R, plan adherence (yes or no), rating and one lesson. The Journal page auto-creates the row from the paper trade; your job is the fields it cannot fill.\n\nThen write the **\"I will not\" list**, the mirror image of the rules: *I will not move a stop further away. I will not enter without a stop order. I will not change timeframe to justify staying in. I will not trade in the first fifteen minutes. I will not add to a losing position. I will not take a signal that is not in this document.* Most journals of failed plans contain the same six sentences in the past tense."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Rules written after a loss are revenge in disguise; rules written after a win are overconfidence in disguise.** Rule changes happen only at the scheduled review (Lesson 5), one at a time, with the reason and the evidence written down. During the week, the plan is read-only."
+        },
+        {
+          "type": "exercise",
+          "md": "Write the rules section of your plan, then check it against the lab.\n\n- Choose one setup family and write the setup, entry trigger, order type and unfilled-order rule in sentences that pass the stranger test. Name the higher-timeframe filter and your event filters.\n- Write every exit: initial stop method with its parameter, target, time stop, trail rule, earnings rule.\n- Write the risk rules with your numbers: risk per trade, the share-count formula, total heat cap, max positions and per sector, weekly loss limit, drawdown response, costs assumed.\n- Write the management rules and your \"I will not\" list.\n- Open the strategy lab on the built-in rule closest to your setup, with $1 commission and 10 bps slippage. Read its description and compare it clause by clause with yours. Every clause of yours that the lab cannot express is a discretionary element; decide whether to keep it as a veto or remove it.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&commission=1&slippageBps=10&run=1",
+            "label": "Open the strategy lab"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Which of these entry rules passes the \"stranger test\"?",
+              "choices": [
+                "Buy when momentum is clearly picking up",
+                "Buy when the chart looks like it is about to break out",
+                "Buy at the next open when yesterday's close is above the 20-day SMA, the 50-day SMA is above the 200-day SMA, and yesterday's close is the highest close of the last 20 days",
+                "Buy when you feel confident about the company"
+              ],
+              "answer": 2,
+              "explain": "A rule passes when two readers would act identically on the same chart. Only the third option consists entirely of checkable comparisons between numbers."
+            },
+            {
+              "q": "Your equity is $20,000, risk per trade is 1%, entry is $50 and the initial stop is $46. How many shares does the plan's formula give?",
+              "choices": [
+                "400",
+                "200",
+                "50",
+                "1,000"
+              ],
+              "answer": 2,
+              "explain": "Shares = (equity x risk%) / (entry minus stop) = ($20,000 x 0.01) / ($50 - $46) = $200 / $4 = 50 shares. The position is worth $2,500 but the amount at risk is $200."
+            },
+            {
+              "q": "Your plan has a 10-bar time stop. A swing trade is now 10 bars old, sitting a few cents above entry, and neither the stop nor the target has been touched. What does the plan say to do?",
+              "choices": [
+                "Hold on: a trade that has not lost money is still working",
+                "Close it now and free the capital; a trade that has gone nowhere in its allotted time has failed the setup even though it never hit the stop",
+                "Move the stop to breakeven and give it ten more bars",
+                "Add to the position to speed things up"
+              ],
+              "answer": 1,
+              "explain": "The time stop is an exit rule, not a suggestion. Capital parked in a stale trade cannot take the next live signal, and journals show dead trades often decay into losses. Extending the deadline because the trade 'has not lost yet' is exactly the discretionary drift the plan exists to prevent; if ten bars is wrong for your setup, change the rule at the quarterly review, not mid-trade."
+            },
+            {
+              "q": "The plan says total heat is capped at 5% of equity. You have four open positions each risking 1.25%, and a valid signal fires. What do you do?",
+              "choices": [
+                "Take it at half size",
+                "Take it and tighten the other stops",
+                "Skip it and log it as a skipped signal with the reason",
+                "Close the weakest position to make room"
+              ],
+              "answer": 2,
+              "explain": "When the cap is reached, no new entries, even valid ones. Logging the skip keeps the record honest and lets the review judge whether the cap is set correctly."
+            },
+            {
+              "q": "When may the plan's rules be changed?",
+              "choices": [
+                "Immediately after a loss, while the lesson is fresh",
+                "Whenever a trade is going badly",
+                "Only at the scheduled review, one change at a time, with the reason and evidence written down",
+                "Never; a plan is permanent"
+              ],
+              "answer": 2,
+              "explain": "Changes made after a loss are revenge in disguise and changes after a win are overconfidence. The review is the only time the plan is editable; between reviews it is read-only."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l4",
+      "title": "Validation: backtest, replay and 30 paper trades",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Three gates, in order, with the criteria written first\n\nA plan that has not been tested is an opinion. The capstone validates it through three gates, each of which answers a different question, and each of which can send you back to Lesson 3. The order matters: the cheap, fast test comes first, the slow, expensive one last.\n\n1. **[[Backtest|Backtest]]** (hours): *does the rule have a positive expectancy after costs on data it has never seen?*\n2. **[[Market replay|Replay]]** (days): *can I execute the rule bar by bar, with the right-hand side of the chart hidden, without breaking it?*\n3. **Paper trading** (weeks to months): *does the rule, and do I, survive contact with live prices, real schedules and real news?*\n\nBefore running any of them, write the pass criteria for each gate into the plan. Module 6 was blunt about this: a result judged against criteria chosen afterwards is a story, not a test. Suggested defaults follow; adjust them to your constraints from Lesson 1, then do not touch them until the review.\n\nEach gate ends with a written **go / no-go** decision. No-go means exactly one change to the rules, recorded with its reason, and the gate is run again. Never change two things at once, because you will not know which one worked, and never loosen a criterion to let a result through."
+        },
+        {
+          "type": "text",
+          "md": "### Gate 1: the backtest, done honestly\n\nRun your setup in the strategy lab on the daily interval with the plan's commission and slippage. Use the built-in rule closest to yours; if your rule adds a filter the lab lacks (an earnings veto, a higher-timeframe check), note that your live results should be somewhat better than the lab's, never worse, and treat any gap the other way as a warning.\n\nThe procedure, from Module 6:\n\n- **In-sample.** Run on each symbol in your universe over the longest history available. Record trades, profit factor, win rate, maximum drawdown, exposure and the buy-and-hold comparison in a table.\n- **Out-of-sample.** Run the same parameters on the three comparison symbols you pre-committed to in Lesson 2. If you tuned any parameter in-sample, the out-of-sample results are the only ones that count.\n- **Sensitivity.** Change each parameter by about 20% (a 20-day lookback to 16 and 24) and confirm the result does not collapse. A rule that works at 20 and fails at 18 and 22 has found noise. The lab's optimizer shows the whole grid; you are looking for a broad plateau, not a sharp peak.\n- **Costs doubled.** Rerun with $2 and 20 basis points. If the edge disappears, the rule is a costs-sensitive rule and belongs on a slower timeframe or not at all.\n\nSuggested pass criteria: at least 30 trades across the universe; [[Profit factor|profit factor]] above 1.3 after costs on the out-of-sample set; [[Maximum drawdown|maximum drawdown]] inside the plan's limit; a result that holds at the neighbouring parameter values; and a return that is at least competitive with buy-and-hold given its lower exposure. Record the actual numbers next to the criteria. A rule that passes narrowly is a rule to trade at half size."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**A failed backtest is a cheap success.** It cost an evening and saved you months. The most expensive outcome of the capstone is a rule that fails only after thirty paper trades because the backtest was skipped or softened."
+        },
+        {
+          "type": "text",
+          "md": "### Gate 2: replay, where the rule meets your hands\n\nThe backtest tested the rule. Replay tests you applying the rule, with the future hidden and the clock running. Module 7 explained why that is different: on a finished chart every signal is obvious; in replay, the breakout that fails looks exactly like the one that works.\n\nRun the plan through at least three replay sessions on daily bars, chosen to cover different regimes: a trending year, a ranging period and a bear market. The drills in Module 7 provide all three, or pick your own symbols and start dates from your universe. In each session:\n\n- Write the rules you are testing into the session notes before pressing play. Keep the plan open beside the chart.\n- Take every valid signal at the plan's size and place the stop as an order immediately. Skip nothing without logging the reason.\n- Do not look up what the real stock did in that period. The replay engine's honesty note is there for a reason.\n- At the end, save the session, then open it on the Journal page and rate yourself on adherence only.\n\nSuggested pass criteria: adherence above 90% across the sessions (count rule breaks per trade); results in each session in the same direction and rough magnitude as the backtest for that regime; no session where the drawdown exceeded the plan's limit without the drawdown-response rule being followed. A rule you cannot follow in replay, where nothing is at stake, will not be followed with money."
+        },
+        {
+          "type": "drill",
+          "drillId": "bear-market-survival-2022",
+          "md": "**Trade your written plan through a bear market.** Apply your own rules, not the drill's suggested ones, with your real risk per trade and total heat cap. Pass criteria for the capstone: every rule break logged, drawdown kept inside your plan's limit, and the drawdown-response rule (halve size at the first threshold) actually executed when triggered. If your plan is long-only, finishing flat or slightly down with high adherence is a pass; a profit from improvised shorts is a fail."
+        },
+        {
+          "type": "text",
+          "md": "### Gate 3: thirty paper trades, and what thirty can and cannot prove\n\nNow trade the plan on the paper account, at the real-capital scale set in Lesson 1, until thirty trades of the setup have closed. For a daily swing rule on a 20-name universe that takes roughly two to four months. The length is the point: it exposes the plan to earnings seasons, macro releases, a holiday week and at least one stretch where nothing works.\n\nBe clear about what thirty trades proves. With a 50% win rate the standard error of the win rate over 30 trades is about 9 percentage points, so the 95% range is roughly 32% to 68%. Thirty trades cannot distinguish a slight edge from luck. What it can do:\n\n- Prove that you can follow written rules for months. That is the main result, and it is a prerequisite for everything else.\n- Catch gross problems the backtest hid: fills that never happen because limits are too tight, signals that arrive when you cannot act, costs higher than assumed, a universe where half the names report earnings in the same two weeks.\n- Produce a journal with enough rows for the stats by setup, emotion and tag to mean something.\n\nSuggested pass criteria: adherence above 90%; realized expectancy after costs at or above zero (positive is better, but zero with high adherence over a bad market is not a fail); worst loss no larger than about 1.3R, meaning stops were respected and gaps were survivable; no circuit-breaker rule ignored. If gate 3 passes, the plan may be traded live at half the planned risk for the next thirty trades, moving to full risk after that if the numbers hold. If it fails on adherence, the fix is behavioural and the next thirty are paper again. If it fails on expectancy with high adherence, go back to gate 1 with one change."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "Microsoft, daily. Count how many valid signals your rule would have produced here over about a year; for a typical daily trend-pullback rule it is five to ten per name. Thirty trades on one name is years; on a 20-name universe it is a few months. The number of signals per month your universe produces is a planning fact: too few and gate 3 never ends, too many and your evening check cannot keep up."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Keep the three gates' results in the plan itself**, under a *Validation record* heading: date, data used, criteria, numbers, decision, and the one change made if any. A plan with its own test history is far harder to abandon in a bad week than a list of rules."
+        },
+        {
+          "type": "exercise",
+          "md": "Run gate 1 tonight; schedule gates 2 and 3.\n\n- In the strategy lab, run the built-in closest to your setup on each universe symbol and each comparison symbol with $1 commission and 10 bps slippage. Fill in the in-sample and out-of-sample tables in your plan's validation record, including buy-and-hold for each.\n- Run the parameter sweep (about plus and minus 20% on each parameter) and the doubled-costs run. Write go or no-go against each pre-written criterion.\n- Put three replay sessions on your calendar for this week, one each for a trending, ranging and bear period, and write their pass criteria.\n- Open the Portfolio settings, confirm the account is at real-capital scale with a $1 commission, and write the date on which thirty trades will be counted from. From that date, every trade is a gate-3 trade.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=rsiReversion&low=30&high=70&commission=1&slippageBps=10&run=1",
+            "label": "Run a costed backtest"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Why are the pass criteria for each validation gate written down before the test is run?",
+              "choices": [
+                "Because the lab requires them as inputs",
+                "So the result is judged against a standard set in advance rather than one chosen to fit the outcome",
+                "To save time",
+                "Because criteria cannot be changed later under any circumstances"
+              ],
+              "answer": 1,
+              "explain": "A result judged against criteria chosen afterwards is a story, not a test. Criteria can change, but only at the scheduled review with the reason recorded."
+            },
+            {
+              "q": "A rule shows a profit factor of 2.1 with a 20-day lookback, but 0.8 at 18 days and 0.9 at 22 days. What does this suggest?",
+              "choices": [
+                "The rule is robust and 20 is the optimal setting",
+                "The result at 20 is probably noise; a sound rule shows a broad plateau across neighbouring parameter values",
+                "The data must be wrong",
+                "The rule needs a longer backtest"
+              ],
+              "answer": 1,
+              "explain": "Sensitivity to a single parameter value is a hallmark of curve-fitting. The optimizer grid should show a plateau; a sharp peak means the parameter found the past, not an edge."
+            },
+            {
+              "q": "What does the replay gate test that the backtest gate does not?",
+              "choices": [
+                "Whether the rule is profitable",
+                "Whether you can execute the rule bar by bar with the future hidden, without breaking it",
+                "Whether the data provider is accurate",
+                "Whether the rule works on intraday bars"
+              ],
+              "answer": 1,
+              "explain": "The backtest tests the rule; replay tests the trader applying the rule under uncertainty. Adherence, not profit, is the main pass criterion for the replay gate."
+            },
+            {
+              "q": "What can thirty paper trades realistically prove?",
+              "choices": [
+                "That the strategy has a statistically significant edge",
+                "That you can follow written rules for months, and whether there are gross execution problems the backtest hid",
+                "That the strategy will work with real money",
+                "Nothing; only backtests matter"
+              ],
+              "answer": 1,
+              "explain": "With a 50% win rate the 95% range for the win rate over 30 trades is roughly 32% to 68%, so an edge cannot be confirmed. Adherence and execution problems can be, and that is the point of the gate."
+            },
+            {
+              "q": "Gate 3 ends with 94% adherence but a slightly negative expectancy after costs. What does the lesson recommend?",
+              "choices": [
+                "Abandon trading",
+                "Go live anyway because adherence was high",
+                "Return to gate 1, make exactly one change to the rules with its reason recorded, and re-test",
+                "Make several changes at once to fix it faster"
+              ],
+              "answer": 2,
+              "explain": "High adherence means the method, not the behaviour, needs work, so the fix belongs in the backtest gate. One change at a time keeps cause and effect visible."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l5",
+      "title": "Review cadence, journal metrics, the written plan and the final exam",
+      "minutes": 14,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### The review is part of the plan, not an afterthought\n\nThe rules in Lesson 3 decide individual trades. The review decides whether the rules are working and whether you are following them. Without a fixed cadence, reviews happen only after bad weeks, which is exactly when judgement is worst. The plan therefore schedules four kinds of review and says what each one is allowed to change.\n\n**Daily, ten to fifteen minutes after the close.** Complete journal rows for anything that closed; create rows for anything that will be entered tomorrow; update trailing stops; cancel expired day orders; check tomorrow's earnings and macro calendar against open positions. Allowed changes: none to the plan.\n\n**Weekly, at a fixed time, about thirty minutes.** The Journal page's weekly review checklist exists for this. Compute adherence for the week (rule breaks divided by decisions), run the two-column test (expectancy of followed versus broken trades), read every journal \"lesson\" line, and check the heat and loss-limit rules were respected. Write one sentence on what next week will do differently *behaviourally*. Allowed changes: none to the rules; one behavioural commitment.\n\n**Monthly, about an hour.** The metrics below, by setup, tag and emotion, compared with the backtest's expectations and with the benchmark. Allowed changes: risk per trade, up or down, according to the scaling rule; the universe, if a name has stopped passing the filters.\n\n**Quarterly, a few hours.** Re-read the whole plan against three months of journal. Decide on at most one rule change, with the evidence, and re-run gate 1 with it before adopting. Review the universe and the constraints (your hours or capital may have changed). Increase the version number and date the document. Allowed changes: anything, one at a time, written down.\n\nA plan that is reviewed on a schedule gets better slowly. A plan that is reviewed after every loss gets worse quickly, because each change is a reaction to the last trade rather than to the last hundred."
+        },
+        {
+          "type": "text",
+          "md": "### The journal metrics that matter, and how to read them\n\nModule 4 and Module 6 introduced most of these; the capstone fixes the short list you will compute every month from the Journal export or the Portfolio stats, and what each one is for.\n\n- **Adherence (%).** Trades that followed the plan divided by all trades. The master metric. Below 90% nothing else is interpretable, because you are not trading the plan you are measuring.\n- **Expectancy (in R).** Average result per trade in units of initial risk: (win rate x average win in R) minus (loss rate x average loss in R). Positive after costs is the goal; the backtest's expectancy is the comparison. Compute it for the followed column and the broken column separately.\n- **Profit factor.** Gross wins divided by gross losses. Above 1.3 is healthy for a swing rule; below 1 is losing. Fewer than 30 trades makes it noisy; say so when you record it.\n- **Win rate and average win / average loss in R.** Together, not separately. A 40% win rate with winners of 2.5R is a good trend plan; a 70% win rate with winners of 0.5R and losers of 1R is a losing one.\n- **Average loss in R.** Should be close to 1.0 or below. Above 1.2 means stops are being moved or hit by gaps; look at the trades.\n- **Maximum drawdown (%) and current drawdown.** Against the plan's limit and the drawdown-response thresholds.\n- **Exposure and number of trades.** Enough trades to mean something; exposure low enough that cash was available when signals came.\n- **By setup, tag and emotion.** The Journal page's breakdowns. The questions: which setup earns the expectancy? Which tag (earnings week, Monday, half-day) loses? Which emotion at entry precedes rule breaks?\n- **Versus benchmark.** Your return and drawdown next to SPY's over the same period. Underperforming with a much smaller drawdown can be acceptable in year one; underperforming with a larger one is not.\n\nExport the journal as CSV monthly and keep every export. The series of monthly numbers, not any single month, is where trends in your trading become visible."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Scaling is a rule, not a feeling.** Move from paper to live at half risk only after gate 3 passes. Move to full risk only after thirty more trades with adherence above 90% and expectancy at or above zero. Drop back to half risk at the first drawdown threshold. Write it in section 12 and let the numbers make the decision."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200"
+          ],
+          "caption": "A stock with a long trend and a deep drawdown on one chart: the kind of year that produces both the best and the worst months in a journal. The monthly review is where you find out whether your winners came from the plan or from the trend, and whether your losers came from the rules or from breaking them. Nvidia here is an illustration of regime change, not a recommendation; demo data is simulated."
+        },
+        {
+          "type": "text",
+          "md": "### The written plan: fill-in template\n\nCopy the outline below into your own document and fill every line. Brackets mark the blanks. A section you cannot fill is a section you have not decided yet, and the plan is not finished until there are no brackets left.\n\n---\n\n**MY TRADING PLAN, version [1.0], dated [date]. Next scheduled review: [date].**\n\n**1. Where I start from**\n\n- Paper trades journaled so far: [n]. Adherence: [%]. Best setup: [name, expectancy]. Worst setup: [name, expectancy].\n- When I break rules: [after losses / after wins / time of day / other].\n- Average actual loss on losing trades vs planned 1R: [x.x R].\n- Deepest drawdown tolerated calmly: [%].\n\n**2. Goals**\n\n- Process goals (scored monthly): [stop placed with every entry]; [journal row before every fill]; [weekly review every (day)]; [every valid signal taken or logged].\n- Learning goal for the next 90 days: [...].\n- Outcome goal: [e.g. positive expectancy after costs over 30 trades; beat (benchmark) over 12 months with smaller max drawdown].\n\n**3. Constraints**\n\n- Hours I can act: [weekday times], [weekend time]. Checking time for open trades: [time, minutes].\n- Starting capital (real): [$]. Paper account set to this amount: [yes/no]. Account type: [cash].\n- Maximum drawdown I will accept: [%]. Leverage: [none]. Shorting: [none / rule reference].\n- I do not trade: [penny stocks, futures, crypto, earnings gambles, naked options, ...].\n\n**4. Market, universe and timeframe**\n\n- Instruments: [US stocks and ETFs / plus defined-risk options per section 9].\n- Universe (name, sector, ATR % of price, earnings month, trending/ranging): [list of 15 to 30].\n- Universe filters: avg volume > [1M], price > [$20], spread < [0.1%], max [2] names per sector, pairwise correlation < [0.8].\n- Trading timeframe: [1day]. Filter timeframe: [weekly / 200-day slope]. I do not change timeframe during a trade.\n- Benchmark: [SPY]. Comparison symbols for out-of-sample tests: [A], [B], [C].\n\n**5. Setup and entry (one setup; add a second only after it passes all gates)**\n\n- Setup name and family: [trend pullback / breakout / mean reversion].\n- Setup conditions: [e.g. 50-day SMA above 200-day, both rising].\n- Entry trigger: [e.g. close back above the 20-day SMA after >= 3 closes below].\n- Order type and time in force: [market at next open / limit at ... GTC / buy stop at ...]. Unfilled rule: [cancel at close / carry one day].\n- Filters: no entry within [2] days before earnings; no entry when heat is at cap; no entry in a name already held; [others].\n- Discretionary veto: I may skip a valid signal if [...], and I log every skip with its reason. I may never enter on discretion.\n\n**6. Exits**\n\n- Initial stop: [structure: below last swing low / volatility: (x) ATR(14) below entry]. Placed as an order with the fill. Never moved further away.\n- Target: [n R / level / none, trail only].\n- Time stop: exit after [n] bars without progress.\n- Trail: at +[1]R move stop to breakeven; then trail [below each higher swing low / (x) ATR below highest close].\n- Earnings inside holding period: [exit the day before / halve size and hold].\n- Gap past stop or halt: exit at the open, log it, no averaging down.\n\n**7. Risk**\n\n- Risk per trade: [1]% of current equity ([0.5]% during a setup's first 30 trades).\n- Shares = (equity x risk %) / (entry - stop). Costs assumed: [$1] per fill, [10] bps slippage.\n- Total open heat cap: [5]%. Max positions: [6]. Max per sector: [2].\n- Weekly loss limit: [3]%; when hit, no new entries until [Monday].\n- Drawdown response: at -[10]% from peak, halve risk per trade; at -[max]% stop, diagnose in writing, restart only after review. Normal risk resumes at a new equity high.\n\n**8. Management**\n\n- Scaling: [full size at trigger / half at trigger, half on first higher low]. Never add to a loser.\n- Daily check at [time] for [15] minutes: update trails, cancel day orders, review GTC orders [weekly].\n- Journal: row before fill (setup, entry, stop, target, size, planned R, confidence, emotion); completed at exit (result in R, adherence yes/no, rating, one lesson).\n\n**9. Options (delete if not used)**\n\n- Allowed forms: [long call/put, vertical spreads, covered calls on held stock, protective puts]. Max premium at risk per trade: [= 1% of equity]. Minimum days to expiry at entry: [45]. Why an option instead of the stock for this setup: [...].\n\n**10. I will not**\n\n- Move a stop further away. Enter without a stop order. Change timeframe to justify staying in. Trade the first [15] minutes. Add to a losing position. Take a signal not in this document. [Others from my audit.]\n\n**11. Validation record**\n\n- Gate 1 backtest: date [..], symbols [..], costs [..], criteria [..], results [..], decision [go/no-go], change made [..].\n- Gate 2 replay: sessions [..], adherence [%], criteria [..], decision [..].\n- Gate 3 paper: dates [..], trades [30], adherence [%], expectancy [R], worst loss [R], decision [..].\n\n**12. Review cadence and metrics**\n\n- Daily [time]: log and manage. Weekly [day, time]: Journal checklist, adherence %, two-column test. Monthly: expectancy, profit factor, max drawdown, average R, by setup / tag / emotion, versus benchmark. Quarterly: plan revision, universe review, version number up.\n- Scaling rule: to live at half risk after gate 3; to full risk after 30 more trades with adherence > 90% and expectancy >= 0; back to half risk at any drawdown threshold.\n\n---\n\nSigned: [name], [date]. I will not edit this document except at a scheduled review."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Keep the plan where you trade.** Paste it into a journal entry on the Journal page (a manual entry tagged *plan*) so it travels with your records and its versions are dated alongside your trades. Save the CSV export after every monthly review."
+        },
+        {
+          "type": "exercise",
+          "md": "Finish the plan and start the clock.\n\n- Fill every bracket in the template. Read the result aloud once; any sentence a stranger could not execute gets rewritten.\n- Create a manual journal entry tagged *plan* containing the whole document, dated and versioned 1.0.\n- Put the four reviews on your calendar: daily after the close, weekly on a fixed day, monthly on the first weekend, quarterly with a version bump.\n- Open the Journal's weekly review and run it on your existing paper and replay trades as a dry run, so the first real review is not the first time you have seen the checklist.\n- Take the final exam below. It draws on all eight modules. Pass it, and the certificate on the Learn page is yours; more importantly, you now have a document that will tell you, honestly, whether you should keep trading the way you are.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=review",
+            "label": "Open the weekly review"
+          }
+        },
+        {
+          "type": "text",
+          "md": "### Final exam\n\nTen questions across the whole course: market mechanics, charts, indicators, risk, options, backtesting, replay and the plan itself. The pass mark is the same 80% as every module quiz, and your best score is kept."
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A stock is quoted bid $84.20, ask $84.26. You buy 200 shares with a market order and sell them immediately with another market order. Ignoring commissions, what is your result?",
+              "choices": [
+                "Break even",
+                "A loss of $12, the spread on 200 shares",
+                "A gain of $12",
+                "A loss of $0.06"
+              ],
+              "answer": 1,
+              "explain": "You buy at the ask ($84.26) and sell at the bid ($84.20), losing $0.06 per share x 200 = $12. The spread is a cost paid on every round trip before price moves at all."
+            },
+            {
+              "q": "On a daily chart a stock makes a series of higher highs and higher lows above a rising 50-day moving average. Which description fits?",
+              "choices": [
+                "A downtrend",
+                "A range",
+                "An uptrend; a trend-following plan looks for pullback entries, a mean-reversion plan stays out",
+                "A head-and-shoulders top"
+              ],
+              "answer": 2,
+              "explain": "Higher highs and higher lows with a rising average define an uptrend. Mean-reversion entries against a strong trend are exactly the trades the lesson warned against."
+            },
+            {
+              "q": "RSI(14) on a stock drops to 22 while the stock is in a steep, persistent downtrend below a falling 200-day average. What is the correct reading for a plan that uses an RSI mean-reversion setup?",
+              "choices": [
+                "Buy immediately; oversold always bounces",
+                "Oversold can stay oversold in a trend; the setup requires a ranging stock, so no trade",
+                "Short the stock because RSI is low",
+                "RSI is irrelevant on daily charts"
+              ],
+              "answer": 1,
+              "explain": "Oscillators measure momentum, not value. In a strong downtrend RSI can stay below 30 for weeks. The setup conditions, not the trigger alone, decide whether a signal is valid."
+            },
+            {
+              "q": "Your account equity is $12,000, risk per trade is 1%, entry $36.00, stop $34.50. Position size?",
+              "choices": [
+                "333 shares",
+                "80 shares",
+                "120 shares",
+                "8 shares"
+              ],
+              "answer": 1,
+              "explain": "Risk = $120. Distance to stop = $1.50. Shares = $120 / $1.50 = 80. Position value is $2,880, but only $120 is at risk if the stop is honoured."
+            },
+            {
+              "q": "A strategy wins 40% of the time with an average winner of 2.5R and an average loser of 1.0R. What is its expectancy per trade, and is it a good sign?",
+              "choices": [
+                "-0.1R; it loses",
+                "+0.4R; positive, so the method can be profitable despite losing most trades",
+                "+1.5R; exceptional",
+                "Cannot be computed without the win count"
+              ],
+              "answer": 1,
+              "explain": "Expectancy = 0.4 x 2.5 - 0.6 x 1.0 = 1.0 - 0.6 = +0.4R per trade. A sub-50% win rate with large winners is typical of a healthy trend-following plan."
+            },
+            {
+              "q": "A stock trades at $100. You buy one $105 call expiring in 30 days for $2.00. At expiry the stock is $104. What is your result?",
+              "choices": [
+                "A gain of $200",
+                "A loss of $200, the whole premium",
+                "A loss of $100",
+                "Break even"
+              ],
+              "answer": 1,
+              "explain": "The call is out of the money at expiry ($104 is below the $105 strike), so it expires worthless and the entire $2.00 x 100 = $200 premium is lost. That is the defined maximum loss of a long call."
+            },
+            {
+              "q": "A backtest of a rule returns 60% a year, but the strategy uses the day's close to decide whether to buy at that same day's open. What is wrong?",
+              "choices": [
+                "Nothing; it is a good result",
+                "Look-ahead bias: the rule uses information unavailable at the time of the decision, so the result is meaningless",
+                "Survivorship bias",
+                "The return is too low to be interesting"
+              ],
+              "answer": 1,
+              "explain": "Any rule that uses data from after the moment of the decision is cheating. Honest rules act on the next bar's open using only completed bars. The lab's built-ins are written this way."
+            },
+            {
+              "q": "In a replay session you are long, price is approaching your stop, and you switch the chart to the 15-minute interval to \"see what it is really doing\". According to your plan, what has just happened?",
+              "choices": [
+                "Good risk management",
+                "A rule break: changing timeframe during a trade, usually to find a reason not to take the stop",
+                "A valid higher-timeframe filter",
+                "Nothing, since replay is practice"
+              ],
+              "answer": 1,
+              "explain": "The plan forbids changing timeframe mid-trade in one sentence because it is one of the most common ways stops get rationalized away. Replay exists to catch this habit before money is involved."
+            },
+            {
+              "q": "After 30 paper trades your adherence is 72% and the followed-plan column has positive expectancy while the broken-plan column is strongly negative. What does this tell you and what is the next step?",
+              "choices": [
+                "The method is broken; redesign the rules",
+                "The method works and discipline is the problem; the next 30 trades stay on paper with a behavioural fix, such as smaller size or a pre-trade checklist",
+                "Go live immediately since the followed trades were profitable",
+                "Add a second setup to diversify"
+              ],
+              "answer": 1,
+              "explain": "The two-column test separates method from behaviour. Positive when followed and negative when broken means the rules are fine and you are not following them; that is fixed behaviourally, not by editing rules."
+            },
+            {
+              "q": "When, according to the plan, may you edit the rules?",
+              "choices": [
+                "Whenever a trade goes badly",
+                "Daily, after the close",
+                "Only at the scheduled quarterly review, one change at a time, with evidence recorded and the backtest gate re-run before adoption",
+                "Only after a losing streak of five"
+              ],
+              "answer": 2,
+              "explain": "Weekly reviews change behaviour, monthly reviews adjust risk by the scaling rule, and only the quarterly review may change a rule. Each change is one at a time, written down, and re-tested through gate 1 first."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

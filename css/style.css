@@ -683,3 +683,193 @@ body.modal-open{overflow:hidden}
   .card,.pane,.callout{break-inside:avoid;box-shadow:none}
   a{color:inherit;text-decoration:underline}
 }
+
+/* ------------------------------------------------------------------ */
+/* 16. Mobile shell (v0.3): injected by js/nav.js                      */
+/*     #nav mount · bottom tab bar · "More" sheet · accordions ·        */
+/*     phone tap targets · dashboard phone layout                      */
+/* ------------------------------------------------------------------ */
+:root{ --tabbar-h:56px; }
+
+/* The #nav mount is the sticky element (a sticky child cannot stick inside
+   a parent exactly its own height). Pages with <body class="page"> pull the
+   mount out to the viewport edges; pages with <body><div class="page"> get a
+   full-bleed bar whose content lines up with the centred page column. */
+#nav{position:sticky;top:0;z-index:50;min-width:0}
+body.page > #nav{margin:0 calc(-1 * var(--gutter-r)) 0 calc(-1 * var(--gutter))}
+#nav .topnav{position:static;margin:0}
+body:not(.page) > #nav .topnav{
+  padding-left:max(var(--gutter),calc((100% - var(--page-max)) / 2 + var(--gutter)));
+  padding-right:max(var(--gutter-r),calc((100% - var(--page-max)) / 2 + var(--gutter-r)))
+}
+body:not(.page) > #footer > .footer{max-width:var(--page-max);margin-left:auto;margin-right:auto;padding-left:var(--gutter);padding-right:var(--gutter-r)}
+.footer .footer-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:4px var(--sp-3);margin-top:var(--sp-2);color:var(--faint)}
+.footer .footer-meta #btNetState{color:var(--warn-text,var(--warn))}
+
+/* theme toggle: shows the theme you would switch to */
+.themebtn{position:relative;min-width:36px;min-height:36px;padding:6px}
+.themebtn .ico{width:18px;height:18px}
+.themebtn .moon{display:none}
+.themebtn[data-mode="light"] .sun{display:none}
+.themebtn[data-mode="light"] .moon{display:inline-block}
+
+/* ---- bottom tab bar (phones only) ---- */
+.tabbar{
+  display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;
+  height:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));
+  padding:0 max(4px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-right,0px));
+  background:color-mix(in srgb,var(--panel) 92%,transparent);
+  -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
+  border-top:1px solid var(--line);
+  box-shadow:0 -6px 20px rgba(0,0,0,.18)
+}
+@supports not (background:color-mix(in srgb,red 50%,blue)){ .tabbar{background:var(--panel)} }
+.tabbar .tab{
+  flex:1 1 0;min-width:0;min-height:var(--tabbar-h);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:6px 2px;margin:0;border:0;border-radius:var(--r);background:none;
+  color:var(--muted);font:inherit;font-size:var(--fs-xs);font-weight:500;letter-spacing:.1px;line-height:1;
+  text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:color var(--dur) var(--ease)
+}
+.tabbar .tab:hover{text-decoration:none;color:var(--fg)}
+.tabbar .tab .ico{width:24px;height:24px;flex:0 0 auto}
+.tabbar .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabbar .tab.on,.tabbar .tab[aria-current="page"]{color:var(--accent)}
+.tabbar .tab.on .ico{filter:drop-shadow(0 0 6px var(--accent-soft))}
+.tabbar .tab:active{transform:none;background:var(--panel2)}
+.tabbar .tab:focus-visible{outline-offset:-3px}
+
+/* ---- "More" sheet ---- */
+.sheet-backdrop{
+  position:fixed;inset:0;z-index:95;background:rgba(5,8,12,.6);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center
+}
+.sheet-backdrop[hidden]{display:none}
+.sheet{
+  width:100%;max-width:560px;max-height:min(88vh,88dvh);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:var(--panel);border:1px solid var(--line2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:var(--shadow-3);padding:6px var(--sp-3) max(var(--sp-4),env(safe-area-inset-bottom,0px));color:var(--fg)
+}
+@media (min-width:761px){ .sheet{border-bottom:1px solid var(--line2);border-radius:var(--r-lg);margin-bottom:var(--sp-5)} }
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--line2);margin:4px auto 8px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding-bottom:var(--sp-2);border-bottom:1px solid var(--line);margin-bottom:var(--sp-2)}
+.sheet-head h2{margin:0;font-size:var(--fs-lg);text-transform:none;letter-spacing:0;color:var(--fg)}
+.sheet-head .close{min-width:44px;min-height:44px;padding:0}
+.sheet-head .close .ico{width:20px;height:20px}
+.sheet-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:2px}
+@media (min-width:480px){ .sheet-list{grid-template-columns:1fr 1fr} }
+.sheet-list a{
+  display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;
+  min-height:56px;padding:8px 10px;border-radius:var(--r-md);color:var(--fg);text-decoration:none;
+  transition:background var(--dur) var(--ease)
+}
+.sheet-list a:hover,.sheet-list a:focus-visible{background:var(--panel2);text-decoration:none}
+.sheet-list a.on{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--accent)}
+.sheet-list a .ico{width:22px;height:22px;color:var(--accent);justify-self:center}
+.sheet-list a .txt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.sheet-list a .txt b{font-weight:500}
+.sheet-list a .txt small{color:var(--muted);font-size:var(--fs-xs);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px solid var(--line)}
+.sheet-foot button{flex:1 1 180px;min-height:48px;justify-content:flex-start;gap:10px;padding:8px 12px;border-color:var(--line)}
+.sheet-foot .themebtn{color:var(--fg);background:var(--panel2)}
+.sheet-foot .themebtn .ico{width:20px;height:20px;color:var(--warn)}
+.sheet-foot .themebtn[data-mode="light"] .ico{color:var(--purple)}
+.sheet-foot .theme-label{font-size:var(--fs-sm)}
+.sheet-foot .sheet-install .ico{width:20px;height:20px;color:var(--accent)}
+.sheet-note{margin:var(--sp-3) 0 0;text-align:center;font-size:var(--fs-xs);color:var(--faint)}
+body.sheet-open{overflow:hidden}
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:sheet-in .26s var(--ease)}
+  @keyframes sheet-in{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+}
+
+/* ---- accordion panels ([data-acc] + js/nav.js) ---- */
+.acc > h2,.acc > .card-title,.acc > h3{position:relative}
+.acc-btn{display:none;margin-left:auto;padding:0;min-width:44px;min-height:44px;background:none;border:0;color:var(--muted);text-transform:none;letter-spacing:0}
+.acc-btn svg{transition:transform var(--dur) var(--ease)}
+.acc-btn:hover{background:none;color:var(--fg)}
+
+/* ---- phones: tab bar on, links row off, bigger targets ---- */
+@media (max-width:760px){
+  .tabbar{display:flex}
+  #nav{position:static}                                  /* the tab bar navigates; the top bar may scroll away */
+  .topnav .links{display:none}                           /* 12 links do not fit; they live in the tab bar + More sheet */
+  .topnav{flex-wrap:nowrap;padding-bottom:0}
+  .topnav .brand{padding-block:10px}
+  .topnav .brand small{display:block}
+  .topnav .right{margin-left:auto}
+  .topnav .themebtn{min-width:44px;min-height:44px}
+
+  /* room for the fixed tab bar */
+  body.has-tabbar{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
+  body.has-tabbar .page{padding-bottom:var(--sp-4)}
+  body.has-tabbar footer.footer{margin-bottom:var(--sp-2);padding-bottom:var(--sp-3)}
+  body.has-tabbar .toasts{bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 10px)}
+  body.has-tabbar .tour-card{bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 10px)}
+  body.has-tabbar .modal{padding-bottom:max(var(--sp-4),env(safe-area-inset-bottom,0px))}
+  .hide-phone{display:none!important}
+
+  /* 44px tap targets; 16px form text so iOS does not zoom the page on focus */
+  button,.btn,.option,.tabs button,.topnav a:not(.brand){min-height:44px}
+  button.sm,.btn.sm,.btn-group button{min-height:40px;padding-top:6px;padding-bottom:6px}
+  .toolbar button.sm,.toolbar .btn.sm{min-height:40px}
+  .wl-list .rm,.toast .close,.tabbar .tab,.themebtn{min-height:0}
+  .pat-legend .k{min-height:36px;padding:6px 10px}
+  .pane .pane-close{min-width:44px;min-height:44px;top:0;right:0;border-radius:0 var(--r-md) 0 var(--r-md)}
+  .toast .close{min-width:40px;min-height:40px}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea{min-height:44px;font-size:16px}
+  input[type="checkbox"],input[type="radio"]{width:20px;height:20px}
+  .toolbar .group > label,.form-row label{min-height:0}
+  .modal .close{min-width:44px}
+  table.hover tbody tr{height:40px}
+  /* <details> summaries (FAQ, explainers) are the main way copy is revealed on phones */
+  details{padding-top:0}
+  details:not([open]){padding-bottom:0}
+  details summary{min-height:44px;align-items:center;padding-block:6px}
+
+  /* accordion sections: the heading toggles the body */
+  .acc > h2,.acc > .card-title,.acc > h3{cursor:pointer;min-height:44px;margin-bottom:0;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  .acc:not(.collapsed) > h2,.acc:not(.collapsed) > .card-title,.acc:not(.collapsed) > h3{margin-bottom:var(--sp-2)}
+  .acc-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .acc.collapsed .acc-btn svg{transform:rotate(-90deg)}
+  .acc.collapsed > *:not(h2):not(.card-title):not(h3){display:none}
+  .acc.collapsed{padding-bottom:var(--sp-2)}
+  .acc > h2 > .acc-btn,.acc > .card-title > .acc-btn{margin-right:-10px}
+
+  /* ---- dashboard (index.html): chart first, then the watchlist strip,
+          then the control cards as accordions, then the lesson cards ---- */
+  .workspace3{display:flex;flex-direction:column;gap:10px}
+  .workspace3 > #panel-chart{order:1}
+  .workspace3 > .wl{order:2;position:static}
+  .workspace3 > #rail{order:3}
+  .workspace3 > .below-chart{order:4}
+  .wl-list{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scroll-snap-type:x proximity;scrollbar-width:none}
+  .wl-list::-webkit-scrollbar{display:none}
+  .wl-list li{flex:0 0 140px;min-height:48px;scroll-snap-align:start;border:1px solid var(--line)}
+  .wl-list .rm{display:inline-flex;min-width:28px;min-height:28px;padding:0 6px;top:auto;bottom:4px}
+  .dash-head{row-gap:6px}
+  .dash-head .ident{flex:1 1 auto}
+  /* chart toolbar: one scrolling row per group so the chart stays near the top */
+  .toolbar{row-gap:6px}
+  .toolbar .sep{display:none}
+  body .toolbar .group{flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;
+    mask-image:linear-gradient(90deg,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 94%,transparent)}
+  body .toolbar .group::-webkit-scrollbar{display:none}
+  body .toolbar .group > label{flex:0 0 auto;min-width:64px}
+  body .toolbar .group > button{flex:0 0 auto}
+  .pane.price{height:min(360px,52vh)}
+}
+/* Phone held sideways (a 390px phone is 844px wide in landscape): the candle chart must still fit in the
+   ~230-290px left above the browser chrome. `body` raises specificity so page-level .pane.price rules lose. */
+@media (max-width:1024px) and (max-height:480px) and (orientation:landscape){
+  body .pane.price{height:min(300px,60vh)}
+  body .pane.sub{height:90px}
+}
+@media (max-width:420px){
+  .tabbar .tab{font-size:10px}
+  .tabbar .tab .ico{width:22px;height:22px}
+}
+/* reduced-motion and print tidy-ups for the shell */
+@media print{ .tabbar,.sheet-backdrop,#nav{display:none!important} body.has-tabbar{padding-bottom:0} }

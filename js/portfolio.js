@@ -947,6 +947,22 @@
     });
     return tot;
   }
+  // Split text into lines that each fit within maxWidth. Lines are balanced
+  // (roughly equal length) rather than greedily filled, so a two-line hint reads
+  // 'Add legs or load a preset' / 'to draw the payoff diagram' instead of a long
+  // first line with one orphaned word.
+  function wrapText(ctx, text, maxWidth) {
+    var str = String(text).trim(), total = ctx.measureText(str).width;
+    if (total <= maxWidth) return [str];
+    var n = Math.ceil(total / maxWidth), target = Math.min(maxWidth, total / n * 1.08);
+    var words = str.split(/\s+/), lines = [], cur = '';
+    words.forEach(function (w) {
+      var test = cur ? cur + ' ' + w : w;
+      if (cur && ctx.measureText(test).width > target) { lines.push(cur); cur = w; } else cur = test;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
   function drawPayoff() {
     if (!canvas || $('panel-options').hidden) return;
     var wrap = canvas.parentElement, dpr = window.devicePixelRatio || 1;
@@ -959,7 +975,10 @@
     ctx.font = '11px ' + C.mono;
     var readout = $('payoff-readout');
     if (!lab.legs.length || !isNum(lab.spot)) {
-      ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText('Add legs or load a preset to draw the payoff diagram', W / 2, H / 2);
+      ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      // Word-wrap the hint so it never clips at phone widths (~332 CSS px canvas).
+      var lines = wrapText(ctx, 'Add legs or load a preset to draw the payoff diagram', W - 24), lh = 15;
+      lines.forEach(function (ln, i) { ctx.fillText(ln, W / 2, H / 2 + (i - (lines.length - 1) / 2) * lh); });
       readout.textContent = ''; return;
     }
     var legsN = apiLegs();

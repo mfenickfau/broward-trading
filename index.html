@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Broward Trading</title>
 <meta name="description" content="Free educational paper-trading and technical-analysis dashboard: live or simulated charts, indicators, plain-English signals and a $100,000 practice account.">
 <meta name="theme-color" content="#0f1319">
@@ -66,8 +66,9 @@
 @keyframes flashUp{0%{color:var(--up)}100%{color:inherit}} @keyframes flashDown{0%{color:var(--down)}100%{color:inherit}}
 .wl .empty{padding:var(--sp-3);font-size:var(--fs-xs)}
 
-/* chart stack */
-.pane.price{height:440px}
+/* chart stack: a taller price pane on wide screens only. Below 760px css/style.css governs
+   (min(360px,52vh)), so landscape phones see the whole candle chart above the tab bar. */
+@media (min-width:761px){.pane.price{height:440px}}
 .pane .tag .pat{color:var(--warn)}
 .pane .pane-close{position:absolute;top:4px;right:6px;z-index:6;padding:1px 6px;font-size:11px;line-height:1.4;background:transparent;border-color:transparent;color:var(--muted)}
 .pane .pane-close:hover{color:var(--fg);background:var(--panel2)}
@@ -156,8 +157,20 @@ body.touring .tour-target{background:var(--panel)}
   .dash-head .ident .name{max-width:200px}
   .dash-head .status{margin-left:0;width:100%}
 }
+@media (max-width:760px){
+  /* phone tap targets for dashboard-only controls (shared rules live in css/style.css) */
+  .search .results{max-height:min(320px,45vh)}             /* stays above the software keyboard */
+  .search .results li{min-height:44px;padding:10px}
+  .pat-legend{gap:4px 6px}
+  .pat-legend .k{min-height:36px;padding:6px 10px}
+  .ticket .qtymode button,#qtyMode{min-width:44px}
+}
+/* short landscape phones: a chart that fits between the top bar and the fixed tab bar */
+@media (max-width:760px) and (max-height:480px) and (orientation:landscape){
+  .pane.price{height:min(300px,60vh)}
+  .pane.sub{height:90px}
+}
 @media (max-width:600px){
-  .pane.price{height:340px}
   .dash-head .quote .px{font-size:20px}
   .search{flex:1 1 100%}
   .search kbd{display:none}
@@ -169,19 +182,8 @@ body.touring .tour-target{background:var(--panel)}
 </head>
 <body class="page">
 
-<nav class="topnav" aria-label="Main">
-  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
-  <div class="links">
-    <a href="index.html" class="active" aria-current="page">Dashboard</a>
-    <a href="learn.html">Learn</a>
-    <a href="portfolio.html">Portfolio</a>
-    <a href="backtest.html">Backtest</a>
-    <a href="about.html">About</a>
-  </div>
-  <div class="right">
-    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
-  </div>
-</nav>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
 
 <header class="dash-head" id="panel-search">
   <div class="search" role="combobox" aria-haspopup="listbox" aria-owns="searchResults" aria-expanded="false" id="searchBox">
@@ -264,7 +266,7 @@ body.touring .tour-target{background:var(--panel)}
   </section>
 
   <aside id="rail">
-    <div class="card" id="panel-signal">
+    <div class="card" id="panel-signal" data-acc="open">
       <h2>Signal <span class="score" id="asof"></span></h2>
       <div class="signal">
         <div class="badge hold" id="badge">HOLD</div>
@@ -281,7 +283,7 @@ body.touring .tour-target{background:var(--panel)}
       <div class="note">Educational signals only. They describe what common indicators say right now, not what will happen next. Check ADX before trusting a crossover and never risk money on a single reading.</div>
     </div>
 
-    <div class="card ticket" id="panel-ticket">
+    <div class="card ticket" id="panel-ticket" data-acc="open">
       <h2>Trade ticket <span class="score" id="ticketSym"></span></h2>
       <div class="sides" role="radiogroup" aria-label="Order side">
         <button class="side b on" data-side="buy" title="Buy shares (go long)">Buy</button>
@@ -329,13 +331,48 @@ body.touring .tour-target{background:var(--panel)}
       <div class="note" id="otypeHelp"></div>
     </div>
 
-    <div class="card" id="panel-orders">
+    <div class="card" id="panel-orders" data-acc>
       <h2>Open orders <span class="score" id="ordersCount"></span></h2>
       <div class="log orders"><table id="orders"></table></div>
       <div class="note">Limit and stop orders rest here and fill against each new bar or tick, exactly like a broker would fill them against the tape: buy limits need the low to reach your price, buy stops need the high to reach it.</div>
     </div>
 
-    <div class="card" id="panel-account">
+    <div class="card ticket" id="panel-alerts" data-acc>
+      <h2>Alerts <span class="score" id="alertsCount"></span></h2>
+      <form id="alertForm" novalidate>
+        <div class="row2">
+          <div class="field">
+            <label for="alertKind">Alert me when <b id="alertSym"></b></label>
+            <select id="alertKind" aria-describedby="alertHelp">
+              <option value="price_above">Price rises above</option>
+              <option value="price_below">Price falls below</option>
+              <option value="rsi_above">RSI rises above</option>
+              <option value="rsi_below">RSI falls below</option>
+              <option value="sma_cross">SMA crossover</option>
+              <option value="signal_change">Signal changes</option>
+            </select>
+          </div>
+          <div class="field" id="alertValueField">
+            <label for="alertValue"><span id="alertValueLabel">Price ($)</span></label>
+            <div class="input-group">
+              <input id="alertValue" type="text" inputmode="decimal" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="0.00" aria-label="Alert level">
+              <button id="alertAdd" class="primary" type="submit" title="Save this alert">Add</button>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div class="note" id="alertHelp"></div>
+      <div class="msg" id="alertMsg" role="status" aria-live="polite"></div>
+      <div class="log orders"><table id="alertList" aria-label="Your alerts"></table></div>
+      <div class="row between" style="margin-top:10px;gap:6px">
+        <button id="notifBtn" class="sm" type="button" title="Let the browser show a system notification when an alert fires, even when this tab is in the background">Enable notifications</button>
+        <button id="alertsClear" class="sm ghost" type="button" title="Remove every alert that has already fired">Clear fired</button>
+      </div>
+      <div class="note" id="notifNote"></div>
+      <div class="note">Alerts are checked on every price tick while the dashboard is open, and watchlist symbols are checked with each quote refresh. Price alerts draw a dotted line on the chart. They are a study tool: an alert tells you a level was reached, never that you must trade it.</div>
+    </div>
+
+    <div class="card" id="panel-account" data-acc>
       <h2>Paper account <span class="row" style="gap:4px"><a class="btn sm" href="portfolio.html">Full portfolio</a><button id="reset" class="sm" type="button">Reset</button></span></h2>
       <div class="acct-grid" id="acct"></div>
       <div class="pos-row" id="posRow" hidden></div>
@@ -345,7 +382,7 @@ body.touring .tour-target{background:var(--panel)}
   </aside>
 
   <div class="below-chart grid cols-2" id="below-chart">
-  <div class="card lesson" id="panel-learn">
+  <div class="card lesson" id="panel-learn" data-acc>
     <h2>Learn the indicators <a href="learn.html" class="xs">Full course →</a></h2>
     <details><summary>Moving averages (SMA / EMA)</summary><p>The average closing price over N bars. <b>SMA 20</b> above <b>SMA 50</b> means the short-term trend is stronger than the long-term one (a “golden cross” when it crosses up, “death cross” when down). EMA weights recent bars more, so it reacts faster; <b>EMA 9/21</b> is a popular fast pair for swing trades.</p></details>
     <details><summary>RSI (Relative Strength Index)</summary><p>Momentum from 0 to 100. Under <b>30</b> is “oversold” (sellers may be exhausted), over <b>70</b> is “overbought”. Traders look for RSI to turn back from these zones, ideally with a divergence against price.</p></details>
@@ -360,7 +397,7 @@ body.touring .tour-target{background:var(--panel)}
     <details><summary>Order types</summary><p><b>Market</b> fills now at the current price. <b>Limit</b> fills only at your price or better (buy lower, sell higher). <b>Stop</b> becomes a market order once price reaches your trigger: used to cut losses or enter breakouts. <b>Stop-limit</b> triggers like a stop but then insists on a limit, so it may not fill in a fast gap.</p></details>
   </div>
 
-  <div class="card" id="panel-keys">
+  <div class="card hide-phone" id="panel-keys">
     <h2>Keyboard shortcuts</h2>
     <div class="keys">
       <kbd>/</kbd><span>Focus symbol search</span>
@@ -369,6 +406,7 @@ body.touring .tour-target{background:var(--panel)}
       <kbd>L</kbd><span>Draw a trend line</span>
       <kbd>1–4</kbd><span>Interval 1D / 1H / 15m / 5m</span>
       <kbd>W</kbd><span>Add symbol to watchlist</span>
+      <kbd>A</kbd><span>New price alert</span>
       <kbd>?</kbd><span>Take the tour</span>
       <kbd>Esc</kbd><span>Close dialogs / cancel drawing</span>
     </div>
@@ -376,10 +414,7 @@ body.touring .tour-target{background:var(--panel)}
   </div>
 </main>
 
-<footer class="footer disclaimer-footer">
-  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
-  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
-</footer>
+<div id="footer"></div>
 
 <!-- Data provider settings -->
 <div class="modal-backdrop" id="settingsModal" hidden>
@@ -440,6 +475,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/data.js"></script>
 <script src="js/paper.js"></script>
 <script src="js/options.js"></script>
+<script src="js/alerts.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

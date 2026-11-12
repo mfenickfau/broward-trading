@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Your Broward Trading paper account: equity curve, open positions with live marks, working orders, trade history, performance statistics and an options strategy lab with payoff diagrams. Free, educational, no real money.">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#0f1319">
@@ -92,7 +92,10 @@
   table.chain thead tr.group th{text-align:center;font-size:var(--fs-xs);letter-spacing:.6px;border-bottom:1px solid var(--line)}
   table.chain thead tr.group th.calls{color:var(--up)} table.chain thead tr.group th.puts{color:var(--down)}
   table.chain td{padding:3px 6px;text-align:right;font-family:var(--mono);white-space:nowrap}
-  table.chain td.strike,table.chain th.strike{text-align:center;font-weight:600;background:var(--panel2);position:sticky;left:auto}
+  table.chain td.strike,table.chain th.strike{text-align:center;font-weight:600;background:var(--panel2);position:sticky;left:0;right:0;z-index:3}
+  table.chain thead th.strike{z-index:4}
+  table.chain td.strike{box-shadow:inset 1px 0 var(--line),inset -1px 0 var(--line)}
+  .chain-hint{display:none}
   table.chain tr.atm td.strike{color:var(--accent)}
   table.chain td.itm{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)}
   table.chain td.act{padding:2px 4px}
@@ -122,24 +125,33 @@
   .preset-desc .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   .emptyline{color:var(--muted);font-size:var(--fs-sm);padding:10px 0}
   .srcnote{font-size:var(--fs-xs);color:var(--muted)}
+  /* ---- phone (<= 760px): tap targets and the options chain ---- */
+  @media (max-width:760px){
+    /* '?' tooltips: the 16px circle stays exactly where it is, but the invisible hit box grows to 44x44.
+       Negative margins give back the extra size so the surrounding line box and column widths do not move. */
+    button.tip,.card > h2 button.tip,.stat .label button.tip,.tip{width:44px;height:44px;padding:14px 10px;margin:-14px -10px}
+    th button.tip{margin:-14px -10px -14px -8px}
+    .tip::after{bottom:calc(100% - 10px)}
+    /* chain: the whole chain must scroll sideways (17 columns), so the strike column is pinned on screen
+       and the +/- buttons become real 40x40 tap targets */
+    table.chain td.act button{min-width:40px;min-height:40px;padding:0 8px;font-size:16px;line-height:1}
+    table.chain td.act{padding:2px 3px}
+    table.chain td{padding:2px 6px}
+    .chain-wrap{max-height:60vh;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+    /* a soft fade on the left and right edges says "there is more this way" */
+    .chain-wrap{mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);
+      -webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent)}
+    .chain-hint{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-xs);color:var(--muted);margin:6px 2px 0}
+    .chain-hint b{font-weight:500;color:var(--fg)}
+    .chain-hint .c{color:var(--up)} .chain-hint .p{color:var(--down)}
+  }
 </style>
 </head>
 <body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
 
 <div class="page">
-<nav class="topnav" aria-label="Main">
-  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
-  <div class="links">
-    <a href="index.html">Dashboard</a>
-    <a href="learn.html">Learn</a>
-    <a href="portfolio.html" class="active" aria-current="page">Portfolio</a>
-    <a href="backtest.html">Backtest</a>
-    <a href="about.html">About</a>
-  </div>
-  <div class="right">
-    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
-  </div>
-</nav>
 
   <header class="pf-head">
     <div>
@@ -334,6 +346,7 @@
             <tbody id="chain"></tbody>
           </table>
         </div>
+        <p class="chain-hint" id="chain-hint" aria-hidden="true"><span>← swipe for <b class="c">calls</b></span><span><b>strike</b> stays put</span><span>swipe for <b class="p">puts</b> →</span></p>
         <div class="note">Shaded cells are in the money. <b>+</b> buys at the ask, <b>−</b> sells (writes) at the bid: paying the spread is the first cost of every options trade. The chain is synthetic, generated from the underlying's price with a Black-Scholes model and a volatility smile, so it behaves like a real chain without a paid data feed.</div>
       </div>
 
@@ -431,10 +444,7 @@
     </section>
   </main>
 
-  <footer class="footer disclaimer-footer">
-  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
-  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
-</footer>
+  <div id="footer"></div>
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
@@ -447,42 +457,32 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/options.js"></script>
 <script src="js/portfolio.js"></script>
 <script>
-(function(){
-  'use strict';
-  // Theme toggle: remembers an explicit choice in localStorage ('bt.theme'); otherwise follows the OS.
-  var root = document.documentElement;
-  var btn = document.getElementById('themeToggle');
-  function stored(){ try { return localStorage.getItem('bt.theme') || ''; } catch (e) { return ''; } }
-  function apply(t){
-    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
-    var isLight = t === 'light' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-    if (btn) btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', isLight ? '#f3f5f8' : '#0f1319');
-    if (window.BT && BT.portfolioPage && BT.portfolioPage.onThemeChange) BT.portfolioPage.onThemeChange();
+/* Phone chain: open the view horizontally centred on the strike column each time a chain is (re)loaded.
+   js/portfolio.js resets tbody#chain's data-scrolled to '' when a new underlying loads and sets it to '1'
+   after the first render; this mirrors that for the horizontal axis without touching the module. */
+(function () {
+  var tb = document.getElementById('chain'), wrap = tb && tb.closest('.chain-wrap');
+  if (!tb || !wrap || !window.MutationObserver) return;
+  var done = false;
+  function centre() {
+    if (done) return;
+    var cell = tb.querySelector('td.strike');
+    if (!cell || wrap.scrollWidth <= wrap.clientWidth + 1) return;
+    done = true;
+    // The strike cell is position:sticky, and a sticky cell's offsetLeft reports where it is currently pinned,
+    // not where it sits in the table. Its neighbour (the calls' +/- cell) is not sticky, so measure from that.
+    var prev = cell.previousElementSibling;
+    var natural = prev ? prev.offsetLeft + prev.offsetWidth : cell.offsetLeft;
+    var left = natural - wrap.clientWidth / 2 + cell.offsetWidth / 2;
+    wrap.scrollLeft = Math.max(0, Math.min(left, wrap.scrollWidth - wrap.clientWidth));
   }
-  apply(stored());
-  if (btn) btn.addEventListener('click', function(){
-    var cur = root.getAttribute('data-theme');
-    var osLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    var effective = cur || (osLight ? 'light' : 'dark');
-    var next = effective === 'light' ? 'dark' : 'light';
-    try { localStorage.setItem('bt.theme', next); } catch (e) { /* storage unavailable: still toggle for this view */ }
-    apply(next);
-  });
-  if (window.matchMedia) {
-    var mq = window.matchMedia('(prefers-color-scheme: light)');
-    var onOs = function(){ if (!stored()) apply(''); };
-    if (mq.addEventListener) mq.addEventListener('change', onOs); else if (mq.addListener) mq.addListener(onOs);
-  }
-  // Mark the current page in the nav even if this file is copied under another name.
-  var here = location.pathname.split('/').pop() || 'index.html';
-  document.querySelectorAll('.topnav .links a').forEach(function(a){
-    var target = (a.getAttribute('href') || '').split('#')[0];
-    var on = target === here;
-    a.classList.toggle('active', on);
-    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
+  new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      if (muts[i].type === 'attributes' && tb.getAttribute('data-scrolled') === '') done = false; // new underlying
+    }
+    centre();
+  }).observe(tb, { childList: true, attributes: true, attributeFilter: ['data-scrolled'] });
+  centre();
 })();
 </script>
 </body>

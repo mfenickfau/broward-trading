@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Learn · Broward Trading</title>
-<meta name="description" content="A free, six-module course on markets, charts, indicators, risk, options and backtesting, with quizzes, a paper-trading lab and a completion certificate.">
+<meta name="description" content="A free eight-module course on markets, charts, indicators, risk, options, backtesting, Market Replay drills and writing your own trading plan, with quizzes, glossary tooltips, a paper-trading lab and a verifiable completion certificate.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Minimal fallback so the page is readable when css/style.css is missing.
@@ -24,16 +24,11 @@ a{color:var(--accent)} button,input,select{font:inherit;color:inherit}
 button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
 button:hover{border-color:var(--accent)} button:disabled{opacity:.55;cursor:not-allowed}
 button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
+button.primary,.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;color:inherit;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+input,select{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;min-width:0}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.topnav{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding-block:12px;border-bottom:1px solid var(--line)}
-.topnav .brand{font-weight:600;font-size:16px;color:var(--fg);text-decoration:none}
-.topnav .brand small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
-.topnav .links{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
-.topnav .links a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;font-size:13px}
-.topnav .links a:hover{color:var(--fg);background:var(--panel2)}
-.topnav .links a.active{color:var(--fg);background:var(--panel2);border:1px solid var(--line)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
 .card h2{margin:0 0 8px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:500}
 .pill{font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
@@ -72,9 +67,20 @@ footer.disclaimer{color:var(--muted);font-size:11px;padding-block:14px 0;text-al
 .teaser ul{margin:8px 0 10px;padding-left:18px;color:var(--muted)}
 .teaser button[disabled]{width:100%}
 .learn-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;margin-top:14px}
-@media (max-width:860px){.learn-layout{grid-template-columns:1fr}}
+@media (max-width:980px){.learn-layout{grid-template-columns:240px minmax(0,1fr)}}
+@media (max-width:760px){.learn-layout{grid-template-columns:1fr;gap:12px;margin-top:10px}}
 .sidebar{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto;padding:8px}
-@media (max-width:860px){.sidebar{position:static;max-height:none}}
+/* phone: the module/lesson list becomes a native dropdown at the top of the reader */
+.lesson-pick{display:none}
+@media (max-width:760px){
+  .sidebar{position:static;max-height:none;overflow:visible;padding:10px}
+  .sidebar .sblist{display:none}
+  .lesson-pick{display:block}
+  .lesson-pick select{width:100%;min-height:44px;font-size:16px;padding:8px 36px 8px 12px;border-radius:8px;appearance:none;-webkit-appearance:none;
+    background:var(--panel2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a97a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 10px center/18px 18px}
+  .lesson-pick .pickmeta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted)}
+  .sidebar .lessons a{min-height:44px}
+}
 .sidebar .back{display:block;padding:8px 10px;font-size:13px;text-decoration:none}
 .sidebar details{border-top:1px solid var(--line)}
 .sidebar summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px 10px;font-weight:500;font-size:13px;color:var(--fg)}
@@ -160,40 +166,120 @@ code{font-family:var(--mono);font-size:.92em;background:var(--panel2);border:1px
 .toolbtn{font-size:12px;padding:4px 9px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.ring .bar{transition:none}}
-@media print{.topnav,.sidebar,.lesson-nav,.cert-form,.teaser{display:none !important}}
+
+/* ---- v0.3: hero stats, continue card, Pro, locks ---- */
+.herostat{display:flex;gap:16px;align-items:center;min-width:260px}
+@media (max-width:760px){.learn-hero{padding-top:14px}.learn-hero h1{font-size:22px}.herostat{min-width:0}}
+.lvl.pro{color:var(--warn);border-color:var(--warn)}
+.lockmeta{display:inline-flex;align-items:center;gap:4px;color:var(--warn)}
+.lock{vertical-align:-2px}
+.continue{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:14px;text-decoration:none;color:inherit;border-color:var(--accent);transition:border-color .15s,transform .15s}
+.continue:hover{transform:translateY(-1px)}
+.continue .ctag{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);font-weight:600}
+.continue h3{margin:4px 0 4px;font-size:18px;font-weight:600}
+.continue p{margin:0 0 8px;color:var(--muted);font-size:13px}
+.continue .cmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
+.continue .cmeta b{color:var(--fg);font-weight:500}
+.continue .go{display:inline-block;border-radius:6px;padding:8px 14px;font-weight:500;background:var(--accent);color:#fff;min-height:44px;line-height:28px;box-sizing:border-box}
+.continue.done{border-color:var(--up)} .continue.done .ctag{color:var(--up)} .continue.done .go{background:var(--up)}
+@media (max-width:760px){.continue{grid-template-columns:1fr}.continue .ring{display:none}.continue .go{display:block;text-align:center}}
+.modcard.complete .idx{color:var(--up)}
+.procard{position:relative} .procard > .pill{position:absolute;top:12px;right:12px}
+.procard ul{margin:8px 0 10px;padding-left:18px;color:var(--muted)}
+.locked{text-align:center;padding:22px 16px;border-color:var(--warn)}
+.locked .lock{color:var(--warn);display:block;margin:0 auto 6px}
+.locked h2{font-size:18px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0 0 6px}
+.locked p{margin:0 auto 12px;max-width:60ch;color:var(--muted);font-size:14px}
+.locked .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.locked-preview{position:relative;max-height:260px;overflow:hidden}
+.locked-preview::after{content:"";position:absolute;inset:auto 0 0 0;height:140px;background:linear-gradient(to bottom,transparent,var(--bg))}
+
+/* ---- v0.3: glossary term tooltips ---- */
+.gl-term{color:inherit}
+.gl-term.on{cursor:pointer;text-decoration:underline dotted var(--accent);text-decoration-thickness:1.5px;text-underline-offset:3px;color:inherit;-webkit-tap-highlight-color:transparent}
+.gl-term.on:hover,.gl-term.on:focus-visible,.gl-term.on[aria-expanded="true"]{color:var(--accent);text-decoration-style:solid;outline:none}
+.gl-term.on:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.gl-term.demo{text-decoration:underline dotted var(--accent);text-decoration-thickness:1.5px;text-underline-offset:3px}
+.gl-pop{position:absolute;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:14px;line-height:1.5;max-width:calc(100vw - 24px)}
+.gl-pop .gl-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.gl-pop .gl-head b{font-size:15px;flex:1;min-width:0}
+.gl-pop .gl-close{min-width:36px;min-height:36px;padding:0;border-radius:50%;line-height:1}
+.gl-pop p{margin:0 0 8px} .gl-pop p:last-child{margin-bottom:0}
+.gl-pop .gl-ex{color:var(--muted);font-size:13px} .gl-pop .gl-ex b{color:var(--fg);font-weight:500}
+.gl-pop .gl-rel{font-size:12px;color:var(--muted)} .gl-pop .gl-rel a{color:var(--accent);text-decoration:none}
+.gl-pop .gl-links{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin-top:4px}
+.gl-pop .gl-links a{text-decoration:none;min-height:32px;display:inline-flex;align-items:center}
+.gl-pop.gl-sheet{position:fixed;left:8px;right:8px;bottom:8px;width:auto;max-width:none;max-height:70vh;overflow:auto;border-radius:14px;padding:14px 16px max(14px,env(safe-area-inset-bottom,0px));box-shadow:0 -8px 32px rgba(0,0,0,.45)}
+.gl-pop.gl-sheet.above-tabbar{bottom:calc(var(--tabbar-h,56px) + env(safe-area-inset-bottom,0px) + 8px)}
+.gl-pop.gl-sheet .gl-head{flex-wrap:wrap;padding-right:48px;position:relative;min-height:36px}
+.gl-pop.gl-sheet .gl-head b{flex:1 1 100%;font-size:17px}
+.gl-pop.gl-sheet .gl-close{position:absolute;top:-4px;right:-6px;min-width:44px;min-height:44px}
+.gl-pop.gl-sheet p{font-size:15px}
+@media (prefers-reduced-motion:no-preference){.gl-pop{animation:glin .14s ease-out}@keyframes glin{from{opacity:0;transform:translateY(4px)}to{opacity:1}}.gl-pop.above{animation:none}}
+
+/* ---- v0.3: practice drills ---- */
+.drill{border:1px dashed var(--warn);background:var(--panel);padding:14px}
+.drill .dtitle{font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;color:var(--warn);margin-bottom:6px}
+.drill p{margin:0 0 10px;font-size:15px;line-height:1.65}
+.drill .dmeta{display:flex;gap:6px 12px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin:4px 0 8px}
+.drill .dmeta b{color:var(--fg);font-size:14px;font-weight:600;flex-basis:100%}
+.drill .dobj{font-size:14px;color:var(--muted);line-height:1.55}
+.drill .dmore{border:1px solid var(--line);border-radius:6px;margin:6px 0;background:var(--panel2)}
+.drill .dmore summary{cursor:pointer;padding:10px 12px;font-size:13px;font-weight:500;min-height:44px;display:flex;align-items:center}
+.drill .dmore ul{margin:0;padding:0 14px 10px 30px;font-size:13px;line-height:1.55;color:var(--muted)}
+.drill .dmore li{margin:3px 0}
+.drill .dnote{font-size:12px;color:var(--muted);margin:8px 0 0}
+.drill .dactions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.drill .go{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;background:var(--warn);color:#141a22;border-radius:6px;padding:0 14px;font-weight:600}
+.drill .dattempts{font-size:12px;color:var(--muted);font-family:var(--mono)}
+
+/* ---- v0.3: certificate id ---- */
+.certid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px}
+.certid .k{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.certid .v{font-weight:500;word-break:break-all}
+.certid .certlinks{grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:760px){.certid{grid-template-columns:1fr}}
+.filebtn{display:inline-block;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer}
+
+/* ---- phone polish: tap targets, stacked lesson nav, bottom tab bar room ---- */
+@media (max-width:760px){
+  .blocks{max-width:none}
+  .lesson-nav{max-width:none;flex-direction:column;align-items:stretch}
+  .lesson-nav > span{display:flex} .lesson-nav > span > a{flex:1;display:flex} .lesson-nav > span > a > button{flex:1;min-height:44px}
+  .lesson-nav #doneArea{flex-direction:column;align-items:stretch;text-align:center}
+  .navt{display:inline-block;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+  .quiz .choice{min-height:44px;align-items:center}
+  .sidebar .back,.sidebar summary{min-height:44px}
+  .exercise .go{display:inline-flex;align-items:center;min-height:44px}
+  .filebtn{min-height:44px;display:inline-flex;align-items:center}
+  .toolbtn{min-height:44px}
+  .cert-form input,.cert-form button{min-height:44px}
+  .checklist li{grid-template-columns:18px 1fr;row-gap:2px}
+  .checklist li > span:last-child{grid-column:2}
+  body.has-tabbar .learn-wrap{padding-bottom:12px}
+}
+@media print{.topnav,.tabbar,.sidebar,.lesson-nav,.cert-form,.teaser,.procard,.gl-pop,#nav,#footer{display:none !important}}
 </style>
 </head>
 <body class="page">
 
-<nav class="topnav" aria-label="Main">
-  <a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>
-  <div class="links">
-    <a href="index.html">Dashboard</a>
-    <a href="learn.html" class="active" aria-current="page">Learn</a>
-    <a href="portfolio.html">Portfolio</a>
-    <a href="backtest.html">Backtest</a>
-    <a href="about.html">About</a>
-  </div>
-  <div class="right">
-    <button id="themeToggle" class="ghost themebtn" type="button" title="Toggle light / dark theme" aria-label="Toggle theme">◐</button>
-  </div>
-</nav>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
 
 <main id="app" class="learn-wrap" aria-live="polite">
   <div class="empty" id="boot">Loading the course…</div>
   <noscript><div class="empty">The course needs JavaScript enabled to run.</div></noscript>
 </main>
 
-<footer class="footer disclaimer-footer">
-  <div class="links"><a href="index.html">Dashboard</a><a href="learn.html">Learn</a><a href="portfolio.html">Portfolio</a><a href="backtest.html">Backtest</a><a href="about.html#disclaimer">About &amp; disclaimer</a></div>
-  Broward Trading is a free educational simulator. No real orders are placed and no money changes hands. Demo prices are simulated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test results, does not predict future results. Nothing here is investment advice.
-</footer>
+<div id="footer"></div>
 
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
 if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
 <script src="js/indicators.js"></script>
 <script src="js/data.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/course.js"></script>
 <script src="js/learn.js"></script>
 </body>

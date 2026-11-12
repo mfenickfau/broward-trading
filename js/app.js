@@ -20,6 +20,7 @@
   var BT = window.BT;
   var LW = window.LightweightCharts;
   var ind = BT.ind, data = BT.data, paper = BT.paper;
+  var alerts = BT.alerts || null;                       // js/alerts.js (v0.3); the dashboard still works without it
 
   /* ------------------------------------------------------------------ *
    * Small helpers
@@ -136,6 +137,7 @@
     return overlay[key];
   }
   var priceLines = [];                                   // S/R + Fib createPriceLine handles
+  var alertLines = [];                                   // price-alert createPriceLine handles (js/alerts.js)
   var trendSeries = [];                                  // drawn trend lines (series)
   var drawing = false, drawPts = [];
 
@@ -313,9 +315,24 @@
       });
     }
 
+    renderAlertLines();
     renderMarkers();
     Object.keys(activePanes).forEach(function (k) { activePanes[k].api.update(); });
     renderTrendLines();
+  }
+
+  /** Dotted horizontal lines for the live price alerts on this symbol (fired ones are drawn faint). */
+  function renderAlertLines() {
+    alertLines.forEach(function (pl) { candles.removePriceLine(pl); }); alertLines = [];
+    if (!alerts || !bars.length) return;
+    alerts.list(symbol).forEach(function (a) {
+      if (a.kind !== 'price_above' && a.kind !== 'price_below') return;
+      var live_ = a.enabled && !a.firedAt;
+      alertLines.push(candles.createPriceLine({
+        price: a.value, color: live_ ? css('--accent') : css('--faint'), lineStyle: 1, lineWidth: 1,
+        title: (a.kind === 'price_above' ? '▲ alert' : '▼ alert') + (live_ ? '' : ' (fired)'), axisLabelVisible: live_
+      }));
+    });
   }
 
   var PAT_CODE = { 'Doji': 'D', 'Hammer': 'H', 'Shooting star': 'SS', 'Bullish engulfing': 'BE', 'Bearish engulfing': 'BR', 'Morning star': 'MS', 'Evening star': 'ES', 'Three white soldiers': '3S', 'Three black crows': '3C' };
@@ -669,6 +686,136 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Alerts (js/alerts.js → BT.alerts)
+   * ------------------------------------------------------------------ */
+  var ALERT_FIELD = {
+    price_above: { label: 'Price ($)', placeholder: function () { return bars.length ? fmt(lastPrice()) : '0.00'; }, mode: 'decimal' },
+    price_below: { label: 'Price ($)', placeholder: function () { return bars.length ? fmt(lastPrice()) : '0.00'; }, mode: 'decimal' },
+    rsi_above: { label: 'RSI level', placeholder: function () { return '70'; }, mode: 'decimal' },
+    rsi_below: { label: 'RSI level', placeholder: function () { return '30'; }, mode: 'decimal' },
+    sma_cross: { label: 'Pair (fast/slow)', placeholder: function () { return '20/50'; }, mode: 'text' },
+    signal_change: { label: 'Only when it turns (optional)', placeholder: function () { return 'BUY, SELL or leave empty'; }, mode: 'text' }
+  };
+  /** Run BT.alerts.check for a symbol; the module toasts + notifies, the panel and chart lines refresh here. */
+  function runAlerts(sym, barsForSym, indForSym) {
+    if (!alerts || !barsForSym || !barsForSym.length) return [];
+    var fired = [];
+    try { fired = alerts.check(sym, barsForSym, indForSym) || []; } catch (e) { console.warn('Alert check failed', e); return []; }
+    if (fired.length) { renderAlerts(); if (sym === symbol) renderAlertLines(); }
+    return fired;
+  }
+  function alertMsg(text, kind) { var m = $('alertMsg'); if (!m) return; m.textContent = text || ''; m.className = 'msg ' + (kind || ''); }
+  function renderAlertForm() {
+    if (!alerts || !$('alertKind')) return;
+    var kind = $('alertKind').value, f = ALERT_FIELD[kind], def = alerts.KINDS[kind];
+    $('alertSym').textContent = symbol;
+    $('alertValueLabel').textContent = f.label;
+    $('alertValue').placeholder = f.placeholder();
+    $('alertValue').setAttribute('inputmode', f.mode);
+    $('alertHelp').textContent = def.help + (kind === 'price_above' || kind === 'price_below' ? ' Current price: ' + (bars.length ? money(lastPrice()) : '—') + '.' : kind === 'rsi_above' || kind === 'rsi_below' ? ' Current RSI: ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—') + '.' : kind === 'signal_change' && sig ? ' Current signal: ' + sig.state + '.' : '');
+  }
+  function renderNotifButton() {
+    if (!alerts || !$('notifBtn')) return;
+    var st = alerts.notificationState(), btn = $('notifBtn'), note = $('notifNote');
+    btn.hidden = st !== 'default';
+    if (st === 'granted') note.textContent = 'System notifications are on: fired alerts also appear as a notification when this tab is in the background.';
+    else if (st === 'denied') note.textContent = 'Notifications are blocked for this site in your browser settings. Alerts still show as toasts while the page is open.';
+    else if (st === 'unsupported') note.textContent = 'This browser cannot show system notifications (on iPhone, add the site to your Home Screen first). Alerts still show as toasts while the page is open.';
+    else note.textContent = 'Alerts show as toasts while the page is open. Enable notifications to also get one when the tab is in the background.';
+  }
+  function fmtWhen(t) {
+    if (!t) return '';
+    var d = new Date(t), today = new Date();
+    return d.toDateString() === today.toDateString() ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function renderAlerts() {
+    if (!alerts || !$('alertList')) return;
+    var all = alerts.list(), live_ = all.filter(function (a) { return a.enabled && !a.firedAt; });
+    $('alertsCount').textContent = all.length ? live_.length + ' active' + (all.length - live_.length ? ' · ' + (all.length - live_.length) + ' fired' : '') : '';
+    // Current symbol first, then live before fired, newest first.
+    var rows = all.slice().sort(function (a, b) {
+      var sa = (a.symbol === symbol ? 0 : 1) - (b.symbol === symbol ? 0 : 1); if (sa) return sa;
+      var fa = (a.firedAt ? 1 : 0) - (b.firedAt ? 1 : 0); if (fa) return fa;
+      return b.id - a.id;
+    });
+    $('alertList').innerHTML = rows.length ? rows.map(function (a) {
+      var fired = !!a.firedAt, def = alerts.KINDS[a.kind];
+      var valTxt = a.kind === 'price_above' || a.kind === 'price_below' ? money(a.value) : a.kind === 'sma_cross' ? 'SMA ' + String(a.value).replace('/', ' / ') : a.kind === 'signal_change' ? (a.value || 'any change') : String(a.value);
+      var at = a.lastValue == null ? '' : a.kind.indexOf('price') === 0 ? ' at ' + money(a.lastValue) : a.kind.indexOf('rsi') === 0 ? ' at RSI ' + (+a.lastValue).toFixed(1) : a.kind === 'sma_cross' ? ' · ' + (a.lastValue > 0 ? 'golden cross' : 'death cross') : a.kind === 'signal_change' ? ' · now ' + esc(String(a.lastValue)) : '';
+      var state = fired ? '<span class="type">fired ' + esc(fmtWhen(a.firedAt)) + at + '</span>' : (!a.enabled ? '<span class="type">paused</span>' : '<span class="type">watching · ' + esc(def.short) + '</span>');
+      return '<tr' + (fired ? ' style="opacity:.65"' : '') + '><td><b' + (a.symbol === symbol ? '' : ' class="muted"') + '>' + esc(a.symbol) + '</b> <span class="' + (a.kind === 'price_below' || a.kind === 'rsi_above' ? 'down' : a.kind === 'price_above' || a.kind === 'rsi_below' ? 'up' : '') + '">' + esc(def.label.replace(' (20/50)', '').replace(' (BUY/SELL/HOLD)', '')) + '</span>' + state + '</td><td class="num">' + esc(valTxt) + '</td><td style="white-space:nowrap">' + (fired ? '<button class="sm ghost" data-rearm="' + a.id + '" title="Watch for this again">↻</button>' : '') + '<button class="sm ghost" data-rmalert="' + a.id + '" title="Remove this alert" aria-label="Remove alert">✕</button></td></tr>';
+    }).join('') : '<tr><td class="muted">No alerts yet. Pick a condition above and tap Add: try “Price falls below” a little under the last price, then watch the dotted line on the chart.</td></tr>';
+    $$('[data-rmalert]', $('alertList')).forEach(function (b) {
+      b.onclick = function () { var a = alerts.remove(+b.dataset.rmalert); if (a) alertMsg('Removed: ' + alerts.describe(a) + '.', ''); renderAlerts(); renderAlertLines(); };
+    });
+    $$('[data-rearm]', $('alertList')).forEach(function (b) {
+      b.onclick = function () {
+        var a = alerts.rearm(+b.dataset.rearm);
+        if (a) alertMsg('Watching again: ' + alerts.describe(a) + '. It fires the next time the condition becomes true.', 'ok');
+        renderAlerts(); renderAlertLines();
+        if (a && a.symbol === symbol) runAlerts(symbol, bars, I);
+      };
+    });
+  }
+  function addAlertFromForm() {
+    if (!alerts) return;
+    var kind = $('alertKind').value, raw = $('alertValue').value.trim();
+    var def = alerts.KINDS[kind];
+    if (def.needsValue && !raw) { alertMsg('Type a ' + (def.group === 'price' ? 'price' : 'level') + ' first. Current ' + (def.group === 'price' ? 'price is ' + (bars.length ? money(lastPrice()) : '—') : 'RSI is ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—')) + '.', 'err'); $('alertValue').focus(); return; }
+    var a = alerts.add({ symbol: symbol, kind: kind, value: raw });
+    if (a.status === 'rejected') { alertMsg(a.reason, 'err'); $('alertValue').focus(); return; }
+    var hint = '';
+    if (bars.length && (kind === 'price_above' || kind === 'price_below')) {
+      var px = lastPrice(), dist = (a.value - px) / px * 100;
+      if ((kind === 'price_above' && a.value <= px) || (kind === 'price_below' && a.value >= px)) hint = ' That level is already ' + (kind === 'price_above' ? 'below' : 'above') + ' the current price, so it will fire on the next tick.';
+      else hint = ' That is ' + Math.abs(dist).toFixed(1) + '% ' + (dist > 0 ? 'above' : 'below') + ' the last price.';
+    }
+    alertMsg('Saved: ' + alerts.describe(a) + '.' + hint, 'ok');
+    $('alertValue').value = '';
+    renderAlerts(); renderAlertLines();
+    runAlerts(symbol, bars, I);
+    if (alerts.notificationState() === 'default' && alerts.list().length === 1) toast('Tip: tap “Enable notifications” in the Alerts card to hear about it even when this tab is in the background.', 'ok', 'First alert saved', 7000);
+  }
+  if (alerts && $('alertForm')) {
+    $('alertForm').addEventListener('submit', function (e) { e.preventDefault(); addAlertFromForm(); });
+    $('alertKind').onchange = function () { $('alertValue').value = ''; alertMsg(''); renderAlertForm(); };
+    $('alertValue').oninput = function () { alertMsg(''); };
+    $('notifBtn').onclick = function () {
+      var btn = this; btn.disabled = true;
+      alerts.requestPermission().then(function (p) {
+        btn.disabled = false; renderNotifButton();
+        if (p === 'granted') { toast('You will get a system notification when an alert fires, even with this tab in the background.', 'ok', 'Notifications on'); alerts.testNotification(); }
+        else if (p === 'denied') toast('Notifications were blocked. You can allow them later in the browser\'s site settings; toasts keep working meanwhile.', 'warn', 'Notifications off', 7000);
+      });
+    };
+    $('alertsClear').onclick = function () {
+      var fired = alerts.list().filter(function (a) { return a.firedAt; });
+      if (!fired.length) { alertMsg('Nothing to clear: no alert has fired yet.', ''); return; }
+      fired.forEach(function (a) { alerts.remove(a.id); });
+      alertMsg('Cleared ' + fired.length + ' fired alert' + (fired.length > 1 ? 's' : '') + '.', 'ok');
+      renderAlerts(); renderAlertLines();
+    };
+    alerts.on(function (fired) {
+      // Keep the list in sync when an alert fires from a watchlist quote or another tab's check.
+      renderAlerts();
+      if (fired.some(function (f) { return f.symbol === symbol; })) renderAlertLines();
+    });
+    window.addEventListener('storage', function (e) { if (e.key === alerts.STORAGE_KEY) { alerts.load(); renderAlerts(); renderAlertLines(); } });
+    renderNotifButton();
+  } else if ($('panel-alerts')) {
+    $('panel-alerts').hidden = true;
+  }
+  /** Focus the alert form (keyboard A); picks a sensible default kind. */
+  function focusAlert(kind) {
+    if (!alerts || !$('alertKind')) return;
+    var card = $('panel-alerts'); card.classList.remove('collapsed');
+    if (kind) $('alertKind').value = kind;
+    renderAlertForm();
+    try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { /* ignore */ }
+    $('alertValue').focus();
+  }
+
+  /* ------------------------------------------------------------------ *
    * Watchlist
    * ------------------------------------------------------------------ */
   function saveWatchlist() { store.set('bt.watchlist', watchlist); }
@@ -723,8 +870,10 @@
           var q = await data.quote(s);
           wlQuotes[s] = { price: q.price, prevClose: wlPrev[s].prevClose, time: q.time, live: !!q.live && !q.fallback };
           paintQuote(s);
-          // Resting orders on other symbols fill against their quote (a one-price bar).
-          if (paper.openOrders(s).length) processFills(s, { time: q.time, open: q.price, high: q.price, low: q.price, close: q.price, volume: 0 });
+          // Resting orders on other symbols fill against their quote (a one-price bar); price alerts check it too.
+          var qBar = { time: q.time, open: q.price, high: q.price, low: q.price, close: q.price, volume: 0 };
+          if (paper.openOrders(s).length) processFills(s, qBar);
+          if (alerts && alerts.list(s).length) runAlerts(s, [qBar], null);
         } catch (e) { /* keep the previous quote */ }
       }
     } finally { wlBusy = false; }
@@ -811,6 +960,7 @@
     dataInfo = { source: res.source, reason: res.reason, fallback: !!res.fallback, cached: !!res.cached, stale: !!res.stale, ageMs: res.ageMs };
     allCharts().forEach(function (c) { c.applyOptions({ timeScale: { timeVisible: tf !== '1day' } }); });
     reindex(); compute(); renderSeries(); renderHeader(); renderSignal(); renderMode(); renderAccount(); renderOrders(); renderWatchlist();
+    renderAlertForm(); renderAlerts();
     updatePaneTags(bars.length - 1);
     chP.timeScale().fitContent();
     if (tf !== '1day' && bars.length > 160) chP.timeScale().setVisibleLogicalRange({ from: bars.length - 160, to: bars.length + 3 });
@@ -819,13 +969,17 @@
     else tickTimer = setInterval(demoTick, 3000);
     scheduleWatchlist(); refreshWatchlist(true);
     processFills(symbol, bars[bars.length - 1]);
+    runAlerts(symbol, bars, alertInd());
     updateHash();
   }
+  /** Indicators plus the composite signal, in the shape BT.alerts.check expects. */
+  function alertInd() { return I ? Object.assign({}, I, { signal: sig }) : null; }
 
   function afterTick() {
     reindex(); compute(); renderSeries(); renderHeader(); renderSignal();
     updatePaneTags(bars.length - 1);
     processFills(symbol, bars[bars.length - 1]);
+    runAlerts(symbol, bars, alertInd());
     wlQuotes[symbol] = { price: lastPrice(), prevClose: prevClose(), time: Date.now() / 1000 };
     paintQuote(symbol);
     renderAccount();
@@ -998,6 +1152,7 @@
     { target: 'panel-chart', title: 'Read the chart', body: 'Candlesticks show open, high, low and close for each bar; the faint bars underneath are volume. Use the Interval buttons for daily or intraday bars, toggle Overlays like moving averages, Bollinger Bands, VWAP, Ichimoku and Fibonacci, and add indicator Panes (RSI, MACD, Stochastic, ADX, OBV, ATR). Hover a bar to read every value. Click ✎ Trend line, then two swing points, to draw your own line: it is saved for this symbol.' },
     { target: 'panel-watchlist', title: 'Keep a watchlist', body: 'Your watchlist shows live last prices and today\'s change for the names you follow. Click one to chart it, press W (or + Add) to add the current symbol, and hover to remove. Limit and stop orders on watchlist symbols fill against these quotes too.' },
     { target: 'panel-signal', title: 'Understand the signal', body: 'Six classic rules each vote −2 to +2: trend (price vs SMA 50, SMA 20 vs 50), momentum (RSI, MACD histogram), stretch (Bollinger position) and crossovers. +3 or more is BUY, −3 or less is SELL. Click “Why?” to read the reasoning behind every vote, and check the ADX line before trusting a crossover. This is a teaching tool, not advice.' },
+    { target: 'panel-alerts', title: 'Set an alert', body: 'Ask to be told when price reaches a level, RSI gets stretched, the moving averages cross or the signal flips. Alerts fire as a toast while the page is open and, if you enable notifications, as a system notification when the tab is in the background. Price alerts draw a dotted line on the chart so you can see how far away your level is. Press A for a quick price alert.' },
     { target: 'panel-ticket', title: 'Place a practice trade', body: 'Buy, Sell, Short or Cover with market, limit, stop or stop-limit orders, sized in shares or dollars. Review shows exactly what will happen before you confirm. Working orders appear below and fill against each new bar the way a real broker fills them. Shortcuts: B for a buy ticket, S for sell.' },
     { target: 'panel-account', title: 'Track your $100,000', body: 'Equity, cash, total and day P&L update with every tick, and each fill lands in the log. The Portfolio page has the full picture, the Backtest page lets you test a rule on history, and the Learn page turns all of this into a course with quizzes and a certificate. Add a free API key under Live data whenever you want real prices.' }
   ];
@@ -1043,6 +1198,7 @@
     else if (k === 's' || k === 'S') { e.preventDefault(); setSide(position() && position().qty < 0 ? 'cover' : 'sell'); focusTicket(); }
     else if (k === 'l' || k === 'L') { setDrawing(!drawing); }
     else if (k === 'w' || k === 'W') { addToWatchlist(symbol); }
+    else if (k === 'a' || k === 'A') { e.preventDefault(); focusAlert(); }
     else if (k === '?') { startTour(); }
     else if (k >= '1' && k <= '4') { setInterval_(INTERVALS[+k - 1]); }
   });
@@ -1073,7 +1229,9 @@
     addToWatchlist: addToWatchlist,
     startTour: startTour,
     toast: toast,
+    focusAlert: focusAlert,
+    checkAlerts: function () { return runAlerts(symbol, bars, alertInd()); },
     chart: function () { return chP; },
-    state: function () { return { symbol: symbol, interval: tf, live: live, bars: bars, ind: I, signal: sig, overlays: Object.assign({}, ov), panes: Object.assign({}, panes), watchlist: watchlist.slice(), dataInfo: dataInfo }; }
+    state: function () { return { symbol: symbol, interval: tf, live: live, bars: bars, ind: I, signal: sig, overlays: Object.assign({}, ov), panes: Object.assign({}, panes), watchlist: watchlist.slice(), dataInfo: dataInfo, alerts: alerts ? alerts.list() : [] }; }
   };
 })();

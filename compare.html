@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Compare up to six stocks or ETFs: performance rebased to 100, a correlation matrix, a watchlist heatmap and relative strength against SPY, with plain-English notes on diversification, correlation and beta. Free and educational.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Compare — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .cp-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .cp-head h1{margin:0;font-size:var(--fs-xl)}
+  .cp-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0;max-width:70ch}
+  .cp-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .cp button,.cp input,.cp select,.cp .btn{min-height:44px}
+  .cp button.sm{min-height:36px;padding:4px 10px;font-size:var(--fs-sm)}
+  @media (max-width:760px){.cp button.sm{min-height:44px}}
+
+  /* collapsible sections: a card whose h2 is the <summary> */
+  details.sec{padding:0;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md)}
+  details.sec > summary{min-height:48px;padding:10px 12px;color:var(--fg);font-size:var(--fs-xs);letter-spacing:.6px;text-transform:uppercase;font-weight:600;gap:10px}
+  details.sec > summary::before{font-size:11px}
+  details.sec > summary .hint{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:var(--fs-xs)}
+  details.sec > .body{padding:0 12px 12px;margin-top:0}
+  details.sec > .body > * + *{margin-top:var(--sp-3)}
+
+  /* symbol bar */
+  .symbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2);align-items:end}
+  .symbar input{font-family:var(--mono);text-transform:uppercase;font-size:var(--fs-md)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm);font-family:var(--mono);min-height:40px;background:var(--panel2);border:1px solid var(--line)}
+  .chip .sw{width:10px;height:10px;border-radius:50%;background:var(--c,var(--muted));flex:0 0 auto}
+  .chip .rm{min-width:32px;min-height:32px;padding:0;border:0;background:transparent;color:var(--muted);font-size:var(--fs-sm);border-radius:50%}
+  .chip .rm:hover{background:var(--panel3);color:var(--fg)}
+  .chip.bench{border-style:dashed}
+  @media (max-width:760px){.chip{min-height:44px} .chip .rm{min-width:44px;min-height:44px}}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .presets .lbl{font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+  .sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .sugs button{font-family:var(--mono);font-size:var(--fs-sm);min-height:40px;padding:4px 12px;border-radius:var(--r-pill)}
+  .sugs button small{font-family:var(--font);color:var(--muted);margin-left:6px}
+
+  /* period selector: never wraps, scrolls on tiny phones */
+  .periods{display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap}
+  .periods .btn-group{display:inline-flex;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .periods .btn-group::-webkit-scrollbar{display:none}
+  .periods .btn-group button{min-width:46px;padding:0 12px;flex:0 0 auto;font-family:var(--mono)}
+  .periods .range{font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono)}
+
+  /* charts */
+  .pane.perf{height:340px} .pane.rs{height:240px}
+  @media (max-width:600px){.pane.perf{height:280px} .pane.rs{height:200px}}
+  .pane .baseline{position:absolute;right:8px;bottom:8px;z-index:5;font-size:var(--fs-xs);color:var(--faint);pointer-events:none;font-family:var(--mono)}
+  .lgd{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:var(--fs-sm);font-family:var(--mono);min-height:22px}
+  .lgd .it{display:inline-flex;align-items:center;gap:6px;min-width:0}
+  .lgd .it .sw{width:12px;height:3px;border-radius:2px;background:var(--c,var(--muted))}
+  .lgd .it .v{font-variant-numeric:tabular-nums}
+  .lgd .it.bench .sw{background:repeating-linear-gradient(90deg,var(--c) 0 3px,transparent 3px 5px)}
+  .lgd .when{width:100%;color:var(--muted);font-size:var(--fs-xs)}
+  .explain{font-size:var(--fs-sm);color:var(--muted);line-height:1.55;margin:0}
+  .explain b{color:var(--fg);font-weight:500}
+
+  /* stats table */
+  .table-wrap table{min-width:560px}
+  table.stats td,table.stats th{padding:8px 8px}
+  table.stats td.sym{font-family:var(--mono);font-weight:600}
+  table.stats td.sym .sw{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c,var(--muted));margin-right:8px;vertical-align:middle}
+  table.stats .up{color:var(--up)} table.stats .down{color:var(--down)}
+
+  /* correlation matrix */
+  .corr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-4);align-items:start}
+  @media (max-width:860px){.corr{grid-template-columns:1fr}}
+  .corr canvas{display:block;max-width:100%;border-radius:var(--r);touch-action:manipulation;cursor:pointer}
+  .corr .scale{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono);margin-top:8px}
+  .corr .scale .bar{flex:1 1 auto;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up))}
+  .reading{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:12px;min-height:88px}
+  .reading .pair{font-family:var(--mono);font-weight:600;font-size:var(--fs-md)}
+  .reading .pair .r{font-weight:500;margin-left:8px}
+  .reading .pair .r.up{color:var(--up)} .reading .pair .r.down{color:var(--down)} .reading .pair .r.muted{color:var(--muted)}
+  .reading p{margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .divers{margin-top:var(--sp-3)}
+
+  /* heatmap tiles */
+  .heatbar{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;justify-content:space-between}
+  .heatbar .btn-group button{min-width:52px;font-family:var(--mono)}
+  .tiles{display:flex;flex-wrap:wrap;gap:6px}
+  .tile{flex:var(--w,1) 1 calc(33.333% - 6px);min-width:104px;min-height:76px;border-radius:var(--r-md);border:1px solid var(--line);padding:10px 10px 8px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:4px;cursor:pointer;color:var(--fg);transition:transform var(--dur) var(--ease),border-color var(--dur) var(--ease);
+    background:color-mix(in srgb,var(--tc,var(--panel2)) calc(var(--i,0) * 1%),var(--panel2))}
+  .tile.up{--tc:var(--up)} .tile.down{--tc:var(--down)}
+  .tile:hover,.tile:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+  .tile .s{font-family:var(--mono);font-weight:600;font-size:var(--fs-md);display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  .tile .s small{font-family:var(--font);font-weight:400;color:var(--muted);font-size:var(--fs-xs);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .tile .p{font-family:var(--mono);font-size:var(--fs-lg);font-weight:500;font-variant-numeric:tabular-nums}
+  .tile .px{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
+  .tile.in{outline:2px solid var(--accent);outline-offset:-2px}
+  @supports not (background:color-mix(in srgb,red 50%,blue)){ .tile.up{background:var(--up-soft)} .tile.down{background:var(--down-soft)} }
+  @media (max-width:420px){.tile{flex-basis:calc(50% - 6px);min-width:0}}
+
+  /* notes */
+  .notes{display:grid;gap:var(--sp-2)}
+  details.note{margin:0;padding:0;background:var(--panel2);border-color:var(--line)}
+  details.note summary{min-height:48px;padding:10px 12px;color:var(--fg);font-weight:600}
+  details.note .body{padding:0 12px 12px 30px;line-height:1.65;font-size:var(--fs);margin-top:0;color:var(--fg)}
+  .skl{height:14px;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page cp">
+
+  <header class="cp-head">
+    <div>
+      <h1>Compare</h1>
+      <p class="sub">Put up to six stocks or ETFs side by side: who is winning over the period, how much they move together, and how each has done against the S&amp;P 500 (SPY). Prices are daily closes; the demo data is simulated.</p>
+    </div>
+    <div class="status">
+      <span class="pill demo" id="pillSource" title="Where prices come from">demo</span>
+      <span class="pill" id="pillBars" hidden title="Common trading days across all symbols"></span>
+    </div>
+  </header>
+
+  <main class="stack">
+
+    <!-- ---------------- Symbols & period ---------------- -->
+    <section class="card" aria-labelledby="symTitle">
+      <h2 id="symTitle">Symbols <span class="muted" id="symCount" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h2>
+      <form class="symbar" id="symForm" autocomplete="off">
+        <div class="field">
+          <label for="sym">Add a ticker</label>
+          <input id="sym" type="text" inputmode="latin" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="e.g. GOOGL" aria-describedby="symHelp" list="symList">
+          <datalist id="symList"></datalist>
+        </div>
+        <button type="submit" class="primary" id="addBtn">Add</button>
+        <div class="help" id="symHelp" style="grid-column:1/-1;font-size:var(--fs-xs);color:var(--muted)">SPY is always loaded as the benchmark for beta and relative strength, even when it is not in the list.</div>
+      </form>
+      <div class="sugs" id="sugs" aria-label="Suggestions" hidden></div>
+      <div class="chips mt-3" id="chips" aria-live="polite"></div>
+      <div class="presets mt-3">
+        <span class="lbl">Presets</span>
+        <button type="button" class="sm" data-preset="bigtech">Big Tech</button>
+        <button type="button" class="sm" data-preset="sectors">Sector ETFs</button>
+        <button type="button" class="sm" data-preset="defensive">Growth vs defensive</button>
+        <button type="button" class="sm" data-preset="watchlist">My watchlist</button>
+        <button type="button" class="sm ghost" id="clearBtn">Clear</button>
+      </div>
+      <div class="periods mt-3">
+        <div class="btn-group" role="group" aria-label="Period" id="periods"></div>
+        <span class="range num" id="rangeLbl"></span>
+      </div>
+      <div class="msg" id="symMsg" role="status"></div>
+    </section>
+
+    <!-- ---------------- Normalized performance ---------------- -->
+    <details class="sec" open id="secPerf">
+      <summary><span>Performance, rebased to 100</span><span class="hint">tap the chart to read values</span></summary>
+      <div class="body">
+        <div class="pane perf" id="perfPane">
+          <div class="tag"><b>Rebased</b> first close of the period = 100</div>
+          <div class="baseline">100 = start</div>
+          <div class="overlay" id="perfOverlay">Loading…</div>
+          <div id="perfChart" style="position:absolute;inset:0"></div>
+        </div>
+        <div class="lgd" id="perfLegend" aria-live="polite"></div>
+        <p class="explain" id="perfExplain"></p>
+        <div class="table-wrap">
+          <table class="stats dense hover" id="statsTable">
+            <thead><tr>
+              <th>Symbol</th><th class="right">Return</th><th class="right" title="Annualised standard deviation of daily returns">Volatility</th><th class="right" title="Largest peak-to-trough fall in the period">Max drawdown</th><th class="right" title="Sensitivity to SPY's daily moves">Beta vs SPY</th><th class="right" title="Correlation of daily returns with SPY">Corr vs SPY</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="explain">Volatility is the annualised standard deviation of daily returns: 30 % means a typical year sees swings of roughly that size. Max drawdown is the worst fall from a high inside the period. Both describe the ride, not the destination.</p>
+      </div>
+    </details>
+
+    <!-- ---------------- Correlation matrix ---------------- -->
+    <details class="sec" open id="secCorr">
+      <summary><span>Correlation matrix</span><span class="hint">daily returns · tap a cell</span></summary>
+      <div class="body">
+        <div class="corr">
+          <div>
+            <canvas id="corrCanvas" width="320" height="320" role="img" aria-label="Correlation matrix heatmap"></canvas>
+            <div class="scale"><span>−1</span><span class="bar" aria-hidden="true"></span><span>+1</span></div>
+          </div>
+          <div>
+            <div class="reading" id="corrReading">
+              <div class="pair">Tap any cell</div>
+              <p>+1 means two symbols rose and fell together every day; −1 means they moved in opposite directions; 0 means no day-to-day relationship. Values are computed on daily log returns over the selected period.</p>
+            </div>
+            <div class="callout key divers" id="divers"><span class="title">Diversification</span> <span id="diversText">Add symbols to measure.</span></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ---------------- Relative strength ---------------- -->
+    <details class="sec" open id="secRs">
+      <summary><span>Relative strength vs SPY</span><span class="hint">rising = beating the index</span></summary>
+      <div class="body">
+        <div class="pane rs" id="rsPane">
+          <div class="tag"><b>Price ÷ SPY</b> rebased to 100</div>
+          <div class="baseline">100 = kept pace with SPY</div>
+          <div class="overlay" id="rsOverlay">Loading…</div>
+          <div id="rsChart" style="position:absolute;inset:0"></div>
+        </div>
+        <div class="lgd" id="rsLegend" aria-live="polite"></div>
+        <p class="explain" id="rsExplain"></p>
+      </div>
+    </details>
+
+    <!-- ---------------- Watchlist heatmap ---------------- -->
+    <details class="sec" open id="secHeat">
+      <summary><span>Watchlist heatmap</span><span class="hint">% change · tap to add</span></summary>
+      <div class="body">
+        <div class="heatbar">
+          <div class="btn-group" role="group" aria-label="Lookback" id="heatLook">
+            <button type="button" data-look="1" class="on">1D</button>
+            <button type="button" data-look="5">1W</button>
+            <button type="button" data-look="21">1M</button>
+            <button type="button" data-look="63">3M</button>
+          </div>
+          <span class="explain" id="heatNote"></span>
+        </div>
+        <div class="tiles" id="tiles" aria-live="polite"></div>
+        <p class="explain">Tiles come from your Dashboard watchlist (edit it there). A bigger, deeper tile means a bigger move over the lookback; green is up, red is down. Tap a tile to add that symbol to the comparison above.</p>
+      </div>
+    </details>
+
+    <!-- ---------------- Notes ---------------- -->
+    <section class="card" aria-labelledby="notesTitle">
+      <h2 id="notesTitle">Read this before you draw conclusions</h2>
+      <div class="notes" id="notes"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>/* Offline / blocked-CDN fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/data.js"></script>
+<script src="js/compare.js"></script>
+<script>
+/* Broward Trading — compare.html page script (UI only; maths and copy live in js/compare.js → BT.compare) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var C = BT.compare, D = BT.data, LW = window.LightweightCharts;
+  var $ = function (id) { return document.getElementById(id); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var isNum = function (v) { return typeof v === 'number' && isFinite(v); };
+  var fmt = function (v, dp) { return isNum(v) ? v.toLocaleString(undefined, { minimumFractionDigits: dp == null ? 2 : dp, maximumFractionDigits: dp == null ? 2 : dp }) : '—'; };
+  var pct = function (v, dp) { return isNum(v) ? (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v), dp == null ? 1 : dp) + '%' : '—'; };
+  var cls = function (v) { return v > 0.0001 ? 'up' : v < -0.0001 ? 'down' : ''; };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+
+  if (!C || !D || !LW) {
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">Compare could not start: a required script (lightweight-charts, data.js or compare.js) did not load. Check your connection and reload.</div>');
+    return;
+  }
+  function toast(msg, kind, title) {
+    if (BT.nav && BT.nav.toast) return BT.nav.toast(msg, kind, title);
+    var host = $('toasts'), el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    el.querySelector('.close').onclick = function () { el.remove(); };
+    host.appendChild(el); setTimeout(function () { el.remove(); }, 4500);
+  }
+  function flash(msg, ok) { var el = $('symMsg'); el.textContent = msg; el.className = 'msg ' + (ok ? 'ok' : 'err'); clearTimeout(el._t); el._t = setTimeout(function () { el.textContent = ''; }, 4000); }
+
+  /* ------------------------------------------------------------------ *
+   * State
+   * ------------------------------------------------------------------ */
+  var KEY = 'bt.compare';
+  var BENCH = C.BENCHMARK;
+  var SERIES_VARS = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6'];
+  var PRESETS = {
+    bigtech: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'META', 'GOOGL'],
+    sectors: ['XLK', 'XLF', 'XLE', 'XLV', 'XLY', 'XLU'],
+    defensive: ['NVDA', 'TSLA', 'KO', 'JNJ', 'PG', 'SPY']
+  };
+  var DEFAULT = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY'];
+  var DEFAULT_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY', 'AMZN'];
+  var BARS_WANTED = 800;
+
+  var saved = store.get(KEY, {}) || {};
+  var symbols = C.normalizeSymbols(fromHash() || saved.symbols || DEFAULT);
+  var period = C.periodById(saved.period || '6m').id;
+  var heatLook = [1, 5, 21, 63].indexOf(+saved.heatLook) >= 0 ? +saved.heatLook : 1;
+  var cache = {};             // SYM → bars (full history, oldest → newest)
+  var aligned = null, view = null, corr = null, geom = null, highlight = null;
+  var loadSeq = 0, loading = false;
+
+  function save() { store.set(KEY, { symbols: symbols, period: period, heatLook: heatLook }); }
+  function fromHash() {
+    var h = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+    if (!h) return null;
+    var list = h.split(/[,+\s]+/).filter(Boolean);
+    return list.length ? list : null;
+  }
+  function writeHash() { try { history.replaceState(null, '', symbols.length ? '#' + symbols.join(',') : location.pathname); } catch (e) { /* ignore */ } }
+  function colorVar(sym) { var i = symbols.indexOf(sym); return i < 0 ? '--muted' : SERIES_VARS[i % SERIES_VARS.length]; }
+  function nameOf(sym) { var u = D.lookup && D.lookup(sym); return u && u.name && !/unknown/i.test(u.name) ? u.name : ''; }
+
+  /* ------------------------------------------------------------------ *
+   * Charts
+   * ------------------------------------------------------------------ */
+  var perfChart = null, rsChart = null, perfSeries = {}, rsSeries = {};
+  function chartTheme() {
+    return {
+      layout: { background: { type: 'solid', color: css('--panel') }, textColor: css('--muted'), fontFamily: css('--mono') },
+      grid: { vertLines: { color: css('--line') }, horzLines: { color: css('--line') } },
+      rightPriceScale: { borderColor: css('--line'), scaleMargins: { top: 0.12, bottom: 0.08 } },
+      timeScale: { borderColor: css('--line'), timeVisible: false, rightOffset: 2, fixLeftEdge: true, fixRightEdge: true },
+      crosshair: { mode: 0, vertLine: { labelBackgroundColor: css('--panel3') }, horzLine: { labelBackgroundColor: css('--panel3') } },
+      handleScroll: { vertTouchDrag: false },
+      localization: { priceFormatter: function (p) { return p.toFixed(0); } }
+    };
+  }
+  function lineOpts(sym, extra) {
+    return Object.assign({ color: css(colorVar(sym)), lineWidth: sym === BENCH ? 1 : 2, lineStyle: sym === BENCH ? 2 : 0, priceLineVisible: false, lastValueVisible: true, crosshairMarkerVisible: true, crosshairMarkerRadius: 3, title: sym }, extra || {});
+  }
+  function ensureCharts() {
+    if (perfChart) return;
+    perfChart = LW.createChart($('perfChart'), Object.assign({ autoSize: true }, chartTheme()));
+    rsChart = LW.createChart($('rsChart'), Object.assign({ autoSize: true }, chartTheme()));
+    perfChart.subscribeCrosshairMove(function (p) { renderLegend('perf', p); });
+    rsChart.subscribeCrosshairMove(function (p) { renderLegend('rs', p); });
+    perfChart.timeScale().subscribeVisibleLogicalRangeChange(function (r) { if (r && rsChart && !syncing) { syncing = true; rsChart.timeScale().setVisibleLogicalRange(r); syncing = false; } });
+    rsChart.timeScale().subscribeVisibleLogicalRangeChange(function (r) { if (r && perfChart && !syncing) { syncing = true; perfChart.timeScale().setVisibleLogicalRange(r); syncing = false; } });
+  }
+  var syncing = false;
+  function applyTheme() {
+    if (!perfChart) return;
+    perfChart.applyOptions(chartTheme()); rsChart.applyOptions(chartTheme());
+    Object.keys(perfSeries).forEach(function (s) { perfSeries[s].applyOptions({ color: css(colorVar(s)) }); });
+    Object.keys(rsSeries).forEach(function (s) { rsSeries[s].applyOptions({ color: css(colorVar(s)) }); });
+    drawCorr(); renderTiles();
+  }
+  window.addEventListener('bt:theme', applyTheme);
+  try { new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* ignore */ }
+  if (window.matchMedia) { try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme); } catch (e) { /* old Safari */ } }
+
+  function clearSeries(chart, map) { Object.keys(map).forEach(function (s) { try { chart.removeSeries(map[s]); } catch (e) { /* removed */ } delete map[s]; }); }
+  function toPoints(times, values) {
+    var out = [];
+    for (var i = 0; i < times.length; i++) if (isNum(values[i])) out.push({ time: times[i], value: values[i] });
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Data loading
+   * ------------------------------------------------------------------ */
+  function needed() { var list = symbols.slice(); if (list.indexOf(BENCH) < 0) list.push(BENCH); return list; }
+  async function load(force) {
+    var seq = ++loadSeq;
+    loading = true;
+    var todo = needed().filter(function (s) { return force || !cache[s]; });
+    if (todo.length) {
+      $('perfOverlay').textContent = 'Loading ' + todo.join(', ') + '…'; $('perfOverlay').hidden = false;
+      $('rsOverlay').hidden = false;
+    }
+    var results = await Promise.all(todo.map(function (s) {
+      return D.candles(s, '1day', BARS_WANTED).then(function (bars) { return { s: s, bars: bars }; }, function (e) { return { s: s, bars: [], error: e }; });
+    }));
+    if (seq !== loadSeq) return;
+    results.forEach(function (r) {
+      var bars = Array.isArray(r.bars) ? r.bars : [];
+      cache[r.s] = bars;
+      if (!bars.length) toast('No daily bars came back for ' + r.s + '. Check the symbol.', 'warn');
+      else if (bars.fallback && bars.code !== 'nokey') toast(r.s + ': ' + (bars.reason || 'provider unavailable') + ' Showing demo bars.', 'warn');
+    });
+    loading = false;
+    render();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Render everything from cache
+   * ------------------------------------------------------------------ */
+  function render() {
+    ensureCharts();
+    renderChips();
+    renderPeriods();
+    var by = {};
+    needed().forEach(function (s) { if (cache[s] && cache[s].length) by[s] = cache[s]; });
+    aligned = C.align(by);
+    var shown = symbols.filter(function (s) { return aligned.symbols.indexOf(s) >= 0; });
+    var benchOk = aligned.symbols.indexOf(BENCH) >= 0;
+    view = C.slice(aligned, period);
+
+    // Source pill
+    var any = Object.keys(by), live = 0, demo = 0;
+    any.forEach(function (s) { if (by[s].fallback || by[s].source === 'demo' || !by[s].source) demo++; else live++; });
+    var pill = $('pillSource');
+    pill.className = 'pill ' + (live && !demo ? 'live' : 'demo');
+    pill.textContent = live && !demo ? 'live' : live ? 'mixed · some demo' : 'demo';
+    pill.title = live && !demo ? 'Daily bars from your configured provider' : 'Demo bars are simulated. Connect a provider on the Dashboard for real prices.';
+    var pb = $('pillBars'); pb.hidden = !view.times.length;
+    pb.textContent = view.times.length + ' common days';
+    $('rangeLbl').textContent = view.times.length ? String(view.times[0]) + ' → ' + String(view.times[view.times.length - 1]) : '';
+
+    // Performance chart
+    clearSeries(perfChart, perfSeries); clearSeries(rsChart, rsSeries);
+    var perfOverlay = $('perfOverlay'), rsOverlay = $('rsOverlay');
+    if (!shown.length) {
+      perfOverlay.textContent = loading ? 'Loading…' : 'Add a symbol above to start comparing.'; perfOverlay.hidden = false;
+      rsOverlay.textContent = perfOverlay.textContent; rsOverlay.hidden = false;
+    } else {
+      perfOverlay.hidden = true;
+      var order = shown.slice(); if (shown.indexOf(BENCH) < 0 && benchOk) order.push(BENCH);
+      order.forEach(function (s) {
+        var pts = toPoints(view.times, C.rebase(view.closes[s]));
+        var inList = shown.indexOf(s) >= 0;
+        var series = perfChart.addLineSeries(lineOpts(s, inList ? {} : { lineWidth: 1, lineStyle: 2, color: css('--muted'), lastValueVisible: false, title: s + ' (benchmark)' }));
+        series.setData(pts);
+        perfSeries[s] = series;
+      });
+      try { perfSeries[shown[0]].createPriceLine({ price: 100, color: css('--line2'), lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: '' }); } catch (e) { /* ignore */ }
+      perfChart.timeScale().fitContent();
+
+      // Relative strength
+      var rsSyms = shown.filter(function (s) { return s !== BENCH; });
+      if (!benchOk) { rsOverlay.textContent = 'SPY bars are needed for relative strength.'; rsOverlay.hidden = false; }
+      else if (!rsSyms.length) { rsOverlay.textContent = 'Add a symbol other than SPY to see relative strength.'; rsOverlay.hidden = false; }
+      else {
+        rsOverlay.hidden = true;
+        rsSyms.forEach(function (s) {
+          var series = rsChart.addLineSeries(lineOpts(s));
+          series.setData(toPoints(view.times, C.relativeStrength(view.closes[s], view.closes[BENCH])));
+          rsSeries[s] = series;
+        });
+        try { rsSeries[rsSyms[0]].createPriceLine({ price: 100, color: css('--line2'), lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: '' }); } catch (e) { /* ignore */ }
+        rsChart.timeScale().fitContent();
+      }
+    }
+    renderLegend('perf', null); renderLegend('rs', null);
+    renderStats(shown, benchOk);
+    corr = shown.length ? C.correlationMatrix(view.closes, shown) : null;
+    highlight = null; drawCorr(); renderReading(null);
+    renderDivers();
+    renderTiles();
+    writeHash();
+  }
+
+  function renderChips() {
+    var host = $('chips');
+    if (!symbols.length) { host.innerHTML = '<span class="muted">No symbols yet. Add one or pick a preset.</span>'; }
+    else host.innerHTML = symbols.map(function (s) {
+      var name = nameOf(s);
+      return '<span class="chip' + (s === BENCH ? ' bench' : '') + '" style="--c:var(' + colorVar(s) + ')"><span class="sw" aria-hidden="true"></span><span title="' + esc(name) + '">' + esc(s) + '</span>' +
+        '<button type="button" class="rm" data-rm="' + esc(s) + '" aria-label="Remove ' + esc(s) + '" title="Remove">✕</button></span>';
+    }).join('');
+    $('symCount').textContent = symbols.length + ' / ' + C.MAX_SYMBOLS;
+    $('addBtn').disabled = symbols.length >= C.MAX_SYMBOLS;
+  }
+  function renderPeriods() {
+    var host = $('periods');
+    if (!host.children.length) host.innerHTML = C.PERIODS.map(function (p) { return '<button type="button" data-period="' + p.id + '" title="' + esc(p.note) + '">' + esc(p.label) + '</button>'; }).join('');
+    $$('button', host).forEach(function (b) { b.classList.toggle('on', b.dataset.period === period); b.setAttribute('aria-pressed', String(b.dataset.period === period)); });
+  }
+
+  /** Legend shows the value under the crosshair, or the last value when idle. */
+  function renderLegend(which, param) {
+    var host = $(which === 'perf' ? 'perfLegend' : 'rsLegend'), map = which === 'perf' ? perfSeries : rsSeries;
+    var keys = Object.keys(map);
+    if (!keys.length || !view) { host.innerHTML = ''; return; }
+    var when = null, html = '';
+    keys.forEach(function (s) {
+      var v = null;
+      if (param && param.time && param.seriesData) { var d = param.seriesData.get(map[s]); if (d) { v = d.value; when = param.time; } }
+      if (v == null) { var data = which === 'perf' ? C.rebase(view.closes[s]) : C.relativeStrength(view.closes[s], view.closes[BENCH]); for (var i = data.length - 1; i >= 0; i--) if (isNum(data[i])) { v = data[i]; break; } }
+      var chg = isNum(v) ? v - 100 : null;
+      var inList = symbols.indexOf(s) >= 0;
+      html += '<span class="it' + (s === BENCH ? ' bench' : '') + '" style="--c:var(' + (inList ? colorVar(s) : '--muted') + ')"><span class="sw" aria-hidden="true"></span>' + esc(s) + ' <span class="v ' + cls(chg) + '">' + pct(chg) + '</span></span>';
+    });
+    if (when) html = '<span class="when">' + esc(String(when)) + '</span>' + html;
+    host.innerHTML = html;
+    if (which === 'perf') renderPerfExplain();
+  }
+  function renderPerfExplain() {
+    var shown = symbols.filter(function (s) { return view && view.closes[s]; });
+    var el = $('perfExplain');
+    if (!shown.length || view.times.length < 2) { el.textContent = ''; return; }
+    var ranked = shown.map(function (s) { return { s: s, r: C.stats(view.closes[s]).totalReturnPct }; }).filter(function (x) { return isNum(x.r); }).sort(function (a, b) { return b.r - a.r; });
+    if (!ranked.length) { el.textContent = ''; return; }
+    var p = C.periodById(period);
+    var best = ranked[0], worst = ranked[ranked.length - 1];
+    var spread = best.r - worst.r;
+    el.innerHTML = 'Over ' + esc(p.label === 'Max' ? 'all ' + view.times.length + ' common days' : p.label + ' (' + p.note + ')') + ', <b>' + esc(best.s) + '</b> leads at ' + pct(best.r) +
+      (ranked.length > 1 ? ' and <b>' + esc(worst.s) + '</b> trails at ' + pct(worst.r) + ', a spread of ' + fmt(spread, 1) + ' points. ' : '. ') +
+      'Try another period: leadership over one month often says little about a year.';
+    var rsEl = $('rsExplain');
+    var rsSyms = shown.filter(function (s) { return s !== BENCH; });
+    if (rsSyms.length && view.closes[BENCH]) {
+      var lead = rsSyms.map(function (s) { var rs = C.relativeStrength(view.closes[s], view.closes[BENCH]); var last = null; for (var i = rs.length - 1; i >= 0; i--) if (isNum(rs[i])) { last = rs[i]; break; } return { s: s, v: last }; }).filter(function (x) { return isNum(x.v); }).sort(function (a, b) { return b.v - a.v; });
+      var ahead = lead.filter(function (x) { return x.v > 100; }).map(function (x) { return x.s; });
+      var behind = lead.filter(function (x) { return x.v <= 100; }).map(function (x) { return x.s; });
+      rsEl.innerHTML = (ahead.length ? '<b>' + esc(ahead.join(', ')) + '</b> ' + (ahead.length > 1 ? 'have' : 'has') + ' beaten SPY over the period' : 'Nothing here has beaten SPY over the period') +
+        (behind.length ? (ahead.length ? '; ' : ', and ') + '<b>' + esc(behind.join(', ')) + '</b> ' + (behind.length > 1 ? 'have' : 'has') + ' lagged. ' : '. ') +
+        'A rising line means outperformance, even on days when both fall.';
+    } else rsEl.textContent = '';
+  }
+
+  function renderStats(shown, benchOk) {
+    var tb = $('statsTable').querySelector('tbody');
+    if (!shown.length) { tb.innerHTML = '<tr><td colspan="6" class="muted">No data yet.</td></tr>'; return; }
+    tb.innerHTML = shown.map(function (s) {
+      var st = C.stats(view.closes[s]);
+      var b = benchOk ? (s === BENCH ? 1 : C.beta(view.closes[s], view.closes[BENCH])) : null;
+      var r = benchOk ? (s === BENCH ? 1 : C.pearson(C.logReturns(view.closes[s]), C.logReturns(view.closes[BENCH]))) : null;
+      var name = nameOf(s);
+      return '<tr><td class="sym" style="--c:var(' + colorVar(s) + ')"><span class="sw" aria-hidden="true"></span>' + esc(s) + (name ? ' <small class="muted" style="font-family:var(--font);font-weight:400">' + esc(name) + '</small>' : '') + '</td>' +
+        '<td class="num right ' + cls(st.totalReturnPct) + '">' + pct(st.totalReturnPct) + '</td>' +
+        '<td class="num right">' + (isNum(st.annVolPct) ? fmt(st.annVolPct, 1) + '%' : '—') + '</td>' +
+        '<td class="num right ' + cls(st.maxDrawdownPct) + '">' + (isNum(st.maxDrawdownPct) ? pct(st.maxDrawdownPct) : '—') + '</td>' +
+        '<td class="num right" title="' + esc(C.describeBeta(b)) + '">' + (isNum(b) ? fmt(b, 2) : '—') + '</td>' +
+        '<td class="num right" title="' + esc(C.describeCorrelation(r).label) + '">' + (isNum(r) ? fmt(r, 2) : '—') + '</td></tr>';
+    }).join('');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Correlation matrix (canvas)
+   * ------------------------------------------------------------------ */
+  function drawCorr() {
+    var canvas = $('corrCanvas');
+    var host = canvas.parentNode;
+    var w = Math.max(220, Math.min(480, host.clientWidth || 320));
+    if (!corr || !corr.symbols.length) {
+      geom = C.drawMatrix(canvas, { symbols: [], matrix: [] }, { width: w, dpr: window.devicePixelRatio || 1, colors: tokens() });
+      return;
+    }
+    geom = C.drawMatrix(canvas, corr, { width: w, dpr: window.devicePixelRatio || 1, colors: tokens(), font: css('--mono') || 'monospace', highlight: highlight });
+    canvas.setAttribute('aria-label', 'Correlation matrix for ' + corr.symbols.join(', ') + '. Average correlation ' + (isNum(corr.avg) ? corr.avg.toFixed(2) : 'n/a') + '.');
+  }
+  function tokens() {
+    return { panel: css('--panel2'), bg: css('--panel'), line: css('--line'), fg: css('--fg'), muted: css('--muted'), up: css('--up'), down: css('--down'), accent: css('--accent') };
+  }
+  function renderReading(cell) {
+    var el = $('corrReading');
+    if (!corr || !cell) {
+      el.innerHTML = '<div class="pair">' + (corr ? 'Tap any cell' : 'No data yet') + '</div><p>+1 means two symbols rose and fell together every day; −1 means they moved in opposite directions; 0 means no day-to-day relationship. Values are computed on daily log returns over the selected period' + (corr ? ' (' + corr.n + ' return days)' : '') + '.</p>';
+      return;
+    }
+    var a = corr.symbols[cell.row], b = corr.symbols[cell.col], r = corr.matrix[cell.row][cell.col];
+    if (a === b) { el.innerHTML = '<div class="pair">' + esc(a) + ' × ' + esc(a) + ' <span class="r muted">1.00</span></div><p>A series is perfectly correlated with itself, which is why the diagonal is always 1. Tap a cell off the diagonal.</p>'; return; }
+    var d = C.describeCorrelation(r);
+    el.innerHTML = '<div class="pair">' + esc(a) + ' × ' + esc(b) + ' <span class="r ' + d.tone + '">' + (isNum(r) ? (r > 0 ? '+' : '') + r.toFixed(2) : '—') + '</span></div>' +
+      '<p><b style="color:var(--fg);font-weight:500">' + esc(d.label.charAt(0).toUpperCase() + d.label.slice(1)) + '.</b> ' + esc(d.text) + '</p>';
+  }
+  function renderDivers() {
+    var d = C.diversification(corr);
+    $('diversText').textContent = d.text;
+    var box = $('divers');
+    box.className = 'callout divers ' + (d.label === 'low' ? 'warn' : d.label === 'good' || d.label === 'high' ? 'tip' : 'key');
+  }
+  function onCanvasTap(ev) {
+    if (!geom || !corr) return;
+    var rect = ev.currentTarget.getBoundingClientRect();
+    var p = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
+    var cell = C.cellAt(geom, p.clientX - rect.left, p.clientY - rect.top);
+    highlight = cell; drawCorr(); renderReading(cell);
+  }
+  $('corrCanvas').addEventListener('click', onCanvasTap);
+  $('corrCanvas').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); highlight = highlight ? { row: highlight.row, col: (highlight.col + 1) % corr.symbols.length } : { row: 0, col: 1 % Math.max(1, (corr || { symbols: [1] }).symbols.length) }; drawCorr(); renderReading(highlight); } });
+  $('corrCanvas').tabIndex = 0;
+
+  /* ------------------------------------------------------------------ *
+   * Watchlist heatmap
+   * ------------------------------------------------------------------ */
+  var tileBars = {};
+  function watchlist() {
+    var w = store.get('bt.watchlist', null);
+    return C.normalizeSymbols(Array.isArray(w) && w.length ? w : DEFAULT_WATCHLIST, 12);
+  }
+  async function loadTiles() {
+    var list = watchlist();
+    var todo = list.filter(function (s) { return !tileBars[s] && !cache[s]; });
+    if (todo.length) {
+      $('tiles').innerHTML = list.map(function (s) { return '<div class="tile" aria-hidden="true"><div class="s">' + esc(s) + '</div><div class="skeleton skl"></div></div>'; }).join('');
+      var res = await Promise.all(todo.map(function (s) { return D.candles(s, '1day', 120).then(function (b) { return { s: s, b: b }; }, function () { return { s: s, b: [] }; }); }));
+      res.forEach(function (r) { tileBars[r.s] = Array.isArray(r.b) ? r.b : []; });
+    }
+    renderTiles();
+  }
+  function renderTiles() {
+    var list = watchlist(), host = $('tiles');
+    var rows = list.map(function (s) {
+      var bars = cache[s] && cache[s].length ? cache[s] : tileBars[s];
+      if (!bars) return null;
+      var p = C.pctChange(bars, heatLook);
+      return { s: s, p: p, last: bars.length ? bars[bars.length - 1].close : null, demo: !!(bars.fallback || bars.source === 'demo' || !bars.source) };
+    }).filter(Boolean);
+    if (!rows.length) { host.innerHTML = '<div class="empty">Your watchlist is empty. Add symbols on the Dashboard.</div>'; return; }
+    var scale = { 1: 3, 5: 6, 21: 12, 63: 20 }[heatLook] || 5;    // % that maps to full intensity
+    rows.sort(function (a, b) { return (isNum(b.p) ? b.p : -1e9) - (isNum(a.p) ? a.p : -1e9); });
+    host.innerHTML = rows.map(function (r) {
+      var h = C.heat(r.p, scale), inList = symbols.indexOf(r.s) >= 0;
+      return '<button type="button" class="tile ' + h.sign + (inList ? ' in' : '') + '" style="--i:' + h.intensity + ';--w:' + C.tileWeight(r.p, scale) + '" data-add="' + esc(r.s) + '" aria-label="' + esc(r.s) + ' ' + pct(r.p) + (inList ? ', already in the comparison' : ', tap to add to the comparison') + '">' +
+        '<div class="s"><span>' + esc(r.s) + '</span><small>' + esc(nameOf(r.s)) + '</small></div>' +
+        '<div><div class="p num">' + pct(r.p, Math.abs(r.p || 0) >= 10 ? 1 : 2) + '</div><div class="px num">' + (isNum(r.last) ? '$' + fmt(r.last) : '—') + (r.demo ? ' · demo' : '') + '</div></div></button>';
+    }).join('');
+    var lbl = { 1: 'one trading day', 5: 'one week (5 bars)', 21: 'one month (21 bars)', 63: 'one quarter (63 bars)' }[heatLook];
+    $('heatNote').textContent = rows.length + ' symbols · change over ' + lbl + ' · full colour at ±' + scale + '%';
+    $$('button', $('heatLook')).forEach(function (b) { b.classList.toggle('on', +b.dataset.look === heatLook); b.setAttribute('aria-pressed', String(+b.dataset.look === heatLook)); });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Notes
+   * ------------------------------------------------------------------ */
+  $('notes').innerHTML = C.NOTES.map(function (n, i) {
+    return '<details class="note"' + (i === 0 ? ' open' : '') + '><summary>' + esc(n.title) + '</summary><div class="body">' + esc(n.text) + '</div></details>';
+  }).join('');
+
+  /* ------------------------------------------------------------------ *
+   * Events
+   * ------------------------------------------------------------------ */
+  function addSymbol(s) {
+    var list = C.normalizeSymbols([s]);
+    if (!list.length) { flash('Enter a ticker like AAPL or SPY.'); return false; }
+    s = list[0];
+    if (symbols.indexOf(s) >= 0) { flash(s + ' is already in the comparison.'); return false; }
+    if (symbols.length >= C.MAX_SYMBOLS) { flash('Six symbols is the limit so the chart stays readable. Remove one first.'); return false; }
+    symbols.push(s); save(); renderChips(); load();
+    return true;
+  }
+  function removeSymbol(s) { symbols = symbols.filter(function (x) { return x !== s; }); save(); render(); }
+  function setSymbols(list) { symbols = C.normalizeSymbols(list); save(); renderChips(); load(); }
+
+  $('symForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('sym');
+    if (addSymbol(input.value)) { input.value = ''; $('sugs').hidden = true; }
+    input.focus();
+  });
+  $('sym').addEventListener('input', function () {
+    var q = this.value.trim(), host = $('sugs');
+    if (q.length < 1 || !D.universeSearch) { host.hidden = true; return; }
+    var hits = D.universeSearch(q, 6).filter(function (h) { return symbols.indexOf(h.symbol) < 0; });
+    host.hidden = !hits.length;
+    host.innerHTML = hits.map(function (h) { return '<button type="button" data-add="' + esc(h.symbol) + '">' + esc(h.symbol) + '<small>' + esc(h.name) + '</small></button>'; }).join('');
+  });
+  $('symList').innerHTML = (D.universe || []).map(function (u) { return '<option value="' + esc(u.symbol) + '">' + esc(u.name) + '</option>'; }).join('');
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-add]'); if (t) { if (addSymbol(t.dataset.add)) { $('sym').value = ''; $('sugs').hidden = true; } return; }
+    var rm = e.target.closest('[data-rm]'); if (rm) { removeSymbol(rm.dataset.rm); return; }
+    var pr = e.target.closest('[data-period]'); if (pr) { period = pr.dataset.period; save(); render(); return; }
+    var lk = e.target.closest('[data-look]'); if (lk) { heatLook = +lk.dataset.look; save(); renderTiles(); return; }
+    var ps = e.target.closest('[data-preset]');
+    if (ps) {
+      var list = ps.dataset.preset === 'watchlist' ? watchlist().slice(0, C.MAX_SYMBOLS) : PRESETS[ps.dataset.preset];
+      if (!list || !list.length) { flash('Your watchlist is empty.'); return; }
+      setSymbols(list); return;
+    }
+  });
+  $('clearBtn').addEventListener('click', function () { setSymbols([]); });
+  window.addEventListener('hashchange', function () { var h = fromHash(); if (h) setSymbols(h); });
+  window.addEventListener('resize', (function () { var t; return function () { clearTimeout(t); t = setTimeout(drawCorr, 120); }; })());
+  // Charts inside a <details> that was closed get a 0×0 size; re-fit when it opens.
+  ['secPerf', 'secRs', 'secCorr'].forEach(function (id) {
+    $(id).addEventListener('toggle', function () {
+      if (!this.open) return;
+      setTimeout(function () { if (perfChart) perfChart.timeScale().fitContent(); if (rsChart) rsChart.timeScale().fitContent(); drawCorr(); }, 60);
+    });
+  });
+  window.addEventListener('storage', function (e) { if (e.key === 'bt.watchlist') loadTiles(); });
+
+  /* ------------------------------------------------------------------ *
+   * Go
+   * ------------------------------------------------------------------ */
+  render();
+  load();
+  loadTiles();
+})();
+</script>
+</body>
+</html>

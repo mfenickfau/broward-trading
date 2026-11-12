@@ -11,6 +11,15 @@
  *       { lessonsDone:{id:true}, quizScores:{lessonId:pct}, startedAt }
  *   - markDone(id), recordQuiz(id, pct), moduleProgress(moduleId), certificateEligible()
  *   - certificate({name}) → PNG dataURL drawn on a 1600×1130 canvas
+ *
+ * v0.3 additions
+ *   - [[Term]] / [[Term|label]] in md → <span class="gl-term" data-term="Term">label</span>
+ *     (plain text until js/learn.js resolves it against course/glossary.json)
+ *   - BT.course.glossary: lazy loader + lookup for course/glossary.json
+ *   - lessons keep a `pro` flag (Pro gating is decided by js/auth.js, see learn.js)
+ *   - timeRemaining(moduleId?) → estimated minutes left; moduleProgress/courseProgress gain minutesLeft
+ *   - certificate({name, id, verifyUrl}) prints a supplied id (BT.auth.issueCertificate) or a
+ *     local 'BT-LOCAL-XXXXXX' one; localCertId() generates the latter
  */
 (function () {
   'use strict';
@@ -20,6 +29,7 @@
   var STORE_KEY = 'bt.course';
   var COURSE_DIR = 'course/';
   var PASS_PCT = 80;                 // quiz average needed per module for the certificate
+  var DEFAULT_LESSON_MINUTES = 10;   // used for time estimates when a lesson has no minutes
   var CERT_W = 1600, CERT_H = 1130;
 
   /* ------------------------------------------------------------------ */
@@ -52,10 +62,20 @@
    * Only the tags we emit (<code>, <strong>, <em>) can appear in the result, so
    * nothing from the source text can become markup.
    */
+  var TERM_RE = /\[\[([^\[\]|\n]{1,80}?)(?:\|([^\[\]\n]{1,80}?))?\]\]/g;
   function inline(escaped) {
     var codes = [];
     var s = escaped.replace(/`([^`\n]+)`/g, function (_, c) {
       codes.push('<code>' + c + '</code>');
+      return '\u0000' + (codes.length - 1) + '\u0000';
+    });
+    // [[Term]] or [[Term|shown text]] → glossary term span. The text is already
+    // escaped, so both the data attribute and the label are safe. It renders as
+    // plain text until learn.js finds the term in course/glossary.json.
+    s = s.replace(TERM_RE, function (_, term, label) {
+      term = term.trim(); label = (label || term).trim();
+      if (!term) return label;
+      codes.push('<span class="gl-term" data-term="' + term + '">' + label + '</span>');
       return '\u0000' + (codes.length - 1) + '\u0000';
     });
     s = s.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
@@ -69,7 +89,8 @@
    * Supported: paragraphs (blank-line separated), `#`/`##`/`###` headings
    * (all rendered as <h3>/<h4> so they sit under the lesson title), `- ` or `* `
    * bullet lists, `1. ` numbered lists, `> ` quotes, `---` rules, and the inline
-   * forms above. Everything is HTML-escaped before any markup is added.
+   * forms above (including [[glossary terms]]). Everything is HTML-escaped before
+   * any markup is added.
    */
   function renderMd(md) {
     if (md == null) return '';
@@ -119,6 +140,86 @@
     return out.join('\n');
   }
 
+  /** termsIn(md) → unique [[terms]] referenced by a markdown string (in order). */
+  function termsIn(md) {
+    var seen = {}, out = [], m;
+    TERM_RE.lastIndex = 0;
+    while ((m = TERM_RE.exec(String(md == null ? '' : md)))) {
+      var t = m[1].trim(); if (t && !seen[t.toLowerCase()]) { seen[t.toLowerCase()] = true; out.push(t); }
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Glossary (course/glossary.json), loaded lazily on first use          */
+  /* ------------------------------------------------------------------ */
+  var GLOSSARY_FILE = COURSE_DIR + 'glossary.json';
+  var _gloss = null;             // {terms:[], byKey:{}} once loaded
+  var _glossPromise = null;
+  var _glossFailed = false;
+
+  function glossKey(s) {
+    return String(s == null ? '' : s).toLowerCase().replace(/&amp;/g, '&')
+      .replace(/[’']/g, '').replace(/[^a-z0-9%+&/-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function indexGlossary(json) {
+    var list = Array.isArray(json) ? json : (json && Array.isArray(json.terms) ? json.terms : []);
+    var terms = [], byKey = {};
+    function add(k, t) { k = glossKey(k); if (k && !byKey[k]) byKey[k] = t; }
+    list.forEach(function (raw) {
+      if (!raw || typeof raw !== 'object' || !raw.term) return;
+      var t = {
+        id: String(raw.id || glossKey(raw.term).replace(/\s+/g, '-')),
+        term: String(raw.term), aliases: Array.isArray(raw.aliases) ? raw.aliases.map(String) : [],
+        category: String(raw.category || ''), lesson: raw.lesson ? String(raw.lesson) : '',
+        definition: String(raw.definition || ''), example: String(raw.example || ''),
+        related: Array.isArray(raw.related) ? raw.related.map(String) : []
+      };
+      terms.push(t);
+      add(t.id, t); add(t.term, t);
+      t.aliases.forEach(function (a) { add(a, t); });
+      // 'Relative Strength Index (RSI)' → also 'relative strength index' and 'rsi'
+      var paren = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(t.term);
+      if (paren) { add(paren[1], t); add(paren[2], t); }
+      // 'Higher high / higher low' → both halves
+      t.term.split(/\s*\/\s*/).forEach(function (part) { if (part !== t.term) add(part, t); });
+    });
+    return { terms: terms, byKey: byKey, categories: (json && Array.isArray(json.categories)) ? json.categories : [] };
+  }
+  /** glossary.load() → Promise<{terms, byKey}>; resolves to null (never rejects) when the file is unavailable. */
+  function loadGlossary(force) {
+    if (_gloss && !force) return Promise.resolve(_gloss);
+    if (_glossFailed && !force) return Promise.resolve(null);
+    if (_glossPromise && !force) return _glossPromise;
+    _glossPromise = fetchJSON(GLOSSARY_FILE).then(function (json) {
+      _gloss = indexGlossary(json); _glossFailed = false; return _gloss;
+    }).catch(function () { _glossFailed = true; _glossPromise = null; return null; });
+    return _glossPromise;
+  }
+  function setGlossary(json) { _gloss = indexGlossary(json); _glossFailed = false; _glossPromise = Promise.resolve(_gloss); return _gloss; }
+  function resetGlossary() { _gloss = null; _glossFailed = false; _glossPromise = null; }
+  /** glossary.lookup('RSI') → term object or null (sync; null until load() has resolved). */
+  function lookupTerm(term) {
+    if (!_gloss) return null;
+    var k = glossKey(term); if (!k) return null;
+    var t = _gloss.byKey[k];
+    if (!t && /s$/.test(k)) t = _gloss.byKey[k.replace(/(ie)?s$/, function (m) { return m === 'ies' ? 'y' : ''; })];
+    if (!t && /s$/.test(k)) t = _gloss.byKey[k.slice(0, -1)];
+    if (!t) { var alt = k.replace(/-/g, ' '); if (alt !== k) t = _gloss.byKey[alt]; }
+    return t || null;
+  }
+  function glossaryUrl(t) { var id = typeof t === 'string' ? t : (t && t.id); return id ? 'glossary.html#term/' + encodeURIComponent(id) : 'glossary.html'; }
+  var glossary = {
+    load: loadGlossary, set: setGlossary, reset: resetGlossary, lookup: lookupTerm, url: glossaryUrl, key: glossKey,
+    get loaded() { return !!_gloss; }, get failed() { return _glossFailed; },
+    get terms() { return _gloss ? _gloss.terms : []; },
+    get categories() { return _gloss ? _gloss.categories : []; },
+    categoryLabel: function (id) {
+      var c = (_gloss ? _gloss.categories : []).filter(function (x) { return x && x.id === id; })[0];
+      return c ? String(c.label) : String(id || '');
+    }
+  };
+
   /* ------------------------------------------------------------------ */
   /* Course data loading                                                  */
   /* ------------------------------------------------------------------ */
@@ -161,8 +262,9 @@
           level: /^(beginner|intermediate|advanced)$/.test(m.level) ? m.level : 'beginner',
           minutes: +m.minutes || 0,
           summary: String(m.summary || ''),
+          pro: !!m.pro,
           lessons: (Array.isArray(m.lessons) ? m.lessons : []).map(function (l, j) {
-            return { id: String(l.id || (m.id + '-l' + (j + 1))), title: String(l.title || ('Lesson ' + (j + 1))), minutes: +l.minutes || 0 };
+            return { id: String(l.id || (m.id + '-l' + (j + 1))), title: String(l.title || ('Lesson ' + (j + 1))), minutes: +l.minutes || 0, pro: !!(l.pro || m.pro) };
           })
         };
       })
@@ -184,12 +286,16 @@
       minutes: +((json && json.minutes) || meta.minutes) || 0,
       summary: String((json && json.summary) || meta.summary || ''),
       objectives: (json && Array.isArray(json.objectives)) ? json.objectives.map(String) : [],
+      pro: !!((json && json.pro) || meta.pro),
       lessons: lessons.map(function (l, j) {
         var fallbackId = (meta.lessons && meta.lessons[j] && meta.lessons[j].id) || (id + '-l' + (j + 1));
+        var indexed = (meta.lessons || []).filter(function (x) { return x.id === String(l.id || fallbackId); })[0] || {};
         return {
           id: String(l.id || fallbackId),
           title: String(l.title || ('Lesson ' + (j + 1))),
           minutes: +l.minutes || 0,
+          pro: !!(l.pro || (json && json.pro) || indexed.pro || meta.pro),
+          summary: String(l.summary || ''),
           blocks: Array.isArray(l.blocks) ? l.blocks.filter(function (b) { return b && typeof b.type === 'string'; }) : []
         };
       })
@@ -228,7 +334,8 @@
       if (_index) {
         var im = _index.modules.filter(function (m) { return m.id === id; })[0];
         if (im) {
-          im.lessons = mod.lessons.map(function (l) { return { id: l.id, title: l.title, minutes: l.minutes }; });
+          im.lessons = mod.lessons.map(function (l) { return { id: l.id, title: l.title, minutes: l.minutes, pro: !!l.pro }; });
+          if (mod.pro) im.pro = true;
           if (mod.minutes) im.minutes = mod.minutes;
           if (mod.summary) im.summary = mod.summary;
         }
@@ -352,29 +459,54 @@
   /** {done, total, pct, quizAvg, quizzes} for one module (needs the index). */
   function moduleProgress(moduleId) {
     var m = _index && _index.modules.filter(function (x) { return x.id === moduleId; })[0];
-    if (!m) return { done: 0, total: 0, pct: 0, quizAvg: null, quizzes: 0 };
-    var done = 0, scores = [];
+    if (!m) return { done: 0, total: 0, pct: 0, quizAvg: null, quizzes: 0, minutes: 0, minutesLeft: 0 };
+    var done = 0, scores = [], minutes = 0, minutesLeft = 0;
     m.lessons.forEach(function (l) {
-      if (progress.lessonsDone[l.id]) done++;
+      var mins = l.minutes || DEFAULT_LESSON_MINUTES;
+      minutes += mins;
+      if (progress.lessonsDone[l.id]) done++; else minutesLeft += mins;
       if (progress.quizScores[l.id] != null) scores.push(progress.quizScores[l.id]);
     });
     var total = m.lessons.length;
     var quizAvg = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length) : null;
-    return { done: done, total: total, pct: total ? Math.round(done / total * 100) : 0, quizAvg: quizAvg, quizzes: scores.length };
+    return { done: done, total: total, pct: total ? Math.round(done / total * 100) : 0, quizAvg: quizAvg, quizzes: scores.length, minutes: minutes, minutesLeft: minutesLeft };
+  }
+
+  /**
+   * timeRemaining(moduleId?) → {minutes, lessons, label} for the lessons not yet
+   * marked done (whole course when no module is given). Lessons without a
+   * minutes value count as DEFAULT_LESSON_MINUTES.
+   */
+  function timeRemaining(moduleId) {
+    var modules = _index ? _index.modules : [];
+    if (moduleId) modules = modules.filter(function (m) { return m.id === moduleId; });
+    var minutes = 0, lessons = 0;
+    modules.forEach(function (m) {
+      m.lessons.forEach(function (l) { if (!progress.lessonsDone[l.id]) { lessons++; minutes += l.minutes || DEFAULT_LESSON_MINUTES; } });
+    });
+    return { minutes: minutes, lessons: lessons, label: formatDuration(minutes) };
+  }
+  /** formatDuration(135) → '2 h 15 min'; (45) → '45 min'; (0) → '0 min'. */
+  function formatDuration(mins) {
+    mins = Math.max(0, Math.round(+mins || 0));
+    if (mins < 60) return mins + ' min';
+    var h = Math.floor(mins / 60), r = mins % 60;
+    return r ? h + ' h ' + r + ' min' : h + ' h';
   }
 
   /** Whole-course summary. */
   function courseProgress() {
     var modules = _index ? _index.modules : [];
-    var done = 0, total = 0, scores = [];
+    var done = 0, total = 0, scores = [], minutes = 0, minutesLeft = 0;
     modules.forEach(function (m) {
-      var mp = moduleProgress(m.id); done += mp.done; total += mp.total;
+      var mp = moduleProgress(m.id); done += mp.done; total += mp.total; minutes += mp.minutes; minutesLeft += mp.minutesLeft;
       m.lessons.forEach(function (l) { if (progress.quizScores[l.id] != null) scores.push(progress.quizScores[l.id]); });
     });
     return {
       done: done, total: total, pct: total ? Math.round(done / total * 100) : 0,
       quizAvg: scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length) : null,
-      quizzes: scores.length, startedAt: progress.startedAt, lastLessonId: progress.lastLessonId
+      quizzes: scores.length, startedAt: progress.startedAt, lastLessonId: progress.lastLessonId,
+      minutes: minutes, minutesLeft: minutesLeft, modules: modules.length
     };
   }
 
@@ -405,12 +537,21 @@
     try { return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); }
     catch (e) { return d.toISOString().slice(0, 10); }
   }
-  function certId(name, date) {
-    // short, stable, non-secret id so a printout can be matched to a browser record
-    var s = (name + '|' + date).toLowerCase(), h = 2166136261;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-    return 'BT-' + h.toString(16).toUpperCase().padStart(8, '0');
+  // Local certificate ids: 'BT-LOCAL-XXXXXX', six characters from an alphabet
+  // without 0/1/O/I so they are easy to read aloud. Random (crypto when available)
+  // so two students with the same name on the same day never collide. Used only
+  // when js/auth.js is absent; with it, BT.auth.issueCertificate supplies the id.
+  var ID_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function localCertId() {
+    var out = 'BT-LOCAL-', bytes = null;
+    try { if (window.crypto && window.crypto.getRandomValues) { bytes = new Uint8Array(6); window.crypto.getRandomValues(bytes); } } catch (e) { bytes = null; }
+    for (var i = 0; i < 6; i++) {
+      var r = bytes ? bytes[i] : Math.floor(Math.random() * 256);
+      out += ID_ALPHABET.charAt(r % ID_ALPHABET.length);
+    }
+    return out;
   }
+  function isLocalCertId(id) { return /^BT-LOCAL-[A-Z0-9]{6}$/.test(String(id || '').toUpperCase()); }
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -423,9 +564,13 @@
   }
 
   /**
-   * certificate({name, date, course, canvas, theme}) → dataURL (PNG).
+   * certificate({name, date, course, canvas, theme, id, verified, verifyUrl, record}) → dataURL (PNG).
    * Draws a 1600×1130 landscape certificate. `canvas` is optional (one is
    * created if omitted); `theme` may be 'dark' | 'light' (default 'light' — it prints well).
+   * `id` is the certificate id to print (from BT.auth.issueCertificate); when
+   * omitted a local 'BT-LOCAL-XXXXXX' id is generated. `verified` labels the id
+   * as server-issued; `verifyUrl` is printed under it. `record:false` skips
+   * writing progress.certificate (used for previews).
    */
   function certificate(opts) {
     opts = opts || {};
@@ -433,6 +578,12 @@
     var date = opts.date instanceof Date ? opts.date : (opts.date ? new Date(opts.date) : new Date());
     if (isNaN(date.getTime())) date = new Date();
     var courseTitle = String(opts.course || (_index && _index.title) || 'Broward Trading Course');
+    var id = String(opts.id || '').trim().toUpperCase() || localCertId();
+    var verified = !!opts.verified;
+    var verifyUrl = opts.verifyUrl ? String(opts.verifyUrl) : '';
+    var modList = (_index && _index.modules.length) ? _index.modules.map(function (m) { return m.title; }) : null;
+    var modCount = modList ? modList.length : 0;
+    var COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
     var canvas = opts.canvas || document.createElement('canvas');
     canvas.width = CERT_W; canvas.height = CERT_H;
     var ctx = canvas.getContext('2d');
@@ -480,19 +631,41 @@
     ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 420, 535); ctx.lineTo(cx + 420, 535); ctx.stroke();
 
     ctx.fillStyle = C.muted; ctx.font = '400 26px ' + SANS;
-    ctx.fillText('has completed all six modules and passed every quiz of', cx, 600);
+    var countText = modCount ? ('all ' + (COUNT_WORDS[modCount] || modCount) + ' modules') : 'every module';
+    ctx.fillText('has completed ' + countText + ' and passed every quiz of', cx, 600);
     ctx.fillStyle = C.fg; fitText(ctx, courseTitle, W - 300, 44, SANS, '600'); ctx.fillText(courseTitle, cx, 660);
 
+    // module list, wrapped onto up to three lines
     ctx.fillStyle = C.muted; ctx.font = '400 20px ' + SANS;
-    ctx.fillText('Market Foundations · Reading Charts & Candlesticks · Technical Indicators', cx, 712);
-    ctx.fillText('Risk Management & Paper Trading · Options Basics · Strategy & Backtesting', cx, 742);
+    var modLines = [];
+    if (modList) {
+      var cur = '';
+      modList.forEach(function (t) {
+        var next = cur ? cur + ' · ' + t : t;
+        if (cur && ctx.measureText(next).width > W - 320) { modLines.push(cur); cur = t; } else cur = next;
+      });
+      if (cur) modLines.push(cur);
+    } else {
+      modLines = ['Market Foundations · Reading Charts & Candlesticks · Technical Indicators', 'Risk Management & Paper Trading · Options Basics · Strategy & Backtesting'];
+    }
+    modLines = modLines.slice(0, 3);
+    var listY = modLines.length === 3 ? 700 : 712;
+    modLines.forEach(function (ln, li) { fitText(ctx, ln, W - 300, 20, SANS, '400'); ctx.fillText(ln, cx, listY + li * 28); });
 
     // footer row: date | seal | id
     ctx.textAlign = 'left'; ctx.fillStyle = C.fg; ctx.font = '500 24px ' + SANS; ctx.fillText(fmtDate(date), 170, 870);
     ctx.fillStyle = C.muted; ctx.font = '400 17px ' + SANS; ctx.fillText('Date of completion', 170, 898);
 
-    ctx.textAlign = 'right'; ctx.fillStyle = C.fg; ctx.font = '500 24px ' + MONO; ctx.fillText(certId(name, fmtDate(date)), W - 170, 870);
-    ctx.fillStyle = C.muted; ctx.font = '400 17px ' + SANS; ctx.fillText('Certificate id (self-issued)', W - 170, 898);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.fg; fitText(ctx, id, 420, 24, MONO, '500'); ctx.fillText(id, W - 170, 870);
+    ctx.fillStyle = C.muted; ctx.font = '400 17px ' + SANS;
+    ctx.fillText(verified ? 'Certificate id (verified)' : 'Certificate id (self-issued)', W - 170, 898);
+    if (verifyUrl) {
+      // the decorative candle strip runs behind this line; mask it so the link stays legible
+      fitText(ctx, verifyUrl, 560, 15, MONO, '400');
+      var uw = ctx.measureText(verifyUrl).width;
+      ctx.save(); ctx.globalAlpha = 0.92; ctx.fillStyle = C.panel; roundRect(ctx, W - 170 - uw - 10, 908, uw + 20, 22, 6); ctx.fill(); ctx.restore();
+      ctx.fillStyle = C.muted; ctx.fillText(verifyUrl, W - 170, 924);
+    }
 
     // seal
     ctx.save(); ctx.translate(cx, 860);
@@ -504,12 +677,14 @@
 
     // disclaimer
     ctx.textAlign = 'center'; ctx.fillStyle = C.muted; ctx.font = '400 15px ' + SANS;
-    ctx.fillText('Free educational simulator. This self-issued certificate recognises course completion; it is not a professional licence or financial advice.', cx, H - 105);
+    ctx.fillText('Free educational simulator. This ' + (verified ? 'certificate' : 'self-issued certificate') + ' recognises course completion; it is not a professional licence or financial advice.', cx, H - 105);
 
     var url;
     try { url = canvas.toDataURL('image/png'); } catch (e) { url = ''; }
-    progress.certificate = { name: name, date: date.toISOString(), id: certId(name, fmtDate(date)) };
-    touch(); saveProgress();
+    if (opts.record !== false) {
+      progress.certificate = { name: name, date: date.toISOString(), id: id, verified: verified, verifyUrl: verifyUrl || null };
+      touch(); saveProgress();
+    }
     return url;
   }
 
@@ -531,7 +706,9 @@
   /* ------------------------------------------------------------------ */
   BT.course = {
     // markdown
-    renderMd: renderMd, escapeHtml: escapeHtml,
+    renderMd: renderMd, escapeHtml: escapeHtml, termsIn: termsIn,
+    // glossary
+    glossary: glossary,
     // data
     loadIndex: loadIndex, loadModule: loadModule, loadAll: loadAll, setIndex: setIndex, setModule: setModule,
     getIndex: getIndex, getModule: getModule, moduleOfLesson: moduleOfLesson, lessonSequence: lessonSequence,
@@ -540,11 +717,11 @@
     get progress() { return progress; },
     save: saveProgress, markDone: markDone, unmarkDone: unmarkDone, isDone: isDone,
     recordQuiz: recordQuiz, quizScore: quizScore, setLastLesson: setLastLesson, resetProgress: resetProgress,
-    moduleProgress: moduleProgress, courseProgress: courseProgress,
+    moduleProgress: moduleProgress, courseProgress: courseProgress, timeRemaining: timeRemaining, formatDuration: formatDuration,
     certificateEligible: certificateEligible, certificateStatus: certificateStatus,
     // certificate & quiz
-    certificate: certificate, gradeQuiz: gradeQuiz,
-    PASS_PCT: PASS_PCT, STORE_KEY: STORE_KEY, CourseError: CourseError,
-    version: '0.2.0'
+    certificate: certificate, localCertId: localCertId, isLocalCertId: isLocalCertId, gradeQuiz: gradeQuiz,
+    PASS_PCT: PASS_PCT, DEFAULT_LESSON_MINUTES: DEFAULT_LESSON_MINUTES, STORE_KEY: STORE_KEY, CourseError: CourseError,
+    version: '0.3.0'
   };
 })();

@@ -1,0 +1,272 @@
+{
+  "version": "0.3.0",
+  "note": "Market Replay drills. Dates refer to the demo (simulated) price series, which is deterministic: every student sees the same bars. A year in a title is a scenario label, not the real market of that year. Criteria types: min_trades, max_trades, min_return_pct, positive_return, beat_buy_hold, max_drawdown_pct, min_win_rate_pct, min_profit_factor, flat_at_end, used_stop, used_limit, used_short, no_short.",
+  "drills": [
+    {
+      "id": "sma-cross-msft-2024",
+      "title": "Trade the SMA crossover on MSFT 2024",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "MSFT",
+      "interval": "1day",
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m3-l1",
+      "tags": ["trend", "moving-averages", "daily"],
+      "objective": "Follow one rule for a whole year: go long when the 20-day SMA crosses above the 50-day SMA and sell when it crosses back below. Stay in cash otherwise. The point is not to make money this once — it is to feel what a mechanical trend rule does to you during the slow, sideways months when it whipsaws.",
+      "hints": [
+        "Turn on the SMA 20 and SMA 50 overlays before you start; the chart only draws them from revealed bars, so a crossover appears exactly when a trader would have seen it.",
+        "Step one bar at a time near a crossover. Entering one bar after the signal (at the next open) is what a real trader gets.",
+        "Count your whipsaws: two quick losses in a row is normal for a crossover system. Quitting the rule after them is the mistake the drill is about.",
+        "Buy-and-hold is your benchmark. A trend rule often lags it in a steady year and shines in a bad one."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 2, "text": "Act on at least two crossovers (two completed round trips)" },
+        { "type": "max_trades", "value": 8, "text": "No more than eight round trips — only trade the crossovers" },
+        { "type": "no_short" },
+        { "type": "flat_at_end", "text": "End the year flat: close the last position when the session ends" }
+      ]
+    },
+    {
+      "id": "bear-market-survival-2022",
+      "title": "2022 bear market survival",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "META",
+      "interval": "1day",
+      "start": "2022-01-03",
+      "end": "2022-12-30",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l3",
+      "tags": ["risk", "drawdown", "daily"],
+      "objective": "This simulated year loses more than a third of its value with brutal rallies on the way down. Your job is to survive: keep your equity drawdown under 15 % while buy-and-hold loses far more. You may stay in cash, trade small, or short — but every position must be protected with a stop order.",
+      "hints": [
+        "Capital preservation is a result in itself. Finishing flat with a 2 % loss beats the index by thirty points here.",
+        "Place the stop in the same step as the entry. A stop you plan to add later is a stop you never add.",
+        "Bear-market rallies are violent; do not add to a long because 'it must bounce'. Size positions so a 10 % move against you costs under 1 % of equity.",
+        "Shorting is allowed, but a short needs a stop above it just as a long needs one below."
+      ],
+      "criteria": [
+        { "type": "max_drawdown_pct", "value": 15, "text": "Keep your maximum equity drawdown under 15 %" },
+        { "type": "beat_buy_hold", "text": "Finish ahead of buy-and-hold for the year" },
+        { "type": "used_stop", "value": 1, "text": "Protect your positions with at least one stop order" }
+      ]
+    },
+    {
+      "id": "ride-the-trend-nvda-2023",
+      "title": "Ride the trend: NVDA 2023",
+      "level": "beginner",
+      "minutes": 12,
+      "symbol": "NVDA",
+      "interval": "1day",
+      "start": "2023-01-03",
+      "end": "2023-12-29",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m2-l2",
+      "tags": ["trend", "patience", "daily"],
+      "objective": "A strong simulated uptrend with pullbacks of 10–30 % along the way. Buy early, hold through the pullbacks, and let the trend pay you. The drill fails if you trade too often: the lesson is that most of the return in a trending year comes from sitting still.",
+      "hints": [
+        "Look for higher highs and higher lows. As long as the pullbacks hold above the previous swing low, the trend is intact.",
+        "Decide in advance what would make you sell — a close below the 50-day SMA, for example — and ignore everything else.",
+        "If you feel the urge to take profit after a 15 % gain, step forward ten bars first and see what the urge would have cost.",
+        "Compare your result to buy-and-hold at the end. Beating it in a straight uptrend is hard; matching it with less drawdown is a win."
+      ],
+      "criteria": [
+        { "type": "max_trades", "value": 3, "text": "Three round trips or fewer — hold, don't churn" },
+        { "type": "min_return_pct", "value": 20, "text": "Capture at least +20 % of the move" },
+        { "type": "no_short" }
+      ]
+    },
+    {
+      "id": "crash-and-recovery-xom-2020",
+      "title": "Crash and recovery: AMZN, Sep 2018 – Apr 2019",
+      "level": "advanced",
+      "minutes": 12,
+      "symbol": "AMZN",
+      "interval": "1day",
+      "start": "2018-09-17",
+      "end": "2019-04-16",
+      "cash": 100000,
+      "ticks": true,
+      "lesson": "m4-l2",
+      "tags": ["volatility", "stops", "daily"],
+      "objective": "A fast simulated crash of about 40 % in six weeks, starting a few weeks into the session, followed by a choppy recovery that retests the low before rallying more than 50 % off it. Buy-and-hold ends slightly down. Trade it with intrabar ticks on, so you feel how gaps and wide ranges blow through stops. Finish with a positive return and a drawdown under 20 %.",
+      "hints": [
+        "With ticks on, each bar reveals open → first extreme → second extreme → close. A stop hit by a gap fills at the open, not at your price — that is what 'stops do not guarantee a price' means.",
+        "In a crash, wait for a bar that closes above the previous bar's high before buying. Catching the exact bottom is luck, not skill — and this series retests its low months later, so a first bounce is not proof the crash is over.",
+        "Volatility is high, so size small: the 1 % rule says risk per trade = 1 % of equity ÷ (entry − stop).",
+        "A stop-limit can save you from a terrible fill — and can leave you stuck in the trade. Try both and read the event log."
+      ],
+      "criteria": [
+        { "type": "positive_return" },
+        { "type": "max_drawdown_pct", "value": 20 },
+        { "type": "used_stop", "value": 2, "text": "Use at least two stop or stop-limit orders" }
+      ]
+    },
+    {
+      "id": "range-trading-spy-2018",
+      "title": "Range trading with RSI: SPY, Apr – Nov 2015",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "SPY",
+      "interval": "1day",
+      "start": "2015-04-15",
+      "end": "2015-11-10",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m3-l2",
+      "tags": ["mean-reversion", "rsi", "limit-orders", "daily"],
+      "objective": "Seven simulated months that end roughly where they began: a quiet range through the summer, one sharp shake-out in August, then a second dip in October before the recovery. Buy-and-hold makes about 1 %; a mean-reversion trader can do better. Buy when RSI(14) drops below 30 and the price is near the bottom of the range (it happens four times in this window), sell when RSI rises above 70 or price reaches the top of the range, and use limit orders so you get your price instead of chasing.",
+      "hints": [
+        "Turn on the RSI pane. Oversold does not mean 'buy now' — wait for the first up close after RSI dips under 30. The first dip comes in early August; the others cluster in October.",
+        "A buy limit a little below the current price is the mean-reversion trader's tool: you get filled on weakness or not at all.",
+        "A range breaks eventually — the August shake-out here drops almost 20 % from the high. Keep a stop under the range low so one breakdown does not undo five good trades, and buy the dip only when RSI has turned up.",
+        "Win rate matters more than big winners in this style; aim for small, repeatable gains. RSI only reaches 70 once in these seven months, so most exits will be sell limits near resistance rather than RSI signals."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 3 },
+        { "type": "used_limit", "value": 2, "text": "Enter or exit with at least two limit orders" },
+        { "type": "beat_buy_hold" },
+        { "type": "min_win_rate_pct", "value": 50 }
+      ]
+    },
+    {
+      "id": "short-selling-nvda-2022",
+      "title": "Short selling practice: NVDA 2022",
+      "level": "advanced",
+      "minutes": 15,
+      "symbol": "NVDA",
+      "interval": "1day",
+      "start": "2022-01-03",
+      "end": "2022-12-30",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l4",
+      "tags": ["short", "margin", "daily"],
+      "objective": "A simulated collapse of roughly 75 %. Practise selling short: open at least one short position, protect it with a buy stop above the entry, and cover it before the session ends. Remember the margin rule — the account must hold 150 % of your short exposure in cash — and that a short's loss is unlimited if you are wrong.",
+      "hints": [
+        "Short into weakness after a lower high, not into a sharp drop that is already stretched — bear-market rallies of 20 % happen.",
+        "A short's stop is a BUY stop above the market. Place it in the same step as the entry.",
+        "Watch the margin figure in the account strip. If cash falls below 150 % of your short exposure the strip shows a warning; the simulator does not force you out, so cover or add nothing until it clears.",
+        "Cover in pieces: take a third off after a 15 % drop, move the stop down, keep the rest."
+      ],
+      "criteria": [
+        { "type": "used_short", "value": 1 },
+        { "type": "used_stop", "value": 1, "text": "Protect the short with a buy stop" },
+        { "type": "positive_return" },
+        { "type": "flat_at_end", "text": "Cover everything before the session ends" }
+      ]
+    },
+    {
+      "id": "stop-discipline-tsla-2024",
+      "title": "Stop-loss discipline: TSLA 2024",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "TSLA",
+      "interval": "1day",
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l1",
+      "tags": ["risk", "position-sizing", "daily"],
+      "objective": "A violent simulated year: the stock loses more than half of its value at one point and still ends higher. You can trade it any way you like, with one rule: never risk more than 1 % of equity on a trade. Size every position from the distance to your stop, and place the stop. The drill checks your drawdown, not your return.",
+      "hints": [
+        "Shares = (1 % of equity) ÷ (entry price − stop price). With $100,000 and a $20 stop distance that is 50 shares, not 500.",
+        "A wider stop means fewer shares, not more risk. Volatile stocks need wide stops and small size.",
+        "Track your losing streak in the event log. Five small losses in a row cost 5 %; one unstopped trade here would have cost 30 %.",
+        "If you take a loss, step forward a few bars before re-entering — revenge trading is the most expensive habit in this drill."
+      ],
+      "criteria": [
+        { "type": "max_drawdown_pct", "value": 10, "text": "Max drawdown under 10 % — the whole point of the 1 % rule" },
+        { "type": "used_stop", "value": 3, "text": "Every trade gets a stop: at least three stop orders" },
+        { "type": "min_trades", "value": 3 }
+      ]
+    },
+    {
+      "id": "breakout-meta-2023",
+      "title": "Breakout entries: META 2023",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "META",
+      "interval": "1day",
+      "start": "2023-01-03",
+      "end": "2023-12-29",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m2-l5",
+      "tags": ["breakout", "stop-orders", "daily"],
+      "objective": "A simulated year that more than doubles in a series of bases and breakouts. Enter with buy stop orders placed just above resistance so the market pulls you in only when it breaks out, and trail a sell stop under each new base. Aim to capture most of the move with a drawdown under 25 %.",
+      "hints": [
+        "A buy stop above the last swing high is the breakout trader's entry: you are not in the trade unless price proves you right.",
+        "After a breakout, the old resistance often becomes support. Trail your sell stop below it.",
+        "False breakouts happen. If the entry fills and the bar closes back inside the range, that is your exit signal.",
+        "Resist buying inside the base 'to get a better price'. The drill wants your entries to be breakouts."
+      ],
+      "criteria": [
+        { "type": "used_stop", "value": 2, "text": "Enter with buy stops and protect with sell stops — at least two stop orders" },
+        { "type": "min_return_pct", "value": 30 },
+        { "type": "max_drawdown_pct", "value": 25 },
+        { "type": "no_short" }
+      ]
+    },
+    {
+      "id": "intraday-aapl-5min",
+      "title": "Intraday session: AAPL on the 5-minute chart",
+      "level": "advanced",
+      "minutes": 15,
+      "symbol": "AAPL",
+      "interval": "5min",
+      "start": "2024-03-15",
+      "end": "2024-03-15",
+      "cash": 100000,
+      "ticks": true,
+      "lesson": "m3-l4",
+      "tags": ["intraday", "vwap", "5min"],
+      "objective": "One simulated trading day, 78 five-minute bars, intrabar ticks on. Trade with the VWAP: look for long entries when price pulls back to VWAP in an up-trending morning, or shorts when it fails below it. Be flat by the close — day traders do not hold overnight — and make no more than four round trips.",
+      "hints": [
+        "Turn on the VWAP overlay. Above VWAP buyers are in control for the day; below it sellers are.",
+        "The first 30 minutes are the widest ranges. Many day traders wait for the 10:00 bar before trading.",
+        "Use the 1× or 2× speed so every tick registers; 20× is for fast-forwarding a quiet lunch hour.",
+        "Commissions and spreads matter most in intraday trading; this simulator charges none, so treat a small positive result as break-even."
+      ],
+      "criteria": [
+        { "type": "max_trades", "value": 4 },
+        { "type": "min_trades", "value": 1 },
+        { "type": "flat_at_end", "text": "No position at the closing bell" },
+        { "type": "max_drawdown_pct", "value": 2, "text": "Intraday drawdown under 2 % of equity" }
+      ]
+    },
+    {
+      "id": "hourly-swing-msft-2024",
+      "title": "Two-week swing trade: MSFT on the hourly chart",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "MSFT",
+      "interval": "1h",
+      "start": "2024-06-03",
+      "end": "2024-06-14",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m6-l1",
+      "tags": ["swing", "1h", "plan"],
+      "objective": "Ten simulated sessions of hourly bars. Before you press play, write down your entry rule, your stop and your target in the notes — then follow the plan to the letter. The drill passes if you complete one or two planned trades, each protected by a stop, and finish with a profit factor of at least 1.",
+      "hints": [
+        "Hourly bars show the gap at each 9:30 open clearly. Decide beforehand whether your stop can be hit by a gap and size for it.",
+        "A plan with an entry, a stop and a target before the trade is what separates trading from guessing. Judge yourself on whether you followed it, not on the P&L.",
+        "Two trades in two weeks is plenty. If your rule gives no signal, doing nothing is following the plan.",
+        "After the session, save the scorecard to your journal and record whether you deviated from the plan — that is the real result."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 1 },
+        { "type": "max_trades", "value": 2 },
+        { "type": "used_stop", "value": 1 },
+        { "type": "min_profit_factor", "value": 1 }
+      ]
+    }
+  ]
+}

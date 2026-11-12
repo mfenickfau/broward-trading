@@ -1,14 +1,20 @@
-/* Broward Trading — js/learn.js (UI for learn.html)
+/* Broward Trading — js/learn.js (UI for learn.html, v0.3)
  *
  * Hash-routed single page:
- *   #/                      course home: progress ring, module cards, certificate & Pro teaser
+ *   #/                      course home: progress ring, "continue where you left off",
+ *                           module cards, certificate checklist, Pro card
  *   #/module/<moduleId>     jumps into the first unfinished lesson of that module
- *   #/lesson/<lessonId>     lesson reader with sidebar, block renderers, quizzes
- *   #/certificate           eligibility checklist + certificate canvas
+ *   #/lesson/<lessonId>     lesson reader: sidebar (a dropdown on phones), block
+ *                           renderers, glossary tooltips, drills, quizzes, Pro lock
+ *   #/certificate           eligibility checklist + certificate canvas with a
+ *                           verifiable id (BT.auth when present, local otherwise)
  *
  * Depends on: js/course.js (BT.course), js/data.js (BT.data), js/indicators.js (BT.ind)
- * and the lightweight-charts v4 UMD global for the 'chart' block. Everything the
- * page renders from course JSON goes through BT.course.renderMd / escapeHtml.
+ * and the lightweight-charts v4 UMD global for the 'chart' block. Optional:
+ * js/nav.js (BT.nav: theme event, phone accordions), js/config.js + js/auth.js
+ * (BT.auth: Pro gating, certificate ids) and js/replay.js (BT.replay.loadDrills) —
+ * every use of them is guarded, the page works when they are absent.
+ * Everything rendered from course JSON goes through BT.course.renderMd / escapeHtml.
  */
 (function () {
   'use strict';
@@ -23,33 +29,43 @@
     get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } }
   };
+  var PHONE = '(max-width: 760px)';
+  function isPhone() { return !!(window.matchMedia && window.matchMedia(PHONE).matches); }
 
   /* ------------------------------------------------------------------ */
-  /* Theme toggle (shared token system: data-theme on <html>)             */
+  /* Theme: js/nav.js owns the toggle and fires 'bt:theme'. Charts read    */
+  /* CSS tokens when created, so re-render the current view on a change.   */
   /* ------------------------------------------------------------------ */
   (function theme() {
     var saved = store.get('bt.theme', null);
-    if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
-    var btn = document.getElementById('themeToggle');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var cur = document.documentElement.getAttribute('data-theme');
-      var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-      var effective = cur || (prefersLight ? 'light' : 'dark');
-      var next = effective === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      store.set('bt.theme', next);
-      // charts read CSS tokens at creation; re-render the current view so they match
-      route();
+    if ((saved === 'light' || saved === 'dark') && !document.documentElement.getAttribute('data-theme')) document.documentElement.setAttribute('data-theme', saved);
+    window.addEventListener('bt:theme', function () {
+      if (!liveCharts.length) return;                   // nothing on screen depends on the palette
+      keepScroll = true; try { route(); } finally { keepScroll = false; }
     });
+    // Fallback for a page without nav.js: a #themeToggle button someone placed in the markup.
+    var btn = document.getElementById('themeToggle');
+    if (btn && !(BT.nav && BT.nav.theme)) {
+      btn.addEventListener('click', function () {
+        var cur = document.documentElement.getAttribute('data-theme');
+        var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var next = (cur || (prefersLight ? 'light' : 'dark')) === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next); store.set('bt.theme', next);
+        keepScroll = true; try { route(); } finally { keepScroll = false; }
+      });
+    }
   })();
 
   /* ------------------------------------------------------------------ */
   /* Small helpers                                                        */
   /* ------------------------------------------------------------------ */
   var LEVEL_LABEL = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
-  var PAGE_LABEL = { 'index.html': 'Open the dashboard', 'portfolio.html': 'Open your paper portfolio', 'backtest.html': 'Open the strategy lab', 'about.html': 'Read more' };
-  var ALLOWED_PAGES = ['index.html', 'learn.html', 'portfolio.html', 'backtest.html', 'about.html'];
+  var PAGE_LABEL = {
+    'index.html': 'Open the dashboard', 'portfolio.html': 'Open your paper portfolio', 'backtest.html': 'Open the strategy lab',
+    'replay.html': 'Open Market Replay', 'journal.html': 'Open your journal', 'news.html': 'Open company news', 'compare.html': 'Open Compare',
+    'glossary.html': 'Open the glossary', 'pricing.html': 'See Pro', 'verify.html': 'Verify a certificate', 'about.html': 'Read more', 'learn.html': 'Open'
+  };
+  var ALLOWED_PAGES = Object.keys(PAGE_LABEL);
 
   function ring(pct, cls, label) {
     pct = Math.max(0, Math.min(100, Math.round(+pct || 0)));
@@ -60,8 +76,11 @@
       '<div class="lbl">' + (label != null ? label : pct + '%') + '</div></div>';
   }
   function levelPill(level) { return '<span class="lvl ' + esc(level) + '">' + esc(LEVEL_LABEL[level] || level) + '</span>'; }
+  function proPill(title) { return '<span class="lvl pro" title="' + esc(title || 'Part of Pro membership') + '">Pro</span>'; }
   function minutes(n) { return n ? '~' + n + ' min' : ''; }
+  function dur(mins) { return C.formatDuration ? C.formatDuration(mins) : (Math.round(mins) + ' min'); }
   function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return ''; } }
+  var LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
   function nextUnfinishedLesson(moduleId) {
     var idx = C.getIndex(); if (!idx) return null;
@@ -71,12 +90,13 @@
     }
     return null;
   }
+  /** Where "Continue" should go: the unfinished last-opened lesson, the one after it, or the first unfinished lesson. */
   function continueTarget() {
     var idx = C.getIndex(); if (!idx) return null;
     var last = C.progress.lastLessonId;
     if (last) {
       var nb = C.neighbours(last);
-      if (nb.index >= 0 && !C.isDone(last)) return { lessonId: last, title: lessonTitle(last), label: 'Resume' };
+      if (nb.index >= 0 && !C.isDone(last)) return { lessonId: last, title: lessonTitle(last), label: 'Resume', resumed: true };
       if (nb.next) return { lessonId: nb.next.lessonId, title: nb.next.title, label: 'Continue' };
     }
     var nu = nextUnfinishedLesson();
@@ -87,6 +107,30 @@
     var m = C.moduleOfLesson(id); if (!m) return id;
     for (var i = 0; i < m.lessons.length; i++) if (m.lessons[i].id === id) return m.lessons[i].title;
     return id;
+  }
+  function lessonMeta(id) {
+    var m = C.moduleOfLesson(id); if (!m) return null;
+    for (var i = 0; i < m.lessons.length; i++) if (m.lessons[i].id === id) return m.lessons[i];
+    return null;
+  }
+  function moduleNumber(moduleId) {
+    var idx = C.getIndex(); if (!idx) return 0;
+    for (var i = 0; i < idx.modules.length; i++) if (idx.modules[i].id === moduleId) return i + 1;
+    return 0;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Pro gating (BT.auth is optional; everything is free without it)      */
+  /* ------------------------------------------------------------------ */
+  function authOn() { return !!(BT.auth && BT.auth.config && typeof BT.auth.config === 'object'); }
+  function gatingOn() { return authOn() && !!BT.auth.config.proGating; }
+  function isPro() { try { return !!(authOn() && typeof BT.auth.isPro === 'function' && BT.auth.isPro()); } catch (e) { return false; } }
+  function authConfigured() { try { return !!(authOn() && typeof BT.auth.configured === 'function' && BT.auth.configured()); } catch (e) { return false; } }
+  function authSession() { try { return authOn() && typeof BT.auth.session === 'function' ? BT.auth.session() : null; } catch (e) { return null; } }
+  /** lessonLocked(lesson | indexLesson) → true when Pro gating is on, the lesson is flagged pro and the visitor is not Pro. */
+  function lessonLocked(lesson) {
+    if (!lesson || !lesson.pro || !gatingOn()) return false;
+    return !isPro();
   }
 
   /* ------------------------------------------------------------------ */
@@ -115,7 +159,7 @@
 
   function route() {
     try {
-      destroyCharts();
+      destroyCharts(); closeTermPop();
       var r = parseHash();
       if (r.view === 'lesson' && r.id) return showLesson(r.id);
       if (r.view === 'module' && r.id) return showModule(r.id);
@@ -130,7 +174,12 @@
   }
 
   var keepScroll = false;
-  function setApp(html) { app.innerHTML = html; if (booted && !keepScroll) window.scrollTo(0, 0); }
+  function setApp(html) {
+    app.innerHTML = html;
+    if (booted && !keepScroll) window.scrollTo(0, 0);
+    // phone accordions for cards marked data-acc (nav.js; no-op on desktop)
+    if (BT.nav && typeof BT.nav.accordion === 'function') { try { BT.nav.accordion(app); } catch (e) { /* ignore */ } }
+  }
 
   function showError(title, message) {
     setApp('<div class="learn-hero"><div><h1>' + esc(title) + '</h1><p>' + esc(message) + '</p>' +
@@ -141,50 +190,86 @@
   /* ------------------------------------------------------------------ */
   /* Home                                                                 */
   /* ------------------------------------------------------------------ */
+  function continueCard(ct, cp) {
+    if (!ct) {
+      return '<a class="card continue done" href="#/certificate"><div class="ctag">All lessons complete</div>' +
+        '<h3>You have finished every lesson</h3><p>Check the quiz requirements and render your certificate.</p>' +
+        '<span class="go">Go to certificate →</span></a>';
+    }
+    var m = C.moduleOfLesson(ct.lessonId), mp = m ? C.moduleProgress(m.id) : null, n = m ? moduleNumber(m.id) : 0;
+    var lm = lessonMeta(ct.lessonId), locked = lessonLocked(lm);
+    var lessonNo = 0; if (m) m.lessons.forEach(function (l, i) { if (l.id === ct.lessonId) lessonNo = i + 1; });
+    var left = C.timeRemaining ? C.timeRemaining() : { minutes: cp.minutesLeft || 0, lessons: cp.total - cp.done };
+    return '<a class="card continue" href="#/lesson/' + encodeURIComponent(ct.lessonId) + '" id="continueCard">' +
+      '<div class="cbody"><div class="ctag">' + (cp.startedAt ? (ct.resumed ? 'Continue where you left off' : 'Up next') : 'Start here') + '</div>' +
+      '<h3>' + esc(ct.title) + (locked ? ' ' + proPill() : '') + '</h3>' +
+      '<p>' + (m ? 'Module ' + n + ': ' + esc(m.title) + ' · lesson ' + lessonNo + ' of ' + m.lessons.length + (lm && lm.minutes ? ' · ~' + lm.minutes + ' min' : '') : '') + '</p>' +
+      '<div class="cmeta"><span>' + (mp ? '<b class="num">' + dur(mp.minutesLeft) + '</b> left in this module' : '') + '</span>' +
+      '<span><b class="num">' + dur(left.minutes) + '</b> left in the course (' + left.lessons + ' lesson' + (left.lessons === 1 ? '' : 's') + ')</span></div>' +
+      '<span class="go primary">' + esc(ct.label) + ' →</span></div>' +
+      (mp ? ring(mp.pct, 'big', mp.done + '/' + mp.total) : '') + '</a>';
+  }
+
+  function proCard() {
+    var pro = isPro(), configured = authConfigured();
+    var head = pro ? '<span class="pill live">member</span>' : (configured ? '<span class="pill">optional</span>' : '<span class="pill soon">coming soon</span>');
+    var body = pro
+      ? '<p style="margin:0 0 8px;color:var(--muted)">Thank you for supporting the project. Your certificate is issued as verified and every lesson is open to you.</p>'
+      : '<p style="margin:0 0 8px;color:var(--muted)">Broward Trading is free and the whole course stays free. Pro is an optional membership for people who want more:</p>' +
+        '<ul><li>Verified certificates with a shareable link</li><li>Graded assignments and feedback on your trading journal</li><li>Live-data credits so you don’t need your own API key</li><li>Cohort sessions and office hours</li></ul>';
+    return '<div class="card procard" data-acc>' + head + '<h2>Pro membership</h2>' + body +
+      '<a href="pricing.html" class="btn' + (pro ? '' : ' primary') + '" style="display:inline-block;width:100%;text-align:center">' + (pro ? 'Manage membership' : (configured ? 'See what Pro adds' : 'See the Pro roadmap')) + '</a>' +
+      (pro ? '' : '<p style="margin:8px 0 0;font-size:12px;color:var(--muted)">' + (configured ? 'Prices are shown before anything is charged.' : 'No payment is taken anywhere on this site today.') + '</p>') + '</div>';
+  }
+
   function showHome() {
     var idx = C.getIndex(), cp = C.courseProgress(), ct = continueTarget(), cert = C.certificateStatus();
+    var modCount = idx.modules.length, lessonCount = cp.total;
+    var WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
     var html = '<section class="learn-hero">' +
       '<div><h1>' + esc(idx.title) + '</h1><p>' + esc(idx.summary) + '</p>' +
-      '<p style="margin-top:8px">Six modules, thirty lessons, a quiz in every lesson. Finish all of them with an 80% quiz average and you can print your completion certificate. Everything you learn can be practised immediately on the <a href="index.html">dashboard</a> with a paper account.</p>' +
+      '<p style="margin-top:8px">' + (WORDS[modCount] ? WORDS[modCount].charAt(0).toUpperCase() + WORDS[modCount].slice(1) : modCount) + ' modules, ' + lessonCount + ' lessons, a quiz in every lesson, about ' + dur(cp.minutes) + ' in all. Finish them with an ' + C.PASS_PCT + '% quiz average and you can issue your completion certificate. Everything you learn can be practised immediately on the <a href="index.html">dashboard</a> and in <a href="replay.html">Market Replay</a> with a paper account.</p>' +
       '<div class="actions">' +
-      (ct ? '<a href="#/lesson/' + encodeURIComponent(ct.lessonId) + '"><button class="primary">' + esc(ct.label) + ': ' + esc(ct.title) + '</button></a>' :
+      (ct ? '<a href="#/lesson/' + encodeURIComponent(ct.lessonId) + '"><button class="primary">' + esc(ct.label) + '</button></a>' :
         '<a href="#/certificate"><button class="primary">All lessons done — get your certificate</button></a>') +
       '<a href="#/certificate"><button>Certificate' + (cert.eligible ? ' ✓' : '') + '</button></a>' +
+      '<a href="glossary.html"><button>Glossary</button></a>' +
       '</div></div>' +
-      '<div class="card" style="display:flex;gap:16px;align-items:center;min-width:260px">' + ring(cp.pct, 'big') +
+      '<div class="card herostat">' + ring(cp.pct, 'big') +
       '<div class="stat"><span>Lessons done</span><span>' + cp.done + ' / ' + cp.total + '</span>' +
+      '<span>Time left</span><span>' + (cp.minutesLeft ? '~' + dur(cp.minutesLeft) : 'none') + '</span>' +
       '<span>Quiz average</span><span>' + (cp.quizAvg == null ? '—' : cp.quizAvg + '%') + '</span>' +
       '<span>Quizzes taken</span><span>' + cp.quizzes + '</span>' +
       '<span>Started</span><span>' + (cp.startedAt ? esc(fmtDate(cp.startedAt)) : '—') + '</span></div></div>' +
       '</section>';
 
+    html += continueCard(ct, cp);
+
     html += '<h2 class="sr-only">Modules</h2><div class="modgrid">' + idx.modules.map(function (m, i) {
       var mp = C.moduleProgress(m.id);
-      return '<a class="card modcard" href="#/module/' + encodeURIComponent(m.id) + '">' +
-        '<div><div class="idx">Module ' + (i + 1) + '</div><h3>' + esc(m.title) + '</h3><p>' + esc(m.summary) + '</p>' +
+      var lockedCount = gatingOn() && !isPro() ? m.lessons.filter(function (l) { return l.pro; }).length : 0;
+      return '<a class="card modcard' + (mp.pct >= 100 ? ' complete' : '') + '" href="#/module/' + encodeURIComponent(m.id) + '">' +
+        '<div><div class="idx">Module ' + (i + 1) + (mp.pct >= 100 ? ' · complete' : mp.done ? ' · in progress' : '') + '</div><h3>' + esc(m.title) + '</h3><p>' + esc(m.summary) + '</p>' +
         '<div class="meta">' + levelPill(m.level) + '<span>' + esc(minutes(m.minutes)) + '</span><span>· ' + m.lessons.length + ' lessons</span>' +
-        (mp.quizAvg != null ? '<span>· quiz avg <b class="num">' + mp.quizAvg + '%</b></span>' : '') + '</div></div>' +
+        (mp.done && mp.minutesLeft ? '<span>· <b class="num">' + dur(mp.minutesLeft) + '</b> left</span>' : '') +
+        (mp.quizAvg != null ? '<span>· quiz avg <b class="num">' + mp.quizAvg + '%</b></span>' : '') +
+        (lockedCount ? '<span class="lockmeta">' + LOCK_SVG + ' ' + lockedCount + ' Pro lesson' + (lockedCount === 1 ? '' : 's') + '</span>' : '') + '</div></div>' +
         ring(mp.pct, '', mp.done + '/' + mp.total) + '</a>';
     }).join('') + '</div>';
 
     html += '<div class="homegrid">' +
-      '<div class="card"><h2>How the course works</h2>' +
-      '<p style="margin:0 0 8px;color:var(--muted)">Each lesson mixes short reading, a live chart you can inspect, a hands-on exercise on the dashboard and a quiz with instant explanations. Your progress is saved in this browser only — no account needed.</p>' +
-      '<ul style="margin:0;padding-left:18px;color:var(--muted)"><li>Read in order; later modules assume the earlier ones.</li><li>Quizzes can be retaken — your best score counts.</li><li>Do the exercises on your paper account. Mistakes are free here.</li></ul></div>' +
+      '<div class="card" data-acc><h2>How the course works</h2>' +
+      '<p style="margin:0 0 8px;color:var(--muted)">Each lesson mixes short reading, a live chart you can inspect, a hands-on exercise on the dashboard or in Market Replay, and a quiz with instant explanations. Your progress is saved in this browser only — no account needed.</p>' +
+      '<ul style="margin:0;padding-left:18px;color:var(--muted)"><li>Read in order; later modules assume the earlier ones.</li><li>Quizzes can be retaken — your best score counts.</li><li>Tap any <span class="gl-term on demo">underlined term</span> for a plain-English definition.</li><li>Do the exercises on your paper account. Mistakes are free here.</li></ul></div>' +
 
-      '<div class="card"><h2>Certificate of completion</h2>' +
-      '<p style="margin:0 0 8px;color:var(--muted)">' + (cert.eligible ? 'You have met every requirement. Add your name and render your certificate.' :
-        'Complete all 30 lessons and keep each module’s quiz average at ' + C.PASS_PCT + '% or better.') + '</p>' +
-      '<ul class="checklist" style="margin-bottom:10px">' + cert.modules.slice(0, 6).map(function (r) {
+      '<div class="card" data-acc><h2>Certificate of completion</h2>' +
+      '<p style="margin:0 0 8px;color:var(--muted)">' + (cert.eligible ? 'You have met every requirement. Add your name and issue your certificate.' :
+        'Complete all ' + cp.total + ' lessons and keep each module’s quiz average at ' + C.PASS_PCT + '% or better.') + '</p>' +
+      '<ul class="checklist" style="margin-bottom:10px">' + cert.modules.map(function (r) {
         return '<li><span class="' + (r.ok ? 'ok' : 'no') + '">' + (r.ok ? '✓' : '○') + '</span><span>' + esc(r.title) + '</span><span class="num" style="color:var(--muted)">' + (r.ok ? 'passed' : esc(r.reason)) + '</span></li>';
       }).join('') + '</ul>' +
       '<a href="#/certificate"><button class="' + (cert.eligible ? 'primary' : '') + '">' + (cert.eligible ? 'Get your certificate' : 'View requirements') + '</button></a></div>' +
-
-      '<div class="card teaser" aria-disabled="true"><span class="pill soon">coming soon</span><h2>Pro membership</h2>' +
-      '<p style="margin:0;color:var(--muted)">Broward Trading is free and will stay free. A paid membership is on the roadmap for people who want more:</p>' +
-      '<ul><li>Verified certificates with a shareable link and instructor sign-off</li><li>Graded assignments and feedback on your trading journal</li><li>Live-data credits so you don’t need your own API key</li><li>Cohort sessions and office hours</li></ul>' +
-      '<button disabled title="Paid memberships are not available yet">Join Pro — not yet available</button>' +
-      '<p style="margin:8px 0 0;font-size:12px;color:var(--muted)">No payment is taken anywhere on this site today. When memberships launch they will be announced on the About page.</p></div>' +
+      proCard() +
       '</div>';
 
     setApp(html);
@@ -203,23 +288,40 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Sidebar                                                              */
+  /* Sidebar (desktop list; a native dropdown on phones)                  */
   /* ------------------------------------------------------------------ */
   var openModules = {};
   function sidebarHtml(currentLessonId) {
     var idx = C.getIndex(), curMod = C.moduleOfLesson(currentLessonId);
-    return '<a class="back" href="#/">← Course home</a>' + idx.modules.map(function (m, i) {
+    var curNo = curMod ? moduleNumber(curMod.id) : 0, lessonNo = 0, curMp = curMod ? C.moduleProgress(curMod.id) : null;
+    if (curMod) curMod.lessons.forEach(function (l, i) { if (l.id === currentLessonId) lessonNo = i + 1; });
+
+    // phone: one <select> with an optgroup per module (the OS shows its own picker)
+    var pick = '<div class="lesson-pick"><label class="sr-only" for="lessonPick">Jump to a lesson</label><select id="lessonPick" aria-label="Jump to a lesson">' +
+      '<option value="#/">← Course home</option>' + idx.modules.map(function (m, i) {
+        var mp = C.moduleProgress(m.id);
+        return '<optgroup label="Module ' + (i + 1) + ': ' + esc(m.title) + ' (' + mp.done + '/' + mp.total + ')">' + m.lessons.map(function (l, j) {
+          return '<option value="#/lesson/' + encodeURIComponent(l.id) + '"' + (l.id === currentLessonId ? ' selected' : '') + '>' +
+            (C.isDone(l.id) ? '✓ ' : '') + (j + 1) + '. ' + esc(l.title) + (lessonLocked(l) ? ' (Pro)' : '') + '</option>';
+        }).join('') + '</optgroup>';
+      }).join('') + '</select>' +
+      (curMod ? '<div class="pickmeta"><span>Module ' + curNo + ' · lesson ' + lessonNo + ' of ' + curMod.lessons.length + '</span><span class="num">' + (curMp && curMp.minutesLeft ? '~' + dur(curMp.minutesLeft) + ' left in module' : 'module complete') + '</span></div>' : '') +
+      '</div>';
+
+    var list = '<div class="sblist"><a class="back" href="#/">← Course home</a>' + idx.modules.map(function (m, i) {
       var mp = C.moduleProgress(m.id), isCur = curMod && curMod.id === m.id;
       var open = isCur || openModules[m.id];
       return '<details data-mod="' + esc(m.id) + '"' + (open ? ' open' : '') + '><summary><span>Module ' + (i + 1) + ': ' + esc(m.title) +
-        '<small>' + mp.done + '/' + mp.total + ' lessons' + (mp.quizAvg != null ? ' · quiz ' + mp.quizAvg + '%' : '') + '</small></span>' + ring(mp.pct, 'sm', mp.done + '/' + mp.total) + '</summary>' +
+        '<small>' + mp.done + '/' + mp.total + ' lessons' + (mp.minutesLeft ? ' · ~' + dur(mp.minutesLeft) + ' left' : '') + (mp.quizAvg != null ? ' · quiz ' + mp.quizAvg + '%' : '') + '</small></span>' + ring(mp.pct, 'sm', mp.done + '/' + mp.total) + '</summary>' +
         '<ul class="lessons">' + m.lessons.map(function (l) {
-          var sc = C.quizScore(l.id);
+          var sc = C.quizScore(l.id), locked = lessonLocked(l);
           return '<li><a href="#/lesson/' + encodeURIComponent(l.id) + '"' + (l.id === currentLessonId ? ' class="current" aria-current="page"' : '') + '>' +
-            '<span class="tick' + (C.isDone(l.id) ? ' done' : '') + '" aria-hidden="true"></span><span>' + esc(l.title) + '</span>' +
-            '<span class="score ' + (sc == null ? '' : sc >= C.PASS_PCT ? 'pass' : 'fail') + '">' + (sc == null ? '' : sc + '%') + '</span></a></li>';
+            '<span class="tick' + (C.isDone(l.id) ? ' done' : '') + '" aria-hidden="true"></span><span>' + esc(l.title) + (l.minutes ? ' <small class="num">' + l.minutes + 'm</small>' : '') + '</span>' +
+            (locked ? '<span class="score lockicon" title="Pro lesson">' + LOCK_SVG + '</span>' :
+              '<span class="score ' + (sc == null ? '' : sc >= C.PASS_PCT ? 'pass' : 'fail') + '">' + (sc == null ? '' : sc + '%') + '</span>') + '</a></li>';
         }).join('') + '</ul></details>';
-    }).join('');
+    }).join('') + '</div>';
+    return pick + list;
   }
   function refreshSidebar(currentLessonId) {
     var sb = document.getElementById('sidebar'); if (!sb) return;
@@ -229,6 +331,8 @@
   }
   function bindSidebar(sb) {
     sb.querySelectorAll('details').forEach(function (d) { d.addEventListener('toggle', function () { openModules[d.dataset.mod] = d.open; }); });
+    var pick = sb.querySelector('#lessonPick');
+    if (pick) pick.addEventListener('change', function () { if (pick.value) go(pick.value); });
   }
 
   /* ------------------------------------------------------------------ */
@@ -249,7 +353,7 @@
         return;
       }
       refreshSidebar(lessonId);                    // real titles now known
-      renderLesson(mod, lesson);
+      if (lessonLocked(lesson)) renderLockedLesson(mod, lesson); else renderLesson(mod, lesson);
       C.setLastLesson(lessonId);
     }, function (e) {
       var reader = app.querySelector('.reader');
@@ -257,24 +361,30 @@
     });
   }
 
-  function renderLesson(mod, lesson) {
+  function lessonHeader(mod, lesson, extra) {
     var idx = C.getIndex(), modIndex = idx.modules.findIndex(function (m) { return m.id === mod.id; });
     var lessonIndex = mod.lessons.findIndex(function (l) { return l.id === lesson.id; });
+    var hasQuiz = C.lessonHasQuiz(lesson), mp = C.moduleProgress(mod.id);
+    return '<div class="crumbs"><a href="#/">Course</a><span>›</span><a href="#/module/' + encodeURIComponent(mod.id) + '">Module ' + (modIndex + 1) + ': ' + esc(mod.title) + '</a><span>›</span><span>Lesson ' + (lessonIndex + 1) + ' of ' + mod.lessons.length + '</span></div>' +
+      '<h1>' + esc(lesson.title) + '</h1>' +
+      '<div class="lmeta">' + levelPill(mod.level) + (lesson.pro && gatingOn() ? proPill() : '') + '<span>' + esc(minutes(lesson.minutes)) + '</span>' +
+      (hasQuiz ? '<span>· quiz' + (C.quizScore(lesson.id) != null ? ' best ' + C.quizScore(lesson.id) + '%' : '') + '</span>' : '') +
+      (C.isDone(lesson.id) ? '<span style="color:var(--up)">· completed</span>' : (mp.minutesLeft ? '<span>· ~' + dur(mp.minutesLeft) + ' left in module</span>' : '')) +
+      (extra || '') + '</div>';
+  }
+
+  function lessonNavHtml(nb) {
+    return '<nav class="lesson-nav" aria-label="Lesson">' +
+      '<span>' + (nb.prev ? '<a href="#/lesson/' + encodeURIComponent(nb.prev.lessonId) + '"><button>← <span class="navt">' + esc(nb.prev.title) + '</span></button></a>' : '') + '</span>' +
+      '<span id="doneArea"></span>' +
+      '<span>' + (nb.next ? '<a href="#/lesson/' + encodeURIComponent(nb.next.lessonId) + '"><button><span class="navt">' + esc(nb.next.title) + '</span> →</button></a>' : '<a href="#/certificate"><button>Finish → certificate</button></a>') + '</span>' +
+      '</nav>';
+  }
+
+  function renderLesson(mod, lesson) {
     var nb = C.neighbours(lesson.id), hasQuiz = C.lessonHasQuiz(lesson);
     var reader = app.querySelector('.reader');
-
-    var html = '<div class="crumbs"><a href="#/">Course</a><span>›</span><a href="#/module/' + encodeURIComponent(mod.id) + '">Module ' + (modIndex + 1) + ': ' + esc(mod.title) + '</a><span>›</span><span>Lesson ' + (lessonIndex + 1) + '</span></div>' +
-      '<h1>' + esc(lesson.title) + '</h1>' +
-      '<div class="lmeta">' + levelPill(mod.level) + '<span>' + esc(minutes(lesson.minutes)) + '</span>' +
-      (hasQuiz ? '<span>· quiz' + (C.quizScore(lesson.id) != null ? ' best ' + C.quizScore(lesson.id) + '%' : '') + '</span>' : '') +
-      (C.isDone(lesson.id) ? '<span style="color:var(--up)">· completed</span>' : '') + '</div>' +
-      '<div class="blocks" id="blocks"></div>' +
-      '<nav class="lesson-nav" aria-label="Lesson">' +
-      '<span>' + (nb.prev ? '<a href="#/lesson/' + encodeURIComponent(nb.prev.lessonId) + '"><button>← ' + esc(nb.prev.title) + '</button></a>' : '') + '</span>' +
-      '<span id="doneArea"></span>' +
-      '<span>' + (nb.next ? '<a href="#/lesson/' + encodeURIComponent(nb.next.lessonId) + '"><button>' + esc(nb.next.title) + ' →</button></a>' : '<a href="#/certificate"><button>Finish → certificate</button></a>') + '</span>' +
-      '</nav>';
-    reader.innerHTML = html;
+    reader.innerHTML = lessonHeader(mod, lesson) + '<div class="blocks" id="blocks"></div>' + lessonNavHtml(nb);
 
     var blocks = document.getElementById('blocks');
     if (!lesson.blocks.length) blocks.innerHTML = '<div class="empty">This lesson has no content yet.</div>';
@@ -283,6 +393,36 @@
       if (el) blocks.appendChild(el);
     });
     renderDoneArea(lesson, nb, hasQuiz);
+    enhanceTerms(blocks, lesson.id);
+  }
+
+  /** Locked preview: title, the first paragraphs of the first text block, then the Pro card. */
+  function renderLockedLesson(mod, lesson) {
+    var nb = C.neighbours(lesson.id);
+    var reader = app.querySelector('.reader');
+    var first = lesson.blocks.filter(function (b) { return b.type === 'text' && b.md; })[0];
+    var previewMd = first ? String(first.md).split(/\n\s*\n/).slice(0, 2).join('\n\n') : '';
+    var counts = { chart: 0, quiz: 0, drill: 0, exercise: 0 };
+    lesson.blocks.forEach(function (b) { if (counts[b.type] != null) counts[b.type]++; });
+    var inside = [];
+    if (counts.chart) inside.push(counts.chart + ' live chart' + (counts.chart === 1 ? '' : 's'));
+    if (counts.exercise) inside.push(counts.exercise + ' hands-on exercise' + (counts.exercise === 1 ? '' : 's'));
+    if (counts.drill) inside.push(counts.drill + ' replay drill' + (counts.drill === 1 ? '' : 's'));
+    if (counts.quiz) inside.push('a graded quiz');
+    var signedIn = !!authSession();
+    reader.innerHTML = lessonHeader(mod, lesson) +
+      '<div class="blocks">' +
+      (previewMd ? '<div class="block-text locked-preview" aria-label="Lesson preview">' + C.renderMd(previewMd) + '</div>' : '') +
+      '<section class="card locked" aria-label="Pro lesson">' + LOCK_SVG.replace('width="14" height="14"', 'width="28" height="28"') +
+      '<h2>This lesson is part of Pro</h2>' +
+      '<p>' + (lesson.summary ? esc(lesson.summary) + ' ' : '') + 'The rest of <b>' + esc(lesson.title) + '</b>' + (inside.length ? ' (' + inside.join(', ') + ')' : '') + ' opens with a Pro membership. The core course stays free, and your progress is kept either way.</p>' +
+      '<div class="actions"><a class="btn primary" href="pricing.html">See Pro plans</a>' +
+      (authConfigured() && !signedIn ? '<a class="btn" href="pricing.html#signin">Already a member? Sign in</a>' : '') +
+      (nb.next ? '<a class="btn ghost" href="#/lesson/' + encodeURIComponent(nb.next.lessonId) + '">Skip to the next lesson →</a>' : '') + '</div>' +
+      '</section></div>' + lessonNavHtml(nb);
+    var area = document.getElementById('doneArea');
+    if (area) area.innerHTML = '<span class="done-note" style="color:var(--muted)">Pro lesson</span>';
+    enhanceTerms(reader.querySelector('.locked-preview'), lesson.id);
   }
 
   function renderDoneArea(lesson, nb, hasQuiz) {
@@ -301,6 +441,70 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Glossary tooltips for [[terms]] (course/glossary.json, loaded lazily)*/
+  /* ------------------------------------------------------------------ */
+  var pop = null, popAnchor = null;
+  function enhanceTerms(container, lessonId) {
+    if (!container || !C.glossary) return;
+    var spans = container.querySelectorAll('.gl-term');
+    if (!spans.length) return;
+    C.glossary.load().then(function (g) {
+      if (!g || !container.isConnected) return;      // glossary unavailable → the spans stay plain text
+      spans.forEach(function (sp) {
+        var t = C.glossary.lookup(sp.getAttribute('data-term'));
+        if (!t) { sp.classList.add('unknown'); return; }
+        sp.classList.add('on');
+        sp.setAttribute('role', 'button'); sp.setAttribute('tabindex', '0'); sp.setAttribute('aria-haspopup', 'dialog');
+        sp.setAttribute('data-id', t.id);
+        sp.title = t.term + ': ' + t.definition;
+        sp.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); toggleTermPop(sp, t, lessonId); });
+        sp.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTermPop(sp, t, lessonId); } });
+      });
+    });
+  }
+  function toggleTermPop(anchor, t, lessonId) {
+    if (pop && popAnchor === anchor) { closeTermPop(); return; }
+    openTermPop(anchor, t, lessonId);
+  }
+  function openTermPop(anchor, t, lessonId) {
+    closeTermPop();
+    var catLabel = t.category ? C.glossary.categoryLabel(t.category) : '';
+    var related = (t.related || []).map(function (id) { return C.glossary.lookup(id); }).filter(Boolean).slice(0, 4);
+    pop = document.createElement('div');
+    pop.className = 'gl-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', t.term + ' — definition');
+    pop.innerHTML = '<div class="gl-head"><b>' + esc(t.term) + '</b>' + (catLabel ? '<span class="pill">' + esc(catLabel) + '</span>' : '') +
+      '<button type="button" class="gl-close" aria-label="Close">✕</button></div>' +
+      '<p class="gl-def">' + esc(t.definition) + '</p>' +
+      (t.example ? '<p class="gl-ex"><b>Example.</b> ' + esc(t.example) + '</p>' : '') +
+      (related.length ? '<p class="gl-rel">Related: ' + related.map(function (r) { return '<a href="' + esc(C.glossary.url(r)) + '">' + esc(r.term) + '</a>'; }).join(' · ') + '</p>' : '') +
+      '<div class="gl-links"><a href="' + esc(C.glossary.url(t)) + '">Open in glossary →</a>' +
+      (t.lesson && t.lesson !== lessonId && C.moduleOfLesson(t.lesson) ? '<a href="#/lesson/' + encodeURIComponent(t.lesson) + '">Taught in: ' + esc(lessonTitle(t.lesson)) + '</a>' : '') + '</div>';
+    document.body.appendChild(pop);
+    popAnchor = anchor;
+    anchor.setAttribute('aria-expanded', 'true');
+    pop.querySelector('.gl-close').onclick = closeTermPop;
+    if (!isPhone()) {
+      var r = anchor.getBoundingClientRect(), w = Math.min(360, window.innerWidth - 24);
+      pop.style.width = w + 'px';
+      var left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + window.scrollX)), top = r.bottom + window.scrollY + 8;
+      if (r.bottom + 260 > window.innerHeight && r.top > 280) { pop.classList.add('above'); top = r.top + window.scrollY - 8; pop.style.transform = 'translateY(-100%)'; }
+      pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    } else pop.classList.add('gl-sheet');
+    if (document.body.classList.contains('has-tabbar')) pop.classList.add('above-tabbar');
+    setTimeout(function () { document.addEventListener('click', onDocClick, true); document.addEventListener('keydown', onKey, true); window.addEventListener('resize', closeTermPop); }, 0);
+    var closeBtn = pop.querySelector('.gl-close'); if (isPhone() && closeBtn) closeBtn.focus();
+  }
+  function onDocClick(e) { if (pop && !pop.contains(e.target) && e.target !== popAnchor) closeTermPop(); }
+  function onKey(e) { if (e.key === 'Escape') { closeTermPop(); if (popAnchor) popAnchor.focus(); } }
+  function closeTermPop() {
+    if (!pop) return;
+    try { pop.remove(); } catch (e) { /* ignore */ }
+    if (popAnchor) popAnchor.setAttribute('aria-expanded', 'false');
+    pop = null; popAnchor = null;
+    document.removeEventListener('click', onDocClick, true); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', closeTermPop);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Block renderers                                                      */
   /* ------------------------------------------------------------------ */
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -311,6 +515,7 @@
       case 'callout': return renderCallout(b);
       case 'chart': return renderChartBlock(b);
       case 'exercise': return renderExercise(b);
+      case 'drill': return renderDrill(b, lesson);
       case 'quiz': return renderQuiz(b, lesson, i);
       case 'image': return renderImage(b);
       default: return el('div', 'block-text', '<p style="color:var(--muted)">[Unsupported block type: ' + esc(b.type) + ']</p>');
@@ -323,16 +528,93 @@
     return el('aside', 'callout ' + tone, '<div class="ctitle">' + esc(b.title || TONE[tone]) + '</div>' + C.renderMd(b.md));
   }
 
+  function actionHref(a) {
+    a = a || {};
+    var page = ALLOWED_PAGES.indexOf(a.page) >= 0 ? a.page : null;
+    if (!page) return null;
+    return page + (a.hash ? (String(a.hash)[0] === '#' ? a.hash : '#' + a.hash) : '');
+  }
   function renderExercise(b) {
-    var a = b.action || {}, page = ALLOWED_PAGES.indexOf(a.page) >= 0 ? a.page : null;
-    var href = page ? page + (a.hash ? (String(a.hash)[0] === '#' ? a.hash : '#' + a.hash) : '') : null;
+    var a = b.action || {}, href = actionHref(a), page = href ? href.split('#')[0] : null;
     return el('section', 'exercise', '<div class="etitle">Hands-on exercise</div>' + C.renderMd(b.md) +
       (href ? '<a class="go" href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(a.label || PAGE_LABEL[page] || 'Open') + ' ↗</a>' : ''));
   }
 
+  /* --- drill block: {type:'drill', drillId, md?} → details from course/drills.json + 'Practice in Replay' --- */
+  var drillsPromise = null;
+  function loadDrills() {
+    if (drillsPromise) return drillsPromise;
+    var p;
+    if (BT.replay && typeof BT.replay.loadDrills === 'function') p = BT.replay.loadDrills();
+    else p = fetch('course/drills.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { return Array.isArray(j) ? j : (j && Array.isArray(j.drills) ? j.drills : []); });
+    drillsPromise = p.then(function (list) { return Array.isArray(list) ? list : []; }).catch(function () { drillsPromise = null; return []; });
+    return drillsPromise;
+  }
+  var CRIT_TEXT = {
+    min_trades: function (v) { return 'Complete at least ' + (v == null ? 1 : v) + ' round trip' + ((v == null ? 1 : v) === 1 ? '' : 's'); },
+    max_trades: function (v) { return 'No more than ' + v + ' round trips'; },
+    min_return_pct: function (v) { return 'Return of at least ' + v + '%'; },
+    positive_return: function () { return 'Finish with a positive return'; },
+    beat_buy_hold: function () { return 'Beat buy-and-hold over the same bars'; },
+    max_drawdown_pct: function (v) { return 'Keep the maximum drawdown under ' + v + '%'; },
+    min_win_rate_pct: function (v) { return 'Win rate of ' + v + '% or better'; },
+    min_profit_factor: function (v) { return 'Profit factor of at least ' + v; },
+    flat_at_end: function () { return 'Be flat (no open position) when the session ends'; },
+    used_stop: function (v) { return 'Use at least ' + (v == null ? 1 : v) + ' stop order' + ((v == null ? 1 : v) === 1 ? '' : 's'); },
+    used_limit: function (v) { return 'Use at least ' + (v == null ? 1 : v) + ' limit order' + ((v == null ? 1 : v) === 1 ? '' : 's'); },
+    used_short: function () { return 'Open at least one short position'; },
+    no_short: function () { return 'No short selling'; }
+  };
+  function critText(c) {
+    if (!c || typeof c !== 'object') return '';
+    if (c.text) return String(c.text);
+    var f = CRIT_TEXT[c.type]; return f ? f(c.value) : String(c.type || '');
+  }
+  function drillAttempts(drillId) {
+    var list = store.get('bt.replay.sessions', []);
+    if (!Array.isArray(list)) return { count: 0, passed: 0, best: null };
+    var mine = list.filter(function (s) { return s && s.drill && s.drill.id === drillId; });
+    var passed = mine.filter(function (s) { return s.drill.passed; }).length, best = null;
+    mine.forEach(function (s) { if (typeof s.returnPct === 'number' && (best == null || s.returnPct > best)) best = s.returnPct; });
+    return { count: mine.length, passed: passed, best: best };
+  }
+  function renderDrill(b, lesson) {
+    var id = String(b.drillId || b.id || '').replace(/[^\w-]/g, '').slice(0, 60);
+    var href = id ? 'replay.html#drill=' + encodeURIComponent(id) : 'replay.html';
+    var box = el('section', 'drill card', '<div class="dtitle">Practice drill</div>' +
+      (b.md ? C.renderMd(b.md) : '') +
+      '<div class="dmeta" data-role="meta">' + (id ? '<span class="pill">loading drill details…</span>' : '') + '</div>' +
+      '<div class="dcrit" data-role="crit"></div>' +
+      '<div class="dactions"><a class="go" href="' + esc(href) + '" target="_blank" rel="noopener">Practice in Replay ↗</a><span class="dattempts" data-role="attempts"></span></div>');
+    box.setAttribute('aria-label', 'Practice drill');
+    if (!id) { box.querySelector('[data-role=meta]').innerHTML = '<span class="pill demo">No drill id given</span>'; return box; }
+    var meta = box.querySelector('[data-role=meta]'), crit = box.querySelector('[data-role=crit]'), att = box.querySelector('[data-role=attempts]');
+    var a = drillAttempts(id);
+    if (a.count) att.textContent = a.count + ' attempt' + (a.count === 1 ? '' : 's') + ' · ' + a.passed + ' passed' + (a.best != null ? ' · best ' + (a.best >= 0 ? '+' : '') + a.best.toFixed(1) + '%' : '');
+    loadDrills().then(function (list) {
+      if (!box.isConnected) return;
+      var d = list.filter(function (x) { return x && x.id === id; })[0];
+      if (!d) { meta.innerHTML = '<span class="pill demo">Drill "' + esc(id) + '" is not in course/drills.json yet</span>'; return; }
+      var when = d.start ? (d.start + (d.end ? ' → ' + d.end : '')) : '';
+      meta.innerHTML = '<b>' + esc(d.title || id) + '</b>' +
+        '<span class="num">' + esc(String(d.symbol || '')) + ' · ' + esc(String(d.interval || '1day')) + (when ? ' · ' + esc(when) : '') + '</span>' +
+        (d.minutes ? '<span>~' + (+d.minutes) + ' min</span>' : '') +
+        (d.ticks ? '<span class="pill">intrabar ticks</span>' : '') +
+        (d.cash ? '<span class="num">$' + Number(d.cash).toLocaleString() + ' replay account</span>' : '');
+      var crits = Array.isArray(d.criteria) ? d.criteria.map(critText).filter(Boolean) : [];
+      var hints = Array.isArray(d.hints) ? d.hints.map(String) : [];
+      crit.innerHTML = (d.objective ? '<p class="dobj">' + esc(d.objective) + '</p>' : '') +
+        (crits.length ? '<details class="dmore"><summary>Pass criteria (' + crits.length + ')</summary><ul>' + crits.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></details>' : '') +
+        (hints.length ? '<details class="dmore"><summary>Hints (' + hints.length + ')</summary><ul>' + hints.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></details>' : '') +
+        '<p class="dnote">Replay hides the future: you decide on the bars revealed so far, then step forward. Trades go to a separate <em>replay</em> paper account, so your main portfolio is untouched.</p>';
+    });
+    return box;
+  }
+
   function renderImage(b) {
     // only relative course assets are allowed, so a module file cannot hot-link anything
-    var src = String(b.src || ''); if (!/^(course|img|assets)\/[\w./-]+$/.test(src)) return null;
+    var src = String(b.src || ''); if (!/^(course|img|assets|icons)\/[\w./-]+$/.test(src)) return null;
     return el('figure', 'chartblock card', '<img src="' + esc(src) + '" alt="' + esc(b.alt || '') + '" style="display:block;max-width:100%">' + (b.caption ? '<figcaption class="caption">' + C.renderMd(b.caption) + '</figcaption>' : ''));
   }
 
@@ -529,6 +811,7 @@
             var ex = qEl.querySelector('.explain'); ex.hidden = false;
             ex.className = 'explain ' + (ok ? 'ok' : 'bad');
             ex.innerHTML = '<b>' + (ok ? 'Correct.' : 'Not quite — the answer is ' + String.fromCharCode(65 + (+q.answer)) + '.') + '</b> ' + C.renderMd(q.explain || '').replace(/^<p>|<\/p>$/g, '');
+            enhanceTerms(ex, lesson.id);
             if (answers.every(function (a) { return a != null; })) finish();
           });
         });
@@ -559,56 +842,130 @@
   /* ------------------------------------------------------------------ */
   /* Certificate page                                                     */
   /* ------------------------------------------------------------------ */
+  function verifyHref(id) { return 'verify.html?id=' + encodeURIComponent(id); }
+  function absoluteVerifyUrl(id) {
+    try {
+      var base = location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '');
+      return base + verifyHref(id);
+    } catch (e) { return verifyHref(id); }
+  }
+  /**
+   * issueId(name) → Promise<{id, url, local, verified, reason}>.
+   * Uses BT.auth.issueCertificate when js/auth.js is loaded (server id when the
+   * backend is configured and the student is signed in, else its local id);
+   * otherwise a local 'BT-LOCAL-XXXXXX' id from BT.course.localCertId().
+   * The id already recorded for the same name is reused so re-rendering never
+   * changes the number printed on a certificate.
+   */
+  function issueId(name) {
+    var prev = C.progress.certificate;
+    if (prev && prev.id && prev.name === name && !(prev.verified === false && authSession() && authConfigured())) {
+      return Promise.resolve({ id: prev.id, url: prev.verifyUrl || absoluteVerifyUrl(prev.id), local: !prev.verified, verified: !!prev.verified, reused: true });
+    }
+    if (authOn() && typeof BT.auth.issueCertificate === 'function') {
+      return Promise.resolve().then(function () { return BT.auth.issueCertificate({ name: name }); }).then(function (r) {
+        if (r && r.ok && r.id) return { id: String(r.id), url: r.url || absoluteVerifyUrl(r.id), local: !!r.local, verified: !!r.verified, reason: r.reason || null };
+        var id = C.localCertId(); return { id: id, url: absoluteVerifyUrl(id), local: true, verified: false, reason: (r && r.error) || 'auth-unavailable' };
+      }).catch(function (e) {
+        var id = C.localCertId(); return { id: id, url: absoluteVerifyUrl(id), local: true, verified: false, reason: e && e.message ? e.message : 'auth-error' };
+      });
+    }
+    var id = C.localCertId();
+    return Promise.resolve({ id: id, url: absoluteVerifyUrl(id), local: true, verified: false, reason: 'no-auth-module' });
+  }
+
+  function verifiedCard() {
+    var s = authSession(), pro = isPro(), configured = authConfigured();
+    var h = '<div class="card" style="margin-top:12px" data-acc><h2>Verified certificate</h2>';
+    if (!authOn()) {
+      h += '<p style="margin:0;color:var(--muted)">This certificate is self-issued and its id is stored only in this browser. The <a href="verify.html">Verify page</a> recognises it on this device; a server-verified version arrives with the membership backend.</p>';
+    } else if (!configured) {
+      h += '<p style="margin:0;color:var(--muted)">This copy of the site has no verification server configured, so certificates are self-issued (id starting <code>BT-YYYY-L…</code>) and stored in this browser. The <a href="verify.html">Verify page</a> recognises them on this device. See the <a href="pricing.html">Pro page</a> for what a verified certificate adds.</p>';
+    } else if (!s) {
+      h += '<p style="margin:0 0 10px;color:var(--muted)">Sign in (free) and your certificate is stored on the server with a shareable link anyone can check on the <a href="verify.html">Verify page</a>.</p><a class="btn" href="pricing.html#signin">Sign in on the Pro page</a>';
+    } else {
+      h += '<p style="margin:0;color:var(--muted)">Signed in as <b>' + esc(s.email || '') + '</b>' + (pro ? ' (Pro)' : '') + '. Certificates you issue are stored on the server and can be checked by anyone with the id or link.</p>';
+    }
+    return h + '</div>';
+  }
+
   function showCertificate() {
     var st = C.certificateStatus(), cp = C.courseProgress();
     var savedName = (C.progress.certificate && C.progress.certificate.name) || store.get('bt.cert.name', '') || '';
+    var left = C.timeRemaining ? C.timeRemaining() : { minutes: cp.minutesLeft, lessons: cp.total - cp.done };
     var html = '<div class="crumbs"><a href="#/">Course</a><span>›</span><span>Certificate</span></div>' +
       '<div class="learn-hero" style="padding-top:8px"><div><h1>Certificate of completion</h1>' +
-      '<p>' + (st.eligible ? 'Congratulations — you have finished every lesson and passed every module quiz. Enter the name you want on the certificate and render it.' :
-        'Finish all ' + cp.total + ' lessons and keep each module’s quiz average at ' + st.passPct + '% or higher. The checklist on the right shows what is left. You can preview the design any time.') + '</p></div>' +
+      '<p>' + (st.eligible ? 'Congratulations — you have finished every lesson and passed every module quiz. Enter the name you want on the certificate and issue it.' :
+        'Finish all ' + cp.total + ' lessons and keep each module’s quiz average at ' + st.passPct + '% or higher. The checklist shows what is left' + (left.minutes ? ' (about ' + dur(left.minutes) + ' of reading)' : '') + '. You can preview the design any time.') + '</p></div>' +
       ring(cp.pct, 'big') + '</div>' +
       '<div class="cert-layout"><section>' +
       '<div class="card"><h2>Your certificate</h2>' +
       '<div class="cert-form"><label class="sr-only" for="certName">Name on certificate</label><input id="certName" maxlength="60" placeholder="Full name as it should appear" value="' + esc(savedName) + '" autocomplete="name">' +
-      '<button class="primary" id="certRender"' + (st.eligible ? '' : ' disabled title="Complete the course to unlock"') + '>Render certificate</button>' +
+      '<button class="primary" id="certRender"' + (st.eligible ? '' : ' disabled title="Complete the course to unlock"') + '>Issue certificate</button>' +
       '<button id="certPreview" title="See the design with your name and a PREVIEW watermark">Preview</button></div>' +
       '<p class="msg" id="certMsg"></p>' +
       '<div id="certOut"></div></div></section>' +
-      '<aside><div class="card"><h2>Requirements</h2><ul class="checklist">' + st.modules.map(function (r) {
+      '<aside><div class="card" data-acc="open"><h2>Requirements</h2><ul class="checklist">' + st.modules.map(function (r) {
         return '<li><span class="' + (r.ok ? 'ok' : 'no') + '">' + (r.ok ? '✓' : '○') + '</span><span>' + esc(r.title) + '<small>' + r.done + '/' + r.total + ' lessons · ' + (r.quizAvg == null ? 'no quiz yet' : 'quiz avg ' + r.quizAvg + '%') + '</small></span>' +
           '<span class="num" style="color:' + (r.ok ? 'var(--up)' : 'var(--muted)') + '">' + (r.ok ? 'passed' : esc(r.reason)) + '</span></li>';
       }).join('') + '</ul>' +
       (st.eligible ? '' : '<p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Pass mark is ' + st.passPct + '% per module. Retake any quiz from its lesson page — best score counts.</p>') + '</div>' +
-      '<div class="card teaser" style="margin-top:12px"><span class="pill soon">coming soon</span><h2>Verified certificate</h2><p style="margin:0;color:var(--muted)">This certificate is self-issued and stored only in your browser. A verified version with a shareable link and instructor sign-off will be part of the Pro membership.</p><button disabled style="margin-top:10px">Verify — not yet available</button></div>' +
-      '<div class="card" style="margin-top:12px"><h2>Progress data</h2><p style="margin:0 0 8px;font-size:12px;color:var(--muted)">Saved in this browser under <code>bt.course</code>. Export a backup before clearing site data or switching devices.</p>' +
-      '<div class="srow"><button class="toolbtn" id="exportProgress">Export JSON</button><label class="toolbtn" style="display:inline-block;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer">Import <input type="file" id="importProgress" accept="application/json" style="display:none"></label><span class="grow"></span><button class="toolbtn" id="resetProgress">Reset</button></div></div>' +
+      verifiedCard() +
+      '<div class="card" style="margin-top:12px" data-acc><h2>Progress data</h2><p style="margin:0 0 8px;font-size:12px;color:var(--muted)">Saved in this browser under <code>bt.course</code>. Export a backup before clearing site data or switching devices.</p>' +
+      '<div class="srow"><button class="toolbtn" id="exportProgress">Export JSON</button><label class="toolbtn filebtn">Import <input type="file" id="importProgress" accept="application/json" style="display:none"></label><span class="grow"></span><button class="toolbtn" id="resetProgress">Reset</button></div></div>' +
       '</aside></div>';
     setApp(html);
 
     var nameEl = document.getElementById('certName'), out = document.getElementById('certOut'), msg = document.getElementById('certMsg');
-    function render(preview) {
-      var name = nameEl.value.trim();
-      if (!name) { msg.textContent = 'Please enter the name that should appear on the certificate.'; nameEl.focus(); return; }
-      if (!preview && !C.certificateEligible()) { msg.textContent = 'The course is not complete yet.'; return; }
-      store.set('bt.cert.name', name); msg.textContent = '';
+    var renderBtn = document.getElementById('certRender'), previewBtn = document.getElementById('certPreview');
+    var busy = false;
+
+    function draw(name, issued, preview) {
       var canvas = document.createElement('canvas');
-      var url = C.certificate({ name: name, canvas: canvas, theme: 'light' });
+      var url = C.certificate({ name: name, canvas: canvas, theme: 'light', id: issued.id, verified: !!issued.verified, verifyUrl: preview ? '' : issued.url, record: !preview });
       if (preview) {
         var ctx = canvas.getContext('2d'); ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(-Math.PI / 8);
         ctx.globalAlpha = 0.18; ctx.fillStyle = '#dc2626'; ctx.font = '600 220px "IBM Plex Sans", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('PREVIEW', 0, 70); ctx.restore();
         try { url = canvas.toDataURL('image/png'); } catch (e) { /* keep */ }
-        // a preview must not be recorded as issued
-        C.progress.certificate = null; C.save();
+      } else if (C.progress.certificate) {
+        C.progress.certificate.verifyUrl = issued.url; C.progress.certificate.verified = !!issued.verified; C.save();
       }
       if (!url) { msg.textContent = 'Your browser blocked canvas export. Try another browser.'; return; }
       var file = 'broward-trading-certificate' + (preview ? '-preview' : '') + '.png';
       out.innerHTML = '<img class="cert-img" id="certImg" alt="Certificate of completion for ' + esc(name) + (preview ? ' (preview)' : '') + '" src="' + url + '">' +
+        (preview ? '' :
+          '<div class="certid"><div><div class="k">Certificate id</div><div class="v num">' + esc(issued.id) + '</div></div>' +
+          '<div><div class="k">Status</div><div class="v">' + (issued.verified ? '<span style="color:var(--up)">Verified · stored on the server</span>' : 'Self-issued · stored in this browser') + '</div></div>' +
+          '<div class="certlinks"><a class="btn" href="' + esc(verifyHref(issued.id)) + '" target="_blank" rel="noopener">Verify this certificate ↗</a><button type="button" id="copyVerify">Copy link</button></div></div>') +
         '<div class="srow" style="margin-top:10px"><a href="' + url + '" download="' + file + '"><button class="primary">Download PNG</button></a><button id="certPrint">Print</button>' +
         '<span style="font-size:12px;color:var(--muted)">If the download is blocked in this viewer, right-click / long-press the image and choose “Save image”.</span></div>';
       document.getElementById('certPrint').onclick = function () { window.print(); };
+      var cp = document.getElementById('copyVerify');
+      if (cp) cp.onclick = function () {
+        var link = issued.url || absoluteVerifyUrl(issued.id);
+        var done = function () { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy link'; }, 1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { window.prompt('Copy this link', link); });
+        else window.prompt('Copy this link', link);
+      };
     }
-    document.getElementById('certRender').onclick = function () { render(false); };
-    document.getElementById('certPreview').onclick = function () { render(true); };
+
+    function render(preview) {
+      if (busy) return;
+      var name = nameEl.value.trim();
+      if (!name) { msg.textContent = 'Please enter the name that should appear on the certificate.'; nameEl.focus(); return; }
+      if (!preview && !C.certificateEligible()) { msg.textContent = 'The course is not complete yet.'; return; }
+      store.set('bt.cert.name', name); msg.textContent = '';
+      if (preview) { draw(name, { id: 'BT-PREVIEW-000000', verified: false, url: '' }, true); return; }
+      busy = true; renderBtn.disabled = true; renderBtn.textContent = 'Issuing…';
+      issueId(name).then(function (issued) {
+        busy = false; renderBtn.disabled = false; renderBtn.textContent = 'Issue certificate';
+        draw(name, issued, false);
+        if (issued.reason === 'not-signed-in') msg.textContent = 'Issued locally. Sign in on the Pro page and issue again for a server-verified id.';
+        else if (issued.reason && issued.reason !== 'not-configured' && issued.reason !== 'no-auth-module' && !issued.reused) msg.textContent = 'The server could not be reached, so the certificate was issued locally (' + issued.reason + ').';
+      });
+    }
+    renderBtn.onclick = function () { render(false); };
+    previewBtn.onclick = function () { render(true); };
     nameEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') render(!C.certificateEligible()); });
     if (st.eligible && C.progress.certificate && savedName) render(false);
 
@@ -642,6 +999,8 @@
   /* Boot                                                                 */
   /* ------------------------------------------------------------------ */
   window.addEventListener('hashchange', route);
+  // Pro status can change while the page is open (sign-in in another tab).
+  window.addEventListener('storage', function (e) { if (e && e.key === 'bt.auth' && booted) { keepScroll = true; try { route(); } finally { keepScroll = false; } } });
   C.loadIndex().then(function () {
     route(); booted = true;
     // Pull every module in the background so sidebars and cards show the real
@@ -654,4 +1013,6 @@
   }, function (e) {
     showError('Could not load the course', e && e.message ? e.message : String(e));
   });
+
+  BT.learnPage = { route: route, lessonLocked: lessonLocked, issueId: issueId, version: '0.3.0' };
 })();

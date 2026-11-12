@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="A trading journal for your paper trades: every fill is logged automatically; add the setup, your emotion, confidence and lessons, then review stats by setup, tag and emotion, a daily P&L calendar and a weekly review checklist. Free and educational.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Journal — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .jn-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .jn-head h1{margin:0;font-size:var(--fs-xl)}
+  .jn-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0;max-width:70ch}
+  .jn-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .jn button,.jn select,.jn input:not([type=checkbox]):not([type=radio]),.jn textarea{min-height:44px}
+  .jn button.sm{min-height:36px}
+  .jn .chip{min-height:36px}
+  @media (max-width:760px){.jn button.sm,.jn .chip,.jn .tabs button,.jn .entry .e-foot .edit,.jn .wk-past button{min-height:44px}}
+  #edClose{min-width:44px;min-height:44px}
+  .jn input[type=checkbox]{width:22px;height:22px;margin:0;flex:0 0 auto}
+
+  /* why journaling */
+  .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--sp-3);margin-top:var(--sp-2)}
+  .why-grid h3{font-size:var(--fs-md);margin:0 0 4px}
+  .why-grid p{margin:0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .why-how{margin:var(--sp-3) 0 0;padding-left:20px;color:var(--muted);font-size:var(--fs-sm);line-height:1.6}
+  .why-how li{margin-bottom:2px}
+  .lede{font-size:var(--fs-md);line-height:1.6;margin:0}
+
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-2)}
+  .tiles .stat{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .tiles .stat .value{font-size:var(--fs-lg)}
+  @media (max-width:420px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .tiles .stat .value{font-size:var(--fs-md)}}
+
+  /* filters */
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-2)}
+  .filters .field.wide{grid-column:1/-1}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp-2)}
+  .actions{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center}
+  .actions .primary{flex:1 1 180px}
+  .actions .ghost.sm{margin-left:auto}
+
+  /* entries */
+  .entries{display:flex;flex-direction:column;gap:var(--sp-2)}
+  .entry{position:relative;display:block;width:100%;text-align:left;padding:12px 12px 10px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);cursor:pointer;transition:border-color var(--dur) var(--ease)}
+  .entry:hover,.entry:focus-within{border-color:var(--accent)}
+  .entry.unreviewed{border-left:3px solid var(--warn)}
+  .entry .e-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+  .entry .sym{font-family:var(--mono);font-weight:600;font-size:var(--fs-md)}
+  .entry .fill{color:var(--muted);font-size:var(--fs-sm)}
+  .entry .pnl{margin-left:auto;font-weight:500}
+  .entry .e-mid{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-top:6px;font-size:var(--fs-sm)}
+  .entry .setup{font-weight:500}
+  .entry .setup.none{color:var(--warn-text);font-weight:400}
+  .entry .stars{font-family:var(--mono);letter-spacing:1px;color:var(--muted);font-size:var(--fs-sm)}
+  .entry .stars b{color:var(--warn);font-weight:400}
+  .entry .notes{margin-top:6px;color:var(--muted);font-size:var(--fs-sm);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .entry .lesson{margin-top:4px;font-size:var(--fs-sm);line-height:1.5;border-left:2px solid var(--accent);padding-left:8px}
+  .entry .e-foot{display:flex;gap:8px;align-items:center;margin-top:8px;color:var(--faint);font-size:var(--fs-xs);font-family:var(--mono)}
+  .entry .e-foot .edit{margin-left:auto;min-height:36px;padding:4px 12px;font-size:var(--fs-sm)}
+  .tag{display:inline-block;font-size:var(--fs-xs);padding:1px 7px;border-radius:var(--r-pill);background:var(--panel3,var(--panel));border:1px solid var(--line);color:var(--muted);font-family:var(--mono)}
+  .emo{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);padding:1px 8px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--muted);text-transform:none}
+  .emo.good{color:var(--up);border-color:var(--up)} .emo.bad{color:var(--down);border-color:var(--down)} .emo.warn{color:var(--warn-text);border-color:var(--warn)}
+  .more{width:100%}
+
+  /* breakdown */
+  .tabs button{min-height:40px}
+  .bd-head{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;justify-content:space-between}
+  .bd-canvas{display:block;width:100%;height:auto;margin-top:var(--sp-2)}
+  .bd-table td:first-child{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bd-note{font-size:var(--fs-xs);color:var(--muted);margin-top:var(--sp-2);line-height:1.5}
+
+  /* calendar heatmap */
+  .heat-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scroll-snap-type:x proximity}
+  .heat-wrap{--cell:14px;--gap:3px}
+  /* phones: each day is a primary tap target ("Tap a day to see its trades"), so cells are 40px on a 6px gap
+     (46px pitch, >= 44px hit pitch); the grid is width:max-content and scrolls sideways, newest week on the right */
+  @media (max-width:760px){.heat-wrap{--cell:40px;--gap:6px}.heat .cell{border-radius:6px;scroll-snap-align:end}.heat .cell.sel{outline-width:3px}}
+  .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,var(--cell));gap:var(--gap);width:max-content}
+  .heat .cell{width:var(--cell);height:var(--cell);border-radius:3px;background:var(--panel2);border:1px solid transparent;padding:0;min-height:0;cursor:pointer;touch-action:manipulation}
+  .heat .cell.has{border-color:var(--line2)}
+  .heat .cell.future{opacity:.35;cursor:default}
+  .heat .cell.sel{outline:2px solid var(--accent);outline-offset:1px}
+  .heat .cell:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .heat-months{display:grid;grid-auto-flow:column;gap:var(--gap);width:max-content;font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono);margin-bottom:4px}
+  .heat-months span{width:var(--cell);overflow:visible;white-space:nowrap}
+  .heat-legend{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:var(--fs-xs);color:var(--muted);margin-top:var(--sp-2)}
+  .heat-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid transparent}
+  .heat-detail{margin-top:var(--sp-2);font-size:var(--fs-sm);display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:24px}
+
+  /* weekly review */
+  .wk-nav{display:flex;gap:var(--sp-2);align-items:center;flex-wrap:wrap}
+  .wk-nav .label{font-weight:600;font-size:var(--fs-md);flex:1 1 auto}
+  .wk-nav .label small{display:block;font-weight:400;color:var(--muted);font-size:var(--fs-xs)}
+  .wk-stats{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:var(--fs-sm);color:var(--muted);margin-top:var(--sp-2)}
+  .wk-stats b{color:var(--fg);font-weight:500;font-family:var(--mono)}
+  .check{list-style:none;margin:var(--sp-3) 0 0;padding:0}
+  .check li{border-top:1px solid var(--line)}
+  .check label{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:start;padding:10px 0;color:var(--fg);font-size:var(--fs);cursor:pointer;min-height:44px}
+  .check label input{margin-top:1px}
+  .check label small{display:block;color:var(--muted);font-size:var(--fs-xs);margin-top:2px;line-height:1.5}
+  .check li.done label{color:var(--muted)}
+  .qs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-3);margin-top:var(--sp-3)}
+  .qs textarea{min-height:88px}
+  .wk-foot{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin-top:var(--sp-3)}
+  .wk-foot .msg{margin-left:auto}
+  .wk-past{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp-2)}
+  .wk-past button{min-height:36px;font-size:var(--fs-xs);padding:4px 10px}
+  .progress{height:6px;border-radius:3px;background:var(--line);overflow:hidden;flex:1 1 120px}
+  .progress i{display:block;height:100%;background:var(--accent);width:0;transition:width var(--dur) var(--ease)}
+
+  /* export */
+  .io-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-3)}
+  .io-grid textarea{font-family:var(--mono);font-size:var(--fs-xs);min-height:160px;white-space:pre;overflow:auto}
+  .io-grid .row label{display:inline-flex;gap:6px;align-items:center;min-height:44px}
+
+  /* editor modal */
+  .ed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:var(--sp-2)}
+  .ed-fill{font-size:var(--fs-sm);color:var(--muted);padding:8px 10px;border:1px dashed var(--line);border-radius:var(--r);background:var(--panel2)}
+  .ed-fill b{color:var(--fg);font-family:var(--mono);font-weight:500}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm);white-space:normal}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .chip.good.on{background:var(--up);border-color:var(--up)} .chip.bad.on{background:var(--down);border-color:var(--down)} .chip.warn.on{background:var(--warn);border-color:var(--warn);color:#141a22}
+  .chip.sug{color:var(--muted);border-style:dashed}
+  .chip .x{font-size:12px;opacity:.8}
+  .tagbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);min-height:44px}
+  .tagbox input{flex:1 1 120px;background:transparent;border:0;min-height:30px!important;padding:2px 6px;box-shadow:none}
+  .tagbox input:focus{box-shadow:none}
+  .seg{display:flex;gap:4px}
+  .seg button{flex:1 1 0;min-width:0;padding:6px 0;font-family:var(--mono)}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .stars-in{display:flex;gap:2px}
+  .stars-in button{flex:1 1 0;min-width:0;font-size:20px;line-height:1;color:var(--muted);background:transparent;border-color:transparent;padding:6px 0}
+  .stars-in button.on{color:var(--warn)}
+  .ed-help{font-size:var(--fs-xs);color:var(--muted);margin-top:3px;line-height:1.5;min-height:1em}
+  .modal footer{justify-content:flex-start}
+  .modal footer .spacer{flex:1 1 auto}
+  .modal footer button{min-height:44px}
+  .modal .close{min-width:44px;min-height:44px}
+  @media (max-width:600px){.modal{max-height:94dvh}}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page jn">
+
+  <header class="jn-head">
+    <div>
+      <h1>Trading Journal</h1>
+      <p class="sub">Every paper fill lands here automatically. Add the setup, how you felt and what you learned, then let the breakdowns show you where your edge is and where the leaks are.</p>
+    </div>
+    <div class="status">
+      <span class="pill accent" id="pillCount" title="Entries in the journal">0 entries</span>
+      <span class="pill" id="pillReviewed" title="Entries with a setup and an emotion filled in">0% reviewed</span>
+      <span class="pill demo" id="pillSync" title="Fills are copied from every paper account on this device">syncing…</span>
+    </div>
+  </header>
+
+  <main class="stack">
+
+    <!-- ---------------- Why ---------------- -->
+    <section class="card" id="why" data-acc aria-labelledby="whyTitle">
+      <h2 id="whyTitle">Why journaling improves traders</h2>
+      <p class="lede" id="whyIntro"></p>
+      <div class="why-grid" id="whyPoints"></div>
+      <ol class="why-how" id="whyHow"></ol>
+    </section>
+
+    <!-- ---------------- Summary tiles ---------------- -->
+    <section class="card" id="summary" aria-label="Summary statistics">
+      <h2>Summary <span class="muted" id="sumScope" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="tiles" id="tiles" aria-live="polite"></div>
+      <p class="note" id="sumNote"></p>
+    </section>
+
+    <!-- ---------------- Filters & actions ---------------- -->
+    <section class="card" id="filtersCard" data-acc="open" aria-labelledby="filtersTitle">
+      <h2 id="filtersTitle">Find entries <button class="ghost sm" id="clearFilters" type="button" hidden>Clear filters</button></h2>
+      <div class="filters">
+        <div class="field wide">
+          <label for="fq">Search</label>
+          <input id="fq" type="search" placeholder="Symbol, setup, notes, lesson…" autocomplete="off">
+        </div>
+        <div class="field"><label for="fAccount">Account</label><select id="fAccount"><option value="">All accounts</option></select></div>
+        <div class="field"><label for="fOutcome">Outcome</label>
+          <select id="fOutcome">
+            <option value="">All fills</option>
+            <option value="closed">Closed (has P&amp;L)</option>
+            <option value="win">Winners</option>
+            <option value="loss">Losers</option>
+            <option value="open">Opening fills</option>
+          </select>
+        </div>
+        <div class="field"><label for="fSetup">Setup</label><select id="fSetup"><option value="">Any setup</option></select></div>
+        <div class="field"><label for="fEmotion">Emotion</label><select id="fEmotion"><option value="">Any emotion</option></select></div>
+        <div class="field"><label for="fTag">Tag</label><select id="fTag"><option value="">Any tag</option></select></div>
+        <div class="field"><label for="fReviewed">Review state</label>
+          <select id="fReviewed"><option value="">Any</option><option value="no">Needs review</option><option value="yes">Reviewed</option></select>
+        </div>
+      </div>
+      <div class="quick" role="group" aria-label="Date range">
+        <button type="button" class="sm" data-range="all">All time</button>
+        <button type="button" class="sm" data-range="week">This week</button>
+        <button type="button" class="sm" data-range="7">Last 7 days</button>
+        <button type="button" class="sm" data-range="30">Last 30 days</button>
+        <button type="button" class="sm" data-range="90">Last 90 days</button>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" id="newEntry" type="button">+ New manual entry</button>
+      <button id="syncNow" type="button" title="Copy any new fills from your paper accounts">Sync fills</button>
+      <span class="msg" id="actionMsg" role="status"></span>
+    </div>
+
+    <!-- ---------------- Entries ---------------- -->
+    <section class="card" id="entriesCard" aria-labelledby="entriesTitle">
+      <h2 id="entriesTitle">Entries <span class="muted" id="entriesCount" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="entries" id="entries" aria-live="polite"></div>
+      <button class="more mt-2" id="moreBtn" type="button" hidden>Show more</button>
+    </section>
+
+    <!-- ---------------- Breakdown ---------------- -->
+    <section class="card" id="breakdown" data-acc="open" aria-labelledby="bdTitle">
+      <h2 id="bdTitle">Breakdown</h2>
+      <div class="bd-head">
+        <div class="tabs" id="bdBy" role="tablist" aria-label="Group by">
+          <button type="button" role="tab" data-by="setup" class="on" aria-selected="true">Setup</button>
+          <button type="button" role="tab" data-by="emotion" aria-selected="false">Emotion</button>
+          <button type="button" role="tab" data-by="tag" aria-selected="false">Tag</button>
+          <button type="button" role="tab" data-by="symbol" aria-selected="false">Symbol</button>
+          <button type="button" role="tab" data-by="weekday" aria-selected="false">Weekday</button>
+        </div>
+        <div class="field" style="flex:0 1 200px">
+          <label for="bdMetric" class="sr-only">Metric</label>
+          <select id="bdMetric">
+            <option value="expectancy">Expectancy per trade</option>
+            <option value="total">Total P&amp;L</option>
+            <option value="winRate">Win rate</option>
+            <option value="count">Number of entries</option>
+          </select>
+        </div>
+      </div>
+      <canvas class="bd-canvas" id="bdCanvas" role="img" aria-label="Bar chart of the selected metric by group"></canvas>
+      <div class="table-wrap mt-2">
+        <table class="dense bd-table" id="bdTable">
+          <thead><tr><th>Group</th><th class="right">Entries</th><th class="right">Win %</th><th class="right">Avg win</th><th class="right">Avg loss</th><th class="right">Expectancy</th><th class="right">Total</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="bd-note" id="bdNote"></p>
+    </section>
+
+    <!-- ---------------- Calendar ---------------- -->
+    <section class="card" id="calendar" data-acc="open" aria-labelledby="calTitle">
+      <h2 id="calTitle">Daily P&amp;L calendar</h2>
+      <div class="heat-wrap" id="heatWrap">
+        <div class="heat-months" id="heatMonths" aria-hidden="true"></div>
+        <div class="heat" id="heat" role="grid" aria-label="Daily P&L heatmap, newest week on the right"></div>
+      </div>
+      <div class="heat-legend" id="heatLegend"></div>
+      <div class="heat-detail" id="heatDetail">Tap a day to see its trades.</div>
+    </section>
+
+    <!-- ---------------- Weekly review ---------------- -->
+    <section class="card" id="review" data-acc aria-labelledby="rvTitle">
+      <h2 id="rvTitle">Weekly review</h2>
+      <div class="wk-nav">
+        <button type="button" id="wkPrev" aria-label="Previous week">◀</button>
+        <div class="label"><span id="wkLabel">—</span><small id="wkSub"></small></div>
+        <button type="button" id="wkNext" aria-label="Next week">▶</button>
+        <button type="button" class="ghost" id="wkThis">This week</button>
+      </div>
+      <div class="wk-stats" id="wkStats"></div>
+      <div class="row mt-3"><div class="progress" aria-hidden="true"><i id="wkBar"></i></div><span class="xs muted" id="wkProgress"></span></div>
+      <ul class="check" id="wkChecks"></ul>
+      <div class="qs" id="wkQs"></div>
+      <div class="wk-foot">
+        <button class="primary" id="wkSave" type="button">Save review</button>
+        <span class="msg" id="wkMsg" role="status"></span>
+      </div>
+      <div class="wk-past" id="wkPast"></div>
+      <p class="note">A review is short on purpose: read the breakdowns, tick what you actually did, answer the four questions and pick one change for next week. Ten minutes every Friday compounds faster than any indicator.</p>
+    </section>
+
+    <!-- ---------------- Export / import ---------------- -->
+    <section class="card" id="exportCard" data-acc aria-labelledby="ioTitle">
+      <h2 id="ioTitle">Export &amp; import</h2>
+      <div class="io-grid">
+        <div class="field">
+          <div class="row">
+            <button type="button" id="expJson">Export JSON</button>
+            <button type="button" id="expCsv">Export CSV</button>
+            <label><input type="checkbox" id="expFiltered"> Filtered entries only</label>
+          </div>
+          <textarea id="expOut" readonly placeholder="Your export appears here. Copy it into a note, a spreadsheet or a file; downloads are blocked in some phone browsers so the text is shown instead." aria-label="Export output"></textarea>
+          <div class="row"><button type="button" class="sm" id="expCopy">Copy to clipboard</button><span class="msg" id="expMsg" role="status"></span></div>
+          <span class="help">JSON keeps everything (entries and weekly reviews) and re-imports exactly. CSV opens in a spreadsheet; one row per entry.</span>
+        </div>
+        <div class="field">
+          <label for="impIn">Import JSON or CSV</label>
+          <textarea id="impIn" placeholder="Paste a journal export here (JSON from this page, or the CSV it produced)."></textarea>
+          <div class="row">
+            <select id="impMode" aria-label="Import mode"><option value="merge">Merge (newer wins)</option><option value="replace">Replace everything</option></select>
+            <button type="button" id="impBtn">Import</button>
+          </div>
+          <span class="msg" id="impMsg" role="status"></span>
+          <span class="help">Merging keeps your current entries and updates any with the same id when the import is newer. Replace wipes this device's journal first, so export it before you do.</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ---------------- Entry editor ---------------- -->
+<div class="modal-backdrop" id="editor" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+    <header><h2 id="edTitle">Edit entry</h2><button type="button" class="close ghost" id="edClose" aria-label="Close">✕</button></header>
+    <form id="edForm" novalidate>
+      <div class="ed-fill" id="edFill" hidden></div>
+      <div class="ed-grid mt-2">
+        <div class="field"><label for="edSymbol">Symbol</label><input id="edSymbol" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="24" placeholder="AAPL"></div>
+        <div class="field"><label for="edDate">Date</label><input id="edDate" type="date"></div>
+        <div class="field" id="edSideWrap"><label for="edSide">Side</label><select id="edSide"><option value="">—</option><option value="buy">Buy</option><option value="sell">Sell</option></select></div>
+        <div class="field" id="edQtyWrap"><label for="edQty">Quantity</label><input id="edQty" type="number" inputmode="decimal" min="0" step="any" placeholder="10"></div>
+        <div class="field" id="edPriceWrap"><label for="edPrice">Price</label><input id="edPrice" type="number" inputmode="decimal" min="0" step="any" placeholder="150.00"></div>
+        <div class="field" id="edPnlWrap"><label for="edPnl">P&amp;L ($)</label><input id="edPnl" type="number" inputmode="decimal" step="any" placeholder="leave empty if open"></div>
+      </div>
+
+      <div class="field mt-3">
+        <label for="edSetup">Setup</label>
+        <input id="edSetup" type="text" list="setupList" autocomplete="off" maxlength="120" placeholder="e.g. Trend pullback, Breakout, RSI oversold bounce">
+        <datalist id="setupList"></datalist>
+        <span class="ed-help">Name the pattern you were trading. Grouping by setup is how you find out which ideas have an edge.</span>
+      </div>
+
+      <div class="field mt-3">
+        <label for="edTagIn">Tags</label>
+        <div class="tagbox" id="edTags"><input id="edTagIn" type="text" autocomplete="off" autocapitalize="none" placeholder="type, then Enter or comma"></div>
+        <div class="chips mt-1" id="edTagSug" aria-label="Suggested tags"></div>
+        <span class="ed-help">Short labels you can filter by later: timeframe, rule-following, exit quality.</span>
+      </div>
+
+      <div class="field mt-3">
+        <label id="edEmotionLabel">Emotion at entry</label>
+        <div class="chips" id="edEmotion" role="group" aria-labelledby="edEmotionLabel"></div>
+        <span class="ed-help" id="edEmotionHelp">How did you feel when you clicked the button? Be honest; this column is usually the most revealing one in the breakdown.</span>
+      </div>
+
+      <div class="ed-grid mt-3">
+        <div class="field">
+          <label id="edConfLabel">Confidence before the trade</label>
+          <div class="seg" id="edConf" role="group" aria-labelledby="edConfLabel"></div>
+          <span class="ed-help">1 = a coin flip, 5 = textbook setup. Compare it with the result over time: are your confident trades actually better?</span>
+        </div>
+        <div class="field">
+          <label id="edRatingLabel">Decision quality</label>
+          <div class="stars-in" id="edRating" role="group" aria-labelledby="edRatingLabel"></div>
+          <span class="ed-help">Rate the decision, not the result. A planned trade that hit its stop can be a 5; a lucky impulse can be a 1.</span>
+        </div>
+      </div>
+
+      <div class="field mt-3">
+        <label for="edNotes">Notes</label>
+        <textarea id="edNotes" rows="3" maxlength="4000" placeholder="Thesis, context, what you saw on the chart, how you managed it."></textarea>
+      </div>
+      <div class="field mt-3">
+        <label for="edLessons">Lesson</label>
+        <textarea id="edLessons" rows="2" maxlength="4000" placeholder="One sentence you want to remember next time."></textarea>
+      </div>
+      <span class="msg" id="edMsg" role="alert"></span>
+    </form>
+    <footer>
+      <button type="button" class="danger" id="edDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="ghost" id="edCancel">Cancel</button>
+      <button type="button" class="primary" id="edSave">Save</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/paper.js"></script>
+<script src="js/journal.js"></script>
+<script>
+/* Broward Trading — journal.html page script (UI only; the engine is js/journal.js → BT.journal) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var J = BT.journal, paper = BT.paper;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var isNum = function (v) { return typeof v === 'number' && isFinite(v); };
+  var fmt = function (v, dp) { if (!isNum(v)) return '—'; if (dp == null) dp = Math.abs(v) < 1 && v !== 0 ? 4 : 2; return v.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp }); };
+  var money = function (v) { return !isNum(v) ? '—' : (v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
+  var signed = function (v) { return !isNum(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
+  var pctf = function (v) { return !isNum(v) ? '—' : v.toFixed(0) + '%'; };
+  var cls = function (v) { return v > 0 ? 'gain' : v < 0 ? 'loss' : ''; };
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  var dayStr = function (d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+  var today = dayStr(new Date());
+  var parseDay = function (s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s)); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  var addDays = function (s, n) { var d = parseDay(s); d.setDate(d.getDate() + n); return dayStr(d); };
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var niceDate = function (s) { var d = parseDay(s); return d ? MONTHS[d.getMonth()] + ' ' + d.getDate() + (d.getFullYear() !== new Date().getFullYear() ? ', ' + d.getFullYear() : '') : s; };
+  var debounce = function (fn, ms) { var t; return function () { var a = arguments, s = this; clearTimeout(t); t = setTimeout(function () { fn.apply(s, a); }, ms); }; };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+  };
+  var emotionOf = function (id) { return J.EMOTIONS.filter(function (e) { return e.id === id; })[0] || null; };
+
+  if (!J || !paper) {
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">The journal could not start: js/paper.js or js/journal.js did not load. Reload the page.</div>');
+    return;
+  }
+
+  function toast(msg, kind, title) {
+    if (BT.nav && BT.nav.toast) return BT.nav.toast(msg, kind, title);
+    var host = $('toasts'); if (!host) return;
+    var el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    el.querySelector('.close').onclick = function () { el.remove(); };
+    host.appendChild(el);
+    setTimeout(function () { el.remove(); }, 4500);
+  }
+  function flash(el, msg, ok) { el.textContent = msg; el.className = 'msg ' + (ok ? 'ok' : ''); clearTimeout(el._t); el._t = setTimeout(function () { el.textContent = ''; }, 4000); }
+
+  /* ------------------------------------------------------------------ *
+   * Why journaling (copy lives in the module so tests cover it)
+   * ------------------------------------------------------------------ */
+  $('whyIntro').textContent = J.WHY.intro;
+  $('whyPoints').innerHTML = J.WHY.points.map(function (p) { return '<div><h3>' + esc(p.title) + '</h3><p>' + esc(p.text) + '</p></div>'; }).join('');
+  $('whyHow').innerHTML = J.WHY.howTo.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('');
+
+  /* ------------------------------------------------------------------ *
+   * State: filters (persisted), paging, selected calendar day, breakdown
+   * ------------------------------------------------------------------ */
+  var UI_KEY = 'bt.journal.ui';
+  var ui = Object.assign({ filters: {}, range: 'all', by: 'setup', metric: 'expectancy', week: null }, store.get(UI_KEY, {}));
+  var PAGE = 40, shown = PAGE;
+  var selectedDay = null;
+  var all = [], view = [];
+  function saveUi() { store.set(UI_KEY, { filters: ui.filters, range: ui.range, by: ui.by, metric: ui.metric }); }
+
+  function rangeFilter() {
+    if (ui.range === 'week') { var r = J.weekRange(today); return { from: r.from, to: r.to }; }
+    var n = parseInt(ui.range, 10);
+    if (isNum(n) && n > 0) return { from: addDays(today, -(n - 1)), to: today };
+    return {};
+  }
+  function activeFilters() {
+    var f = Object.assign({}, ui.filters, rangeFilter());
+    if (selectedDay) { f.from = selectedDay; f.to = selectedDay; }
+    if (f.reviewed === 'yes') f.reviewed = true; else if (f.reviewed === 'no') f.reviewed = false; else delete f.reviewed;
+    Object.keys(f).forEach(function (k) { if (f[k] === '' || f[k] == null) delete f[k]; });
+    return f;
+  }
+  function hasFilters() { var f = activeFilters(); return Object.keys(f).length > 0; }
+
+  /* ------------------------------------------------------------------ *
+   * Sync
+   * ------------------------------------------------------------------ */
+  function sync(manual) {
+    var r;
+    try { r = J.sync(paper); } catch (e) { r = { added: 0, updated: 0, accounts: [] }; }
+    var pill = $('pillSync');
+    var n = r.accounts.length;
+    pill.textContent = 'synced · ' + n + ' account' + (n === 1 ? '' : 's');
+    pill.className = 'pill live';
+    pill.title = 'Fills copied from: ' + r.accounts.map(function (a) { return a.id + ' (' + a.trades + ' fills)'; }).join(', ');
+    if (manual) flash($('actionMsg'), r.added ? 'Added ' + r.added + ' new fill' + (r.added === 1 ? '' : 's') + '.' : 'Nothing new. Every fill is already in the journal.', true);
+    else if (r.added) toast(r.added + ' new fill' + (r.added === 1 ? '' : 's') + ' added from your paper account' + (n === 1 ? '' : 's') + '. Tap one to add the setup and how you felt.', 'ok', 'Journal synced');
+    return r;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Filter controls
+   * ------------------------------------------------------------------ */
+  function fillSelect(sel, values, current, labelFn) {
+    var first = sel.options[0].outerHTML;
+    sel.innerHTML = first + values.map(function (v) { return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(labelFn ? labelFn(v) : v) + '</option>'; }).join('');
+    if (current && values.indexOf(current) === -1) sel.value = '';
+  }
+  function refreshFilterOptions() {
+    var accounts = [], setups = {}, tags = {}, emotions = {};
+    all.forEach(function (e) {
+      var acc = e.account || (e.source === 'replay' ? 'replay' : 'manual');
+      if (accounts.indexOf(acc) === -1) accounts.push(acc);
+      if (e.setup) setups[e.setup] = 1;
+      e.tags.forEach(function (t) { tags[t] = 1; });
+      if (e.emotion) emotions[e.emotion] = 1;
+    });
+    fillSelect($('fAccount'), accounts.sort(), ui.filters.account);
+    fillSelect($('fSetup'), Object.keys(setups).sort(), ui.filters.setup);
+    fillSelect($('fTag'), Object.keys(tags).sort(), ui.filters.tag);
+    fillSelect($('fEmotion'), J.EMOTIONS.map(function (e) { return e.id; }).filter(function (id) { return emotions[id]; }), ui.filters.emotion, function (id) { var e = emotionOf(id); return e ? e.label : id; });
+    $('fq').value = ui.filters.q || '';
+    $('fOutcome').value = ui.filters.outcome || '';
+    $('fReviewed').value = ui.filters.reviewed || '';
+    $$('#filtersCard [data-range]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-range') === ui.range); b.setAttribute('aria-pressed', b.classList.contains('on') ? 'true' : 'false'); });
+    $('clearFilters').hidden = !hasFilters();
+  }
+  function onFilterChange() {
+    ui.filters = {
+      q: $('fq').value.trim(), account: $('fAccount').value, outcome: $('fOutcome').value, setup: $('fSetup').value,
+      emotion: $('fEmotion').value, tag: $('fTag').value, reviewed: $('fReviewed').value
+    };
+    Object.keys(ui.filters).forEach(function (k) { if (!ui.filters[k]) delete ui.filters[k]; });
+    shown = PAGE; saveUi(); render();
+  }
+  ['fAccount', 'fOutcome', 'fSetup', 'fEmotion', 'fTag', 'fReviewed'].forEach(function (id) { $(id).addEventListener('change', onFilterChange); });
+  $('fq').addEventListener('input', debounce(onFilterChange, 200));
+  $$('#filtersCard [data-range]').forEach(function (b) {
+    b.addEventListener('click', function () { ui.range = b.getAttribute('data-range'); selectedDay = null; shown = PAGE; saveUi(); render(); });
+  });
+  $('clearFilters').addEventListener('click', function () { ui.filters = {}; ui.range = 'all'; selectedDay = null; shown = PAGE; saveUi(); render(); });
+
+  /* ------------------------------------------------------------------ *
+   * Summary tiles
+   * ------------------------------------------------------------------ */
+  function tile(label, value, sub, klass) {
+    return '<div class="stat"><span class="label">' + esc(label) + '</span><span class="value ' + (klass || '') + '">' + esc(value) + '</span>' + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') + '</div>';
+  }
+  function renderSummary() {
+    var s = J.summary(view);
+    var st = J.streaks(view);
+    $('sumScope').textContent = hasFilters() ? '· ' + view.length + ' of ' + all.length + ' entries' : '';
+    $('tiles').innerHTML = [
+      tile('Closed trades', String(s.closed), s.count + ' entries, ' + (s.count - s.closed) + ' opening fills'),
+      tile('Win rate', s.winRate == null ? '—' : s.winRate.toFixed(0) + '%', s.wins + ' W · ' + s.losses + ' L' + (s.scratches ? ' · ' + s.scratches + ' flat' : '')),
+      tile('Expectancy', s.expectancy == null ? '—' : signed(s.expectancy), 'avg $ per closed trade', cls(s.expectancy)),
+      tile('Total P&L', s.closed ? signed(s.total) : '—', s.profitFactor == null ? (s.wins && !s.losses ? 'no losing trades yet' : 'profit factor —') : 'profit factor ' + s.profitFactor.toFixed(2), cls(s.total)),
+      tile('Avg win / loss', s.closed ? money(s.avgWin) + ' / ' + money(s.avgLoss) : '—', s.avgLoss > 0 ? 'ratio ' + (s.avgWin / s.avgLoss).toFixed(2) : ''),
+      tile('Streak', st.current.kind ? st.current.n + ' ' + st.current.kind + (st.current.n === 1 ? '' : st.current.kind === 'win' ? 's' : 'es') : '—', 'longest: ' + st.longestWin + ' wins, ' + st.longestLoss + ' losses', st.current.kind === 'win' ? 'gain' : st.current.kind === 'loss' ? 'loss' : ''),
+      tile('Reviewed', s.reviewedPct + '%', 'entries with setup + emotion'),
+      tile('Decision quality', s.avgRating == null ? '—' : s.avgRating.toFixed(1) + ' / 5', 'avg confidence ' + (s.avgConfidence == null ? '—' : s.avgConfidence.toFixed(1)))
+    ].join('');
+    var note;
+    if (!s.count) note = 'No entries yet. Place a paper trade on the Dashboard, Portfolio or Replay page and it appears here automatically; or add a manual entry.';
+    else if (s.closed < 10) note = 'Expectancy = win rate × average win − loss rate × average loss: the dollars an average trade "should" make. With fewer than ten closed trades it is mostly noise; keep logging before you trust it.';
+    else if (s.expectancy > 0) note = 'Positive expectancy over ' + s.closed + ' closed trades. The breakdown below shows which setups and emotions are carrying it; protect those and cut the rest.';
+    else note = 'Negative expectancy over ' + s.closed + ' closed trades. That is normal early on. Look for the red lines in the emotion and setup breakdowns: removing one bad habit often flips the sign.';
+    $('sumNote').textContent = note;
+    $('pillCount').textContent = all.length + ' entr' + (all.length === 1 ? 'y' : 'ies');
+    var full = J.summary(all);
+    $('pillReviewed').textContent = full.reviewedPct + '% reviewed';
+    $('pillReviewed').className = 'pill ' + (full.reviewedPct >= 80 ? 'up' : full.count ? 'demo' : '');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Entries list
+   * ------------------------------------------------------------------ */
+  function stars(n) { var out = ''; for (var i = 1; i <= 5; i++) out += i <= n ? '<b>★</b>' : '☆'; return '<span class="stars" aria-label="Decision quality ' + n + ' of 5">' + out + '</span>'; }
+  function fillText(e) {
+    var t = e.trade;
+    if (e.source === 'replay' && e.replay) return 'Replay session · return ' + (isNum(e.replay.returnPct) ? (e.replay.returnPct > 0 ? '+' : '') + e.replay.returnPct.toFixed(2) + '%' : '—');
+    if (!t || !t.side) return e.source === 'manual' ? 'manual entry' : '';
+    var verb = t.side === 'buy' ? 'Bought' : 'Sold';
+    var role = t.role === 'close' ? (t.side === 'sell' ? ' · closed long' : ' · covered short') : t.role === 'reverse' ? ' · reversed' : (t.side === 'buy' ? ' · opened long' : ' · opened short');
+    return verb + ' ' + fmt(t.qty, 0) + (t.kind === 'option' ? ' contract' + (t.qty === 1 ? '' : 's') : '') + ' @ ' + money(t.price) + role;
+  }
+  function entryCard(e) {
+    var em = emotionOf(e.emotion);
+    var reviewed = !!(e.setup && e.emotion);
+    var acc = e.account || e.source;
+    return '<article class="entry' + (reviewed ? '' : ' unreviewed') + '" data-id="' + esc(e.id) + '" tabindex="0" role="button" aria-label="Edit entry ' + esc(e.symbol) + ' ' + esc(niceDate(e.date)) + '">' +
+      '<div class="e-top"><span class="sym">' + esc(e.symbol || '—') + '</span><span class="pill solid">' + esc(acc) + '</span><span class="fill num">' + esc(fillText(e)) + '</span>' +
+      (e.pnl != null ? '<span class="pnl num ' + cls(e.pnl) + '">' + signed(e.pnl) + '</span>' : '') + '</div>' +
+      '<div class="e-mid">' + (e.setup ? '<span class="setup">' + esc(e.setup) + '</span>' : '<span class="setup none">Add a setup</span>') +
+      (em ? '<span class="emo ' + em.tone + '">' + esc(em.label) + '</span>' : (e.emotion ? '<span class="emo">' + esc(e.emotion) + '</span>' : '<span class="emo">emotion?</span>')) +
+      stars(e.rating) + '<span class="muted xs">conf ' + e.confidence + '/5</span>' +
+      e.tags.slice(0, 8).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + (e.tags.length > 8 ? '<span class="tag">+' + (e.tags.length - 8) + '</span>' : '') + '</div>' +
+      (e.notes ? '<div class="notes">' + esc(e.notes) + '</div>' : '') +
+      (e.lessons ? '<div class="lesson">' + esc(e.lessons) + '</div>' : '') +
+      '<div class="e-foot"><span>' + esc(niceDate(e.date)) + (e.trade && isNum(e.trade.time) ? ' ' + new Date(e.trade.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '') + '</span>' +
+      '<button type="button" class="edit sm" data-edit="' + esc(e.id) + '">' + (reviewed ? 'Edit' : 'Review') + '</button></div></article>';
+  }
+  function renderEntries() {
+    var host = $('entries');
+    $('entriesCount').textContent = view.length ? '· ' + view.length : '';
+    if (!view.length) {
+      host.innerHTML = '<div class="empty">' + (all.length ? 'No entries match these filters.' : 'Your journal is empty. Trades you place on the Dashboard, Portfolio or Replay page appear here automatically, or add a manual entry for a trade you took elsewhere.') + '</div>';
+      $('moreBtn').hidden = true; return;
+    }
+    host.innerHTML = view.slice(0, shown).map(entryCard).join('');
+    $('moreBtn').hidden = view.length <= shown;
+    $('moreBtn').textContent = 'Show more (' + Math.max(0, view.length - shown) + ' left)';
+  }
+  $('moreBtn').addEventListener('click', function () { shown += PAGE; renderEntries(); });
+  $('entries').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-edit]');
+    var card = ev.target.closest('.entry');
+    if (btn) return openEditor(btn.getAttribute('data-edit'));
+    if (card) openEditor(card.getAttribute('data-id'));
+  });
+  $('entries').addEventListener('keydown', function (ev) {
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList.contains('entry')) { ev.preventDefault(); openEditor(ev.target.getAttribute('data-id')); }
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Breakdown: horizontal bars on canvas + table
+   * ------------------------------------------------------------------ */
+  var METRICS = {
+    expectancy: { label: 'Expectancy per trade', fmt: signed, polarity: true, note: 'Expectancy is the average P&L of a closed trade in the group. Groups with fewer than five closed trades are shown but are not yet statistically meaningful.' },
+    total: { label: 'Total P&L', fmt: signed, polarity: true, note: 'Total realized P&L of the group. A big total from one trade is luck; a steady total from many small trades is edge.' },
+    winRate: { label: 'Win rate', fmt: function (v) { return isNum(v) ? v.toFixed(0) + '%' : '—'; }, polarity: false, note: 'Win rate alone is misleading: a 40% win rate with 3:1 winners beats a 70% win rate with tiny winners. Read it next to expectancy.' },
+    count: { label: 'Entries', fmt: function (v) { return String(v); }, polarity: false, note: 'How often you trade each group. If a setup with negative expectancy is also your most frequent one, that is the first thing to fix.' }
+  };
+  function drawBars(canvas, rows, metric) {
+    var m = METRICS[metric];
+    var wrap = canvas.parentElement;
+    var W = Math.max(280, wrap.clientWidth - 2);
+    var rowH = 30, top = 6, bottom = 6;
+    var n = rows.length;
+    var H = n ? top + n * rowH + bottom : 60;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var fg = css('--fg') || '#e6ebf2', muted = css('--muted') || '#8a97a8', line = css('--line') || '#263040';
+    var up = css('--up') || '#22c55e', down = css('--down') || '#ef4444', accent = css('--accent') || '#4f8cff';
+    var font = (css('--font') || 'system-ui');
+    var mono = (css('--mono') || 'monospace');
+    if (!n) {
+      ctx.fillStyle = muted; ctx.font = '13px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('No closed trades in this view yet.', W / 2, H / 2);
+      return;
+    }
+    var labelW = Math.min(150, Math.max(70, Math.round(W * 0.34)));
+    var valueW = 78;
+    var x0 = labelW + 10, x1 = W - valueW - 6;
+    var span = Math.max(1, x1 - x0);
+    var vals = rows.map(function (r) { return isNum(r[metric]) ? r[metric] : 0; });
+    var maxAbs = Math.max.apply(null, vals.map(Math.abs).concat([1e-9]));
+    var hasNeg = m.polarity && vals.some(function (v) { return v < 0; });
+    var negMax = Math.max.apply(null, vals.map(function (v) { return -v; }).concat([0]));
+    var posMax = Math.max.apply(null, vals.concat([0]));
+    var zeroX = hasNeg ? x0 + span * (negMax / ((negMax + posMax) || 1)) : x0;
+    var scale = hasNeg ? span / ((negMax + posMax) || 1) : span / maxAbs;
+    // baseline
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(zeroX + 0.5, top); ctx.lineTo(zeroX + 0.5, H - bottom); ctx.stroke();
+    ctx.textBaseline = 'middle';
+    rows.forEach(function (r, i) {
+      var y = top + i * rowH + rowH / 2;
+      var v = vals[i];
+      var w = Math.abs(v) * scale;
+      var barH = 12;
+      ctx.fillStyle = m.polarity ? (v > 0 ? up : v < 0 ? down : muted) : accent;
+      var bx = v >= 0 ? zeroX : zeroX - w;
+      roundRect(ctx, bx, y - barH / 2, Math.max(w, v === 0 ? 0 : 2), barH, v >= 0 ? [0, 4, 4, 0] : [4, 0, 0, 4]);
+      // label
+      ctx.fillStyle = fg; ctx.font = '12px ' + font; ctx.textAlign = 'left';
+      ctx.fillText(truncate(ctx, r.label, labelW), 2, y);
+      // sample size under the label
+      ctx.fillStyle = muted; ctx.font = '10px ' + mono;
+      ctx.fillText(r.closed + ' closed', 2, y + 11);
+      // value, direct label in text color
+      ctx.fillStyle = fg; ctx.font = '12px ' + mono; ctx.textAlign = 'right';
+      ctx.fillText(m.fmt(isNum(r[metric]) ? r[metric] : null), W - 2, y);
+    });
+    canvas.setAttribute('aria-label', m.label + ' by ' + ui.by + ': ' + rows.map(function (r) { return r.label + ' ' + m.fmt(isNum(r[metric]) ? r[metric] : null); }).join(', '));
+  }
+  function roundRect(ctx, x, y, w, h, radii) {
+    if (w <= 0) return;
+    var r = Math.min(4, h / 2);
+    var tl = radii[0] ? r : 0, tr = radii[1] ? r : 0, br = radii[2] ? r : 0, bl = radii[3] ? r : 0;
+    ctx.beginPath();
+    ctx.moveTo(x + tl, y);
+    ctx.lineTo(x + w - tr, y); if (tr) ctx.arcTo(x + w, y, x + w, y + tr, tr);
+    ctx.lineTo(x + w, y + h - br); if (br) ctx.arcTo(x + w, y + h, x + w - br, y + h, br);
+    ctx.lineTo(x + bl, y + h); if (bl) ctx.arcTo(x, y + h, x, y + h - bl, bl);
+    ctx.lineTo(x, y + tl); if (tl) ctx.arcTo(x, y, x + tl, y, tl);
+    ctx.closePath(); ctx.fill();
+  }
+  function truncate(ctx, s, maxW) {
+    s = String(s);
+    if (ctx.measureText(s).width <= maxW) return s;
+    while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+    return s + '…';
+  }
+  function renderBreakdown() {
+    var rows = J.groupStats(view, ui.by);
+    var metric = ui.metric;
+    // chart: only groups with closed trades for P&L metrics; sort by the metric
+    var chartRows = rows.filter(function (r) { return metric === 'count' ? r.count > 0 : r.closed > 0; })
+      .sort(function (a, b) { return (isNum(b[metric]) ? b[metric] : -Infinity) - (isNum(a[metric]) ? a[metric] : -Infinity); }).slice(0, 12);
+    drawBars($('bdCanvas'), chartRows, metric);
+    $('bdMetric').value = metric;
+    $$('#bdBy [data-by]').forEach(function (b) { var on = b.getAttribute('data-by') === ui.by; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    var tb = $('bdTable').querySelector('tbody');
+    if (!rows.length) tb.innerHTML = '<tr><td colspan="7" class="muted">Nothing to group yet.</td></tr>';
+    else tb.innerHTML = rows.map(function (r) {
+      return '<tr><td title="' + esc(r.label) + '">' + esc(r.label) + '</td><td class="right num">' + r.count + '</td><td class="right num">' + (r.winRate == null ? '—' : r.winRate.toFixed(0) + '%') + '</td>' +
+        '<td class="right num">' + (r.wins ? money(r.avgWin) : '—') + '</td><td class="right num">' + (r.losses ? money(r.avgLoss) : '—') + '</td>' +
+        '<td class="right num ' + cls(r.expectancy) + '">' + (r.expectancy == null ? '—' : signed(r.expectancy)) + '</td><td class="right num ' + cls(r.total) + '">' + (r.closed ? signed(r.total) : '—') + '</td></tr>';
+    }).join('');
+    var worst = chartRows.filter(function (r) { return r.key !== '' && r.closed >= 3 && r.expectancy < 0; }).sort(function (a, b) { return a.total - b.total; })[0];
+    var best = chartRows.filter(function (r) { return r.key !== '' && r.closed >= 3 && r.expectancy > 0; })[0];
+    var hint = '';
+    if (best) hint += ' Best so far: "' + best.label + '" (' + signed(best.expectancy) + ' per trade over ' + best.closed + ').';
+    if (worst) hint += ' Biggest leak: "' + worst.label + '" (' + signed(worst.total) + ' total). Ask whether you would keep trading it if it were someone else\'s record.';
+    $('bdNote').textContent = METRICS[metric].note + hint;
+  }
+  $('bdBy').addEventListener('click', function (ev) { var b = ev.target.closest('[data-by]'); if (!b) return; ui.by = b.getAttribute('data-by'); saveUi(); renderBreakdown(); });
+  $('bdMetric').addEventListener('change', function () { ui.metric = $('bdMetric').value; saveUi(); renderBreakdown(); });
+
+  /* ------------------------------------------------------------------ *
+   * Calendar heatmap (DOM grid so each day is a real tap target)
+   * ------------------------------------------------------------------ */
+  function heatColor(pnl, max) {
+    if (!isNum(pnl) || pnl === 0 || !max) return '';
+    var k = Math.max(0.18, Math.min(1, Math.sqrt(Math.abs(pnl) / max)));   // sqrt so small days stay visible
+    return 'color-mix(in srgb, var(' + (pnl > 0 ? '--up' : '--down') + ') ' + Math.round(k * 100) + '%, var(--panel2))';
+  }
+  function renderCalendar() {
+    var wrap = $('heatWrap');
+    var cs = getComputedStyle(wrap);
+    var colW = (parseFloat(cs.getPropertyValue('--cell')) || 14) + (parseFloat(cs.getPropertyValue('--gap')) || 3);
+    // Fit as many week columns as the card allows (at least 8, at most 52). On phones the 46px pitch
+    // fits ~7, so the last 8 weeks render and the wrap scrolls sideways to the newest week.
+    var weeks = Math.max(8, Math.min(52, Math.floor((wrap.clientWidth - 8) / colW)));
+    // the calendar always shows the whole journal view ignoring the day selection, so you can move between days
+    var base = J.filter(all, (function () { var f = activeFilters(); delete f.from; delete f.to; return f; })());
+    var rf = rangeFilter();
+    if (rf.from) base = J.filter(base, rf);
+    var cal = J.calendar(base, { weeks: weeks, end: today });
+    var heat = $('heat'), months = $('heatMonths');
+    var cells = '', mlabels = '', lastMonth = -1;
+    cal.days.forEach(function (d, i) {
+      var isFuture = d.date > today;
+      var color = heatColor(d.pnl, cal.max);
+      var title = niceDate(d.date) + (d.count ? ' · ' + d.count + ' entr' + (d.count === 1 ? 'y' : 'ies') + (d.closed ? ' · ' + signed(d.pnl) : '') : '');
+      cells += '<button type="button" class="cell' + (d.count ? ' has' : '') + (isFuture ? ' future' : '') + (d.date === selectedDay ? ' sel' : '') + '" data-day="' + d.date + '"' +
+        (color ? ' style="background:' + color + '"' : '') + ' title="' + esc(title) + '" aria-label="' + esc(title) + '"' + (isFuture ? ' disabled tabindex="-1"' : '') + '></button>';
+      if (i % 7 === 0) {           // one label per week column, printed when the month changes
+        var m = parseDay(d.date).getMonth();
+        mlabels += '<span>' + (m !== lastMonth ? MONTHS[m] : '') + '</span>';
+        lastMonth = m;
+      }
+    });
+    heat.innerHTML = cells;
+    months.innerHTML = mlabels;
+    wrap.scrollLeft = wrap.scrollWidth;
+    $('heatLegend').innerHTML = '<span>Loss</span><i style="background:' + heatColor(-cal.max || -1, cal.max || 1) + '"></i><i style="background:' + heatColor(-(cal.max || 1) / 4, cal.max || 1) + '"></i>' +
+      '<i style="background:var(--panel2);border:1px solid var(--line2)"></i><i style="background:' + heatColor((cal.max || 1) / 4, cal.max || 1) + '"></i><i style="background:' + heatColor(cal.max || 1, cal.max || 1) + '"></i><span>Gain</span>' +
+      '<span class="faint">· ' + weeks + ' weeks' + (wrap.scrollWidth > wrap.clientWidth + 2 ? ', swipe for earlier weeks' : '') + ', outlined = entries without a closed P&L</span>';
+    if (selectedDay) {
+      var sel = cal.days.filter(function (d) { return d.date === selectedDay; })[0] || { count: 0, pnl: 0, closed: 0 };
+      $('heatDetail').innerHTML = '<b>' + esc(niceDate(selectedDay)) + '</b><span>' + sel.count + ' entr' + (sel.count === 1 ? 'y' : 'ies') + '</span>' +
+        (sel.closed ? '<span class="num ' + cls(sel.pnl) + '">' + signed(sel.pnl) + '</span>' : '') + '<span class="muted">· entries list filtered to this day</span>' +
+        '<button type="button" class="ghost sm" id="heatClear">Show all days</button>';
+      $('heatClear').addEventListener('click', function () { selectedDay = null; render(); });
+    } else {
+      var best = cal.days.reduce(function (b, d) { return d.closed && (b == null || d.pnl > b.pnl) ? d : b; }, null);
+      var worst = cal.days.reduce(function (b, d) { return d.closed && (b == null || d.pnl < b.pnl) ? d : b; }, null);
+      var active = cal.days.filter(function (d) { return d.count; }).length;
+      $('heatDetail').innerHTML = active ? '<span class="muted">' + active + ' active day' + (active === 1 ? '' : 's') + ' in view.</span>' +
+        (best && best.pnl > 0 ? '<span>Best ' + esc(niceDate(best.date)) + ' <span class="num gain">' + signed(best.pnl) + '</span></span>' : '') +
+        (worst && worst.pnl < 0 ? '<span>Worst ' + esc(niceDate(worst.date)) + ' <span class="num loss">' + signed(worst.pnl) + '</span></span>' : '') +
+        '<span class="muted">Tap a day to see its trades.</span>' : 'Tap a day to see its trades. Days light up green or red by realized P&L; the colour scale is relative to your biggest day.';
+    }
+  }
+  $('heat').addEventListener('click', function (ev) {
+    var c = ev.target.closest('[data-day]'); if (!c || c.disabled) return;
+    var d = c.getAttribute('data-day');
+    selectedDay = selectedDay === d ? null : d;
+    shown = PAGE; render();
+    if (selectedDay) $('entriesCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Weekly review
+   * ------------------------------------------------------------------ */
+  var week = J.weekKey(today);
+  function renderReview() {
+    var r = J.getReview(week);
+    var range = J.weekRange(week);
+    var isThis = week === J.weekKey(today);
+    $('wkLabel').textContent = (isThis ? 'This week · ' : '') + niceDate(range.from) + ' – ' + niceDate(range.to);
+    $('wkSub').textContent = r.savedAt ? 'Saved ' + new Date(r.savedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) + (r.complete ? ' · complete' : '') : 'Not reviewed yet';
+    $('wkNext').disabled = isThis;
+    var s = J.weekSummary(week, all);
+    $('wkStats').innerHTML = '<span>Entries <b>' + s.count + '</b></span><span>Closed <b>' + s.closed + '</b></span><span>Win rate <b>' + (s.winRate == null ? '—' : s.winRate.toFixed(0) + '%') + '</b></span>' +
+      '<span>P&amp;L <b class="' + cls(s.total) + '">' + (s.closed ? signed(s.total) : '—') + '</b></span><span>Reviewed <b>' + s.reviewedPct + '%</b></span>' +
+      (s.best ? '<span>Best <b>' + esc(s.best.symbol) + ' ' + signed(s.best.pnl) + '</b></span>' : '') + (s.worst && s.worst.pnl < 0 ? '<span>Worst <b>' + esc(s.worst.symbol) + ' ' + signed(s.worst.pnl) + '</b></span>' : '');
+    $('wkChecks').innerHTML = J.REVIEW_CHECKLIST.map(function (c) {
+      var on = !!r.checks[c.id];
+      return '<li class="' + (on ? 'done' : '') + '"><label><input type="checkbox" data-check="' + c.id + '"' + (on ? ' checked' : '') + '><span>' + esc(c.text) + '<small>' + esc(c.why) + '</small></span></label></li>';
+    }).join('');
+    $('wkQs').innerHTML = J.REVIEW_QUESTIONS.map(function (q) {
+      return '<div class="field"><label for="wq_' + q.id + '">' + esc(q.label) + '</label><textarea id="wq_' + q.id + '" data-q="' + q.id + '" maxlength="4000" placeholder="' + esc(q.placeholder) + '">' + esc(r.answers[q.id] || '') + '</textarea></div>';
+    }).join('');
+    updateReviewProgress();
+    var weeks = J.reviewWeeks();
+    $('wkPast').innerHTML = weeks.length ? '<span class="xs muted" style="align-self:center">Past reviews:</span>' + weeks.slice(0, 12).map(function (k) {
+      var rv = J.getReview(k);
+      return '<button type="button" class="' + (k === week ? 'on' : '') + '" data-week="' + k + '">' + esc(niceDate(k)) + (rv.complete ? ' ✓' : ' ' + rv.done + '/' + rv.total) + '</button>';
+    }).join('') : '';
+  }
+  function updateReviewProgress() {
+    var checks = $$('#wkChecks input').filter(function (i) { return i.checked; }).length;
+    var answers = $$('#wkQs textarea').filter(function (t) { return t.value.trim(); }).length;
+    var total = J.REVIEW_CHECKLIST.length + J.REVIEW_QUESTIONS.length;
+    var pct = Math.round((checks + answers) / total * 100);
+    $('wkBar').style.width = pct + '%';
+    $('wkProgress').textContent = checks + '/' + J.REVIEW_CHECKLIST.length + ' checks · ' + answers + '/' + J.REVIEW_QUESTIONS.length + ' answers';
+    $$('#wkChecks li').forEach(function (li) { li.classList.toggle('done', li.querySelector('input').checked); });
+  }
+  $('wkChecks').addEventListener('change', updateReviewProgress);
+  $('wkQs').addEventListener('input', updateReviewProgress);
+  function saveReview(quiet) {
+    var checks = {}, answers = {};
+    $$('#wkChecks input').forEach(function (i) { if (i.checked) checks[i.getAttribute('data-check')] = true; });
+    $$('#wkQs textarea').forEach(function (t) { if (t.value.trim()) answers[t.getAttribute('data-q')] = t.value.trim(); });
+    var r = J.saveReview(week, { checks: checks, answers: answers });
+    if (!quiet) flash($('wkMsg'), r.complete ? 'Saved. Review complete for this week.' : 'Saved (' + r.done + '/' + r.total + ' checks, ' + r.answered + '/' + r.questions + ' answers).', true);
+    renderReview();
+  }
+  $('wkSave').addEventListener('click', function () { saveReview(false); });
+  $('wkPrev').addEventListener('click', function () { week = addDays(week, -7); renderReview(); });
+  $('wkNext').addEventListener('click', function () { if (week < J.weekKey(today)) { week = addDays(week, 7); renderReview(); } });
+  $('wkThis').addEventListener('click', function () { week = J.weekKey(today); renderReview(); });
+  $('wkPast').addEventListener('click', function (ev) { var b = ev.target.closest('[data-week]'); if (b) { week = b.getAttribute('data-week'); renderReview(); } });
+
+  /* ------------------------------------------------------------------ *
+   * Export / import
+   * ------------------------------------------------------------------ */
+  function exportList() { return $('expFiltered').checked ? view : all; }
+  $('expJson').addEventListener('click', function () { $('expOut').value = J.exportJSON(exportList()); flash($('expMsg'), exportList().length + ' entries as JSON.', true); });
+  $('expCsv').addEventListener('click', function () { $('expOut').value = J.exportCSV(exportList()); flash($('expMsg'), exportList().length + ' entries as CSV.', true); });
+  $('expCopy').addEventListener('click', function () {
+    var ta = $('expOut');
+    if (!ta.value) return flash($('expMsg'), 'Export something first.');
+    var done = function () { flash($('expMsg'), 'Copied to the clipboard.', true); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); flash($('expMsg'), 'Select the text and copy it manually.'); });
+    else { ta.select(); try { document.execCommand('copy'); done(); } catch (e) { flash($('expMsg'), 'Select the text and copy it manually.'); } }
+  });
+  $('impBtn').addEventListener('click', function () {
+    var mode = $('impMode').value;
+    if (mode === 'replace' && all.length && !confirm('Replace every entry and review on this device with the pasted data? Export first if you are not sure.')) return;
+    var r = J.importJSON($('impIn').value, { mode: mode });
+    if (r.errors.length && !r.added && !r.updated) { flash($('impMsg'), r.errors[0]); return; }
+    flash($('impMsg'), 'Imported: ' + r.added + ' added, ' + r.updated + ' updated, ' + r.skipped + ' skipped' + (r.reviews ? ', ' + r.reviews + ' weekly reviews' : '') + '.', true);
+    if (r.added || r.updated) $('impIn').value = '';
+    render();
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Entry editor
+   * ------------------------------------------------------------------ */
+  var ed = { id: null, tags: [], emotion: '', confidence: 3, rating: 3, isNew: false, lastFocus: null };
+  var backdrop = $('editor');
+
+  function renderChips() {
+    var box = $('edTags'), input = $('edTagIn');
+    $$('.chip', box).forEach(function (c) { c.remove(); });
+    ed.tags.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip on'; b.setAttribute('data-tag', t); b.setAttribute('aria-label', 'Remove tag ' + t);
+      b.innerHTML = esc(t) + ' <span class="x" aria-hidden="true">✕</span>';
+      box.insertBefore(b, input);
+    });
+    var sug = J.tagSuggestions(all).filter(function (t) { return ed.tags.indexOf(t) === -1; }).slice(0, 12);
+    $('edTagSug').innerHTML = sug.map(function (t) { return '<button type="button" class="chip sug sm" data-add="' + esc(t) + '">+ ' + esc(t) + '</button>'; }).join('');
+    $('edEmotion').innerHTML = J.EMOTIONS.map(function (e) {
+      return '<button type="button" class="chip ' + e.tone + (ed.emotion === e.id ? ' on' : '') + '" data-emotion="' + e.id + '" aria-pressed="' + (ed.emotion === e.id ? 'true' : 'false') + '">' + esc(e.label) + '</button>';
+    }).join('');
+    var em = emotionOf(ed.emotion);
+    $('edEmotionHelp').textContent = em ? em.help : 'How did you feel when you clicked the button? Be honest; this column is usually the most revealing one in the breakdown.';
+    $('edConf').innerHTML = [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (ed.confidence === n ? 'on' : '') + '" data-conf="' + n + '" aria-pressed="' + (ed.confidence === n ? 'true' : 'false') + '">' + n + '</button>'; }).join('');
+    $('edRating').innerHTML = [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (n <= ed.rating ? 'on' : '') + '" data-rating="' + n + '" aria-label="' + n + ' of 5" aria-pressed="' + (ed.rating === n ? 'true' : 'false') + '">' + (n <= ed.rating ? '★' : '☆') + '</button>'; }).join('');
+  }
+  function addTag(t) { t = J.normTag(t); if (t && ed.tags.indexOf(t) === -1) ed.tags.push(t); $('edTagIn').value = ''; renderChips(); }
+  $('edTags').addEventListener('click', function (ev) { var c = ev.target.closest('[data-tag]'); if (c) { ed.tags = ed.tags.filter(function (t) { return t !== c.getAttribute('data-tag'); }); renderChips(); $('edTagIn').focus(); } });
+  $('edTagSug').addEventListener('click', function (ev) { var c = ev.target.closest('[data-add]'); if (c) addTag(c.getAttribute('data-add')); });
+  $('edTagIn').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); addTag(ev.target.value); }
+    else if (ev.key === 'Backspace' && !ev.target.value && ed.tags.length) { ed.tags.pop(); renderChips(); }
+  });
+  $('edTagIn').addEventListener('blur', function (ev) { if (ev.target.value.trim()) addTag(ev.target.value); });
+  $('edEmotion').addEventListener('click', function (ev) { var c = ev.target.closest('[data-emotion]'); if (!c) return; var id = c.getAttribute('data-emotion'); ed.emotion = ed.emotion === id ? '' : id; renderChips(); });
+  $('edConf').addEventListener('click', function (ev) { var c = ev.target.closest('[data-conf]'); if (c) { ed.confidence = +c.getAttribute('data-conf'); renderChips(); } });
+  $('edRating').addEventListener('click', function (ev) { var c = ev.target.closest('[data-rating]'); if (c) { ed.rating = +c.getAttribute('data-rating'); renderChips(); } });
+
+  function openEditor(id) {
+    var e = id ? J.get(id) : null;
+    ed.isNew = !e;
+    ed.id = e ? e.id : null;
+    ed.lastFocus = document.activeElement;
+    var manual = !e || e.source === 'manual';
+    $('edTitle').textContent = e ? (e.setup && e.emotion ? 'Edit entry' : 'Review this trade') : 'New manual entry';
+    $('edDelete').hidden = !e;
+    $('edSymbol').value = e ? e.symbol : '';
+    $('edSymbol').disabled = !manual;
+    $('edDate').value = e ? e.date : today;
+    $('edDate').max = today;
+    $('edDate').disabled = !!(e && e.source === 'paper');   // a fill's date comes from the account
+    $('edSetup').value = e ? e.setup : '';
+    $('edNotes').value = e ? e.notes : '';
+    $('edLessons').value = e ? e.lessons : '';
+    ed.tags = e ? e.tags.slice() : [];
+    ed.emotion = e ? e.emotion : '';
+    ed.confidence = e ? e.confidence : 3;
+    ed.rating = e ? e.rating : 3;
+    // trade fields: editable on manual entries, shown read-only for synced fills
+    var t = e && e.trade;
+    ['edSideWrap', 'edQtyWrap', 'edPriceWrap', 'edPnlWrap'].forEach(function (k) { $(k).hidden = !manual; });
+    $('edSide').value = t && t.side ? t.side : '';
+    $('edQty').value = t && isNum(t.qty) ? t.qty : '';
+    $('edPrice').value = t && isNum(t.price) ? t.price : '';
+    $('edPnl').value = e && isNum(e.pnl) ? e.pnl : '';
+    var fill = $('edFill');
+    if (e && !manual) {
+      fill.hidden = false;
+      fill.innerHTML = '<b>' + esc(e.symbol) + '</b> · ' + esc(fillText(e)) + (e.pnl != null ? ' · realized <b class="' + cls(e.pnl) + '">' + signed(e.pnl) + '</b>' : '') +
+        ' · account <b>' + esc(e.account || e.source) + '</b>' + (t && isNum(t.time) ? ' · ' + new Date(t.time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') +
+        '<br><span class="xs">Copied from your paper account; the fill itself cannot be edited here. Add the thinking around it.</span>';
+    } else fill.hidden = true;
+    $('setupList').innerHTML = J.setupSuggestions(all).map(function (s) { return '<option value="' + esc(s) + '"></option>'; }).join('');
+    $('edMsg').textContent = '';
+    renderChips();
+    backdrop.hidden = false;
+    document.body.classList.add('modal-open');
+    setTimeout(function () { (manual ? $('edSymbol') : $('edSetup')).focus(); }, 30);
+    try { history.replaceState(null, '', e ? '#entry=' + encodeURIComponent(e.id) : '#new'); } catch (err) { /* file:// */ }
+  }
+  function closeEditor() {
+    backdrop.hidden = true;
+    document.body.classList.remove('modal-open');
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (err) { /* ignore */ }
+    if (ed.lastFocus && ed.lastFocus.focus) ed.lastFocus.focus();
+  }
+  function saveEditor() {
+    if ($('edTagIn').value.trim()) addTag($('edTagIn').value);
+    var patch = {
+      symbol: $('edSymbol').value, date: $('edDate').value, setup: $('edSetup').value, tags: ed.tags, emotion: ed.emotion,
+      confidence: ed.confidence, rating: ed.rating, notes: $('edNotes').value, lessons: $('edLessons').value
+    };
+    var existing = ed.id ? J.get(ed.id) : null;
+    var manual = !existing || existing.source === 'manual';
+    if (manual) {
+      if (!patch.symbol.trim() && !patch.notes.trim() && !patch.setup.trim()) { $('edMsg').textContent = 'Give the entry at least a symbol, a setup or a note.'; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(patch.date)) { $('edMsg').textContent = 'Pick a date.'; return; }
+      var pnl = $('edPnl').value.trim(); patch.pnl = pnl === '' ? null : parseFloat(pnl);
+      if (pnl !== '' && !isNum(patch.pnl)) { $('edMsg').textContent = 'P&L must be a number (negative for a loss).'; return; }
+      var side = $('edSide').value, qty = parseFloat($('edQty').value), price = parseFloat($('edPrice').value);
+      patch.trade = side || isNum(qty) || isNum(price) ? { side: side || null, qty: isNum(qty) ? qty : null, price: isNum(price) ? price : null, role: patch.pnl == null ? 'open' : 'close', closedQty: patch.pnl == null ? 0 : (isNum(qty) ? qty : 1), openedQty: patch.pnl == null ? (isNum(qty) ? qty : 1) : 0, realized: patch.pnl, time: parseDay(patch.date) ? parseDay(patch.date).getTime() + 16 * 3600e3 : Date.now() } : null;
+    }
+    var saved = existing ? J.update(existing.id, patch) : J.add(Object.assign({ source: 'manual' }, patch));
+    if (!saved) { $('edMsg').textContent = 'Could not save this entry.'; return; }
+    closeEditor();
+    toast(existing ? 'Entry updated.' : 'Entry added to your journal.', 'ok');
+    render();
+  }
+  $('edSave').addEventListener('click', saveEditor);
+  $('edForm').addEventListener('submit', function (ev) { ev.preventDefault(); saveEditor(); });
+  $('edCancel').addEventListener('click', closeEditor);
+  $('edClose').addEventListener('click', closeEditor);
+  $('edDelete').addEventListener('click', function () {
+    if (!ed.id) return;
+    var e = J.get(ed.id);
+    if (!confirm('Delete this entry' + (e && e.tradeId ? ' (the fill stays in your paper account, but will not re-sync)' : '') + '?')) return;
+    J.remove(ed.id); closeEditor(); toast('Entry deleted.', 'warn'); render();
+  });
+  backdrop.addEventListener('click', function (ev) { if (ev.target === backdrop) closeEditor(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !backdrop.hidden) closeEditor(); });
+  $('newEntry').addEventListener('click', function () { openEditor(null); });
+  $('syncNow').addEventListener('click', function () { sync(true); render(); });
+
+  /* ------------------------------------------------------------------ *
+   * Render everything
+   * ------------------------------------------------------------------ */
+  function render() {
+    all = J.entries();
+    view = J.filter(all, activeFilters());
+    refreshFilterOptions();
+    renderSummary();
+    renderEntries();
+    renderBreakdown();
+    renderCalendar();
+    renderReview();
+  }
+
+  // Redraw canvases on resize / theme change; accordion open on phones (a collapsed canvas has no width).
+  var redraw = debounce(function () { renderBreakdown(); renderCalendar(); }, 120);
+  window.addEventListener('resize', redraw);
+  window.addEventListener('bt:theme', redraw);
+  window.addEventListener('bt:accordion', redraw);
+  // Fills placed in another tab (Dashboard / Replay) arrive through the storage event.
+  window.addEventListener('storage', function (ev) {
+    if (!ev.key) return;
+    if (ev.key.indexOf('bt.portfolio') === 0) { sync(false); render(); }
+    else if (ev.key === J.STORAGE_KEY) { J.load(); render(); }
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { J.load(); sync(false); render(); } });
+
+  sync(false);
+  render();
+
+  // Deep links: #new, #entry=<id>, #day=YYYY-MM-DD
+  var h = location.hash || '';
+  if (h === '#new') openEditor(null);
+  else if (h.indexOf('#entry=') === 0) { var id = decodeURIComponent(h.slice(7)); if (J.get(id)) openEditor(id); }
+  else if (h.indexOf('#day=') === 0 && /^\d{4}-\d{2}-\d{2}$/.test(h.slice(5))) { selectedDay = h.slice(5); render(); }
+})();
+</script>
+</body>
+</html>
