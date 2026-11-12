@@ -38,6 +38,7 @@
   var PAGES = [
     { id: 'index',     file: 'index.html',     label: 'Dashboard', short: 'Dashboard', tab: true,  icon: 'chart',    desc: 'Charts, indicators and the paper trade ticket' },
     { id: 'learn',     file: 'learn.html',     label: 'Learn',     short: 'Learn',     tab: true,  icon: 'book',     desc: 'The free course, quizzes and your certificate' },
+    { id: 'start',     file: 'start.html',     label: 'First Week', short: 'First Week', tab: false, icon: 'flag',   desc: 'Seven days of guided first steps for complete beginners' },
     { id: 'replay',    file: 'replay.html',    label: 'Replay',    short: 'Replay',    tab: true,  icon: 'play',     desc: 'Market Replay: trade past data bar by bar' },
     { id: 'portfolio', file: 'portfolio.html', label: 'Portfolio', short: 'Portfolio', tab: true,  icon: 'wallet',   desc: 'Paper account, positions, orders and options lab' },
     { id: 'backtest',  file: 'backtest.html',  label: 'Backtest',  short: 'Backtest',  tab: false, icon: 'flask',    desc: 'Test rule-based strategies on past prices' },
@@ -47,6 +48,7 @@
     { id: 'glossary',  file: 'glossary.html',  label: 'Glossary',  short: 'Glossary',  tab: false, icon: 'glossary', desc: 'Every term explained, flashcards, Daily 5' },
     { id: 'pricing',   file: 'pricing.html',   label: 'Pro',       short: 'Pro',       tab: false, icon: 'star',     desc: 'Everything is free today; see what Pro will add' },
     { id: 'verify',    file: 'verify.html',    label: 'Verify certificate', short: 'Verify', tab: false, icon: 'badge', desc: 'Check that a Broward Trading certificate is genuine' },
+    { id: 'instructor', file: 'instructor.html', label: 'Instructor', short: 'Instructor', tab: false, icon: 'people', desc: 'Class codes, roster, gradebook and share-code import' },
     { id: 'about',     file: 'about.html',     label: 'About',     short: 'About',     tab: false, icon: 'info',     desc: 'Mission, data sources, disclaimer, roadmap' }
   ];
 
@@ -77,12 +79,20 @@
     sun:      '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
     moon:     '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
     close:    '<path d="M6 6l12 12M18 6L6 18"/>',
-    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4 19h16"/>'
+    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4 19h16"/>',
+    flag:     '<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',
+    people:   '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+    globe:    '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
   };
   function svg(name, cls) {
     return '<svg class="ico' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ICONS[name] || ICONS.info) + '</svg>';
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  /** BT.t when js/i18n.js is present (it loads right after this file), plain interpolation otherwise. */
+  function T(s, v) {
+    if (BT.t) return BT.t(s, v);
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s;
+  }
 
   /* ------------------------------------------------------------------ *
    * Pure helpers
@@ -162,6 +172,102 @@
     syncThemeUi(true);
   }
   function toggleTheme() { setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark'); }
+
+  /* ------------------------------------------------------------------ *
+   * Language (js/i18n.js → BT.i18n). nav.js loads i18n.js itself when the
+   * page did not, synchronously and before the page's own scripts, so BT.t
+   * exists for every UI module. The toggle cycles through BT.i18n.langs.
+   * ------------------------------------------------------------------ */
+  var LANG_FALLBACK = [{ code: 'en', label: 'English', short: 'EN' }, { code: 'es', label: 'Español', short: 'ES' }];
+  function langs() { return (BT.i18n && BT.i18n.langs && BT.i18n.langs.length) ? BT.i18n.langs : LANG_FALLBACK; }
+  function readStoredLang() {
+    try {
+      var v = localStorage.getItem('bt.lang');
+      if (!v) return 'en';
+      try { v = JSON.parse(v); } catch (e) { /* bare value */ }
+      return typeof v === 'string' && v ? v : 'en';
+    } catch (e) { return 'en'; }
+  }
+  function currentLang() { return BT.i18n ? BT.i18n.lang() : readStoredLang(); }
+  function langAfter(code) {
+    var list = langs(), i = 0;
+    for (; i < list.length; i++) if (list[i].code === code) break;
+    return list[(i + 1) % list.length];
+  }
+  function langLabel(code) {
+    var list = langs();
+    for (var i = 0; i < list.length; i++) if (list[i].code === code) return list[i].label;
+    return code.toUpperCase();
+  }
+  /** Path of js/i18n.js next to this script (works on GitHub Pages sub-paths). */
+  function i18nSrc() {
+    var cs = hasDOM && document.currentScript;
+    var src = cs && cs.src ? String(cs.src) : '';
+    return /nav\.js(\?.*)?$/.test(src) ? src.replace(/nav\.js(\?.*)?$/, 'i18n.js') : 'js/i18n.js';
+  }
+  /**
+   * Load js/i18n.js if the page did not include it. While the parser is still
+   * running, document.write keeps script order (the same trick the pages use for
+   * the vendored chart library); afterwards an ordinary script element is used.
+   */
+  function ensureI18n() {
+    if (!hasDOM || BT.i18n) return;
+    if (document.querySelector('script[src$="i18n.js"],script[src*="/i18n.js?"]')) return;
+    var src = i18nSrc();
+    if (document.readyState === 'loading' && document.currentScript && typeof document.write === 'function') {
+      try { document.write('<script src="' + esc(src) + '"><\/script>'); return; } catch (e) { /* fall through */ }
+    }
+    var s = document.createElement('script'); s.src = src; s.async = false;
+    (document.head || document.documentElement).appendChild(s);
+  }
+  function syncLangUi() {
+    var cur = currentLang(), next = langAfter(cur);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bt-lang-toggle]'), function (b) {
+      b.setAttribute('data-lang', cur);
+      var aria = T('Language: {current}. Switch to {next}.', { current: langLabel(cur), next: next.label });
+      b.setAttribute('aria-label', aria);
+      b.title = aria;
+      Array.prototype.forEach.call(b.querySelectorAll('.lang-opt'), function (o) {
+        var on = o.getAttribute('data-lang') === cur;
+        o.classList.toggle('on', on);
+        o.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+      var lbl = b.querySelector('.lang-label');
+      if (lbl) lbl.textContent = T('Language: {current} · switch to {next}', { current: langLabel(cur), next: next.label });
+    });
+  }
+  function onLangClick() {
+    var next = langAfter(currentLang());
+    if (BT.i18n && BT.i18n.setLang) {
+      BT.i18n.setLang(next.code).then(function (ok) {
+        syncLangUi();
+        if (!ok && next.code !== 'en' && BT.nav.toast) BT.nav.toast('The ' + next.label + ' translation could not be loaded. Check your connection and try again.', 'warn', 'Language');
+      });
+    } else {
+      // i18n.js did not load (very old browser / blocked): save the choice and reload.
+      try { localStorage.setItem('bt.lang', JSON.stringify(next.code)); } catch (e) { /* ignore */ }
+      location.reload();
+    }
+  }
+  function langButton(extraClass, withLabel) {
+    var cur = currentLang();
+    var opts = langs().map(function (l) {
+      return '<span class="lang-opt' + (l.code === cur ? ' on' : '') + '" data-lang="' + esc(l.code) + '" aria-current="' + (l.code === cur ? 'true' : 'false') + '">' + esc(l.short || l.code.toUpperCase()) + '</span>';
+    }).join('<span class="lang-sep" aria-hidden="true">/</span>');
+    return '<button class="ghost langbtn' + (extraClass ? ' ' + extraClass : '') + '" type="button" data-bt-lang-toggle data-lang="' + esc(cur) + '" aria-label="Language">' +
+      (withLabel ? svg('globe') : '') + '<span class="lang-opts no-i18n" translate="no">' + opts + '</span>' + (withLabel ? '<span class="lang-label">Language</span>' : '') + '</button>';
+  }
+  var NAV_CSS = '.langbtn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 8px;font:inherit;font-size:var(--fs-sm);letter-spacing:.02em}' +
+    '.langbtn .lang-opts{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-weight:500}' +
+    '.langbtn .lang-opt{color:var(--muted);padding:1px 2px;border-radius:3px}' +
+    '.langbtn .lang-opt.on{color:var(--fg);background:var(--panel3)}' +
+    '.langbtn .lang-sep{color:var(--faint)}' +
+    '.topnav .langbtn{margin-right:2px}' +
+    '.sheet-foot .langbtn{color:var(--fg);background:var(--panel2);justify-content:flex-start}' +
+    '.sheet-foot .langbtn .ico{width:20px;height:20px;color:var(--teal)}' +
+    '.sheet-foot .langbtn .lang-label{font-size:var(--fs-sm)}' +
+    '.sheet-foot .langbtn .lang-opts{margin-left:auto}' +
+    '@media (max-width:760px){.topnav .langbtn{min-height:44px;min-width:44px}.topnav .themebtn{min-height:44px;min-width:44px}}';
   /**
    * Click handler for a toggle button. Older page scripts (js/app.js, js/learn.js)
    * also bind #themeToggle and flip the theme themselves; a 0 ms deferral lets them
@@ -188,9 +294,9 @@
       return '<a href="' + p.file + '"' + (on ? ' class="active" aria-current="page"' : '') + (p.label !== p.short ? ' title="' + esc(p.label) + '"' : '') + '>' + esc(p.short) + '</a>';
     }).join('');
     return '<nav class="topnav" aria-label="Main">' +
-      '<a class="brand" href="index.html">Broward Trading<small>Paper-trading &amp; technical analysis lab</small></a>' +
+      '<a class="brand" href="index.html"><span class="no-i18n" translate="no">Broward Trading</span><small>Paper-trading &amp; technical analysis lab</small></a>' +
       '<div class="links">' + links + '</div>' +
-      '<div class="right">' + themeButton('themeToggle', '', false) + '</div>' +
+      '<div class="right">' + langButton('', false) + themeButton('themeToggle', '', false) + '</div>' +
       '</nav>';
   }
   function tabbarHtml(active) {
@@ -215,6 +321,7 @@
       '<ul class="sheet-list">' + items + '</ul>' +
       '<div class="sheet-foot">' +
       themeButton('', 'sheet-theme', true) +
+      langButton('sheet-lang', true) +
       '<button class="sheet-install" type="button" id="btInstall" hidden>' + svg('download') + '<span>Install app</span></button>' +
       '</div>' +
       '<p class="sheet-note">Free educational simulator. No real orders, no real money.</p>' +
@@ -247,6 +354,7 @@
     addOnce('meta[name="apple-mobile-web-app-status-bar-style"]', function () { var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-status-bar-style'; m.content = 'black-translucent'; return m; });
     addOnce('meta[name="apple-mobile-web-app-title"]', function () { var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title'; m.content = 'Broward Trading'; return m; });
     addOnce('meta[name="color-scheme"]', function () { var m = document.createElement('meta'); m.name = 'color-scheme'; m.content = 'dark light'; return m; });
+    addOnce('style#btNavCss', function () { var s = document.createElement('style'); s.id = 'btNavCss'; s.textContent = NAV_CSS; return s; });
   }
 
   /* ------------------------------------------------------------------ *
@@ -363,6 +471,9 @@
     var active = activePage(location.pathname);
     document.documentElement.setAttribute('data-page', active ? active.id : fileOf(location.pathname).replace(/\.html$/, ''));
 
+    // 0. Translations: queue js/i18n.js right after this script when the page lacks it.
+    ensureI18n();
+
     // 1. Theme first, so nothing paints in the wrong colours.
     applyThemeAttr(readStoredTheme());
     ensureHead();
@@ -389,6 +500,13 @@
         if (mq.addEventListener) mq.addEventListener('change', onOs); else if (mq.addListener) mq.addListener(onOs);
       } catch (e) { /* ignore */ }
     }
+
+    // 4b. Language toggles (top bar + sheet). i18n.js translates the shell itself once it
+    //     loads (its boot path + MutationObserver); when it is already present, do it now.
+    Array.prototype.forEach.call(navHost.querySelectorAll('[data-bt-lang-toggle]'), function (b) { b.addEventListener('click', onLangClick); });
+    syncLangUi();
+    root.addEventListener('bt:lang', syncLangUi);
+    if (BT.i18n && BT.i18n.lang() !== 'en' && BT.i18n.hasDict(BT.i18n.lang())) { try { BT.i18n.translatePage(navHost); } catch (e) { /* ignore */ } }
 
     // 5. Phone shell: body.has-tabbar adds bottom padding for the fixed tab bar.
     function syncPhone() {
@@ -494,6 +612,7 @@
     mount: mount,
     accordion: accordion,
     theme: { get: effectiveTheme, stored: readStoredTheme, set: setTheme, toggle: toggleTheme },
+    lang: { get: currentLang, stored: readStoredLang, next: langAfter, list: langs, button: langButton, sync: hasDOM ? syncLangUi : null },
     toast: hasDOM ? toast : null,
     isPhone: function () { return !!(root.matchMedia && root.matchMedia(PHONE_QUERY).matches); },
     html: { topnav: topnavHtml, tabbar: tabbarHtml, sheet: sheetHtml, footer: footerHtml },

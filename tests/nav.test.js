@@ -32,14 +32,32 @@ test('module exposes the contract surface and mount() is a no-op without a DOM',
   assert.strictEqual(N.mount(), false);
 });
 
-test('registry lists the twelve v0.3 pages in nav order with the right files', () => {
+test('registry lists the fourteen v0.4 pages in nav order with the right files', () => {
   const files = N.pages.map(p => p.file);
-  assert.deepStrictEqual(files, ['index.html', 'learn.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
-    'news.html', 'compare.html', 'glossary.html', 'pricing.html', 'verify.html', 'about.html']);
+  assert.deepStrictEqual(files, ['index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
+    'news.html', 'compare.html', 'glossary.html', 'pricing.html', 'verify.html', 'instructor.html', 'about.html']);
   const labels = Object.fromEntries(N.pages.map(p => [p.file, p.label]));
   assert.strictEqual(labels['pricing.html'], 'Pro');
   assert.strictEqual(labels['verify.html'], 'Verify certificate');
   assert.strictEqual(labels['index.html'], 'Dashboard');
+  assert.strictEqual(labels['start.html'], 'First Week');
+  assert.strictEqual(labels['instructor.html'], 'Instructor');
+  assert.ok(!files.includes('certificate.html'), 'certificate.html stays out of the nav');
+});
+
+test('language toggle: EN/ES in the top bar and the More sheet, codes marked no-i18n, cycles through BT.i18n.langs', () => {
+  assert.deepStrictEqual(N.lang.list().map(l => l.code), ['en', 'es']);
+  assert.strictEqual(N.lang.get(), 'en');
+  assert.strictEqual(N.lang.next('en').code, 'es');
+  assert.strictEqual(N.lang.next('es').code, 'en');
+  const top = N.html.topnav(null);
+  assert.ok(/data-bt-lang-toggle/.test(top), 'top nav has the toggle');
+  assert.ok(/class="lang-opts no-i18n" translate="no"/.test(top), 'language codes are never translated');
+  assert.ok(/data-lang="en" aria-current="true">EN</.test(top));
+  assert.ok(/data-lang="es" aria-current="false">ES</.test(top));
+  assert.ok(/<span class="no-i18n" translate="no">Broward Trading<\/span>/.test(top), 'brand name is not translated');
+  const sheet = N.html.sheet(null);
+  assert.ok(/langbtn sheet-lang/.test(sheet) && /lang-label/.test(sheet), 'sheet has a labelled language button');
 });
 
 test('phone tab bar holds exactly Dashboard, Learn, Replay, Portfolio; the rest live behind More', () => {
