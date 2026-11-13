@@ -33,6 +33,10 @@ Nothing in this course involves real money. Students trade a simulated $100,000 
 17. [Appendix C — Discussion prompts](#appendix-c--discussion-prompts)
 18. [Appendix D — The First Week assignment](#appendix-d--the-first-week-assignment)
 19. [Appendix E — Optional week: crypto and ETFs](#appendix-e--optional-week-crypto-and-etfs)
+20. [Appendix F — A four-week league assignment](#appendix-f--a-four-week-league-assignment)
+21. [Appendix G — Screener lab](#appendix-g--screener-lab)
+22. [Appendix H — Rule-builder lab](#appendix-h--rule-builder-lab)
+23. [Appendix I — XP, badges and participation](#appendix-i--xp-badges-and-participation)
 
 ---
 
@@ -46,7 +50,7 @@ Nothing in this course involves real money. Students trade a simulated $100,000 
 | **Format** | Face-to-face, hybrid or fully online. Every exercise is done in the student's own browser. |
 | **Devices** | Phone is enough. A laptop helps for the backtester and the capstone write-up but is not required. |
 | **Cost** | $0. No textbook, no accounts, no API keys needed (demo mode). |
-| **App modules used** | Course Modules 1 to 8 (40 lessons; Module 9 on crypto and ETFs is optional, Appendix E), 10 Market Replay drills, journal, glossary, backtester, options lab, compare page, the First Week path for beginners (Appendix D), Classroom codes (section 10) |
+| **App modules used** | Course Modules 1 to 8 (40 lessons; Module 9 on crypto and ETFs is optional, Appendix E; Module 10 on the screener, rule builder, risk calculator, coach and leagues supports Appendices F to H), 10 Market Replay drills, journal, glossary, backtester, options lab, compare page, the First Week path for beginners (Appendix D), Classroom codes (section 10), and optionally a class league (Appendix F), the screener (Appendix G) and the strategy builder (Appendix H) |
 | **Assessment** | Quizzes, replay drills, a graded journal, a trading-plan capstone, participation. P&L is never graded. |
 | **Credential** | The app's completion certificate (free, printable from `certificate.html`), optionally server-verified if the school runs the backend |
 | **Language** | The interface and the course are in English and Spanish (EN / ES toggle in the app); students may work in either. Quiz ids and answers are identical in both, so grading is unaffected. |
@@ -98,7 +102,7 @@ Students who prefer a laptop get exactly the same site; nothing changes.
 
 | Need | Where it is in the app |
 |---|---|
-| Readings with embedded live charts and quizzes | Learn → 8 modules, 40 lessons. Every lesson ends with a quiz; scores are stored. |
+| Readings with embedded live charts and quizzes | Learn → Modules 1 to 8 (40 lessons) for this syllabus, plus the optional Modules 9 and 10. Every lesson ends with a quiz; scores are stored. |
 | Exercises that open the right chart | Exercise blocks in lessons carry deep links (Appendix A). Students tap the button; the dashboard opens with the symbol, timeframe and overlays set. |
 | Practice under uncertainty | Replay: the future is hidden; students step bar by bar. Drills grade themselves against criteria (min trades, used a stop, max drawdown, beat buy-and-hold, flat at end). |
 | Separating practice from the "real" paper account | Replay trades go to a separate `replay` account; the main paper account stays clean for the forward test in Weeks 5 and 6. |
@@ -107,6 +111,11 @@ Students who prefer a laptop get exactly the same site; nothing changes.
 | Evidence of work | **Classroom**: students join with your class code and their progress, quiz scores, drill scorecards, paper stats and journal counts appear on your roster (section 10). Fallbacks: Learn → certificate → Export JSON; Journal → Export CSV; Replay → session history. |
 | A gradebook that follows this guide | Instructor page → Gradebook: the weights in section 8, automatic scores for quizzes, drills, journal completeness and Daily 5, manual boxes for the forward test and capstone, CSV export. |
 | A gentle start for beginners | First Week (`start.html`): seven days × three tasks with checks that tick themselves (Appendix D). |
+| A class competition that grades process, not rank | Leagues (`leagues.html`): one rule set for everyone, a separate paper account per league, standings with drawdown and Sharpe next to return, a projector view; works offline with codes (Appendix F, `docs/LEAGUES.md`). |
+| Feedback on every trade without grading it by hand | The coach notes under the trade ticket flag missing stops, oversized risk, low reward-to-risk, revenge trades and overtrading, with a lesson link (`docs/COACH.md`). |
+| Sizing from a risk budget | "Plan this trade" in the ticket (`BT.risk`): equity, risk % and stop → shares; the planned stop and target are saved with the order and seen by the coach. |
+| Finding and testing setups | Screener (Appendix G) and Strategy Builder (Appendix H): ready-made scans, AND / OR rule blocks, a plain-English description and a backtest in one screen. |
+| Motivation without rewarding gambling | XP, levels and badges on `profile.html`; no XP for profit or rank (Appendix I). |
 | Spanish-speaking students | EN / ES toggle translates the interface and, where the files exist, the course; untranslated lessons show an "English only" badge and open in English. |
 | Printed hand-outs | Every lesson has Print / Save as PDF (one lesson or the whole module); quizzes print as worksheets without answers. `certificate.html` prints the certificate on one landscape sheet. |
 | Honesty built in | Demo badge on simulated prices; hidden-future note in Replay; backtest page shows buy-and-hold next to every result; composite signal explains its points and says it is not a prediction; the roster marks paper return "never graded". |
@@ -300,7 +309,7 @@ Suggested weights for a 100-point course:
 | Journal (Weeks 3, 4, 5, 6) | 20 | Journal export, rubric in section 6 |
 | Forward test process (Weeks 5–6) | 10 | Journal stats: share of trades tagged `followed-plan`; every trade has a stop; no trade risked more than the plan's limit. Not P&L. |
 | Capstone trading plan | 25 | Document plus evidence, rubric below |
-| Participation and Daily 5 | 5 | In-class exercises; Daily 5 streak or total answered (Glossary → Daily 5 history) |
+| Participation and Daily 5 | 5 | In-class exercises; Daily 5 streak or total answered (Glossary → Daily 5 history); optionally two process badges (Appendix I) |
 
 Letter bands: A 90+, B 80–89, C 70–79, D 60–69.
 
@@ -332,7 +341,7 @@ On a phone, exports download to Files (iOS) or Downloads (Android); students upl
 
 Grading the progress JSON quickly: open it in any text viewer; `quizScores` is a flat object of `lessonId: percent`. A spreadsheet formula over 40 ids is enough. A small import script is on the roadmap (v0.4 "progress report file").
 
-**Optional classroom leaderboard.** If the backend is running, students may opt in by nickname with your class code; it shows return, trades, win rate and max drawdown. Use it for discussion ("why does the top return have the worst drawdown?"), never for grades. It is anonymous and opt-in by design.
+**Optional class league.** A league (`leagues.html`) supersedes the opt-in classroom leaderboard: everyone trades the same rules in a separate paper account, and the standings show return, max drawdown, Sharpe ratio and consistency side by side. It works offline with codes, or syncs when the backend runs. Use it for discussion ("why does the top return have the worst drawdown?"), never for grades. Appendix F turns it into a four-week assignment that grades the process around it.
 
 Most sections will not need the three-files-a-week routine at all: the class code in section 10 replaces the progress JSON and the drill screenshots, and reduces the journal upload to the weeks you grade reflection.
 
@@ -381,7 +390,7 @@ It does not prove identity (a share code is editable text; pair it with in-class
 
 Students earn the app's completion certificate when **every lesson is marked done and quiz scores average 80 % or better**. The app checks this (`Learn → certificate` shows a checklist of what is missing). The student enters the name to print, taps **Issue certificate**, and gets a 1600 × 1130 PNG with a certificate id, downloadable or long-pressable to save. A **Printable certificate** button then opens `certificate.html`, a single landscape sheet with the name, course, date, id, verification URL and a signature line for you; print it or save it as a PDF from the phone's share sheet.
 
-With Module 9 in the course, "every lesson" includes m9-l1 to m9-l5. If your section skips the crypto / ETF module (Appendix E), tell students that the certificate needs those five short lessons and quizzes too; most finish them in an hour, and the module stands on its own.
+With Modules 9 and 10 in the course, "every lesson" includes m9-l1 to m9-l5 and m10-l1 to m10-l5 (50 lessons in all). If your section skips the crypto / ETF module (Appendix E) or does not use the screener, builder and league appendices, tell students that the certificate needs those short lessons and quizzes too; each module takes about an hour and stands on its own.
 
 Two kinds of id:
 
@@ -415,6 +424,7 @@ For a course grade you do not need the certificate at all: the progress JSON car
 
 Before Week 1
 - [ ] Site published over HTTPS; address shared (the public one is https://mfenickfau.github.io/broward-trading/)
+- [ ] Decided whether to run the four-week league (Appendix F) and which labs to use (Appendices G and H); if running the league, created it with the **Classroom 4-week** preset and saved its league code
 - [ ] Installed on your own phone; Module 1 Lesson 1, one drill and one journal entry done
 - [ ] Decision: demo mode for the course (recommended)
 - [ ] Class code created on `instructor.html`; invitation text in the syllabus; backup JSON saved (section 10)
@@ -472,6 +482,14 @@ Strategies and params: `smaCross` (`fast`, `slow`), `rsiReversion` (`low`, `high
 **Instructor** `instructor.html` (classes, roster, gradebook, exports). **Printable certificate** `certificate.html` (opened from Learn once a certificate exists; accepts `?name=&id=&date=` for a reprint).
 
 **Crypto and ETFs** `index.html#symbol=BTC-USD&interval=1h&ov=sma20,sma50&pane=rsi,atr`, `index.html#symbol=SPY&interval=1day&ov=sma50,sma200`, `compare.html#SPY,QQQ,IWM,GLD,BTC-USD,ETH-USD`, `learn.html#/module/m9-crypto-etf`.
+
+**Leagues** `leagues.html` (create, join, standings), `leagues.html?join=<BTL1 league code>` (prefills the join box), `leagues.html?projector=1&league=<CODE>` (projector view). Guide: `docs/LEAGUES.md`.
+
+**Screener** `screener.html`, or a built-in scan directly: `screener.html?scan=builtin:oversold-uptrend` (also `builtin:golden-week`, `builtin:squeeze`, `builtin:high52`, `builtin:bull-engulfing`, `builtin:strong-trend`).
+
+**Strategy Builder** `builder.html`, or a template: `builder.html#template=smaCross` (also `rsiReversion`, `macdMomentum`, `bollingerBreakout`).
+
+**Profile** `profile.html` (level, XP history, badges, streak calendar, personality quiz). **Module 10** `learn.html#/module/m10-toolkit`.
 
 ## Appendix B — Suggested slide outline per week
 
@@ -550,3 +568,112 @@ Module 9, *Crypto & ETFs: Different Markets, Same Discipline* (intermediate, 58 
 **Deliverable:** Module 9 done and quizzes attempted (visible on the roster), the journal export if it is a graded week. If you run Week 7, add Module 9 to the gradebook's quiz component; it is included automatically because the gradebook sums over every lesson in the course.
 
 **Compliance note for instructors:** keep the framing educational. Do not name a coin or fund as a good buy, do not discuss where to open a crypto account, and repeat the disclaimer footer's line that nothing in the app is a recommendation. If a student asks whether they should buy, the answer the course gives is the one in m9-l4: decide the risk budget first, and know that no lesson here can tell you what a price will do.
+
+## Appendix F — A four-week league assignment
+
+A class league gives students a reason to trade every day for a month, and gives you a month of trades to talk about. Run carelessly, it teaches the opposite of this course: that the person who bet the most on the luckiest day is the best trader. This assignment keeps the competition and grades only the process around it. Mechanics, privacy and fair-play notes are in `docs/LEAGUES.md`; the student-facing lesson is m10-l5, "Competing in leagues: ethics, luck and what leaderboards hide".
+
+**When:** Weeks 3 to 6, starting after the risk lesson (m4-l1) and the first journal assignment, and running alongside the forward test. A league account is separate from the main account, so the forward test in Weeks 5 and 6 stays clean. In a section that skips the forward test, the league can *be* the forward test (see grading).
+
+**Setup (instructor, 10 minutes, the week before)**
+
+1. Open `leagues.html` → **Create a league** → tap **Classroom 4-week**. Name it after the section ("FIN 1100 Spring League"), set the start to the Monday of Week 3 and the end to the Sunday of Week 6. Leave the preset rules as they are: $100,000, $1 commission, 5 bps slippage, stocks and ETFs, day trading on, shorting off, no position above 25 % of equity. Optional: turn on **Teams** with four or five team names.
+2. Tap **Create league**, then **Copy invitation text** and post it with the week's announcement. Add the league to the **Leagues** tab on `instructor.html` (paste the `BTL1.` code) so standings sit next to the roster.
+3. Without the backend, create four weekly LMS text assignments, "League share code, week N". With the backend, members sync themselves.
+
+**The assignment, as students see it**
+
+| When | Task | Evidence |
+|---|---|---|
+| Before the start | **League plan**, half a page: which setups you will trade (from the course), your risk per trade (at most 1 % of league equity), where stops go, your maximum number of open positions, and one rule you will follow when you are losing. | Uploaded to the LMS |
+| Every trade | Size it with **Plan this trade**, enter with a stop, and annotate the journal entry: setup, emotion, one sentence of reasoning. Read the coach notes after the fill. | Journal export |
+| Each Friday | One weekly review in the journal. Tap **Copy my share code** on the league card and paste it into the week's LMS box (or **Sync now** with the backend). | Share code, journal |
+| After the end | **Reflection**, one page: your return, max drawdown, Sharpe and consistency from the standings; which coach findings came up most and what you changed; one trade you are proud of regardless of outcome; and why your rank says little about your skill over four weeks. | Uploaded to the LMS |
+
+**In class**
+
+- Week 3, 10 minutes: join together; read the privacy line from section 10; show a rule refusal live (try to short, or buy 40 % of the account) so everyone sees the rules are real.
+- Weeks 4 and 5, 10 minutes each: put the **Projector view** up (`leagues.html?projector=1&league=CODE`). Ask the same three questions every time. Who has the smallest drawdown? Whose Sharpe is highest, and is it the same person as the top return? What would the top return look like if the market had gone the other way this week?
+- Week 6, 20 minutes: final standings, then discuss the m10-l5 questions. The best discussion is usually about the gap between the return column and the drawdown column.
+
+**Grading (10 points; use it as the forward-test component in section 8, or as extra participation)**
+
+| Criterion | Points | Evidence |
+|---|---|---|
+| League plan submitted before the start, with a risk-per-trade number and a stop rule | 2 | LMS timestamp |
+| Every league trade had a stop and risked no more than the plan's limit | 3 | Journal export and coach findings: no "No stop-loss" or "Risk above 2% of the account" warnings, or each one explained in the journal |
+| Every league trade journaled with setup, emotion and reasoning | 2 | Journal export |
+| Weekly reviews and share codes submitted (4) | 1 | LMS, journal |
+| Reflection that uses drawdown, Sharpe and consistency, names the coach findings and discusses luck honestly | 2 | LMS |
+
+**Rank, return and trade count earn nothing.** A student at the bottom of the table with a full journal and a stop on every trade earns 10 out of 10. A student at the top who abandoned the plan does not. Say this on the first day of the league and again at the end. If you want to recognise someone, recognise the best journal or the smallest drawdown, and never with a real-money prize (`docs/LEAGUES.md`, section 8).
+
+**Variations:** a one-week **Day-trading sprint** for a club meeting (same rubric, scaled to 5 points); the **Long-only investor** preset for a personal-finance section, where the reflection compares the account with simply holding SPY; the **Options challenge** after Week 4 for advanced sections, where the plan must state the maximum premium at risk per trade.
+
+## Appendix G — Screener lab
+
+One 50-minute block, best in Week 2 or 3 after the indicator lessons, or alongside m10-l1, "Using a screener without fooling yourself". The point is not to find stocks to buy. It is to learn that a screener produces candidates to study, and that adding filters until something looks perfect is the same overfitting the backtester lesson warns about.
+
+**Before class:** m10-l1 (12 minutes). Everyone uses demo mode, so every student who scans on the same day sees the same results.
+
+| Min | Activity |
+|---|---|
+| 0–5 | Poll: "If a screen shows 3 stocks that are oversold in an uptrend, how many of them should you buy?" Keep the answers for minute 45. |
+| 5–15 | **G.1 — Read a built-in scan.** Open `screener.html?scan=builtin:oversold-uptrend` and tap **Run scan**. Read the scan's own description aloud: RSI(14) under 35 while price holds above the 200-day average, "a pullback inside a long-term uptrend. Pullbacks can turn into reversals, so a plan needs a stop." Every built-in scan carries a sentence like this; ask students to find the warning in two more (Golden cross this week, Squeeze setups). |
+| 15–25 | **G.2 — From row to chart.** Each student picks one result, taps **Open chart**, turns on SMA 50, SMA 200 and RSI, and writes three lines in a manual journal entry: what the scan saw, what the chart adds (trend, support and resistance, volume), and where a stop would have to go. Pairs compare. |
+| 25–35 | **G.3 — Build your own.** Start from the filters: price vs moving average (SMA 50, above), RSI between 40 and 60, average volume above 1 million. Tap **Save scan** with a name. This earns the *Screener Scout* badge. Then set **Universe** to *My watchlist* and run it again; **+ Watchlist** on any result adds it to the dashboard watchlist. |
+| 35–45 | **G.4 — The data-mining trap.** Keep adding filters (a golden cross within 20 bars, ADX above 25, a candle pattern today) until the list has one name. Ask: is that one stock "the best", or the one that happened to fit five rules you chose after looking? Compare with the backtester's overfitting lesson: the more knobs you turn after seeing the data, the less the result means. |
+| 45–50 | Back to the poll. The course's answer: none until each candidate has a plan with an entry, a stop and a size from the risk calculator. |
+
+**Deliverable:** the journal entry from G.2 and a screenshot of the saved scan (or the profile's *Screener Scout* badge). Grade as participation or as part of the Week 2 or 3 journal.
+
+**With a live data key:** a scan of the whole universe takes many requests. The screener waits out per-minute limits instead of burning the key, and stops at a daily limit, listing what it could not reach. In class, keep live scans to the watchlist or one sector.
+
+**Say it once:** a screen finds what matches a rule today. It does not know the future, and a stock appearing in a scan is not a recommendation, from the app or from you.
+
+## Appendix H — Rule-builder lab
+
+One 50- to 60-minute block in Week 5, alongside m10-l2 ("Writing rules a computer could test") and m10-l3 ("From rule to backtest to replay to paper"). It turns the capstone's first criterion, an edge stated as rules anyone could execute, into something students can test before they write it up.
+
+**Before class:** m10-l2 and m10-l3 (25 minutes); m6-l1 (entry and exit rules) if it is not fresh.
+
+| Min | Activity |
+|---|---|
+| 0–10 | **H.1 — Read a rule.** Open `builder.html#template=smaCross`. Read the **In plain English** box aloud. Ask: could two classmates follow this sentence and make the same trades? (Yes; that is the test for the capstone too.) Switch the site to ES and read it in Spanish if the section is bilingual. |
+| 10–25 | **H.2 — Backtest it honestly.** In **Backtest it**, keep the defaults, then set commission to $1 and slippage to 10 bps and run again. Compare with buy-and-hold, as in Week 5. Add a **Stop-loss %** of 5 under Risk exits and run once more. Write down the trades, return, max drawdown and buy-and-hold return for each run. Note the page's warning: risk exits fill at the next bar's open, so a gap can make a loss bigger than the stop. |
+| 25–40 | **H.3 — Your capstone rule.** Tap **Start a blank rule** and build the entry and exit you plan to use in the capstone (two or three conditions, AND or OR). Name it and tap **Save rule** (the *Rule Maker* badge). Run it on the symbol you chose, then on a **second symbol you did not look at first**. If it only works on the first, that is the overfitting lesson in your own data. |
+| 40–50 | **H.4 — Put it to work, safely.** Tap **Create alert from entry rule**. Then, on the dashboard, turn on **Semi-auto mode** with the saved rule. When the rule fires, the app *proposes* a sized paper trade and waits; nothing is placed without your tap. Discuss why the course built it that way: a rule that trades by itself is how small mistakes become large ones. |
+| 50–60 | Optional: **Export current rule** and paste the JSON into the LMS, or swap rules with a partner via Import and backtest each other's. |
+
+**Deliverable:** the exported rule JSON plus a short table of the H.2 and H.3 runs (with costs, against buy-and-hold, on two symbols). It becomes the backtest piece of the capstone's evidence criterion (section 8). The rubric's honesty criterion applies: a rule that loses to buy-and-hold, reported honestly, scores better than a cherry-picked winner.
+
+**Common mistakes to watch for:** conditions that can never be true together (RSI below 30 AND crosses above 70 on the same bar); exits that never fire, so the backtest holds one trade forever; and changing parameters ten times on one symbol, then presenting the best run. The builder's `validate()` catches empty or incomplete rules; only a second symbol and an honest write-up catch the last one.
+
+## Appendix I — XP, badges and participation
+
+The profile page (`profile.html`) gives every student XP, a level (Freshman, Sophomore, Junior, Senior, Graduate, Analyst, Portfolio Manager), badges and a practice-streak calendar. It is built to reward studying and good habits, and it can count toward the participation component in section 8 as long as you keep that intent.
+
+**What earns XP.** Lessons (20 each), quizzes passed at 80 % or more (30, plus 10 at 100 %), finished Replay drills (25), journal entries the student annotated themselves (10), the first paper trade ever (15, once), creating an alert (5), a flashcard session (10), each active day (5) and finishing a league (50). Each award is granted once per item and never taken away, and work done before v0.5 counts automatically.
+
+**What never earns XP.** Profit, return, league rank, number of trades, or trade size. The only XP tied to trading at all is the one-time first fill and the league-finished award, which needs just one league trade. A student cannot level up by trading more or by taking bigger risks.
+
+**How to count it toward participation (suggested: 2 of the 5 participation points)**
+
+1. **Process badges, not totals.** Pick three or four badges that match the habits this course grades and ask for any two by the end of term:
+   - *Risk Manager* — 10 trades opened with a stop and no more than 1 % of the account at risk
+   - *Journal Keeper* — 14 journal entries
+   - *Weekly Reviewer* — a weekly review saved
+   - *Drill Passed* — every check of a Replay drill passed
+   - *Honor Roll* — 10 quizzes passed at 80 % or more
+   - *Flashcard Regular* or *Streak 7* — practice spread over many days
+2. **Or a level by a date.** For example: Junior (500 XP) by the end of Week 3 and Senior (1,000 XP) by Week 6. Lessons and quizzes alone get a student there on the syllabus schedule, so this rewards keeping up, not trading.
+3. **Evidence.** XP and badges live on the student's device and are not yet part of the classroom snapshot. Ask for a screenshot of the profile page (the badges grid shows earned and locked badges with their criteria), or check it on the student's phone in class.
+
+**What to avoid**
+
+- **Do not count *Replay Pro*** (beat buy-and-hold in five drills) toward a grade. It is the one badge that depends on an outcome, and section 7 says drills grade rule-following, not return. It is fine as a personal goal.
+- **Do not grade XP totals or rank students by XP.** Totals reward volume. A student could write empty journal entries for points; cap anything you count, and spot-check the journal export.
+- **Do not create your own badges for profit**, "top of the league" or "biggest winner", even informally. They tell students that this course secretly does grade P&L.
+- **Keep it optional for students who do not want it.** A student who studies in the printed lessons and on a borrowed laptop may have a thin profile. Offer the Daily 5 history or in-class work as an alternative route to the same points.
+
+**What to say to students:** XP measures how much of the course you have worked through and whether you practise the habits it teaches. It does not measure whether you would make money, and nothing in this app does.

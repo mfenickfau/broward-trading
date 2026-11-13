@@ -1,7 +1,7 @@
 {
   "version": "0.4.0",
   "title": "Broward Trading Course",
-  "summary": "Nine modules that take you from 'what is a stock?' to a backtested, replay-practised, written trading plan, then show how the same discipline carries over to crypto and ETFs, with the paper-trading dashboard and Market Replay as your lab.",
+  "summary": "Ten modules that take you from 'what is a stock?' to a backtested, replay-practised, written trading plan, then show how the same discipline carries over to crypto and ETFs and into the screener, rule builder and leagues, with the paper-trading dashboard and Market Replay as your lab.",
   "modules": [
     {
       "id": "m1-foundations",
@@ -305,6 +305,40 @@
         {
           "id": "m9-l5",
           "title": "Fees, custody, taxes and adding a new market to your plan",
+          "minutes": 12
+        }
+      ]
+    },
+    {
+      "id": "m10-toolkit",
+      "title": "Your Trading Toolkit: Screeners, Rules & Competitions",
+      "level": "intermediate",
+      "minutes": 61,
+      "summary": "Use the screener without data-mining, write rules a computer could test, carry one rule through backtest, Market Replay and paper trading, size every trade with the calculator and the coach, and compete in leagues knowing what a leaderboard cannot tell you.",
+      "lessons": [
+        {
+          "id": "m10-l1",
+          "title": "Using a screener without fooling yourself",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l2",
+          "title": "Writing rules a computer could test",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l3",
+          "title": "From rule to backtest to replay to paper",
+          "minutes": 13
+        },
+        {
+          "id": "m10-l4",
+          "title": "Risk sizing with the calculator and the coach",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l5",
+          "title": "Competing in leagues: ethics, luck and what leaderboards hide",
           "minutes": 12
         }
       ]

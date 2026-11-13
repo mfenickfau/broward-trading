@@ -15,7 +15,9 @@
 (function () {
   'use strict';
   /* Reason texts for the composite signal are UI strings: translated through BT.t when js/i18n.js is loaded
-   * (looked up at call time, so load order does not matter); plain {var} interpolation otherwise. */
+   * (looked up at call time, so load order does not matter); plain {var} interpolation otherwise.
+   * Candlestick patterns keep `name` in English (it is an identifier: the screener and the dashboard match on it)
+   * and add `label` (the translated name); `description` and every signal `text` / `why` go through T(). */
   function T(s, v) {
     var tf = typeof window !== 'undefined' && window.BT && window.BT.t;
     if (tf) { try { return tf(s, v); } catch (e) { /* fall through */ } }
@@ -544,25 +546,25 @@
 
       // ---- single candle ----
       if (a.body <= a.range * 0.1) {
-        out.push({ index: i, name: 'Doji', bias: 'neutral',
-          description: 'Open and close are nearly equal: buyers and sellers fought to a draw. After a strong move it warns the trend may be tiring; wait for the next candle to confirm direction.' });
+        out.push({ index: i, name: 'Doji', label: T('Doji'), bias: 'neutral',
+          description: T('Open and close are nearly equal: buyers and sellers fought to a draw. After a strong move it warns the trend may be tiring; wait for the next candle to confirm direction.') });
       } else if (a.lower >= 2 * a.body && a.upper <= a.body * 0.5 && a.body >= a.range * 0.1 && downTrendInto(bars, i)) {
-        out.push({ index: i, name: 'Hammer', bias: 'bull',
-          description: 'A small body at the top with a long lower wick after a decline. Sellers pushed price down hard, but buyers took it all back by the close: a potential bottom, confirmed if the next bar closes higher.' });
+        out.push({ index: i, name: 'Hammer', label: T('Hammer'), bias: 'bull',
+          description: T('A small body at the top with a long lower wick after a decline. Sellers pushed price down hard, but buyers took it all back by the close: a potential bottom, confirmed if the next bar closes higher.') });
       } else if (a.upper >= 2 * a.body && a.lower <= a.body * 0.5 && a.body >= a.range * 0.1 && upTrendInto(bars, i)) {
-        out.push({ index: i, name: 'Shooting star', bias: 'bear',
-          description: 'A small body at the bottom with a long upper wick after a rally. Buyers tried to extend the move and were rejected: a potential top, confirmed if the next bar closes lower.' });
+        out.push({ index: i, name: 'Shooting star', label: T('Shooting star'), bias: 'bear',
+          description: T('A small body at the bottom with a long upper wick after a rally. Buyers tried to extend the move and were rejected: a potential top, confirmed if the next bar closes lower.') });
       }
 
       // ---- two candles ----
       if (i >= 1) {
         var p = bars[i - 1], pa = anatomy(p);
         if (pa.bear && a.bull && b.open <= p.close && b.close >= p.open && a.body > pa.body && pa.body > 0) {
-          out.push({ index: i, name: 'Bullish engulfing', bias: 'bull',
-            description: 'A green body that completely covers the previous red body. Buyers overwhelmed the prior session\'s sellers; strongest after a downtrend and on heavier volume.' });
+          out.push({ index: i, name: 'Bullish engulfing', label: T('Bullish engulfing'), bias: 'bull',
+            description: T('A green body that completely covers the previous red body. Buyers overwhelmed the prior session\'s sellers; strongest after a downtrend and on heavier volume.') });
         } else if (pa.bull && a.bear && b.open >= p.close && b.close <= p.open && a.body > pa.body && pa.body > 0) {
-          out.push({ index: i, name: 'Bearish engulfing', bias: 'bear',
-            description: 'A red body that completely covers the previous green body. Sellers overwhelmed the prior session\'s buyers; strongest after an uptrend.' });
+          out.push({ index: i, name: 'Bearish engulfing', label: T('Bearish engulfing'), bias: 'bear',
+            description: T('A red body that completely covers the previous green body. Sellers overwhelmed the prior session\'s buyers; strongest after an uptrend.') });
         }
       }
 
@@ -573,28 +575,28 @@
         // Morning star: long red, small body below it, long green closing above red's midpoint
         if (long1 && a1.bear && a2.body <= a1.body * 0.3 && Math.max(b2.open, b2.close) <= b1.close &&
             a.bull && b.close >= a1.mid && a.body >= a1.body * 0.5) {
-          out.push({ index: i, name: 'Morning star', bias: 'bull',
-            description: 'Three-bar bottom: a strong red candle, a small indecision candle gapping lower, then a strong green candle that recovers past the midpoint of the first. Selling pressure stalled and buyers took over.' });
+          out.push({ index: i, name: 'Morning star', label: T('Morning star'), bias: 'bull',
+            description: T('Three-bar bottom: a strong red candle, a small indecision candle gapping lower, then a strong green candle that recovers past the midpoint of the first. Selling pressure stalled and buyers took over.') });
         }
         // Evening star: mirror image at a top
         if (long1 && a1.bull && a2.body <= a1.body * 0.3 && Math.min(b2.open, b2.close) >= b1.close &&
             a.bear && b.close <= a1.mid && a.body >= a1.body * 0.5) {
-          out.push({ index: i, name: 'Evening star', bias: 'bear',
-            description: 'Three-bar top: a strong green candle, a small indecision candle gapping higher, then a strong red candle that falls past the midpoint of the first. Buying pressure stalled and sellers took over.' });
+          out.push({ index: i, name: 'Evening star', label: T('Evening star'), bias: 'bear',
+            description: T('Three-bar top: a strong green candle, a small indecision candle gapping higher, then a strong red candle that falls past the midpoint of the first. Buying pressure stalled and sellers took over.') });
         }
         // Three white soldiers / three black crows
         var solid = function (x) { return x.body >= x.range * 0.5; };
         if (a1.bull && a2.bull && a.bull && solid(a1) && solid(a2) && solid(a) &&
             b2.open >= b1.open && b2.open <= b1.close && b2.close > b1.close &&
             b.open >= b2.open && b.open <= b2.close && b.close > b2.close) {
-          out.push({ index: i, name: 'Three white soldiers', bias: 'bull',
-            description: 'Three consecutive strong green candles, each opening inside the prior body and closing at a new high. Steady, confident buying; often marks the start of an advance after a base.' });
+          out.push({ index: i, name: 'Three white soldiers', label: T('Three white soldiers'), bias: 'bull',
+            description: T('Three consecutive strong green candles, each opening inside the prior body and closing at a new high. Steady, confident buying; often marks the start of an advance after a base.') });
         }
         if (a1.bear && a2.bear && a.bear && solid(a1) && solid(a2) && solid(a) &&
             b2.open <= b1.open && b2.open >= b1.close && b2.close < b1.close &&
             b.open <= b2.open && b.open >= b2.close && b.close < b2.close) {
-          out.push({ index: i, name: 'Three black crows', bias: 'bear',
-            description: 'Three consecutive strong red candles, each opening inside the prior body and closing at a new low. Persistent selling; often marks the start of a decline after a top.' });
+          out.push({ index: i, name: 'Three black crows', label: T('Three black crows'), bias: 'bear',
+            description: T('Three consecutive strong red candles, each opening inside the prior body and closing at a new low. Persistent selling; often marks the start of a decline after a top.') });
         }
       }
     }
@@ -669,7 +671,7 @@
    */
   function signals(bars, ind, i) {
     bars = bars || [];
-    if (!bars.length) return { score: 0, max: SIGNAL_MAX, state: 'HOLD', reasons: [{ pts: 0, text: 'No data', why: 'Load a symbol first' }], index: -1, close: null };
+    if (!bars.length) return { score: 0, max: SIGNAL_MAX, state: 'HOLD', reasons: [{ pts: 0, text: T('No data'), why: T('Load a symbol first') }], index: -1, close: null };
     ind = ensureInd(bars, ind);
     if (i == null || i < 0 || i >= bars.length) i = bars.length - 1;
     return scoreAt(bars, ind, i);
@@ -682,51 +684,51 @@
     var hist = ind.macd.hist, bbU = ind.bollinger.upper[i], bbL = ind.bollinger.lower[i];
 
     if (sma50 != null) {
-      add(c > sma50 ? 1 : -1, c > sma50 ? 'Price above SMA 50' : 'Price below SMA 50', 'Long-term trend filter: trade in the direction of the 50-bar average');
-    } else add(0, 'SMA 50 not available yet', 'Needs 50 bars of history');
+      add(c > sma50 ? 1 : -1, c > sma50 ? T('Price above SMA 50') : T('Price below SMA 50'), T('Long-term trend filter: trade in the direction of the 50-bar average'));
+    } else add(0, T('SMA 50 not available yet'), T('Needs 50 bars of history'));
 
     if (sma20 != null && sma50 != null) {
       var bullAlign = sma20 > sma50;
-      add(bullAlign ? 1 : -1, bullAlign ? 'SMA 20 above SMA 50 (bullish alignment)' : 'SMA 20 below SMA 50 (bearish alignment)', 'Trend direction: short-term average leading the long-term one');
+      add(bullAlign ? 1 : -1, bullAlign ? T('SMA 20 above SMA 50 (bullish alignment)') : T('SMA 20 below SMA 50 (bearish alignment)'), T('Trend direction: short-term average leading the long-term one'));
     }
 
     if (ind.rsi[i] != null) {
       var v = ind.rsi[i];
-      if (v < 30) add(2, T('RSI {v} is oversold', { v: v.toFixed(0) }), 'Momentum stretched down; sellers may be exhausted (bounce candidate)');
-      else if (v > 70) add(-2, T('RSI {v} is overbought', { v: v.toFixed(0) }), 'Momentum stretched up; buyers may be exhausted (pullback candidate)');
-      else add(0, T('RSI {v} is neutral', { v: v.toFixed(0) }), 'Between 30 and 70: no extreme');
+      if (v < 30) add(2, T('RSI {v} is oversold', { v: v.toFixed(0) }), T('Momentum stretched down; sellers may be exhausted (bounce candidate)'));
+      else if (v > 70) add(-2, T('RSI {v} is overbought', { v: v.toFixed(0) }), T('Momentum stretched up; buyers may be exhausted (pullback candidate)'));
+      else add(0, T('RSI {v} is neutral', { v: v.toFixed(0) }), T('Between 30 and 70: no extreme'));
     }
 
     if (hist[i] != null) {
       var h = hist[i], ph = hist[i - 1] != null ? hist[i - 1] : h;
-      if (h > 0 && h >= ph) add(1, 'MACD histogram positive and rising', 'Upward momentum accelerating');
-      else if (h < 0 && h <= ph) add(-1, 'MACD histogram negative and falling', 'Downward momentum accelerating');
-      else add(0, h > 0 ? 'MACD positive but fading' : 'MACD negative but recovering', 'Momentum losing steam; watch for a cross');
+      if (h > 0 && h >= ph) add(1, T('MACD histogram positive and rising'), T('Upward momentum accelerating'));
+      else if (h < 0 && h <= ph) add(-1, T('MACD histogram negative and falling'), T('Downward momentum accelerating'));
+      else add(0, h > 0 ? T('MACD positive but fading') : T('MACD negative but recovering'), T('Momentum losing steam; watch for a cross'));
     }
 
     if (bbL != null && bbU != null) {
-      if (c < bbL) add(1, 'Close below lower Bollinger Band', 'More than 2 standard deviations below the 20-bar mean: statistically stretched down');
-      else if (c > bbU) add(-1, 'Close above upper Bollinger Band', 'More than 2 standard deviations above the 20-bar mean: statistically stretched up');
-      else add(0, 'Inside Bollinger Bands', 'Normal range');
+      if (c < bbL) add(1, T('Close below lower Bollinger Band'), T('More than 2 standard deviations below the 20-bar mean: statistically stretched down'));
+      else if (c > bbU) add(-1, T('Close above upper Bollinger Band'), T('More than 2 standard deviations above the 20-bar mean: statistically stretched up'));
+      else add(0, T('Inside Bollinger Bands'), T('Normal range'));
     }
 
     if (i > 0 && sma20 != null && sma50 != null && ind.sma20[i - 1] != null && ind.sma50[i - 1] != null) {
       var up = sma20 > sma50, pu = ind.sma20[i - 1] > ind.sma50[i - 1];
-      if (up && !pu) add(2, 'Golden cross on this bar', 'SMA 20 crossed above SMA 50: a classic trend-change signal');
-      else if (!up && pu) add(-2, 'Death cross on this bar', 'SMA 20 crossed below SMA 50: a classic trend-change signal');
+      if (up && !pu) add(2, T('Golden cross on this bar'), T('SMA 20 crossed above SMA 50: a classic trend-change signal'));
+      else if (!up && pu) add(-2, T('Death cross on this bar'), T('SMA 20 crossed below SMA 50: a classic trend-change signal'));
     }
 
     // Context (no points): trend strength
     if (ind.adx && ind.adx.adx && ind.adx.adx[i] != null) {
       var ax = ind.adx.adx[i];
       add(0, T(ax >= 25 ? 'ADX {v}: strong trend' : ax < 20 ? 'ADX {v}: no clear trend' : 'ADX {v}: trend building', { v: ax.toFixed(0) }),
-        ax >= 25 ? 'Trend-following signals are more reliable; mean-reversion (RSI/Bollinger) less so' : ax < 20 ? 'Range-bound market: mean-reversion signals matter more, crossovers whipsaw' : 'Transitional');
+        ax >= 25 ? T('Trend-following signals are more reliable; mean-reversion (RSI/Bollinger) less so') : ax < 20 ? T('Range-bound market: mean-reversion signals matter more, crossovers whipsaw') : T('Transitional'));
     }
 
     // Context: the latest candlestick pattern ending on this bar
     if (ind.patterns && ind.patterns.length) {
       for (var p = ind.patterns.length - 1; p >= 0; p--) {
-        if (ind.patterns[p].index === i) { var pt = ind.patterns[p]; add(0, 'Candle: ' + pt.name, pt.description); break; }
+        if (ind.patterns[p].index === i) { var pt = ind.patterns[p]; add(0, T('Candle: {name}', { name: pt.label || T(pt.name) }), pt.description); break; }
         if (ind.patterns[p].index < i) break;
       }
     }

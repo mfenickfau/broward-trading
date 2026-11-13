@@ -1,4 +1,4 @@
-/* Broward Trading — js/nav.js → BT.nav (shared page shell, v0.3)
+/* Broward Trading — js/nav.js → BT.nav (shared page shell, v0.3; v0.5 adds Leagues, Builder, Screener, Profile and the level chip)
  *
  * The ONLY place the site's navigation and footer markup lives. Every page has
  * `<div id="nav"></div>` right after <body> and `<div id="footer"></div>` at the
@@ -8,7 +8,8 @@
  *
  * What mount() injects
  *   - <a class="skip-link">     "Skip to content", the first focusable element on every page
- *   - <nav class="topnav">      sticky top bar: brand, one link per page, theme toggle
+ *   - <nav class="topnav">      sticky top bar: brand, one link per page, language toggle,
+ *                               level chip (v0.5, links to profile.html), theme toggle
  *   - <nav class="tabbar">      fixed bottom tab bar on phones (≤ 760px): Dashboard,
  *                               Learn, Replay, Portfolio, More
  *   - "More" bottom sheet       every other page, theme switch, install button
@@ -22,6 +23,10 @@
  * about a change through the 'bt:theme' CustomEvent on window and, for the two
  * pages that predate the event, BT.portfolioPage.onThemeChange /
  * BT.backtestPage.onThemeChange.
+ *
+ * Lazy scripts: js/i18n.js is queued synchronously when the page lacks it (BT.t must
+ * exist before page scripts run); js/xp.js is loaded async after parsing (only the
+ * level chip needs it) and the chip subscribes via BT.xp.onChange.
  *
  * Plain ES2020, no imports. Pure helpers (pages, activePage) are usable without
  * a DOM so tests/nav.test.js can load the file in Node.
@@ -42,11 +47,15 @@
     { id: 'start',     file: 'start.html',     label: 'First Week', short: 'First Week', tab: false, icon: 'flag',   desc: 'Seven days of guided first steps for complete beginners' },
     { id: 'replay',    file: 'replay.html',    label: 'Replay',    short: 'Replay',    tab: true,  icon: 'play',     desc: 'Market Replay: trade past data bar by bar' },
     { id: 'portfolio', file: 'portfolio.html', label: 'Portfolio', short: 'Portfolio', tab: true,  icon: 'wallet',   desc: 'Paper account, positions, orders and options lab' },
+    { id: 'leagues',   file: 'leagues.html',   label: 'Leagues',   short: 'Leagues',   tab: false, icon: 'trophy',   desc: 'Paper-trading competitions with classmates and friends' },
     { id: 'backtest',  file: 'backtest.html',  label: 'Backtest',  short: 'Backtest',  tab: false, icon: 'flask',    desc: 'Test rule-based strategies on past prices' },
+    { id: 'builder',   file: 'builder.html',   label: 'Strategy Builder', short: 'Builder', tab: false, icon: 'blocks', desc: 'Build trading rules from blocks, then back-test them' },
+    { id: 'screener',  file: 'screener.html',  label: 'Screener',  short: 'Screener',  tab: false, icon: 'filter',   desc: 'Scan the market for setups with technical filters' },
     { id: 'journal',   file: 'journal.html',   label: 'Journal',   short: 'Journal',   tab: false, icon: 'journal',  desc: 'Review every trade: setup, emotion, lesson' },
     { id: 'news',      file: 'news.html',      label: 'News',      short: 'News',      tab: false, icon: 'news',     desc: 'Company profile, earnings and headlines' },
     { id: 'compare',   file: 'compare.html',   label: 'Compare',   short: 'Compare',   tab: false, icon: 'compare',  desc: 'Relative performance, correlation, heatmap' },
     { id: 'glossary',  file: 'glossary.html',  label: 'Glossary',  short: 'Glossary',  tab: false, icon: 'glossary', desc: 'Every term explained, flashcards, Daily 5' },
+    { id: 'profile',   file: 'profile.html',   label: 'Profile',   short: 'Profile',   tab: false, icon: 'user',     desc: 'Your level, XP, badges, streak and trader personality' },
     { id: 'pricing',   file: 'pricing.html',   label: 'Pro',       short: 'Pro',       tab: false, icon: 'star',     desc: 'Everything is free today; see what Pro will add' },
     { id: 'verify',    file: 'verify.html',    label: 'Verify certificate', short: 'Verify', tab: false, icon: 'badge', desc: 'Check that a Broward Trading certificate is genuine' },
     { id: 'instructor', file: 'instructor.html', label: 'Instructor', short: 'Instructor', tab: false, icon: 'people', desc: 'Class codes, roster, gradebook and share-code import' },
@@ -83,6 +92,10 @@
     download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4 19h16"/>',
     flag:     '<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',
     people:   '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+    trophy:   '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3M12 13v4M8.5 20h7M10 17h4"/>',
+    filter:   '<path d="M4 5h16l-6 7.5V19l-4 1.5v-8z"/>',
+    blocks:   '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/><path d="M15 4h5v5M4 15v5h5"/>',
+    user:     '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
     globe:    '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
   };
   function svg(name, cls) {
@@ -200,12 +213,16 @@
     for (var i = 0; i < list.length; i++) if (list[i].code === code) return list[i].label;
     return code.toUpperCase();
   }
-  /** Path of js/i18n.js next to this script (works on GitHub Pages sub-paths). */
-  function i18nSrc() {
-    var cs = hasDOM && document.currentScript;
-    var src = cs && cs.src ? String(cs.src) : '';
-    return /nav\.js(\?.*)?$/.test(src) ? src.replace(/nav\.js(\?.*)?$/, 'i18n.js') : 'js/i18n.js';
+  /* src of this script, captured while it executes (document.currentScript is null later). */
+  var NAV_SRC = (function () {
+    try { var cs = hasDOM && document.currentScript; return cs && cs.src ? String(cs.src) : ''; } catch (e) { return ''; }
+  })();
+  /** Path of a sibling script (js/<name>) next to this one (works on GitHub Pages sub-paths). */
+  function siblingSrc(name) {
+    var src = NAV_SRC;
+    return /nav\.js(\?.*)?$/.test(src) ? src.replace(/nav\.js(\?.*)?$/, name) : 'js/' + name;
   }
+  function i18nSrc() { return siblingSrc('i18n.js'); }
   /**
    * Load js/i18n.js if the page did not include it. While the parser is still
    * running, document.write keeps script order (the same trick the pages use for
@@ -215,7 +232,7 @@
     if (!hasDOM || BT.i18n) return;
     if (document.querySelector('script[src$="i18n.js"],script[src*="/i18n.js?"]')) return;
     var src = i18nSrc();
-    if (document.readyState === 'loading' && document.currentScript && typeof document.write === 'function') {
+    if (document.readyState === 'loading' && document.currentScript && document.currentScript.src === NAV_SRC && typeof document.write === 'function') {
       try { document.write('<script src="' + esc(src) + '"><\/script>'); return; } catch (e) { /* fall through */ }
     }
     var s = document.createElement('script'); s.src = src; s.async = false;
@@ -268,7 +285,16 @@
     '.sheet-foot .langbtn .ico{width:20px;height:20px;color:var(--teal)}' +
     '.sheet-foot .langbtn .lang-label{font-size:var(--fs-sm)}' +
     '.sheet-foot .langbtn .lang-opts{margin-left:auto}' +
-    '@media (max-width:760px){.topnav .langbtn{min-height:44px;min-width:44px}.topnav .themebtn{min-height:44px;min-width:44px}}';
+    '.topnav a.levelchip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);' +
+      'background:linear-gradient(90deg,color-mix(in srgb,var(--teal) 22%,transparent) var(--lv-pct,0%),transparent var(--lv-pct,0%));color:var(--fg);font-size:var(--fs-sm);white-space:nowrap;text-decoration:none}' +
+    '.topnav a.levelchip[hidden]{display:none}' +
+    '.topnav a.levelchip::after{display:none}' +
+    '.topnav a.levelchip:hover{border-color:var(--teal);background-color:var(--panel2)}' +
+    '.topnav a.levelchip:focus-visible{outline:2px solid var(--teal);outline-offset:2px}' +
+    '.levelchip .lv-num{font-family:var(--mono);font-weight:600;color:var(--teal)}' +
+    '.levelchip .lv-name{color:var(--muted);max-width:14ch;overflow:hidden;text-overflow:ellipsis}' +
+    '@media (max-width:1100px){.levelchip .lv-name{display:none}}' +
+    '@media (max-width:760px){.topnav .langbtn{min-height:44px;min-width:44px}.topnav .themebtn{min-height:44px;min-width:44px}.topnav a.levelchip{min-height:44px;min-width:44px;justify-content:center;padding:4px 8px}}';
   /**
    * Click handler for a toggle button. Older page scripts (js/app.js, js/learn.js)
    * also bind #themeToggle and flip the theme themselves; a 0 ms deferral lets them
@@ -283,12 +309,75 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Level chip (v0.5). js/xp.js → BT.xp is loaded lazily (async, after the
+   * page has parsed) on every page that does not include it, and the chip next
+   * to the theme toggle follows BT.xp.onChange. Without xp.js (blocked, very old
+   * browser, Node) the chip simply stays hidden.
+   * ------------------------------------------------------------------ */
+  /** Pure: the chip's visible text and accessible label for a BT.xp.summary(). */
+  function levelChipInfo(sum) {
+    if (!sum || !sum.level) return null;
+    var L = sum.level;
+    var n = L.number || ((L.index || 0) + 1);
+    var xp = Math.max(0, Math.round(Number(sum.total != null ? sum.total : L.xp) || 0));
+    var label = L.next
+      ? T('Level {n}: {name}, {xp} XP, {left} XP to {next}. Open your profile.', { n: n, name: L.name, xp: xp, left: L.toNext, next: L.next.name })
+      : T('Level {n}: {name}, {xp} XP, top level. Open your profile.', { n: n, name: L.name, xp: xp });
+    return { n: n, short: T('Lv {n}', { n: n }), name: String(L.name || ''), xp: xp, pct: Math.max(0, Math.min(100, Number(L.pct) || 0)), label: label };
+  }
+  function levelChipHtml(sum) {
+    var info = levelChipInfo(sum);
+    return '<a class="levelchip" id="btLevel" href="profile.html"' + (info ? '' : ' hidden') +
+      ' style="--lv-pct:' + (info ? info.pct : 0) + '%"' +
+      ' aria-label="' + esc(info ? info.label : T('Your level. Open your profile.')) + '"' + (info ? ' title="' + esc(info.label) + '"' : '') + '>' +
+      '<span class="lv-num">' + esc(info ? info.short : '') + '</span><span class="lv-name">' + esc(info ? info.name : '') + '</span></a>';
+  }
+  function renderLevelChip(sum) {
+    if (!hasDOM) return;
+    var el = document.getElementById('btLevel');
+    var info = levelChipInfo(sum);
+    if (!el || !info) return;
+    el.hidden = false;
+    el.style.setProperty('--lv-pct', info.pct + '%');
+    el.setAttribute('aria-label', info.label);
+    el.title = info.label;
+    var a = el.querySelector('.lv-num'), b = el.querySelector('.lv-name');
+    if (a) a.textContent = info.short;
+    if (b) b.textContent = info.name;
+  }
+  var xpBound = false;
+  function bindXp() {
+    if (xpBound || !BT.xp || typeof BT.xp.onChange !== 'function') return false;
+    xpBound = true;
+    try { BT.xp.onChange(function (sum) { renderLevelChip(sum); }, { immediate: true }); } catch (e) { /* chip stays hidden */ }
+    root.addEventListener('bt:lang', function () { try { renderLevelChip(BT.xp.summary()); } catch (e) { /* ignore */ } });
+    return true;
+  }
+  /** Load js/xp.js after parsing unless the page already has it, then bind the chip. */
+  function ensureXp() {
+    if (!hasDOM) return;
+    var go = function () {
+      if (bindXp()) return;
+      var tag = document.querySelector('script[src$="xp.js"],script[src*="/xp.js?"]');
+      if (!tag) {
+        tag = document.createElement('script');
+        tag.src = siblingSrc('xp.js'); tag.async = true;
+        (document.head || document.documentElement).appendChild(tag);
+      }
+      tag.addEventListener('load', bindXp);
+      root.addEventListener('load', bindXp);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  }
+
+  /* ------------------------------------------------------------------ *
    * Markup
    * ------------------------------------------------------------------ */
   function themeButton(id, extraClass, withLabel) {
     return '<button ' + (id ? 'id="' + id + '" ' : '') + 'class="ghost themebtn' + (extraClass ? ' ' + extraClass : '') + '" type="button" data-bt-theme-toggle aria-pressed="false" aria-label="Switch theme">' +
       svg('sun', 'sun') + svg('moon', 'moon') + (withLabel ? '<span class="theme-label">Theme</span>' : '') + '</button>';
   }
+  function safeSummary() { try { return BT.xp.summary(); } catch (e) { return null; } }
   function topnavHtml(active) {
     var links = PAGES.map(function (p) {
       var on = active && active.id === p.id;
@@ -297,7 +386,7 @@
     return '<nav class="topnav" aria-label="Main">' +
       '<a class="brand" href="index.html"><span class="no-i18n" translate="no">Broward Trading</span><small>Paper-trading &amp; technical analysis lab</small></a>' +
       '<div class="links">' + links + '</div>' +
-      '<div class="right">' + langButton('', false) + themeButton('themeToggle', '', false) + '</div>' +
+      '<div class="right">' + langButton('', false) + levelChipHtml(BT.xp && BT.xp.summary ? safeSummary() : null) + themeButton('themeToggle', '', false) + '</div>' +
       '</nav>';
   }
   function tabbarHtml(active) {
@@ -636,6 +725,9 @@
       } catch (e) { /* ignore */ }
     }
 
+    // 4a. Level chip: lazy-load js/xp.js and follow BT.xp.onChange.
+    ensureXp();
+
     // 4b. Language toggles (top bar + sheet). i18n.js translates the shell itself once it
     //     loads (its boot path + MutationObserver); when it is already present, do it now.
     Array.prototype.forEach.call(navHost.querySelectorAll('[data-bt-lang-toggle]'), function (b) { b.addEventListener('click', onLangClick); });
@@ -753,7 +845,8 @@
     lang: { get: currentLang, stored: readStoredLang, next: langAfter, list: langs, button: langButton, sync: hasDOM ? syncLangUi : null },
     toast: hasDOM ? toast : null,
     isPhone: function () { return !!(root.matchMedia && root.matchMedia(PHONE_QUERY).matches); },
-    html: { topnav: topnavHtml, tabbar: tabbarHtml, sheet: sheetHtml, footer: footerHtml, skipLink: skipLinkHtml },
+    html: { topnav: topnavHtml, tabbar: tabbarHtml, sheet: sheetHtml, footer: footerHtml, skipLink: skipLinkHtml, levelChip: levelChipHtml },
+    level: { info: levelChipInfo, render: hasDOM ? renderLevelChip : function () {}, bind: bindXp, src: function () { return siblingSrc('xp.js'); } },
     swRegistration: null
   };
   BT.a11y = {

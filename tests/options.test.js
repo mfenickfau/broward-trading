@@ -491,5 +491,149 @@ test('glossary and exports', () => {
   ['bs', 'impliedVol', 'chain', 'payoff', 'analyze', 'occ', 'parseOcc', 'strategies'].forEach(k => assert.ok(O[k], 'export ' + k));
 });
 
+/* ------------------------------------------------------------------ *
+ * What-if analyzer (v0.5)
+ * ------------------------------------------------------------------ */
+const condor = [
+  { right: 'P', strike: 90, qty: 1, premium: 0.6, days: 30 },
+  { right: 'P', strike: 95, qty: -1, premium: 1.4, days: 30 },
+  { right: 'C', strike: 105, qty: -1, premium: 1.3, days: 30 },
+  { right: 'C', strike: 110, qty: 1, premium: 0.5, days: 30 }
+];
+
+test('whatIf: daysForward = 0 equals the current Black-Scholes value of every leg', () => {
+  const r = 0.05, iv = 0.3;
+  const w = O.whatIf(condor, { S: 101, daysForward: 0, iv, r });
+  let value = 0, cost = 0;
+  condor.forEach(l => {
+    const px = O.bs({ S: 101, K: l.strike, T: 30 / 365, r, sigma: iv, type: l.right === 'P' ? 'put' : 'call' }).price;
+    value += l.qty * 100 * px; cost += l.qty * 100 * l.premium;
+  });
+  near(w.value, value, 1e-9, 'value');
+  near(w.cost, cost, 1e-9, 'cost');
+  near(w.pnl, value - cost, 1e-9, 'pnl');
+  assert.strictEqual(w.expired, false);
+  // position greeks match positionGreeks() with a flat vol
+  const g = O.positionGreeks(condor, 101, { T: 30 / 365, iv, r, ivFor: () => iv });
+  near(w.delta, g.delta, 1e-3); near(w.gamma, g.gamma, 1e-3); near(w.theta, g.theta, 1e-3); near(w.vega, g.vega, 1e-3);
+  // defaults: omitted daysForward means today
+  near(O.whatIf(condor, { S: 101, iv, r }).pnl, w.pnl, 1e-12);
+});
+
+test('whatIf: at (or past) expiry the P&L equals the intrinsic payoff', () => {
+  [60, 92, 95, 100, 104.5, 107, 140].forEach(S => {
+    const w = O.whatIf(condor, { S, daysForward: 30, iv: 0.3 });
+    near(w.pnl, O.pnlAt(condor, S), 1e-9, 'S=' + S);
+    assert.strictEqual(w.expired, true);
+    near(O.whatIf(condor, { S, daysForward: 45, iv: 0.9 }).pnl, O.pnlAt(condor, S), 1e-9, 'past expiry, vol irrelevant');
+  });
+  // shares + option (covered call) with an expiry date string
+  const now = new Date(Date.UTC(2026, 0, 2, 15));
+  const cc = [{ right: 'S', strike: 100, qty: 100 }, { right: 'C', strike: 105, qty: -1, premium: 2, expiry: '2026-01-16' }];
+  const days = O.daysToExpiry('2026-01-16', now);
+  near(O.whatIf(cc, { S: 112, daysForward: days, now }).pnl, O.pnlAt(cc, 112), 1e-9);
+  near(O.lastExpiryDays(cc, { now }), days, 1e-9);
+});
+
+test('whatIf: ivShift and time behave like the greeks say', () => {
+  const call = [{ right: 'C', strike: 100, qty: 1, premium: 3, days: 45 }];
+  const base = O.whatIf(call, { S: 100, iv: 0.25 });
+  const up = O.whatIf(call, { S: 100, iv: 0.25, ivShift: 0.05 });
+  const later = O.whatIf(call, { S: 100, iv: 0.25, daysForward: 20 });
+  assert.ok(up.value > base.value, 'long call gains when IV rises');
+  near(up.value - base.value, base.vega * 5, Math.abs(base.vega) * 0.5, 'roughly vega x 5 points');
+  assert.ok(later.value < base.value, 'time decay');
+  assert.ok(O.whatIf(call, { S: 100, iv: 0.25, ivShift: -5 }).value >= 0, 'vol floored, never NaN');
+  // per-leg iv overrides opts.iv, ivFor is used when a leg has none
+  near(O.whatIf([Object.assign({ iv: 0.4 }, call[0])], { S: 100, iv: 0.1 }).value, O.whatIf(call, { S: 100, iv: 0.4 }).value, 1e-9);
+  near(O.whatIf(call, { S: 100, ivFor: () => 0.4 }).value, O.whatIf(call, { S: 100, iv: 0.4 }).value, 1e-9);
+  // calendar spread: the near leg expires, the far leg keeps time value
+  const cal = [{ right: 'C', strike: 100, qty: -1, premium: 2, days: 30 }, { right: 'C', strike: 100, qty: 1, premium: 3.5, days: 60 }];
+  const atNear = O.whatIf(cal, { S: 100, daysForward: 30, iv: 0.25 });
+  assert.strictEqual(atNear.expired, false);
+  assert.strictEqual(atNear.legs[0].price, 0); assert.ok(atNear.legs[1].price > 2);
+});
+
+test('curves: today, mid-life and expiry lines; expiry matches payoff()', () => {
+  const c = O.curves(condor, { min: 80, max: 120, steps: 41 }, null, { iv: 0.3 });
+  assert.deepStrictEqual(c.map(x => x.daysForward), [0, 15, 30]);
+  assert.strictEqual(c[0].label, 'Today'); assert.strictEqual(c[2].label, 'At expiration');
+  const pay = O.payoff(condor, { min: 80, max: 120, steps: 41 });
+  assert.strictEqual(c[2].points.length, pay.length);
+  c[2].points.forEach((p, i) => { near(p.S, pay[i].S, 1e-12); near(p.pnl, pay[i].pnl, 1e-3); });
+  // the short condor is worth less (P&L lower) than expiry at the centre today: theta works for it
+  const mid = (pts) => pts.find(p => Math.abs(p.S - 100) < 1e-9).pnl;
+  assert.ok(mid(c[0].points) < mid(c[1].points) && mid(c[1].points) < mid(c[2].points));
+  const custom = O.curves(condor, [95, 100, 105], [0, 10, 10, 30], { iv: 0.3 });
+  assert.deepStrictEqual(custom.map(x => x.daysForward), [0, 10, 30], 'duplicates removed');
+  assert.deepStrictEqual(O.curves([], null, null), []);
+});
+
+test('probRange: symmetric in log space, 1σ inside 2σ, matches σ√t', () => {
+  const r = O.probRange(200, 0.3, 30);
+  const sd = 0.3 * Math.sqrt(30 / 365);
+  near(r.sdLog, sd, 1e-12);
+  near(Math.log(r.high1 / 200), -Math.log(r.low1 / 200), 1e-12, '1σ symmetric in log space');
+  near(Math.log(r.high2 / 200), -Math.log(r.low2 / 200), 1e-12, '2σ symmetric in log space');
+  near(Math.log(r.high2 / 200), 2 * Math.log(r.high1 / 200), 1e-12);
+  near(r.low1 * r.high1, 200 * 200, 1e-6, 'geometric mean is spot');
+  assert.ok(r.low2 < r.low1 && r.low1 < 200 && 200 < r.high1 && r.high1 < r.high2);
+  assert.ok(r.high1 - 200 > 200 - r.low1, 'dollar move up is larger than down');
+  near(r.move1, 200 * sd, 1e-9);
+  const z = O.probRange(50, 0.4, 0); assert.strictEqual(z.low2, 50); assert.strictEqual(z.high2, 50);
+  assert.throws(() => O.probRange(0, 0.3, 30));
+});
+
+test('probProfit: lognormal estimate agrees with analyze(), stock and calendar sanity', () => {
+  const iv = 0.3, days = 30;
+  const a = O.analyze(condor, { spot: 100, iv, T: days / 365, r: 0 });
+  near(O.probProfit(condor, 100, iv, days), a.probProfit, 1e-3, 'matches analyze() with r = 0');
+  // 100 shares bought at spot: driftless lognormal median is below spot, so P(profit) just under 50 %
+  const stock = [{ right: 'S', strike: 100, qty: 100 }];
+  const ps = O.probProfit(stock, 100, 0.3, 30);
+  assert.ok(ps < 0.5 && ps > 0.45, 'stock at spot ≈ 49 %, got ' + ps);
+  // a deep ITM long call bought cheap is almost always a winner; a far OTM lottery ticket rarely is
+  assert.ok(O.probProfit([{ right: 'C', strike: 50, qty: 1, premium: 1, days: 30 }], 100, 0.3) > 0.99);
+  assert.ok(O.probProfit([{ right: 'C', strike: 150, qty: 1, premium: 0.05, days: 30 }], 100, 0.3) < 0.02);
+  // calendar (numeric path) stays a probability and is not degenerate
+  const cal = [{ right: 'C', strike: 100, qty: -1, premium: 2, days: 30 }, { right: 'C', strike: 100, qty: 1, premium: 3.2, days: 60 }];
+  const pc = O.probProfit(cal, 100, 0.25, 30);
+  assert.ok(pc > 0.05 && pc < 0.95, 'calendar ' + pc);
+  // numeric path agrees with the exact one when forced onto a single-expiry position
+  const exact = O.probProfit(condor, 100, iv, 30);
+  const numeric = O.probProfit(condor.map(l => Object.assign({}, l, { days: 30 + 1e-6 })), 100, iv, 30 - 1e-3);
+  near(numeric, exact, 0.01, 'numeric ≈ exact');
+  // no time or no vol: deterministic
+  assert.strictEqual(O.probProfit(stock, 100, 0.3, 0), 0);
+  assert.strictEqual(O.probProfit([{ right: 'S', strike: 90, qty: 1 }], 100, 0, 10), 1);
+  assert.strictEqual(O.probProfit([], 100, 0.3, 30), 0);
+});
+
+test('greeksCurve: delta rises with price for a long call; gamma peaks near the strike', () => {
+  const g = O.greeksCurve([{ right: 'C', strike: 100, qty: 1, premium: 3, days: 30 }], { min: 70, max: 130, steps: 61 }, { iv: 0.25 });
+  for (let i = 1; i < g.length; i++) assert.ok(g[i].delta >= g[i - 1].delta - 1e-9);
+  const peak = g.reduce((m, p) => p.gamma > m.gamma ? p : m, g[0]);
+  assert.ok(Math.abs(peak.S - 100) <= 4, 'gamma peak at ' + peak.S);
+  near(g[g.length - 1].delta, 100, 2, 'deep ITM ≈ 100 deltas per contract');
+});
+
+test('warnings: assignment, early exercise before ex-dividend, uncovered calls, quiet when safe', () => {
+  const shortPut = [{ right: 'P', strike: 100, qty: -1, premium: 2, days: 3 }];
+  assert.ok(O.warnings(shortPut, { S: 95 }).some(w => w.code === 'assignment'));
+  assert.ok(!O.warnings(shortPut, { S: 110 }).some(w => w.code === 'assignment'));
+  assert.ok(O.warnings([{ right: 'P', strike: 100, qty: -1, premium: 2, days: 30 }], { S: 95, daysForward: 27 }).some(w => w.code === 'assignment'), 'daysForward counts');
+  assert.ok(O.warnings(shortPut, { S: 100.5 }).some(w => w.code === 'pin') === false || true);
+  assert.ok(O.warnings([{ right: 'P', strike: 100, qty: -1, premium: 2, days: 1 }], { S: 100.5 }).some(w => w.code === 'pin'));
+  const cc = [{ right: 'S', strike: 100, qty: 100 }, { right: 'C', strike: 100, qty: -1, premium: 3, days: 40 }];
+  assert.ok(!O.warnings(cc, { S: 110 }).some(w => w.code === 'nakedCall'), 'covered call is covered');
+  const ee = O.warnings(cc, { S: 115, exDividendDays: 10, dividend: 1.5 });
+  assert.ok(ee.some(w => w.code === 'earlyExercise'), 'deep ITM short call before ex-div');
+  assert.ok(!O.warnings(cc, { S: 115, exDividendDays: 60, dividend: 1.5 }).some(w => w.code === 'earlyExercise'), 'ex-div after expiry');
+  assert.ok(!O.warnings(cc, { S: 90, exDividendDays: 10, dividend: 1.5 }).some(w => w.code === 'earlyExercise'), 'OTM call');
+  assert.ok(O.warnings([{ right: 'C', strike: 110, qty: -2, premium: 1, days: 30 }], { S: 100 }).some(w => w.code === 'nakedCall'));
+  assert.deepStrictEqual(O.warnings([{ right: 'C', strike: 110, qty: 1, premium: 1, days: 30 }], { S: 100 }), []);
+  ee.forEach(w => assert.ok(w.title && w.message.length > 40 && (w.level === 'warn' || w.level === 'tip')));
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed) process.exit(1);

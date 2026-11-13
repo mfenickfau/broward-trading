@@ -226,7 +226,11 @@
    * bars  : full oldest→newest array (the engine copies it; never mutated)
    * opts  : { symbol, interval, startIndex | start ('YYYY-MM-DD'), cash=100000,
    *           drill, ticks=false, speed=1, account='replay', paper=BT.paper,
-   *           timers={setInterval, clearInterval} }
+   *           timers={setInterval, clearInterval},
+   *           validateOrder(request, ctx) → {ok, reason}  optional rule check run before every
+   *             order reaches BT.paper (replay.html uses it to practise under a league's rules) }
+   * order(o) also accepts o.validate (same signature, per order) and o.meta (merged into the
+   * placed order's meta, e.g. {plan:{stop, target, riskPct}} from the "Plan this trade" panel).
    * Resets the paper account, reveals bars[0..startIndex] as history and
    * stands ready for step(). The first visible price is bars[startIndex].close.
    */
@@ -309,7 +313,7 @@
       return { revealed: revealed, total: total, pct: total > 0 ? Math.min(100, revealed / total * 100) : 100, barsLeft: Math.max(0, all.length - cursor) };
     }
     /** 'bar forming' while a partial bar is showing, '' otherwise. Deliberately says nothing about which sub-step this is. */
-    function phaseLabel() { return S.ticks && phase > 0 ? 'bar forming' : ''; }
+    function phaseLabel() { return S.ticks && phase > 0 ? T('bar forming') : ''; }
 
     /* ---- account plumbing ---- */
     // paper.use() saves the outgoing account from memory before switching. That
@@ -324,7 +328,7 @@
     function objWith(k, v) { var o = {}; o[k] = v; return o; }
     function mark() { return paper.markToMarket(objWith(symbol, price()), nowMs()); }
     mark();
-    addLog('info', 'Replay started: ' + symbol + ' ' + interval + ' from ' + fmtTime(all[startIndex].time) + '. ' + (all.length - startIndex - 1) + ' bars hidden ahead.');
+    addLog('info', T('Replay started: {symbol} {interval} from {time}. {n} bars hidden ahead.', { symbol: symbol, interval: interval, time: fmtTime(all[startIndex].time), n: all.length - startIndex - 1 }));
 
     function snapshot() {
       var st = paper.getState();
@@ -437,13 +441,13 @@
         if (!reducing) { q += sq; continue; }
         var allowed = (q !== 0 && signOf(sq) === -signOf(q)) ? Math.min(o.qty, Math.abs(q)) : 0;
         if (allowed <= 0) {
-          cancelWith(o, 'OCO: the position it protected was already closed by another order in the same bar (' + (paper.describeOrder ? paper.describeOrder(o) : o.type + ' order') + ').', 'oco');
+          cancelWith(o, T('OCO: the position it protected was already closed by another order in the same bar ({order}).', { order: paper.describeOrder ? paper.describeOrder(o) : o.type + ' order' }), 'oco');
           continue;
         }
         if (allowed < o.qty) {
           o.qty = allowed;
           o.reason = T('Reduce-only: size cut to the {n} shares still open.', { n: allowed });
-          addLog('info', 'Order #' + o.id + ' reduced to ' + allowed + ' shares — only ' + allowed + ' remain to close.', { orderId: o.id, oco: 'clamp' });
+          addLog('info', T('Order #{id} reduced to {n} shares — only {n} remain to close.', { id: o.id, n: allowed }), { orderId: o.id, oco: 'clamp' });
         }
         closedDir = signOf(q); closedSize = Math.abs(q);
         q += (sq > 0 ? allowed : -allowed);
@@ -466,15 +470,15 @@
         if (culprit) {
           var fix = paper.placeOrder({ symbol: symbol, side: q > 0 ? 'sell' : 'buy', qty: Math.abs(q), type: 'market' }, culprit.trade.price);
           if (fix && fix.status === 'filled') {
-            fix._replayLogged = true; fix.reason = 'OCO correction: a reduce-only order can only close a position, never reverse it.';
-            addLog('info', 'OCO: reduce-only fill of order #' + culprit.order.id + ' could not reverse your position; the excess ' + Math.abs(q) + ' shares were undone @ ' + money(culprit.trade.price) + '.', { orderId: fix.id, oco: 'correction' });
+            fix._replayLogged = true; fix.reason = T('OCO correction: a reduce-only order can only close a position, never reverse it.');
+            addLog('info', T('OCO: reduce-only fill of order #{id} could not reverse your position; the excess {n} shares were undone @ {price}.', { id: culprit.order.id, n: Math.abs(q), price: money(culprit.trade.price) }), { orderId: fix.id, oco: 'correction' });
           }
         }
       }
       markReduceOnly();
       if (posQty() === 0) {
         var open = paper.openOrders(symbol);
-        for (var k = 0; k < open.length; k++) if (open[k].reduceOnly) cancelWith(open[k], 'OCO: the position it protected is closed.', 'oco');
+        for (var k = 0; k < open.length; k++) if (open[k].reduceOnly) cancelWith(open[k], T('OCO: the position it protected is closed.'), 'oco');
       }
     }
     function processAgainst(bar) {
@@ -506,7 +510,7 @@
       done = true;
       pause();
       card = buildScorecard();
-      addLog('end', 'Replay finished. Return ' + pct(card.returnPct) + ' vs buy-and-hold ' + pct(card.buyHoldPct) + '.');
+      addLog('end', T('Replay finished. Return {ret} vs buy-and-hold {bh}.', { ret: pct(card.returnPct), bh: pct(card.buyHoldPct) }));
       emit('end', card);
       return card;
     }
@@ -633,13 +637,33 @@
         tif: o.tif || 'gtc'
       };
       if (done) {
-        var dead = { status: 'rejected', reason: 'The replay has finished — start a new session to keep trading.', symbol: symbol, side: o.side, qty: req.qty, type: req.type };
+        var dead = { status: 'rejected', reason: T('The replay has finished — start a new session to keep trading.'), symbol: symbol, side: o.side, qty: req.qty, type: req.type };
         addLog('reject', dead.reason);
         return dead;
+      }
+      // Optional rule check before the order reaches BT.paper (e.g. league rules via BT.leagues.validateOrder).
+      // A per-order o.validate wins over the session-wide opts.validateOrder; both get the request and context.
+      var check = typeof o.validate === 'function' ? o.validate : (typeof opts.validateOrder === 'function' ? opts.validateOrder : null);
+      if (check) {
+        var verdict = null;
+        try { verdict = check(Object.assign({}, req, { price: price(), time: nowMs() }), { session: api, account: paper.getState(), price: price(), time: nowMs() }); } catch (e) { verdict = null; }
+        if (verdict && verdict.ok === false) {
+          var blocked = { status: 'rejected', reason: verdict.reason || T('This order breaks the rules you chose for this session.'), symbol: symbol, side: o.side, qty: req.qty, type: req.type, blockedByRules: true };
+          counters.orders += 1;
+          addLog('reject', T('Rejected: {reason}', { reason: blocked.reason }));
+          emit('order', blocked);
+          return blocked;
+        }
       }
       var posBefore = paper.getState().positions[symbol];
       var qtyBefore = posBefore ? posBefore.qty : 0;
       var placed = paper.placeOrder(req, price());
+      // Planned stop / target (the "Plan this trade" panel) travel on the order's meta so the journal,
+      // the coach and the XP badges can see that the trade had a plan.
+      if (o.meta && typeof o.meta === 'object' && placed && placed.status !== 'rejected') {
+        placed.meta = Object.assign({}, placed.meta || {}, o.meta);
+        if (typeof paper.save === 'function') paper.save();
+      }
       counters.orders += 1;
       if (placed.status !== 'rejected') {
         if (placed.type === 'stop' || placed.type === 'stop_limit') counters.stops += 1;
@@ -650,11 +674,11 @@
       if (placed.status === 'filled') {
         var tr = paper.getState().trades[paper.getState().trades.length - 1];
         placed._replayLogged = true;
-        addLog('fill', label.charAt(0).toUpperCase() + label.slice(1) + ' ' + placed.qty + ' ' + symbol + ' filled @ ' + money(placed.fillPrice) + (tr && tr.realized ? ' (realized ' + money(tr.realized) + ')' : ''), { orderId: placed.id, tradeId: tr ? tr.id : null, side: placed.side, qty: placed.qty, price: placed.fillPrice, realized: tr ? tr.realized : 0 });
+        addLog('fill', fillText(label, placed.qty, placed.fillPrice, tr && tr.realized ? tr.realized : 0), { orderId: placed.id, tradeId: tr ? tr.id : null, side: placed.side, qty: placed.qty, price: placed.fillPrice, realized: tr ? tr.realized : 0 });
         emit('fill', { order: placed, trade: tr });
       } else if (placed.status === 'open') {
         markReduceOnly();
-        addLog('order', 'Working: ' + (paper.describeOrder ? paper.describeOrder(placed) : placed.type + ' order #' + placed.id) + (placed.reduceOnly ? ' (reduce-only: it can only close your position, and is cancelled if another order closes it first)' : ''), { orderId: placed.id, reduceOnly: !!placed.reduceOnly });
+        addLog('order', T('Working: {order}', { order: paper.describeOrder ? paper.describeOrder(placed) : placed.type + ' order #' + placed.id }) + (placed.reduceOnly ? ' ' + T('(reduce-only: it can only close your position, and is cancelled if another order closes it first)') : ''), { orderId: placed.id, reduceOnly: !!placed.reduceOnly });
       } else {
         placed._replayLogged = true;
         addLog('reject', T('Rejected: {reason}', { reason: placed.reason }), { orderId: placed.id });
@@ -663,6 +687,12 @@
       emit('order', placed);
       mark();
       return placed;
+    }
+    /* 'Buy 10 AAPL filled @ $190.00 (realized $12.00)': one template per intent so each language can order the words. */
+    function fillText(intent, qty, px, realized) {
+      var base = { buy: 'Buy {qty} {symbol} filled @ {price}', sell: 'Sell {qty} {symbol} filled @ {price}', short: 'Short {qty} {symbol} filled @ {price}', cover: 'Cover {qty} {symbol} filled @ {price}' }[intent] || 'Buy {qty} {symbol} filled @ {price}';
+      var v = { qty: qty, symbol: symbol, price: money(px), realized: money(realized) };
+      return realized ? T(base + ' (realized {realized})', v) : T(base, v);
     }
     // A short is "opened" whenever the position goes (more) negative — on placement or on a later fill.
     var lastQtySeen = 0;
@@ -679,12 +709,12 @@
     function closePosition() {
       if (destroyed || done) return null;
       var pos = paper.getState().positions[symbol];
-      if (!pos) { addLog('reject', 'Nothing to close: you have no position in ' + symbol + '.'); return null; }
+      if (!pos) { addLog('reject', T('Nothing to close: you have no position in {symbol}.', { symbol: symbol })); return null; }
       var o = paper.closePosition(symbol, price());
       if (o.status === 'filled') {
         var tr = paper.getState().trades[paper.getState().trades.length - 1];
         o._replayLogged = true;
-        addLog('fill', (pos.qty > 0 ? 'Closed long ' : 'Covered short ') + Math.abs(pos.qty) + ' ' + symbol + ' @ ' + money(o.fillPrice) + (tr ? ' (realized ' + money(tr.realized) + ')' : ''), { orderId: o.id, tradeId: tr ? tr.id : null, side: o.side, qty: o.qty, price: o.fillPrice, realized: tr ? tr.realized : 0 });
+        addLog('fill', T(pos.qty > 0 ? (tr ? 'Closed long {qty} {symbol} @ {price} (realized {realized})' : 'Closed long {qty} {symbol} @ {price}') : (tr ? 'Covered short {qty} {symbol} @ {price} (realized {realized})' : 'Covered short {qty} {symbol} @ {price}'), { qty: Math.abs(pos.qty), symbol: symbol, price: money(o.fillPrice), realized: tr ? money(tr.realized) : '' }), { orderId: o.id, tradeId: tr ? tr.id : null, side: o.side, qty: o.qty, price: o.fillPrice, realized: tr ? tr.realized : 0 });
         emit('fill', { order: o, trade: tr });
       } else { o._replayLogged = true; addLog('reject', T('Close rejected: {reason}', { reason: o.reason })); }
       if (o.status === 'filled') reconcile(pos.qty, []);
@@ -694,7 +724,7 @@
     }
     function cancel(id) {
       var o = paper.cancelOrder(id);
-      if (o) { counters.cancels += 1; addLog('info', 'Cancelled order #' + o.id + '.', { orderId: o.id }); emit('order', o); }
+      if (o) { counters.cancels += 1; addLog('info', T('Cancelled order #{id}.', { id: o.id }), { orderId: o.id }); emit('order', o); }
       return o;
     }
     function position() { return paper.getState().positions[symbol] || null; }
@@ -736,7 +766,7 @@
         // A drill can only be passed on the whole session. Ending early is
         // hindsight-free, but choosing the end date after seeing the result is
         // cherry-picking — exactly what the scorecard exists to prevent.
-        var results = [{ type: 'completed', text: 'Reveal the whole session (ending early cannot pass a drill)', pass: c.completed, actual: c.barsRevealed, target: c.bars, actualText: c.barsRevealed + ' of ' + c.bars + ' bars' + (c.completed ? '' : ' — ended early') }]
+        var results = [{ type: 'completed', text: T('Reveal the whole session (ending early cannot pass a drill)'), pass: c.completed, actual: c.barsRevealed, target: c.bars, actualText: T(c.completed ? '{n} of {total} bars' : '{n} of {total} bars — ended early', { n: c.barsRevealed, total: c.bars }) }]
           .concat(evaluateDrill(S.drill, c));
         c.drill = { id: S.drill.id, title: S.drill.title, results: results, completed: c.completed, passed: c.completed && results.length > 1 && results.every(function (r) { return r.pass; }) };
       }
@@ -850,10 +880,10 @@
         case 'min_win_rate_pct': r.actual = c.winRate; r.pass = c.winRate != null && c.winRate >= (v == null ? 50 : v); r.text = r.text || T('Win at least {n} % of your closed trades', { n: v == null ? 50 : v }); r.actualText = c.winRate == null ? T('no closed trades') : c.winRate.toFixed(0) + ' %'; break;
         case 'min_profit_factor': r.actual = c.profitFactor; r.pass = (c.profitFactor == null && c.wins > 0 && c.losses === 0) || (c.profitFactor != null && c.profitFactor >= (v == null ? 1 : v)); r.text = r.text || T('Profit factor of at least {n}', { n: v == null ? 1 : v }); r.actualText = c.profitFactor == null ? (c.wins > 0 ? T('no losing trades') : 'n/a') : c.profitFactor.toFixed(2); break;
         case 'flat_at_end': r.actual = c.openPosition ? c.openPosition.qty : 0; r.pass = !c.openPosition; r.text = r.text || T('Be flat (no open position) when the session ends'); r.actualText = c.openPosition ? T('{n} shares open', { n: c.openPosition.qty }) : T('flat'); break;
-        case 'used_stop': r.actual = c.stopsUsed; r.pass = c.stopsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Protect at least one position with a stop order') : T(v > 1 ? 'Protect at least {n} positions with a stop order' : 'Protect at least {n} position with a stop order', { n: v })); r.actualText = c.stopsUsed + ' stop order' + (c.stopsUsed === 1 ? '' : 's'); break;
-        case 'used_limit': r.actual = c.limitsUsed; r.pass = c.limitsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Enter or exit with at least one limit order') : T('Enter or exit with at least {n} limit order', { n: v })); r.actualText = c.limitsUsed + ' limit order' + (c.limitsUsed === 1 ? '' : 's'); break;
-        case 'used_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Open at least one short position') : T('Open at least {n} short position', { n: v })); r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
-        case 'no_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened === 0; r.text = r.text || T('Stay long-only: no short sales'); r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
+        case 'used_stop': r.actual = c.stopsUsed; r.pass = c.stopsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Protect at least one position with a stop order') : T(v > 1 ? 'Protect at least {n} positions with a stop order' : 'Protect at least {n} position with a stop order', { n: v })); r.actualText = T(c.stopsUsed === 1 ? '{n} stop order' : '{n} stop orders', { n: c.stopsUsed }); break;
+        case 'used_limit': r.actual = c.limitsUsed; r.pass = c.limitsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Enter or exit with at least one limit order') : T('Enter or exit with at least {n} limit order', { n: v })); r.actualText = T(c.limitsUsed === 1 ? '{n} limit order' : '{n} limit orders', { n: c.limitsUsed }); break;
+        case 'used_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Open at least one short position') : T('Open at least {n} short position', { n: v })); r.actualText = T(c.shortsOpened === 1 ? '{n} short' : '{n} shorts', { n: c.shortsOpened }); break;
+        case 'no_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened === 0; r.text = r.text || T('Stay long-only: no short sales'); r.actualText = T(c.shortsOpened === 1 ? '{n} short' : '{n} shorts', { n: c.shortsOpened }); break;
         default: return; // unknown criterion: ignored rather than failed
       }
       out.push(r);
@@ -1014,14 +1044,14 @@
     function finishLoad(bars, source, note) {
       var kept = [];
       for (var i = 0; i < bars.length; i++) { if (barDay(bars[i].time) <= end) kept.push(bars[i]); }
-      if (kept.length < 2) throw new Error('No bars available for ' + symbol + ' up to ' + end + '.');
+      if (kept.length < 2) throw new Error(T('No bars available for {symbol} up to {date}.', { symbol: symbol, date: end }));
       var startIndex = -1;
       for (var j = 0; j < kept.length; j++) { if (barDay(kept[j].time) >= start) { startIndex = j; break; } }
-      if (startIndex < 0 || startIndex >= kept.length - 1) throw new Error('No bars after the start date ' + start + ' for ' + symbol + ' ' + interval + '. Pick an earlier start or a later end.');
+      if (startIndex < 0 || startIndex >= kept.length - 1) throw new Error(T('No bars after the start date {date} for {symbol} {interval}. Pick an earlier start or a later end.', { date: start, symbol: symbol, interval: interval }));
       var notes = [];
       if (note) notes.push(note);
       if (budget.truncated) notes.push(T('That span needs {wanted} bars; the engine loads at most {max}, so the session starts at {time}.', { wanted: budget.wanted.toLocaleString(), max: MAX_LIMIT.toLocaleString(), time: fmtTime(kept[startIndex].time) }));
-      if (startIndex === 0) notes.push('No warm-up history before the start date: indicators such as SMA 50 appear once enough bars are revealed.');
+      if (startIndex === 0) notes.push(T('No warm-up history before the start date: indicators such as SMA 50 appear once enough bars are revealed.'));
       kept.symbol = symbol; kept.interval = interval; kept.source = source;
       return { bars: kept, startIndex: startIndex, source: source, note: notes.join(' ') || null, truncated: budget.truncated, start: start, end: end, symbol: symbol, interval: interval };
     }
@@ -1032,13 +1062,13 @@
     if (!live) return new Promise(function (resolve, reject) { try { resolve(fromDemo(null)); } catch (e) { reject(e); } });
 
     return data.candles(symbol, interval, budget.limit).then(function (bars) {
-      if (!bars || !bars.length) return fromDemo('The data provider returned no candles; showing demo data.');
-      if (bars.fallback) return fromDemo(bars.reason || 'The data provider was unavailable; showing demo data.');
+      if (!bars || !bars.length) return fromDemo(T('The data provider returned no candles; showing demo data.'));
+      if (bars.fallback) return fromDemo(bars.reason || T('The data provider was unavailable; showing demo data.'));
       var firstDay = barDay(bars[0].time);
-      if (firstDay > start) return fromDemo('Your provider\'s free history for ' + symbol + ' ' + interval + ' starts on ' + firstDay + ', after your start date, so this replay uses demo data.');
+      if (firstDay > start) return fromDemo(T('Your provider\'s free history for {symbol} {interval} starts on {date}, after your start date, so this replay uses demo data.', { symbol: symbol, interval: interval, date: firstDay }));
       return finishLoad(bars, bars.source || (st && st.provider) || 'live', null);
     }).catch(function (e) {
-      return fromDemo('Live candles failed (' + (e && e.message ? e.message : e) + '); showing demo data.');
+      return fromDemo(T('Live candles failed ({error}); showing demo data.', { error: e && e.message ? e.message : e }));
     });
   }
   function defaultEndBack(today, interval) {

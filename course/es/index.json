@@ -1,7 +1,7 @@
 {
   "version": "0.4.0",
   "title": "Curso de Broward Trading",
-  "summary": "Nueve módulos que te llevan desde '¿qué es una acción?' hasta un plan de trading escrito, probado con backtesting y practicado en replay, y luego te muestran cómo la misma disciplina se aplica a cripto y ETFs, con el panel de paper trading y Market Replay como tu laboratorio.",
+  "summary": "Diez módulos que te llevan desde '¿qué es una acción?' hasta un plan de trading escrito, probado con backtesting y practicado en replay, y luego te muestran cómo la misma disciplina se aplica a cripto y ETFs y al screener, el constructor de reglas y las ligas, con el panel de paper trading y Market Replay como tu laboratorio.",
   "modules": [
     {
       "id": "m1-foundations",
@@ -305,6 +305,40 @@
         {
           "id": "m9-l5",
           "title": "Comisiones, custodia, impuestos y cómo agregar un nuevo mercado a tu plan",
+          "minutes": 12
+        }
+      ]
+    },
+    {
+      "id": "m10-toolkit",
+      "title": "Tu caja de herramientas: screeners, reglas y competencias",
+      "level": "intermediate",
+      "minutes": 61,
+      "summary": "Usa el screener sin caer en la minería de datos, escribe reglas que una computadora pueda probar, lleva una misma regla por el backtest, Market Replay y el paper trading, dimensiona cada operación con la calculadora y el coach, y compite en ligas sabiendo lo que una clasificación no puede decirte.",
+      "lessons": [
+        {
+          "id": "m10-l1",
+          "title": "Usar un screener sin engañarte a ti mismo",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l2",
+          "title": "Escribir reglas que una computadora pueda probar",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l3",
+          "title": "De la regla al backtest, al replay y al paper trading",
+          "minutes": 13
+        },
+        {
+          "id": "m10-l4",
+          "title": "Dimensionar el riesgo con la calculadora y el coach",
+          "minutes": 12
+        },
+        {
+          "id": "m10-l5",
+          "title": "Competir en ligas: ética, suerte y lo que ocultan las clasificaciones",
           "minutes": 12
         }
       ]

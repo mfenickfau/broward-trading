@@ -212,8 +212,9 @@ FILES['course/es/glossary.json'] = { terms: [{ id: 'rsi', term: 'RSI', definitio
   /* ---- the real files ---- */
   await test('course/index.json: m9-crypto-etf sits after m8 with five lessons m9-l1…m9-l5 and sane minutes', () => {
     const idx = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'course', 'index.json'), 'utf8'));
-    const m9 = idx.modules[idx.modules.length - 1];
-    assert.strictEqual(idx.modules[idx.modules.length - 2].id, 'm8-capstone');
+    const i9 = idx.modules.findIndex(m => m.id === 'm9-crypto-etf');
+    const m9 = idx.modules[i9];
+    assert.strictEqual(idx.modules[i9 - 1].id, 'm8-capstone');
     assert.strictEqual(m9.id, 'm9-crypto-etf');
     assert.deepStrictEqual(m9.lessons.map(l => l.id), ['m9-l1', 'm9-l2', 'm9-l3', 'm9-l4', 'm9-l5']);
     const sum = m9.lessons.reduce((s, l) => s + l.minutes, 0);

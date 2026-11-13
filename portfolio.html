@@ -126,6 +126,53 @@
   .preset-desc .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   .emptyline{color:var(--muted);font-size:var(--fs-sm);padding:10px 0}
   .srcnote{font-size:var(--fs-xs);color:var(--muted)}
+  /* account switcher (header) */
+  .acct{display:flex;align-items:center;gap:6px}
+  .acct label{font-size:var(--fs-xs);color:var(--muted)}
+  .acct select{font-size:var(--fs-sm);padding:4px 26px 4px 8px;max-width:220px}
+  .acct-note{font-size:var(--fs-xs);color:var(--muted);margin:-6px 0 var(--sp-2)}
+  /* what-if analyzer */
+  .wi-sliders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3)}
+  @media (max-width:900px){.wi-sliders{grid-template-columns:1fr}}
+  .wi-sliders .field > label{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .wi-sliders output{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--fg);font-weight:500}
+  .wi-sliders .help{min-height:2.6em}
+  .wi-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:var(--sp-2)}
+  .wi-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-3);margin-top:var(--sp-3)}
+  @media (max-width:760px){.wi-grid{grid-template-columns:1fr}}
+  .wi-result .big{font-size:var(--fs-md);font-weight:500}
+  .mini-wrap{position:relative;height:240px}
+  .mini-wrap.short{height:170px}
+  .mini-wrap canvas{width:100%;height:100%;display:block;border-radius:var(--r)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-xs);color:var(--muted);margin-top:6px}
+  .legend i{display:inline-block;width:18px;height:0;border-top:2px solid currentColor;vertical-align:middle;margin-right:5px}
+  .legend i.dash{border-top-style:dashed} .legend i.dot{border-top-style:dotted}
+  .legend i.band{height:10px;border:0;border-radius:2px;opacity:.5}
+  .warnlist{display:flex;flex-direction:column;gap:var(--sp-2);margin-top:var(--sp-3)}
+  .warnlist:empty{display:none}
+  .greek-pick{display:flex;flex-wrap:wrap;gap:4px}
+  .greek-pick button[aria-pressed="true"]{background:var(--accent-btn);color:var(--accent-fg);border-color:transparent}
+  .divrow{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:end;margin-top:var(--sp-3)}
+  .divrow .field{flex:1 1 140px}
+  .divrow input{width:100%}
+  /* position size calculator */
+  .ps-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-3);align-items:start}
+  @media (max-width:900px){.ps-grid{grid-template-columns:1fr}}
+  .ps-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3)}
+  @media (max-width:420px){.ps-form{grid-template-columns:1fr}}
+  .ps-form input,.ps-form select{width:100%}
+  .ps-out .statgrid{font-size:var(--fs)}
+  .ps-out .hero{font-size:var(--fs-xl);font-family:var(--mono);font-weight:500;margin:4px 0 2px}
+  /* simulation settings */
+  .sim{display:flex;flex-direction:column;gap:var(--sp-3)}
+  .sim .setting{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:6px var(--sp-3);align-items:center;padding-bottom:var(--sp-3);border-bottom:1px solid var(--line)}
+  .sim .setting:last-of-type{border-bottom:0}
+  .sim .setting > label,.sim .setting > .lbl{font-weight:500}
+  .sim .setting .help{grid-column:1 / -1;font-size:var(--fs-xs);color:var(--muted);line-height:1.5;margin:0}
+  .sim .setting input[type="number"],.sim .setting select{width:100%}
+  .sim .setting .check{display:inline-flex;align-items:center;gap:8px;min-height:24px;cursor:pointer;justify-self:start}
+  .sim .unsupported{color:var(--warn)}
+  @media (max-width:520px){.sim .setting{grid-template-columns:1fr}}
   /* ---- phone (<= 760px): tap targets and the options chain ---- */
   @media (max-width:760px){
     /* '?' tooltips: the 16px circle stays exactly where it is, but the invisible hit box grows to 44x44.
@@ -137,6 +184,11 @@
        and the +/- buttons become real 40x40 tap targets */
     table.chain td.act button{min-width:40px;min-height:40px;padding:0 8px;font-size:16px;line-height:1}
     table.chain td.act{padding:2px 3px}
+    /* sliders: a 44px-tall hit area for thumbs on touch screens */
+    .wi-sliders input[type="range"],.ivrow input[type="range"]{min-height:44px}
+    .acct{width:100%} .acct select{max-width:none;flex:1}
+    .sim .setting .check{min-height:44px}
+    .greek-pick button{min-height:40px}
     table.chain td{padding:2px 6px}
     .chain-wrap{max-height:60vh;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
     /* a soft fade on the left and right edges says "there is more this way" */
@@ -160,6 +212,10 @@
       <p class="sub">A simulated brokerage account: every fill, mark and statistic here is computed exactly the way a real broker would show it, with play money.</p>
     </div>
     <div class="status">
+      <div class="acct">
+        <label for="acct">Account</label>
+        <select id="acct" aria-describedby="acct-help"><option value="main">Main</option></select>
+      </div>
       <span class="pill demo" id="srcpill" title="Prices are simulated unless you add a free API key on the dashboard">demo</span>
       <span class="pill" id="marketpill" title="NYSE session status">market —</span>
       <span class="pill" id="refreshpill" title="When positions were last marked to market">marks —</span>
@@ -192,6 +248,8 @@
       </div>
     </section>
 
+    <p class="acct-note" id="acct-help">Main is your everyday account. Market Replay and each league you join keep a separate paper account, so practice in one never changes the others.</p>
+
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
 
     <div class="pf-main">
@@ -218,6 +276,7 @@
       <button role="tab" id="tab-positions" aria-selected="true" aria-controls="panel-positions" data-tab="positions" type="button">Positions &amp; orders</button>
       <button role="tab" id="tab-history" aria-selected="false" aria-controls="panel-history" data-tab="history" type="button">Trade history</button>
       <button role="tab" id="tab-options" aria-selected="false" aria-controls="panel-options" data-tab="options" type="button">Options Lab</button>
+      <button role="tab" id="tab-sizing" aria-selected="false" aria-controls="panel-sizing" data-tab="sizing" type="button">Position size</button>
       <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings" data-tab="settings" type="button">Settings &amp; reset</button>
     </div>
 
@@ -371,9 +430,61 @@
           </div>
 
           <div class="card">
-            <h2>Payoff at expiration <span class="right-tools"><label class="xs"><input type="checkbox" id="show-t0" checked> show today's value curve</label></span></h2>
+            <h2>Payoff at expiration <span class="right-tools"><label class="xs"><input type="checkbox" id="show-t0" checked> show today's value curve</label><label class="xs"><input type="checkbox" id="show-cone" checked> show probability range</label></span></h2>
             <div class="payoff-wrap"><canvas id="payoff" role="img" aria-label="Profit and loss at expiration versus underlying price"></canvas><div class="readout" id="payoff-readout"></div></div>
-            <div class="note">Green area: profit at expiration for that stock price. Red: loss. Vertical markers show your breakevens and the current spot. The dotted curve is what the position is worth <em>today</em> under the model: notice how it is smoother than the expiration payoff, and how it drifts toward the kinked line as days pass (that drift is theta).</div>
+            <div class="note">Green area: profit at expiration for that stock price. Red: loss. Vertical markers show your breakevens and the current spot. The dotted curve is what the position is worth <em>today</em> under the model: notice how it is smoother than the expiration payoff, and how it drifts toward the kinked line as days pass (that drift is theta). The shaded bands are the probability range: under the model the stock finishes inside the darker band about 68% of the time and inside the lighter band about 95% of the time.</div>
+          </div>
+
+          <div class="card" id="whatif">
+            <h2>What-if analyzer <span class="right-tools"><button class="sm ghost" id="wi-reset" type="button">Reset to today</button></span></h2>
+            <p class="srcnote">Move the stock, the calendar and implied volatility to see what the position would be worth before expiration. These are model estimates, not predictions: real prices also react to news, earnings and the bid-ask spread.</p>
+            <div class="wi-sliders">
+              <div class="field">
+                <label for="wi-price">Stock price <output id="wi-price-v" for="wi-price">—</output></label>
+                <input type="range" id="wi-price" min="0" max="100" step="0.01" value="50" aria-describedby="wi-price-h">
+                <div class="help" id="wi-price-h">Drag to test a move in the underlying, up to 30% either way.</div>
+              </div>
+              <div class="field">
+                <label for="wi-days">Days from today <output id="wi-days-v" for="wi-days">0</output></label>
+                <input type="range" id="wi-days" min="0" max="45" step="1" value="0" aria-describedby="wi-days-h">
+                <div class="help" id="wi-days-h">Time passing alone changes the value: that is theta at work.</div>
+              </div>
+              <div class="field">
+                <label for="wi-iv">IV change <output id="wi-iv-v" for="wi-iv">+0 pts</output></label>
+                <input type="range" id="wi-iv" min="-20" max="40" step="1" value="0" aria-describedby="wi-iv-h">
+                <div class="help" id="wi-iv-h">Implied volatility often drops right after earnings (an IV crush) and rises in sell-offs.</div>
+              </div>
+            </div>
+            <div class="wi-grid">
+              <div class="wi-result">
+                <div class="statgrid" id="wi-result" aria-live="polite"></div>
+              </div>
+              <div>
+                <div class="mini-wrap"><canvas id="wi-curves" role="img" aria-label="Profit and loss curves at several dates"></canvas></div>
+                <div class="legend" id="wi-legend" aria-hidden="true"></div>
+              </div>
+            </div>
+            <h3 class="mt-4" style="font-size:var(--fs-sm);margin-bottom:6px">Greeks across prices</h3>
+            <div class="greek-pick" role="group" aria-label="Greek to chart">
+              <button class="sm" type="button" data-greek="delta" aria-pressed="true">Delta</button>
+              <button class="sm" type="button" data-greek="gamma" aria-pressed="false">Gamma</button>
+              <button class="sm" type="button" data-greek="theta" aria-pressed="false">Theta</button>
+              <button class="sm" type="button" data-greek="vega" aria-pressed="false">Vega</button>
+            </div>
+            <div class="mini-wrap short mt-2"><canvas id="wi-greeks" role="img" aria-label="Position greek across underlying prices"></canvas></div>
+            <p class="srcnote" id="wi-greeks-note"></p>
+            <div class="divrow">
+              <div class="field">
+                <label for="wi-exdiv">Ex-dividend in (days)</label>
+                <input type="number" id="wi-exdiv" min="0" step="1" placeholder="none" class="num" aria-describedby="wi-div-h">
+              </div>
+              <div class="field">
+                <label for="wi-div">Dividend per share ($)</label>
+                <input type="number" id="wi-div" min="0" step="0.01" placeholder="0.00" class="num" aria-describedby="wi-div-h">
+              </div>
+            </div>
+            <div class="help srcnote" id="wi-div-h">Optional. Enter the next ex-dividend date to check whether a short call might be exercised early to collect the dividend.</div>
+            <div class="warnlist" id="wi-warn" role="status" aria-live="polite"></div>
           </div>
         </div>
 
@@ -403,6 +514,59 @@
       </div>
     </section>
 
+    <!-- Position size calculator -->
+    <section class="tabpanel" id="panel-sizing" role="tabpanel" aria-labelledby="tab-sizing" hidden>
+      <div class="callout compact">
+        <div><span class="title">Position size calculator</span>
+        Decide how much you are willing to lose first, then let the distance to your stop decide how many shares to buy. Many traders risk 1% or less of their account on a single idea, so a string of losses stays survivable.</div>
+      </div>
+      <div class="ps-grid">
+        <div class="card">
+          <h2>Plan the trade</h2>
+          <div class="ps-form">
+            <div class="field">
+              <label for="ps-equity">Account equity ($)</label>
+              <input type="number" id="ps-equity" min="0" step="100" class="num" aria-describedby="ps-equity-h">
+              <div class="help" id="ps-equity-h">Prefilled from the active paper account.</div>
+            </div>
+            <div class="field">
+              <label for="ps-risk">Risk per trade (%)</label>
+              <input type="number" id="ps-risk" min="0.1" max="10" step="0.1" value="1" class="num" aria-describedby="ps-risk-h">
+              <div class="help" id="ps-risk-h">The most you accept losing if the stop is hit.</div>
+            </div>
+            <div class="field">
+              <label for="ps-side">Direction</label>
+              <select id="ps-side"><option value="long">Long (buy, stop below)</option><option value="short">Short (sell, stop above)</option></select>
+            </div>
+            <div class="field">
+              <label for="ps-entry">Entry price ($)</label>
+              <input type="number" id="ps-entry" min="0" step="0.01" class="num">
+            </div>
+            <div class="field">
+              <label for="ps-stop">Stop-loss price ($)</label>
+              <input type="number" id="ps-stop" min="0" step="0.01" class="num" aria-describedby="ps-stop-h">
+              <div class="help" id="ps-stop-h">Where your idea is proven wrong, not a random percentage.</div>
+            </div>
+            <div class="field">
+              <label for="ps-target">Target price ($, optional)</label>
+              <input type="number" id="ps-target" min="0" step="0.01" class="num">
+            </div>
+            <div class="field">
+              <label for="ps-win">Your win rate (%, optional)</label>
+              <input type="number" id="ps-win" min="1" max="99" step="1" class="num" aria-describedby="ps-win-h">
+              <div class="help" id="ps-win-h">From your journal or a back-test. Used only for the Kelly figure.</div>
+            </div>
+          </div>
+          <div class="msg" id="ps-msg" role="status" aria-live="polite"></div>
+        </div>
+        <div class="card ps-out" aria-live="polite">
+          <h2>Result</h2>
+          <div id="ps-out"><p class="emptyline">Enter an entry and a stop to size the position.</p></div>
+        </div>
+      </div>
+      <div class="note">Educational tool. It does the arithmetic of risk; it cannot tell you whether a trade is a good idea. Gaps can jump past a stop, so a real loss can be larger than planned.</div>
+    </section>
+
     <!-- Settings & reset -->
     <section class="tabpanel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
       <div class="grid cols-2">
@@ -420,6 +584,50 @@
           <h2 class="mt-4">Data source</h2>
           <div class="statgrid" id="datasrc"></div>
           <div class="note">Add a free API key on the <a href="index.html">dashboard</a> for real quotes. Marks on this page are batched and paced to stay inside the free-tier limits; while a quota is exhausted they fall back to simulated prices and say so.</div>
+        </div>
+        <div class="card" id="sim-card">
+          <h2>Simulation settings</h2>
+          <p class="srcnote">Make the paper account behave more like a real brokerage. Everything here applies to the active account (<b id="sim-acct">Main</b>) and only to new fills.</p>
+          <div class="sim" id="sim">
+            <div class="setting">
+              <label for="sim-fill">Fill model</label>
+              <select id="sim-fill"><option value="instant">Instant</option><option value="volume">Volume-limited</option></select>
+              <p class="help">Instant fills the whole order at once. Volume-limited fills at most 10% of a bar's volume per bar and leaves the rest working, which is how a big order in a thinly traded stock really behaves.</p>
+            </div>
+            <div class="setting">
+              <label for="sim-slip">Slippage (basis points)</label>
+              <input type="number" id="sim-slip" min="0" max="500" step="1" class="num">
+              <p class="help">Market orders fill a little worse than the quote: 10 bps is 0.10%, or 10 cents on a $100 stock. Real slippage is larger in fast markets and in small stocks.</p>
+            </div>
+            <div class="setting">
+              <label for="sim-comm">Commission preset</label>
+              <select id="sim-comm" aria-describedby="sim-comm-info"><option value="zero">Zero commission</option><option value="per-share">Per share</option><option value="per-trade">Flat per trade</option></select>
+              <p class="help">Most US apps charge $0 for stocks (they earn from order flow and the spread instead). Per-share pricing, around half a cent a share, is common at brokers for active traders; flat per-trade fees are older-style pricing that punishes small, frequent trades. <span id="sim-comm-info"></span></p>
+            </div>
+            <div class="setting">
+              <span class="lbl" id="sim-div-l">Dividends</span>
+              <label class="check"><input type="checkbox" id="sim-div" aria-labelledby="sim-div-l sim-div-t"> <span id="sim-div-t">Pay dividends</span></label>
+              <p class="help">Shareholders of dividend payers receive cash each quarter; short sellers pay it. Uses the demo data's dividend schedule.</p>
+            </div>
+            <div class="setting">
+              <label for="sim-int">Interest on cash (% a year)</label>
+              <input type="number" id="sim-int" min="0" max="25" step="0.1" class="num">
+              <p class="help">Idle cash earns interest, accrued daily. It is the return you get for doing nothing, a fair bar for any strategy to beat.</p>
+            </div>
+            <div class="setting">
+              <span class="lbl" id="sim-pdt-l">Pattern day trader rule</span>
+              <label class="check"><input type="checkbox" id="sim-pdt" aria-labelledby="sim-pdt-l sim-pdt-t"> <span id="sim-pdt-t">Enforce the rule</span></label>
+              <p class="help">In a US margin account under $25,000, a fourth day trade (open and close the same day) within five business days is blocked. Turn it on to practise within the limits a real small account faces. <span id="sim-pdt-info"></span></p>
+            </div>
+            <div class="setting">
+              <label for="sim-borrow">Short borrow fee (% a year)</label>
+              <input type="number" id="sim-borrow" min="0" max="200" step="0.1" class="num">
+              <p class="help">Short sellers borrow the shares and pay a fee for every day the position is open. Easy-to-borrow stocks cost well under 1%; heavily shorted ones can cost 20% or more.</p>
+            </div>
+          </div>
+          <div class="row mt-3"><button id="sim-save" type="button">Save simulation settings</button><button class="ghost" id="sim-defaults" type="button">Restore defaults</button></div>
+          <div class="msg" id="sim-msg" role="status" aria-live="polite"></div>
+          <p class="srcnote mt-2" id="sim-income"></p>
         </div>
         <div class="card">
           <h2>Reset account</h2>
@@ -456,6 +664,8 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/data.js"></script>
 <script src="js/paper.js"></script>
 <script src="js/options.js"></script>
+<script src="js/risk.js"></script>
+<script src="js/leagues.js"></script>
 <script src="js/portfolio.js"></script>
 <script>
 /* Phone chain: open the view horizontally centred on the strike column each time a chain is (re)loaded.

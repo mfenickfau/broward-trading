@@ -3,7 +3,7 @@
 [![Deploy to GitHub Pages](https://github.com/mfenickfau/broward-trading/actions/workflows/pages.yml/badge.svg)](https://github.com/mfenickfau/broward-trading/actions/workflows/pages.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**A free, open-source paper-trading and technical-analysis lab with a built-in trading course in English and Spanish, Market Replay, a trading journal, classroom tools for instructors and an installable phone app.**
+**A free, open-source paper-trading and technical-analysis lab with a built-in trading course in English and Spanish, Market Replay, a trading journal, classroom leagues, a screener, a no-code strategy builder, a coach that reviews every trade, classroom tools for instructors and an installable phone app.**
 Static site, no build step, no accounts required, no money.
 
 **Live site: <https://mfenickfau.github.io/broward-trading/>** (open it on your phone and add it to your home screen). Every push to `main` runs the unit tests and, when they pass, deploys this folder to GitHub Pages through the workflow the badge above links to.
@@ -41,14 +41,15 @@ Static site, no build step, no accounts required, no money.
 Broward Trading was built for students (first at Broward College, then anyone) who want to learn how
 markets, charts, indicators, risk management and options work **by doing**, without risking a dollar.
 
-It is five things in one static website:
+It is six things in one static website:
 
 | Part | What you get |
 |---|---|
-| **Simulator** | Candlestick charts, 15+ indicators, a composite BUY / SELL / HOLD signal that explains itself, a paper-trading account with market / limit / stop orders and shorting, price and indicator alerts, a synthetic options chain with Greeks and payoff diagrams, a strategy backtester with parameter optimisation, and a symbol comparison page with correlation and relative strength. The demo universe covers 50+ US stocks, 17 ETFs with expense ratios and three crypto pairs that trade 24/7. |
+| **Simulator** | Candlestick charts, 15+ indicators, a composite BUY / SELL / HOLD signal that explains itself, a paper-trading account with market / limit / stop orders, shorting and optional realism (volume-limited fills, slippage, commissions, dividends, a pattern-day-trader rule), a **trade planner** that sizes every position from your risk budget, a **coach** that reviews every order and trade for the mistakes the course warns about, price, indicator and rule alerts, a synthetic options chain with Greeks, payoff diagrams and a **what-if analyzer**, a **screener**, a **no-code strategy builder**, a strategy backtester (also on your own CSV data) and a symbol comparison page. The demo universe covers 50+ US stocks, 17 ETFs with expense ratios and three crypto pairs that trade 24/7. |
 | **Market Replay** | Trade past data bar by bar with the future hidden. Ten graded drills (trend following, breakouts, range trading, bear-market survival, stop discipline, short selling, intraday) with a scorecard at the end and a separate practice account so your main portfolio stays clean. |
-| **Course** | Nine modules (45 lessons) from "what is a stock?" through indicators, risk, options and backtesting to replay drills, a written trading plan, and crypto and ETFs. A guided **First Week** for complete beginners. Every lesson links to a live exercise. Quizzes track progress and unlock a printable certificate. A 220-term glossary with flashcards and a "Daily 5" quiz keeps the vocabulary fresh. The interface and the course are available in **English and Spanish**. |
+| **Course** | Ten modules (50 lessons) from "what is a stock?" through indicators, risk, options and backtesting to replay drills, a written trading plan, crypto and ETFs, and the toolkit (screeners, rules and competitions). A guided **First Week** for complete beginners. Every lesson links to a live exercise. Quizzes track progress and unlock a printable certificate. A 220-term glossary with flashcards and a "Daily 5" quiz keeps the vocabulary fresh. The interface and the course are available in **English and Spanish**. |
 | **Journal & review** | Every paper trade becomes a journal entry you tag with setup, emotion and confidence; stats by tag show where your edge and your leaks are; a weekly review checklist and export to JSON / CSV. |
+| **Compete & progress** | **Leagues**: paper-trading competitions with one rule set for everyone, a separate account per league, standings that show drawdown and Sharpe next to return, team standings and a projector view, offline with codes or synced with the optional backend. **XP, levels and badges** that reward studying and good habits, never profit, plus a "what kind of trader are you?" quiz. |
 | **Classroom** | Instructors create a six-character class code; students join from their phones with no email and no real name. The instructor page shows a roster (progress, quiz average, drills, journal counts, last active), a gradebook using the Teaching Guide's rubric and CSV export. It works entirely offline from pasted **share codes**, and syncs automatically when a school deploys the optional backend. |
 
 Everything (portfolio, journal, course progress, settings) is stored in your browser's `localStorage`. The site works with no server at all. An **optional** Cloudflare Worker adds email sign-in, a Pro tier, server-verified certificates and classroom sync when a site owner chooses to deploy it; see [Membership backend](#membership-backend-optional).
@@ -62,7 +63,7 @@ Captured by the Playwright smoke test (`tests/e2e.playwright.js`) at 1280 px and
 | ![Dashboard](docs/screenshots/index-desktop.png) | ![Course](docs/screenshots/learn-desktop.png) | ![Portfolio](docs/screenshots/portfolio-desktop.png) | ![Backtest](docs/screenshots/backtest-desktop.png) |
 | ![Dashboard on a phone](docs/screenshots/index-phone.png) | ![Course on a phone](docs/screenshots/learn-phone.png) | ![Portfolio on a phone](docs/screenshots/portfolio-phone.png) | ![Backtest on a phone](docs/screenshots/backtest-phone.png) |
 
-Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) are added when the e2e script's page list is extended; see `docs/ROADMAP.md`.
+Screenshots of the v0.4 and v0.5 pages (First Week, Instructor, Leagues, Screener, Strategy Builder, Profile) are added when the e2e script's page list is extended; see `docs/ROADMAP.md`.
 
 ## Features
 
@@ -72,7 +73,11 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 - Oscillator panes: RSI, MACD, Stochastic, ADX / DI, ATR, OBV.
 - Automatic **candlestick-pattern detection** (doji, hammer, shooting star, engulfing, morning / evening star, three white soldiers / black crows) with plain-English descriptions.
 - A **composite signal** that scores every indicator, shows the points each one contributed and *why*, and states clearly that it describes what indicators say right now, not what will happen next.
-- **Alerts panel** (new in v0.3): price above / below, RSI above / below, SMA cross, composite-signal change. Checked on every tick; in-page toast plus a browser `Notification` when you grant permission.
+- **Alerts panel** (new in v0.3): price above / below, RSI above / below, SMA cross, composite-signal change, and (v0.5) a strategy rule's entry lining up. Checked on every tick; in-page toast plus a browser `Notification` when you grant permission.
+- **Account switcher** (new in v0.5): the trade ticket trades Main, Replay or any league you joined; a league's rules are checked before the order is placed.
+- **Plan this trade** (new in v0.5): enter your risk % and stop and the ticket fills in the share count; the planned stop and target are saved with the order.
+- **Coach notes** (new in v0.5): after each fill, short tips and warnings about risk, stops, reward-to-risk, the trend, revenge trading, overtrading, size and averaging down, each linked to its lesson. See [Coach](#coach-new-in-v05).
+- **Semi-auto mode** (new in v0.5): pick a saved rule from the Strategy Builder; when it fires, the dashboard proposes a sized paper trade and waits for your tap. It never places an order on its own.
 - Market status (pre-market, open, after-hours, closed, US holidays) in New York time; crypto symbols show as open 24/7.
 - Watchlist and symbol search over a demo universe of 50+ US stocks, 17 ETFs (with expense ratio, issuer and what each one tracks) and three crypto pairs (BTC-USD, ETH-USD, SOL-USD); live search when a provider key is configured.
 - A short first-run **tour** of the dashboard (also under the Tour button, or press `?`).
@@ -88,10 +93,13 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 - $100,000 starting balance (configurable, resettable), cash, positions, open orders, trade log and equity curve.
 - Market, limit, stop and stop-limit orders with day / GTC time-in-force; shorting; optional commissions.
 - Mark-to-market P&L, realised vs unrealised, day P&L, and statistics: total return, win rate, average win / loss, profit factor, max drawdown, Sharpe.
-- **Multiple accounts** (new in v0.3): `main` for the dashboard and portfolio, `replay` for Market Replay; `BT.paper.use(id)` switches, `BT.paper.accounts()` lists them with equity. Storage stays backward compatible.
+- **Multiple accounts** (new in v0.3): `main` for the dashboard and portfolio, `replay` for Market Replay, and one per joined league (v0.5); `BT.paper.use(id)` switches, `BT.paper.accounts()` lists them with equity. Storage stays backward compatible.
+- **Realism settings** (new in v0.5, all off by default): volume-limited partial fills, slippage, commission presets, quarterly dividends on demo data, interest on cash, a short-borrow fee and a pattern-day-trader rule toggle that explains why it blocked an order.
+- **Risk calculator** (new in v0.5): position size from equity, risk % and stop; R multiple, reward-to-risk, the breakeven win rate, expectancy and an "educational only" Kelly fraction.
 
 ### Options lab (`portfolio.html`)
 - Black-Scholes-Merton pricing and Greeks (delta, gamma, theta, vega, rho) and implied volatility.
+- **What-if analyzer** (new in v0.5): sliders for the underlying price, days forward and an IV shift; P&L curves at today, mid-life and expiry; the 1σ / 2σ probability cone shaded on the payoff chart; an estimated probability of profit; Greeks across the price range; warnings for assignment risk and early exercise before an ex-dividend date.
 - A synthetic option chain around spot with a volatility smile and bid / ask spread, using OCC-style contract ids.
 - Payoff diagrams and `analyze()` for nine preset strategies (long call, long put, covered call, protective put, bull call spread, bear put spread, straddle, strangle, iron condor), each with max profit / loss, breakevens and a one-paragraph explanation.
 
@@ -99,6 +107,32 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 - Built-in strategies: SMA cross, RSI mean reversion, MACD cross, Bollinger bounce, breakout, composite signal, buy-and-hold.
 - Honest statistics: return vs buy-and-hold, CAGR, win rate, profit factor, max drawdown, Sharpe, exposure, trade count; trades drawn as chart markers.
 - Grid optimisation (capped at 200 combinations) with a lesson on why the best backtest is usually overfit.
+- **Upload CSV** (new in v0.5): back-test on your own price history. Yahoo, Nasdaq.com, TradingView, MetaTrader and most broker exports are recognised (dates in US or day-first order, semicolons, decimal commas, Spanish headers); uploaded datasets are kept in your browser.
+
+### Strategy Builder (`builder.html`, new in v0.5)
+- Build entry and exit rules from blocks (RSI, SMA, EMA, close, MACD and its signal line, Bollinger bands, ADX, stochastic, volume or a number; above, below, crosses above, crosses below) joined with AND / OR, plus stop-loss %, profit target %, trailing stop % and max bars held. Long or short.
+- Four templates (SMA crossover, RSI reversion, MACD momentum, Bollinger breakout), a live **plain-English description** of the rule (in Spanish too), and **Backtest it** on the same screen against buy-and-hold with costs.
+- Rules compile to backtester strategies with no look-ahead (crosses compare the previous bar with the current one). Save rules, export / import them as JSON, turn the entry into an alert, or use the rule in the dashboard's semi-auto mode.
+
+### Screener (`screener.html`, new in v0.5)
+- Filters for price, % change (1 day / 5 days / 1 month), average volume, RSI, price versus SMA 50 / 200, golden and death crosses, Bollinger squeeze, new 52-week highs and lows, today's candlestick pattern, the composite signal, ADX, sector and kind (stock / ETF / crypto). Match all or any.
+- Six ready-made scans (Oversold in an uptrend, Golden cross this week, Squeeze setups, 52-week highs, Bullish engulfing today, Strong trend), each with a sentence on what it can and cannot tell you; save your own; "Open chart" and "+ Watchlist" on every result; card list on phones.
+- The demo universe scans in seconds in a small pool of Web Workers. With a live key, requests are paced to your plan's limits and a daily cap stops the scan cleanly instead of silently switching to simulated prices.
+
+### Leagues (`leagues.html`, new in v0.5)
+- Create a league with a name, dates and rules: starting cash, commission, slippage, allowed assets (stocks, ETFs, crypto, options), day trading, short selling, max position % and teams. Presets: **Classroom 4-week**, **Day-trading sprint**, **Long-only investor**, **Options challenge**.
+- Each league trades in its own paper account. The dashboard and Replay tickets refuse orders that break a rule and say which rule and why.
+- Standings by return with max drawdown, Sharpe ratio, a consistency score and an equity sparkline; team standings; biggest movers; a **projector view** for the classroom screen (`leagues.html?projector=1&league=CODE`).
+- **Offline**: the whole league travels as a `BTL1.` code and members send back share codes, no server needed. **Online**: with the optional backend, members join with the six-character code and standings sync. Standings are for discussion, never grades. Full guide: [docs/LEAGUES.md](docs/LEAGUES.md).
+
+### Coach (new in v0.5)
+- A free, rule-based coach in your browser reviews every order and every closed trade: risk above 1 % / 2 % of the account, no stop, reward-to-risk under 1.5, a loss bigger than planned, trading against the SMA50 trend, a likely revenge trade, more than five new positions a day, a position above 25 % of the account, and adding to a loser. Each note links to the lesson that teaches the habit.
+- It judges your process, not the outcome, never blocks an order, never predicts a price and never tells you what to buy or sell.
+- Pro (optional backend): an AI-written review of a closed trade through the Worker, under an education-only system prompt with a daily cap; it falls back to the rule-based notes whenever it is unavailable. What it checks and the AI guardrails: [docs/COACH.md](docs/COACH.md).
+
+### Profile, XP and badges (`profile.html`, new in v0.5)
+- XP for lessons, quizzes, drills, journal entries, flashcards and active days; seven levels from Freshman to Portfolio Manager; 28 badges with honest, checkable criteria (for example *Risk Manager*: ten trades with a stop and at most 1 % risk). **No XP or badge is ever given for profit or league rank.**
+- Level chip in the nav, streak calendar, XP history, locked badges that show what they need, an opt-in display name, and a ten-question "What kind of trader are you?" quiz that suggests a learning path. Everything is computed from what you have already done, so earlier work counts.
 
 ### Trading journal (`journal.html`, new in v0.3)
 - Entries are created automatically from paper and replay fills (keyed by trade id) and can be added by hand.
@@ -123,7 +157,7 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 - Watchlist **heatmap tiles** sized and coloured by % change, with a plain-English diversification note.
 
 ### Course (`learn.html`)
-- Nine modules, five lessons each, with text, callouts, embedded live charts, exercises that send you to the simulator, drills that send you to Replay, and quizzes. Module 9 (new in v0.4) covers crypto and ETFs with the same risk discipline as the rest of the course.
+- Ten modules, five lessons each, with text, callouts, embedded live charts, exercises that send you to the simulator, drills that send you to Replay, and quizzes. Module 9 (new in v0.4) covers crypto and ETFs with the same risk discipline as the rest of the course; Module 10 (new in v0.5) teaches the screener, the strategy builder, the risk calculator, the coach and leagues, including what each one cannot tell you.
 - Progress tracked per lesson and per quiz; a module progress bar; an **Up next** recommendation (start, resume, next lesson, take or retake a quiz, claim the certificate); a **completion certificate** drawn to canvas when every lesson is done and quizzes average 80 % or better.
 - Certificates can be verified at `verify.html`. Browser-issued certificates carry an id starting with `BT-YYYY-L…`; server-verified ones (when the optional backend is deployed) carry a signed id and are checked against the server.
 - **Print / Save as PDF** (new in v0.4) in every lesson, for one lesson or a whole module: `css/print.css` hides the shell, prints prose at a readable size, replaces live charts with their captions, prints quizzes as worksheets and starts each lesson on a new page. The button is hidden where `window.print` is unavailable or the page is framed.
@@ -158,7 +192,7 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 - Market data is never cached by the service worker for longer than 60 s (in practice it is never cached at all; `js/data.js` keeps its own short cache).
 
 ### Spanish interface and course (new in v0.4)
-- An **EN / ES** toggle in the nav (and the More sheet on phones) switches the whole interface without reloading. `js/i18n.js` translates the live DOM from a dictionary of exact English strings (`i18n/es.json`, 2,700+ entries), watches for content added later, and restores English when you switch back. `BT.t()` translates strings built in JavaScript; `Intl` formatters follow the active locale.
+- An **EN / ES** toggle in the nav (and the More sheet on phones) switches the whole interface without reloading. `js/i18n.js` translates the live DOM from a dictionary of exact English strings (`i18n/es.json`, 3,200+ entries), watches for content added later, and restores English when you switch back. `BT.t()` translates strings built in JavaScript; `Intl` formatters follow the active locale.
 - Course content is translated file by file: `course/es/<same file>.json` with identical ids, structure and quiz answers. Anything not yet translated falls back to English with an "English only" badge. How it works and how to add a language: [docs/I18N.md](docs/I18N.md).
 
 ### Design
@@ -169,7 +203,7 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 
 | Page | What it does | Primary tab on phones |
 |---|---|---|
-| `index.html` | Dashboard: chart, indicators, signal, alerts, watchlist, trade ticket, data settings, first-run tour | Dashboard |
+| `index.html` | Dashboard: chart, indicators, signal, alerts, watchlist, trade ticket with account switcher, trade planner and coach notes, semi-auto mode, data settings, first-run tour | Dashboard |
 | `learn.html` | Course player, progress, Up next, First Week card, Classroom card, certificate | Learn |
 | `start.html` | First Week: seven days of guided first steps for beginners | More |
 | `replay.html` | Market Replay and drills | Replay |
@@ -179,7 +213,11 @@ Screenshots of the v0.4 pages (First Week, Instructor, printable certificate) ar
 | `news.html` | Company profile, earnings, headlines (key required) | More |
 | `compare.html` | Relative performance, correlation, heatmap, RS vs SPY | More |
 | `glossary.html` | Glossary, flashcards, Daily 5 | More |
-| `instructor.html` | Instructor: class codes, roster, gradebook, share-code import, CSV export | More |
+| `leagues.html` | Leagues: create, join, rules, standings, team standings, projector view | More |
+| `screener.html` | Screener: filters, ready-made and saved scans, send to watchlist | More |
+| `builder.html` | Strategy Builder: rule blocks, plain-English summary, backtest, alert, export | More |
+| `profile.html` | Profile: level, XP, badges, streak, personality quiz, display name | More |
+| `instructor.html` | Instructor: class codes, roster, gradebook, share-code import, CSV export, league standings | More |
 | `pricing.html` | What is free, what Pro will add, sign-in when configured | More |
 | `verify.html` | Certificate verification | More |
 | `certificate.html` | Printable certificate (linked from Learn, not in the nav) | — |
@@ -260,7 +298,11 @@ broward-trading/
 ├── news.html             Company profile, earnings, headlines (key required)
 ├── compare.html          Relative performance, correlation, heatmap, RS vs SPY
 ├── glossary.html         Glossary, flashcards, Daily 5
-├── instructor.html       Instructor: classes, roster, gradebook, share-code import, CSV export
+├── instructor.html       Instructor: classes, roster, gradebook, share-code import, CSV export, leagues tab
+├── leagues.html          Leagues: create, join, standings, projector view
+├── screener.html         Screener: filters, ready-made and saved scans
+├── builder.html          Strategy Builder: rule blocks, summary, backtest, alert, export
+├── profile.html          Level, XP, badges, streak, personality quiz
 ├── pricing.html          Free vs Pro, sign-in and checkout when the backend is configured
 ├── verify.html           Certificate verification
 ├── certificate.html      Printable certificate (landscape print CSS)
@@ -292,6 +334,16 @@ broward-trading/
 │   ├── auth.js           BT.auth       membership client; works offline when apiBase is ''
 │   ├── classroom.js      BT.classroom  student side: join a class, snapshot, share codes, sync
 │   ├── onboarding.js     BT.onboarding First Week tasks and self-ticking checks
+│   ├── leagues.js        BT.leagues    league codes, rules, order validation, standings, share codes, online sync
+│   ├── screener.js       BT.screener   filter catalogue, scan runner (Web Workers on demo), saved scans
+│   ├── rules.js          BT.rules      rule JSON → backtest strategy, plain-English describe, validate, templates
+│   ├── xp.js             BT.xp         XP, levels, badges, streaks, personality quiz, display name
+│   ├── risk.js           BT.risk       position size, R multiple, breakeven win rate, expectancy, Kelly (educational)
+│   ├── coach.js          BT.coach      rule-based trade review; Pro AI review through the Worker
+│   ├── csv.js            BT.csv        CSV price-history parser and dataset library for the backtester
+│   ├── leagues-ui.js     leagues UI (leagues.html), projector view
+│   ├── screener-ui.js    screener UI (screener.html)
+│   ├── builder-ui.js     strategy builder UI (builder.html)
 │   ├── app.js            dashboard UI (index.html)
 │   ├── learn.js          course UI (learn.html)
 │   ├── portfolio.js      portfolio + options UI (portfolio.html)
@@ -299,8 +351,9 @@ broward-trading/
 │   ├── instructor.js     instructor UI (instructor.html): roster, gradebook, exports
 │   └── vendor/           lightweight-charts 4.2.0 fallback + its licence
 ├── course/
-│   ├── index.json        module and lesson index (9 modules, 45 lessons)
-│   ├── m1-…m9-*.json     one file per module with lesson blocks and quizzes
+│   ├── index.json        module and lesson index (10 modules, 50 lessons)
+│   ├── m1-…m10-*.json    one file per module with lesson blocks and quizzes
+│   ├── personality.json  "What kind of trader are you?" quiz (10 questions, 4 profiles)
 │   ├── firstweek.json    First Week: 7 days × 3 tasks with self-checks
 │   ├── drills.json       Market Replay drills
 │   ├── glossary.json     220 terms
@@ -309,7 +362,8 @@ broward-trading/
 ├── server/               optional Cloudflare Worker (worker.js, wrangler.toml, README.md)
 ├── tests/                node tests/<module>.test.js, plain assert, no framework; e2e.playwright.js
 ├── docs/                 BRAND, ROADMAP, CHANGELOG, DATA_SOURCES, BUSINESS, DEPLOY, MOBILE, TEACHING_GUIDE,
-│                         INSTRUCTOR_GUIDE, I18N, MARKETING, COMPETITIVE_ANALYSIS, MEMBERSHIP_SETUP, screenshots/
+│                         INSTRUCTOR_GUIDE, LEAGUES, COACH, I18N, ACCESSIBILITY, MARKETING, COMPETITIVE_ANALYSIS,
+│                         MEMBERSHIP_SETUP, screenshots/
 ├── .github/workflows/pages.yml   CI: run every unit test, then deploy to GitHub Pages
 ├── CONTRACTS.md          the module interfaces everything is built against
 ├── .nojekyll             tells GitHub Pages to serve files verbatim
@@ -337,17 +391,24 @@ broward-trading/
 | `js/i18n.js` | `BT.i18n`, `BT.t` | `lang()` / `setLang(code)` (persisted `bt.lang`, sets `<html lang>`, fires `bt:lang`), `translatePage()` over text nodes and `placeholder` / `title` / `aria-label` / `alt`, MutationObserver for later content, `BT.t(str, vars)` with `{name}` interpolation, `fmtNumber` / `fmtMoney` / `fmtPercent` / `fmtDate`, `addLang()`. |
 | `js/classroom.js` | `BT.classroom` | `join(code, name)` / `leave()`, `snapshot()`, `encodeShare()` / `decodeShare()` / `parseShareCodes()`, `sync(reason)` to the Worker when `apiBase` is set (throttled 5 min, immediate after lesson / quiz); state in `bt.classroom`. |
 | `js/onboarding.js` | `BT.onboarding` | Loads `course/firstweek.json`; `status()` evaluates every task's check against localStorage; manual ticks and day unlocks in `bt.onboarding`. |
-| `js/instructor.js` | (UI) | Classes, roster maths, gradebook with editable weights, share-code import, CSV / JSON exports; state in `bt.instructor`. |
+| `js/instructor.js` | (UI) | Classes, roster maths, gradebook with editable weights, share-code import, CSV / JSON exports, league standings tab; state in `bt.instructor`. |
+| `js/leagues.js` | `BT.leagues` | `create()`, presets, `encodeLeague()` / `decodeLeague()` (`BTL1.` codes), `join()` / `leave()`, `validateOrder(order, league, account)`, `phase()` / `countdown()`, `standings()` / `teamStandings()` / `movers()` / `metrics()`, share codes, `remote.*` for the Worker; state in `bt.leagues`. |
+| `js/screener.js` | `BT.screener` | `filters` / `filterList`, `run(universe, filters, opts)` with progress and rate-limit pacing, `snapshot()`, `evaluate()`, `describe()`, built-in and saved scans in `bt.screener.scans`. |
+| `js/rules.js` | `BT.rules` | Rule JSON, `compile(rule)` → `BT.backtest` strategy without look-ahead, `describe(rule, lang)`, `validate()`, templates; saved rules in `bt.rules`. |
+| `js/xp.js` | `BT.xp` | `award(event, key)`, `recompute()` from existing stores, levels, 28 badges, streaks, `profile.*` and `personality.*`; state in `bt.xp` and `bt.profile`. |
+| `js/risk.js` | `BT.risk` | `positionSize()`, `rMultiple()`, `rewardRisk()`, `breakevenWinRate()`, `kellyFraction()`, `expectancy()`, `planTrade()`. Pure maths. |
+| `js/coach.js` | `BT.coach` | `reviewOrder()` / `reviewTrade()` → `[{level, id, title, message, lessonId}]`, `THRESHOLDS`, `summary()`, `toJournal()`, `ai(trade)` (Pro, falls back to the rules). |
+| `js/csv.js` | `BT.csv` | `parse(text, opts)` for Yahoo / Nasdaq / TradingView / broker exports; dataset library `list` / `save` / `get` / `rename` / `remove`. |
 
 Bars everywhere are `{time, open, high, low, close, volume}`, oldest to newest; `time` is `'YYYY-MM-DD'` for daily and unix seconds for intraday. Charts use lightweight-charts v4.2.0 from unpkg with the vendored copy as fallback.
 
 ### Browser storage keys
 
-`bt.data`, `bt.portfolio`, `bt.portfolio.replay`, `bt.course`, `bt.cert`, `bt.theme`, `bt.lang`, `bt.i18n.<code>` (cached dictionary), `bt.alerts`, `bt.journal`, `bt.replay.sessions`, `bt.flashcards`, `bt.daily5`, `bt.news.cache`, `bt.auth`, `bt.auth.certs`, `bt.classroom`, `bt.onboarding`, `bt.tour.done`, `bt.instructor`, `bt.instructor.ui`, plus dashboard preferences (`bt.sym`, `bt.tf`, `bt.ov`, `bt.panes`, `bt.watchlist`, `bt.lines`). Clearing site data resets all of them; the journal, portfolio progress and instructor data can be exported first.
+`bt.data`, `bt.portfolio`, `bt.portfolio.replay`, `bt.portfolio.league-<code>`, `bt.course`, `bt.cert`, `bt.theme`, `bt.lang`, `bt.i18n.<code>` (cached dictionary), `bt.alerts`, `bt.journal`, `bt.replay.sessions`, `bt.flashcards`, `bt.daily5`, `bt.news.cache`, `bt.auth`, `bt.auth.certs`, `bt.classroom`, `bt.onboarding`, `bt.tour.done`, `bt.tour.finished`, `bt.instructor`, `bt.instructor.ui`, `bt.leagues`, `bt.leagues.ui`, `bt.screener.scans`, `bt.screener.cache`, `bt.screener.last`, `bt.rules`, `bt.builder.last`, `bt.xp`, `bt.profile`, `bt.csv.datasets`, `bt.csv.data.<id>`, plus dashboard preferences (`bt.sym`, `bt.tf`, `bt.ov`, `bt.panes`, `bt.watchlist`, `bt.lines`, `bt.dash.account`, `bt.dash.auto`). Clearing site data resets all of them; the journal, portfolio progress and instructor data can be exported first.
 
 ## Course structure
 
-Nine modules, roughly 8.5 hours of reading plus exercises and drills. Each lesson ends with a quiz; the certificate unlocks when every lesson is marked done and quiz scores average 80 % or better.
+Ten modules, roughly 9.5 hours of reading plus exercises and drills. Each lesson ends with a quiz; the certificate unlocks when every lesson is marked done and quiz scores average 80 % or better.
 
 | # | Module | Level | Minutes | Covers |
 |---|---|---|---|---|
@@ -360,6 +421,7 @@ Nine modules, roughly 8.5 hours of reading plus exercises and drills. Each lesso
 | 7 | Practice Drills: Market Replay | Intermediate | 57 | Using Replay honestly, trend drills, reversal and range drills, risk drills, self-review with scorecard and journal |
 | 8 | Capstone: Your Trading Plan | Advanced | 60 | Why a written plan, defining your edge, risk architecture, proving the plan, the routine and graduation checklist |
 | 9 | Crypto & ETFs: Different Markets, Same Discipline | Intermediate | 58 | What an ETF is and what the expense ratio costs, ETF families (index, sector, bond, commodity, leveraged), what crypto is and how it trades 24/7, sizing when volatility triples, the same toolkit on a different clock |
+| 10 | Your Trading Toolkit: Screeners, Rules & Competitions | Intermediate | 61 | Using a screener without fooling yourself, writing rules a computer could test, from rule to backtest to replay to paper, risk sizing with the calculator and the coach, competing in leagues (ethics, luck and what leaderboards hide) |
 
 Before the course, complete beginners can take the **First Week** (`start.html`): seven days, three short tasks a day, drawn from Modules 1 to 4 and 7 plus the simulator, Replay, glossary and journal, with checks that tick themselves.
 
@@ -375,7 +437,9 @@ The interface and the course are available in **English** and **Spanish** (`es-4
 
 ## Teaching with it
 
-[docs/TEACHING_GUIDE.md](docs/TEACHING_GUIDE.md) is a ready-to-run **six-week syllabus** for a college elective built on the app: weekly lessons mapped to modules, in-class exercises with the exact deep links, Replay drills with pass criteria, journal assignments, a grading rubric, how the certificate fits, the **classroom code workflow**, a **First Week assignment** for mixed-experience sections and an optional **crypto / ETF week**. It assumes students are on phones and the instructor has no budget.
+[docs/TEACHING_GUIDE.md](docs/TEACHING_GUIDE.md) is a ready-to-run **six-week syllabus** for a college elective built on the app: weekly lessons mapped to modules, in-class exercises with the exact deep links, Replay drills with pass criteria, journal assignments, a grading rubric, how the certificate fits, the **classroom code workflow**, a **First Week assignment** for mixed-experience sections, an optional **crypto / ETF week**, a **four-week league assignment** graded on process rather than rank, a **screener lab**, a **rule-builder lab**, and how **XP and badges** can count toward participation without rewarding risky trading. It assumes students are on phones and the instructor has no budget.
+
+[docs/LEAGUES.md](docs/LEAGUES.md) explains running a league offline with codes or online with the backend, the rule presets, how standings are calculated and the fair-play notes. [docs/COACH.md](docs/COACH.md) lists everything the coach checks and why.
 
 [docs/INSTRUCTOR_GUIDE.md](docs/INSTRUCTOR_GUIDE.md) covers the tooling: creating a class code, importing share codes, reading the roster, the gradebook and its weights, CSV export, backups and the privacy notice to read to students.
 
@@ -385,11 +449,11 @@ We looked at TradingView, thinkorswim paperMoney / OnDemand, the Investopedia Si
 
 What Broward Trading already does that most of them do not: Market Replay that saves scorecards and is wired into the paper account and the journal; a complete course, glossary, flashcards, journal and certificate in one free product; an instructor dashboard that works offline from share codes with no student emails; a Spanish interface and course; an installable open-source PWA with no account required.
 
-What they do better, and which we are adopting: classroom **competitions and leagues** with configurable rules and a projector view (HowTheMarketWorks, Stock Market Game, Investopedia); a **screener** with saved scans (TradingView); a **no-code strategy builder** feeding the backtester and alerts (TradingView's strategy tester, without the scripting); an **options what-if analyzer** with probability cones (thinkorswim); a **grade ladder, XP and badges** with honest criteria (Babypips, Trading Game); and a **rule-based coach** that reviews each trade for the mistakes the course warns about. These are the v0.5 plan in [docs/ROADMAP.md](docs/ROADMAP.md). We will not copy leveraged 24/7 products, "AI predictions" or paid signals.
+What they did better, and what v0.5 adopted: classroom **competitions and leagues** with configurable rules and a projector view (HowTheMarketWorks, Stock Market Game, Investopedia); a **screener** with saved scans (TradingView); a **no-code strategy builder** feeding the backtester and alerts (TradingView's strategy tester, without the scripting); an **options what-if analyzer** with probability cones (thinkorswim); a **grade ladder, XP and badges** with honest criteria (Babypips, Trading Game); a **trade planner** and **paper-engine realism**; and a **rule-based coach** that reviews each trade for the mistakes the course warns about. All eight shipped in v0.5 ([docs/CHANGELOG.md](docs/CHANGELOG.md)); the next tier is in [docs/ROADMAP.md](docs/ROADMAP.md). We will not copy leveraged 24/7 products, "AI predictions" or paid signals.
 
 ## Membership backend (optional)
 
-Everything above runs with no server. If you want email sign-in, a paid Pro tier, server-verified certificates, automatic classroom sync (`POST /classes`, `/classes/:code/snapshots`, `/classes/:code/roster`) and an opt-in classroom leaderboard, the repo includes a single **Cloudflare Worker** (`server/worker.js`) with KV storage, Stripe Checkout and Resend email, all on free tiers, with no npm dependencies and no secrets in code.
+Everything above runs with no server. If you want email sign-in, a paid Pro tier, server-verified certificates, automatic classroom sync (`POST /classes`, `/classes/:code/snapshots`, `/classes/:code/roster`), online leagues (`/leagues…`, optional `LEAGUES` namespace), the Pro AI coach (`POST /coach`, with your own `ANTHROPIC_API_KEY` secret and a per-member daily cap) and an opt-in classroom leaderboard, the repo includes a single **Cloudflare Worker** (`server/worker.js`) with KV storage, Stripe Checkout and Resend email, all on free tiers, with no npm dependencies and no secrets in code.
 
 - Technical reference, routes, KV layout and local development: [server/README.md](server/README.md).
 - Step-by-step setup for a non-developer (about 90 minutes): [docs/MEMBERSHIP_SETUP.md](docs/MEMBERSHIP_SETUP.md).
@@ -418,7 +482,7 @@ for f in js/*.js tests/*.js sw.js server/worker.js; do node --check "$f"; done
 for f in course/*.json course/es/*.json i18n/*.json manifest.json; do [ -f "$f" ] && { node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || echo "BAD JSON: $f"; }; done
 ```
 
-As of v0.4 there are nineteen unit-test files (alerts, auth, backtest, classroom, compare, course, course-v04, data, glossary, i18n, icons, indicators, journal, nav, news, onboarding, options, paper, replay) holding more than 500 assertions-as-tests. `tests/i18n.test.js` and `tests/course-v04.test.js` double as the translation **structure validator**: dictionary keys normalised, `{placeholders}` preserved, every `course/es/*.json` mirroring its English file's ids and quiz answers (see [docs/I18N.md](docs/I18N.md)).
+As of v0.5 there are twenty-eight unit-test files holding more than 800 tests: the v0.4 set (alerts, auth, backtest, classroom, compare, course, course-v04, data, glossary, i18n, i18n-structure, icons, indicators, instructor-page, journal, nav, news, onboarding, options, paper, replay) plus coach, csv, leagues, risk, rules, screener and xp. `tests/leagues.test.js` also drives the Worker's `/leagues` and `/coach` routes against an in-memory KV and a stubbed `fetch`. `tests/i18n.test.js` and `tests/course-v04.test.js` double as the translation **structure validator**: dictionary keys normalised, `{placeholders}` preserved, every `course/es/*.json` mirroring its English file's ids and quiz answers (see [docs/I18N.md](docs/I18N.md)).
 
 **Continuous integration**: `.github/workflows/pages.yml` runs every unit-test file on each push to `main` and deploys to GitHub Pages only when all of them pass. A failing test blocks the deploy, so never push one.
 
@@ -442,11 +506,14 @@ Course content contributions should include sources for any factual claim and sh
 
 - [docs/CHANGELOG.md](docs/CHANGELOG.md): what changed in each release.
 - [docs/ROADMAP.md](docs/ROADMAP.md): what is done, what is next, what we will not build.
-- [docs/TEACHING_GUIDE.md](docs/TEACHING_GUIDE.md): six-week syllabus, exercises, drills, rubric, certificate, classroom code workflow, First Week assignment, crypto / ETF week.
+- [docs/TEACHING_GUIDE.md](docs/TEACHING_GUIDE.md): six-week syllabus, exercises, drills, rubric, certificate, classroom code workflow, First Week assignment, crypto / ETF week, four-week league assignment, screener and rule-builder labs, XP and participation.
 - [docs/INSTRUCTOR_GUIDE.md](docs/INSTRUCTOR_GUIDE.md): the Classroom tooling: class codes, share codes, roster, gradebook, exports, privacy.
+- [docs/LEAGUES.md](docs/LEAGUES.md): running a paper-trading league offline with codes or online with the backend; rule presets; standings maths; projector view; fair play.
+- [docs/COACH.md](docs/COACH.md): what the trade coach checks and why, what it never does, and the Pro AI coach's guardrails.
+- [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md): the accessibility audit, what was fixed and the follow-ups.
 - [docs/I18N.md](docs/I18N.md): how translation works, adding a language, keeping Spanish in step with English, the structure validator.
 - [docs/MARKETING.md](docs/MARKETING.md): landing copy, student personas, free-to-Pro email sequence, social post ideas, compliance checklist for educational finance marketing.
-- [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md): what similar learning and trading products do well and which features we are adopting.
+- [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md): what similar learning and trading products do well, which features v0.5 adopted and what comes next.
 - [docs/MOBILE.md](docs/MOBILE.md): installing as a PWA on iPhone / Android, phone tips.
 - [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md): market-data options, accuracy, costs, recommendation.
 - [docs/BUSINESS.md](docs/BUSINESS.md): turning the course into a membership with verified certificates while the simulator stays free.
@@ -457,7 +524,7 @@ Course content contributions should include sources for any factual claim and sh
 
 ## Disclaimer
 
-Broward Trading is a free educational simulator. **No real orders are placed and no money changes hands.** Demo prices are generated by a seeded random walk and are not real market prices; a year in a Replay drill title is a scenario label, not the real market of that year. Live prices come from the third-party provider you configure with your own key and may be delayed, incomplete or wrong. Indicators, the composite signal, alerts and backtests describe what a formula says about past prices; they do not predict the future. Nothing on this site is investment, legal or tax advice, and nothing is a recommendation to buy or sell any security, ETF or cryptocurrency. Trading real money involves risk, including the loss of your entire investment; crypto assets can lose most of their value quickly and are not covered by the protections that apply to securities accounts. Past performance, simulated or real, does not guarantee future results.
+Broward Trading is a free educational simulator. **No real orders are placed and no money changes hands.** Demo prices are generated by a seeded random walk and are not real market prices; a year in a Replay drill title is a scenario label, not the real market of that year. Live prices come from the third-party provider you configure with your own key and may be delayed, incomplete or wrong. Indicators, the composite signal, alerts, screener results, strategy rules and backtests describe what a formula says about past prices; they do not predict the future. The coach (including the optional AI review) comments on your own practice process and never recommends a trade. League standings rank simulated results and say little about skill over a few weeks. Nothing on this site is investment, legal or tax advice, and nothing is a recommendation to buy or sell any security, ETF or cryptocurrency. Trading real money involves risk, including the loss of your entire investment; crypto assets can lose most of their value quickly and are not covered by the protections that apply to securities accounts. Past performance, simulated or real, does not guarantee future results.
 
 Broward Trading is an independent project and is not affiliated with, endorsed by or sponsored by Broward College or any broker, exchange or data provider.
 

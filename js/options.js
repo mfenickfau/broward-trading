@@ -25,6 +25,12 @@
   root.BT = root.BT || {};
   var BT = root.BT;
 
+  /* i18n: BT.t when js/i18n.js is loaded; plain {var} interpolation otherwise. */
+  function T(s, v) {
+    if (BT.t) return BT.t(s, v);
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s;
+  }
+
   var SQRT2PI = Math.sqrt(2 * Math.PI);
   var DAYS_PER_YEAR = 365;
   var MULTIPLIER = 100;
@@ -688,6 +694,10 @@
       var a = segs[i], b = segs[i + 1];
       if (b <= a) continue;
       var fa = pnlAt(L, a), fb = pnlAt(L, b);
+      // A breakeven exactly on a kink (shares bought at spot, a strike at the
+      // breakeven) has no sign change inside either segment; keep it as a
+      // boundary so the regions on both sides are probed separately.
+      if (Math.abs(fa) < 1e-9 && a > 0) { out.push(a); continue; }
       if (fa * fb < 0) {
         var lo = a, hi = b;
         for (var it = 0; it < 80; it++) { var m = (lo + hi) / 2; var fm = pnlAt(L, m); if ((fm < 0) === (fa < 0)) { lo = m; fa = fm; } else hi = m; }
@@ -990,7 +1000,7 @@
     ds = ds.map(function (d) { return Math.max(0, num(d, 0)); })
       .filter(function (d, i, a) { return a.indexOf(d) === i; });
     return ds.map(function (d) {
-      var label = d === 0 ? 'Today' : (d >= last && last > 0 ? 'At expiration' : 'In ' + round(d, 0) + ' days');
+      var label = d === 0 ? T('Today') : (d >= last && last > 0 ? T('At expiration') : T('In {n} days', { n: round(d, 0) }));
       return {
         daysForward: d,
         label: label,
@@ -1100,15 +1110,18 @@
       if (l.qty >= 0) return;
       var left = Math.max(0, l.days - fwd);
       var itm = l.right === 'C' ? S > l.strike : S < l.strike;
-      var what = round(l.strike, 2) + (l.right === 'C' ? ' call' : ' put');
+      var what = T(l.right === 'C' ? '{k} call' : '{k} put', { k: round(l.strike, 2) });
       if (itm && left <= 5) {
         out.push({ level: 'warn', code: 'assignment', strike: l.strike, right: l.right,
-          title: 'Assignment risk',
-          message: 'Your short ' + what + ' is in the money with ' + round(left, 0) + ' day(s) left. The buyer can exercise at any time, and in-the-money options are exercised automatically at expiration, so you could be assigned ' + (l.right === 'C' ? 'a short stock position' : 'shares you must pay for') + '. Closing or rolling before expiry avoids the surprise.' });
+          title: T('Assignment risk'),
+          message: T(l.right === 'C'
+            ? 'Your short {what} is in the money with {n} day(s) left. The buyer can exercise at any time, and in-the-money options are exercised automatically at expiration, so you could be assigned a short stock position. Closing or rolling before expiry avoids the surprise.'
+            : 'Your short {what} is in the money with {n} day(s) left. The buyer can exercise at any time, and in-the-money options are exercised automatically at expiration, so you could be assigned shares you must pay for. Closing or rolling before expiry avoids the surprise.',
+            { what: what, n: round(left, 0) }) });
       } else if (!itm && left <= 2 && Math.abs(S / l.strike - 1) <= 0.01) {
         out.push({ level: 'tip', code: 'pin', strike: l.strike, right: l.right,
-          title: 'Pin risk',
-          message: 'The stock is within 1% of your short ' + what + ' strike right before expiry. A small move at the close decides whether you are assigned, and you will not know until the next morning.' });
+          title: T('Pin risk'),
+          message: T('The stock is within 1% of your short {what} strike right before expiry. A small move at the close decides whether you are assigned, and you will not know until the next morning.', { what: what }) });
       }
       if (l.right === 'C' && itm && isNum(exDiv) && exDiv >= fwd && exDiv < l.days) {
         var tLeft = Math.max(0, l.days - exDiv) / DAYS_PER_YEAR;
@@ -1116,15 +1129,17 @@
         var putTime = tLeft > 0 ? bs({ S: S, K: l.strike, T: tLeft, r: r, sigma: iv, type: 'put' }).price : 0;
         if (!isNum(div) || div > putTime) {
           out.push({ level: 'warn', code: 'earlyExercise', strike: l.strike, right: 'C',
-            title: 'Early exercise before the ex-dividend date',
-            message: 'Your short ' + what + ' is in the money and the stock goes ex-dividend in about ' + round(exDiv - fwd, 0) + ' day(s), before expiry. Call owners often exercise the day before to collect the dividend' + (isNum(div) ? ' (about $' + round(div, 2) + ' a share, more than the option\'s remaining time value)' : '') + ', which would leave you short the shares and owing the dividend.' });
+            title: T('Early exercise before the ex-dividend date'),
+            message: isNum(div)
+              ? T('Your short {what} is in the money and the stock goes ex-dividend in about {n} day(s), before expiry. Call owners often exercise the day before to collect the dividend (about ${div} a share, more than the option\'s remaining time value), which would leave you short the shares and owing the dividend.', { what: what, n: round(exDiv - fwd, 0), div: round(div, 2) })
+              : T('Your short {what} is in the money and the stock goes ex-dividend in about {n} day(s), before expiry. Call owners often exercise the day before to collect the dividend, which would leave you short the shares and owing the dividend.', { what: what, n: round(exDiv - fwd, 0) }) });
         }
       }
     });
     var cover = longCalls + Math.max(0, sharesHeld);
     if (shortCalls > cover + 1e-9) {
-      out.push({ level: 'warn', code: 'nakedCall', title: 'Uncovered short call',
-        message: 'You are short more calls than you own shares or long calls, so the loss grows without limit if the stock keeps rising. Brokers require high option approval and margin for this.' });
+      out.push({ level: 'warn', code: 'nakedCall', title: T('Uncovered short call'),
+        message: T('You are short more calls than you own shares or long calls, so the loss grows without limit if the stock keeps rising. Brokers require high option approval and margin for this.') });
     }
     return out;
   }

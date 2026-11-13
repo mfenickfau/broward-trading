@@ -106,6 +106,28 @@
   .ticket .msg{margin-top:8px;line-height:1.45;min-height:18px}
   .ticket .hint{font-size:var(--fs-xs);color:var(--muted);margin-top:6px}
 
+  /* account & rules, plan panel, coach notes (v0.5) */
+  .acct-field{margin-bottom:8px}
+  .acct-field select{width:100%}
+  .plan-box{margin-top:8px;background:var(--panel2)}
+  .plan-box summary{justify-content:flex-start;flex-wrap:wrap}
+  .plan-box .plan-sum{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:var(--fs-xs);font-weight:400}
+  .plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:end}
+  .plan-grid input{width:100%;min-width:0}
+  .ticket .est{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:var(--fs-sm);margin-top:8px;color:var(--muted)}
+  .ticket .est span:nth-child(even){text-align:right;font-family:var(--mono);color:var(--fg)}
+  .plan-warn{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs)}
+  .plan-warn li{padding:5px 8px;border-radius:var(--r);background:var(--panel);border-left:3px solid var(--accent);color:var(--muted)}
+  .plan-warn li.warn{border-left-color:var(--warn);color:var(--fg)}
+  .plan-chk{display:flex;gap:8px;align-items:center;font-size:var(--fs-sm);margin-top:8px;min-height:44px;cursor:pointer}
+  .coach{margin-top:8px;padding:8px 10px;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--panel2);font-size:var(--fs-sm)}
+  .coach-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .coach ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .coach li{padding-left:10px;border-left:3px solid var(--accent);line-height:1.45}
+  .coach li.warn{border-left-color:var(--warn)}
+  .coach .note{margin:6px 0 0;font-size:var(--fs-xs);color:var(--muted)}
+  @media (max-width:420px){.plan-grid{grid-template-columns:1fr 1fr}.plan-grid .field:last-child{grid-column:1/-1}}
+
   /* account strip */
   .acct{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px}
   .acct .stat{min-width:0}
@@ -301,6 +323,11 @@
       <div class="work">
         <section class="card ticket" aria-labelledby="ticketTitle">
           <h2 id="ticketTitle">Trade ticket <span class="pill" id="pxPill">—</span></h2>
+          <div class="field acct-field">
+            <label for="rAcct">Account &amp; rules</label>
+            <select id="rAcct" aria-describedby="rAcctNote"><option value="replay">Replay practice account</option></select>
+            <span class="help" id="rAcctNote">Replay trades always use their own practice account, so historical prices never mix with your main account or league standings.</span>
+          </div>
           <div class="qtyrow">
             <div class="field">
               <label for="qty">Quantity (shares)</label>
@@ -337,6 +364,29 @@
               <input id="stopPx" type="number" inputmode="decimal" step="0.01" min="0.01">
             </div>
           </div>
+          <details class="plan-box" id="planBox">
+            <summary>Plan this trade <span class="plan-sum" id="planSummary"></span></summary>
+            <p class="note">Decide what you are willing to lose first. A stop below the price plans a long (Buy); a stop above it plans a short.</p>
+            <div class="plan-grid">
+              <div class="field">
+                <label for="planRisk">Risk (% of equity)</label>
+                <input id="planRisk" type="number" min="0.1" max="10" step="0.05" value="1" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label for="planStop">Stop-loss price</label>
+                <input id="planStop" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+              </div>
+              <div class="field">
+                <label for="planTarget">Target price <span class="muted">(optional)</span></label>
+                <input id="planTarget" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+              </div>
+            </div>
+            <div class="est" id="planOut"></div>
+            <ul class="plan-warn" id="planWarn" aria-live="polite"></ul>
+            <label class="plan-chk" id="planStopRow" hidden><input type="checkbox" id="planStopOrder" checked> <span>Also place a stop-loss order at my stop after the fill</span></label>
+            <div class="msg ok" id="planMsg" role="status" aria-live="polite"></div>
+            <p class="note">Arithmetic for practice, not advice. A gap can jump past a stop, so a loss can be bigger than planned.</p>
+          </details>
           <div class="sides">
             <button type="button" class="buy" id="buyBtn">Buy</button>
             <button type="button" class="sell" id="sellBtn">Sell</button>
@@ -344,7 +394,8 @@
             <button type="button" class="cover" id="coverBtn">Cover</button>
           </div>
           <button type="button" class="close ghost" id="closeBtn" hidden>Close position at market</button>
-          <div class="msg" id="tmsg" role="status"></div>
+          <div class="msg" id="tmsg" role="status" aria-live="polite"></div>
+          <div class="coach" id="rCoach" role="status" aria-live="polite" hidden></div>
           <div class="hint" id="thint"></div>
         </section>
 
@@ -428,6 +479,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/data.js"></script>
 <script src="js/paper.js"></script>
 <script src="js/replay.js"></script>
+<script src="js/risk.js"></script>
+<script src="js/leagues.js"></script>
+<script src="js/xp.js"></script>
+<script src="js/coach.js"></script>
 <script>
 /* Broward Trading — replay.html page script (UI only; the engine is js/replay.js → BT.replay) */
 (function () {
@@ -442,7 +497,8 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
   var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  var fmt = function (v, dp) { if (v == null || !isFinite(v)) return '—'; if (dp == null) dp = Math.abs(v) < 1 ? 4 : 2; return v.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp }); };
+  function loc() { try { return BT.i18n && typeof BT.i18n.locale === 'function' ? BT.i18n.locale() : undefined; } catch (e) { return undefined; } }
+  var fmt = function (v, dp) { if (v == null || !isFinite(v)) return '—'; if (dp == null) dp = Math.abs(v) < 1 ? 4 : 2; return v.toLocaleString(loc(), { minimumFractionDigits: dp, maximumFractionDigits: dp }); };
   var money = function (v) { return v == null || !isFinite(v) ? '—' : (v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
   var signed = function (v) { return v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
   var pct = function (v) { return v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; };
@@ -455,7 +511,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   var isTyping = function (el) { return el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable); };
 
   if (!LW || !ind || !data || !paper || !replay) {
-    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">Market Replay could not start: a required script (lightweight-charts, indicators.js, data.js, paper.js or replay.js) did not load. Check your connection and reload.</div>');
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="callout danger">' + esc(T('Market Replay could not start: a required script (lightweight-charts, indicators.js, data.js, paper.js or replay.js) did not load. Check your connection and reload.')) + '</div>');
     return;
   }
 
@@ -463,7 +519,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     var host = $('toasts'); if (!host) return;
     var el = document.createElement('div');
     el.className = 'toast ' + (kind || '');
-    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(T(title)) + '</b>' : '') + esc(T(msg)) + '</div><button class="close" aria-label="' + esc(T('Dismiss')) + '">✕</button>';
     var kill = function () { el.classList.add('leaving'); setTimeout(function () { el.remove(); }, 220); };
     el.querySelector('.close').onclick = kill;
     host.appendChild(el);
@@ -471,7 +527,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     setTimeout(kill, ms || 4500);
   }
 
-  $('honestyText').textContent = replay.HONESTY;
+  $('honestyText').textContent = T(replay.HONESTY);
 
   /* ------------------------------------------------------------------ *
    * Setup form
@@ -485,9 +541,9 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   function setSrcPill() {
     var st = data.status();
     var pill = $('srcpill');
-    pill.textContent = st.live ? st.label : 'demo';
+    pill.textContent = st.live ? st.label : T('demo');
     pill.className = 'pill ' + (st.live ? 'live' : 'demo');
-    pill.title = st.live ? 'Live candles from ' + st.label + ' when they cover your dates; otherwise demo' : 'Prices are simulated unless you add a free API key on the dashboard';
+    pill.title = st.live ? T('Live candles from {provider} when they cover your dates; otherwise demo', { provider: st.label }) : T('Prices are simulated unless you add a free API key on the dashboard');
   }
   setSrcPill();
 
@@ -508,10 +564,11 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   $('end').addEventListener('change', function () { endTouched = true; $('endHelp').textContent = budgetText(); });
   function budgetText() {
     var s = $('start').value, e = $('end').value, iv = $('interval').value;
-    if (!s || !e || e < s) return 'The end date must be after the start date.';
+    if (!s || !e || e < s) return T('The end date must be after the start date.');
     var b = replay.barBudget(iv, s, e);
     var n = b.days * (iv === '1day' ? 1 : b.per);
-    return (iv === '1day' ? b.days + ' trading days' : b.days + ' session' + (b.days === 1 ? '' : 's') + ' ≈ ' + n.toLocaleString() + ' bars') + (b.truncated ? ' — more than the ' + replay.MAX_LIMIT.toLocaleString() + '-bar limit, so the start will move later.' : '.');
+    var span = iv === '1day' ? T('{n} trading days', { n: b.days }) : T(b.days === 1 ? '{n} session ≈ {bars} bars' : '{n} sessions ≈ {bars} bars', { n: b.days, bars: n.toLocaleString() });
+    return b.truncated ? T('{span} — more than the {max}-bar limit, so the start will move later.', { span: span, max: replay.MAX_LIMIT.toLocaleString() }) : span + '.';
   }
 
   // symbol search
@@ -540,11 +597,11 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   function drillHtml(d, compact) {
     var crit = replay.evaluateDrill(d, { trades: 0, returnPct: 0, buyHoldPct: 0, alphaPct: 0, maxDrawdownPct: 0, winRate: null, profitFactor: null, wins: 0, losses: 0, openPosition: null, stopsUsed: 0, limitsUsed: 0, shortsOpened: 0 });
     return '<h3>' + esc(d.title) + '</h3>' +
-      '<div class="meta"><span class="pill ' + esc(d.level) + '">' + esc(d.level) + '</span><span class="num">' + esc(d.symbol) + ' · ' + esc(d.interval) + ' · ' + esc(d.start) + ' → ' + esc(d.end) + '</span>' + (d.minutes ? '<span>~' + d.minutes + ' min</span>' : '') + (d.ticks ? '<span class="pill">ticks on</span>' : '') + '</div>' +
+      '<div class="meta"><span class="pill ' + esc(d.level) + '">' + esc(T(d.level)) + '</span><span class="num">' + esc(d.symbol) + ' · ' + esc(d.interval) + ' · ' + esc(d.start) + ' → ' + esc(d.end) + '</span>' + (d.minutes ? '<span>' + esc(T('~{n} min', { n: d.minutes })) + '</span>' : '') + (d.ticks ? '<span class="pill">' + esc(T('ticks on')) + '</span>' : '') + '</div>' +
       '<p>' + esc(d.objective) + '</p>' +
-      '<details' + (compact ? '' : ' open') + '><summary>You pass when</summary><ul class="crit">' + crit.map(function (c) { return '<li>' + esc(c.text) + '</li>'; }).join('') + '</ul></details>' +
-      (d.hints.length ? '<details><summary>Hints (' + d.hints.length + ')</summary><ul>' + d.hints.map(function (h) { return '<li>' + esc(h) + '</li>'; }).join('') + '</ul></details>' : '') +
-      (d.lesson ? '<p class="note" style="margin:8px 0 0"><a href="learn.html#' + esc(d.lesson) + '">Related lesson ▸</a></p>' : '');
+      '<details' + (compact ? '' : ' open') + '><summary>' + esc(T('You pass when')) + '</summary><ul class="crit">' + crit.map(function (c) { return '<li>' + esc(c.text) + '</li>'; }).join('') + '</ul></details>' +
+      (d.hints.length ? '<details><summary>' + esc(T('Hints ({n})', { n: d.hints.length })) + '</summary><ul>' + d.hints.map(function (h) { return '<li>' + esc(h) + '</li>'; }).join('') + '</ul></details>' : '') +
+      (d.lesson ? '<p class="note" style="margin:8px 0 0"><a href="learn.html#' + esc(d.lesson) + '">' + esc(T('Related lesson')) + ' ▸</a></p>' : '');
   }
   function applyDrill(id) {
     var d = replay.getDrill(id);
@@ -562,12 +619,12 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   replay.loadDrills().then(function (list) {
     drills = list;
     var sel = $('drill');
-    list.forEach(function (d) { var o = document.createElement('option'); o.value = d.id; o.textContent = d.title + ' (' + d.level + ')'; sel.appendChild(o); });
+    list.forEach(function (d) { var o = document.createElement('option'); o.value = d.id; o.textContent = d.title + ' (' + T(d.level) + ')'; sel.appendChild(o); });
     var want = (location.hash.match(/drill=([\w-]+)/) || location.search.match(/drill=([\w-]+)/) || [])[1];
     if (want && replay.getDrill(want)) { sel.value = want; applyDrill(want); startSession(); }
   }).catch(function (e) {
     $('drill').disabled = true;
-    $('drill').options[0].textContent = 'Drills unavailable (' + (location.protocol === 'file:' ? 'open the site over http to load course/drills.json' : e.message) + ')';
+    $('drill').options[0].textContent = location.protocol === 'file:' ? T('Drills unavailable (open the site over http to load course/drills.json)') : T('Drills unavailable ({error})', { error: e.message });
   });
 
   // restore prefs
@@ -726,17 +783,17 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     priceLines = [];
     if (!S) return;
     var pos = S.position();
-    if (pos) priceLines.push(candles.createPriceLine({ price: pos.avg, color: css(pos.qty > 0 ? '--up' : '--down'), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: (pos.qty > 0 ? 'long ' : 'short ') + Math.abs(pos.qty) }));
+    if (pos) priceLines.push(candles.createPriceLine({ price: pos.avg, color: css(pos.qty > 0 ? '--up' : '--down'), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: T(pos.qty > 0 ? 'long {n}' : 'short {n}', { n: Math.abs(pos.qty) }) }));
     S.openOrders().forEach(function (o) {
       var px = o.type === 'stop' || o.type === 'stop_limit' ? o.stopPrice : o.limitPrice;
       if (px == null) return;
-      priceLines.push(candles.createPriceLine({ price: px, color: css(o.type === 'limit' ? '--accent' : '--warn'), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: (o.side === 'buy' ? 'buy ' : 'sell ') + o.type.replace('_', '-') }));
+      priceLines.push(candles.createPriceLine({ price: px, color: css(o.type === 'limit' ? '--accent' : '--warn'), lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: T(o.side === 'buy' ? 'buy {type}' : 'sell {type}', { type: T({ market: 'Market', limit: 'Limit', stop: 'Stop', stop_limit: 'Stop-limit' }[o.type] || o.type).toLowerCase() }) }));
     });
   }
   function updateTag(bars) {
     var b = bars[bars.length - 1];
     var chg = bars.length > 1 ? (b.close / bars[bars.length - 2].close - 1) * 100 : 0;
-    $('chartTag').innerHTML = '<b>' + esc(S.symbol) + '</b> O ' + fmt(b.open) + ' H ' + fmt(b.high) + ' L ' + fmt(b.low) + ' C <b>' + fmt(b.close) + '</b> <span class="' + cls(chg) + '">' + pct(chg) + '</span>' + (b.partial ? ' <span class="warnc">forming…</span>' : '');
+    $('chartTag').innerHTML = '<b>' + esc(S.symbol) + '</b> O ' + fmt(b.open) + ' H ' + fmt(b.high) + ' L ' + fmt(b.low) + ' C <b>' + fmt(b.close) + '</b> <span class="' + cls(chg) + '">' + pct(chg) + '</span>' + (b.partial ? ' <span class="warnc">' + esc(T('forming…')) + '</span>' : '');
   }
   $('ovl').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-ovl]'); if (!b) return;
@@ -756,10 +813,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     var iv = $('interval').value, start = $('start').value, end = $('end').value;
     var cash = +$('cash').value || 100000, ticks = $('ticks').checked, drillId = $('drill').value;
     var msg = $('setupMsg');
-    if (!sym) { msg.textContent = 'Enter a symbol first.'; $('sym').focus(); return; }
-    if (!start) { msg.textContent = 'Pick a start date.'; return; }
-    if (end && end < start) { msg.textContent = 'The end date must be after the start date.'; return; }
-    msg.textContent = 'Loading bars…'; $('startBtn').disabled = true;
+    if (!sym) { msg.textContent = T('Enter a symbol first.'); $('sym').focus(); return; }
+    if (!start) { msg.textContent = T('Pick a start date.'); return; }
+    if (end && end < start) { msg.textContent = T('The end date must be after the start date.'); return; }
+    msg.textContent = T('Loading bars…'); $('startBtn').disabled = true;
     store.set('bt.replay.prefs', { symbol: sym, interval: iv, start: start, cash: cash, ticks: ticks });
     lastSetup = { symbol: sym, interval: iv, start: start, end: end, cash: cash, ticks: ticks, drillId: drillId };
     replay.loadBars({ symbol: sym, interval: iv, start: start, end: end }).then(function (r) {
@@ -767,18 +824,18 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
       beginSession(r, lastSetup);
       msg.textContent = '';
     }).catch(function (e) {
-      msg.textContent = (e && e.message) || 'Could not load bars.';
+      msg.textContent = (e && e.message) || T('Could not load bars.');
       toast(msg.textContent, 'err', 'Replay');
     }).then(function () { $('startBtn').disabled = false; });
   }
   function beginSession(r, setup) {
     if (S) { S.destroy(); S = null; }
     var drill = setup.drillId ? replay.getDrill(setup.drillId) : null;
-    S = replay.createSession(r.bars, { symbol: r.symbol, interval: r.interval, startIndex: r.startIndex, cash: setup.cash, ticks: setup.ticks, drill: drill, source: r.source, note: r.note });
+    S = replay.createSession(r.bars, { symbol: r.symbol, interval: r.interval, startIndex: r.startIndex, cash: setup.cash, ticks: setup.ticks, drill: drill, source: r.source, note: r.note, validateOrder: practiceRules });
     logShown = 0; $('log').innerHTML = ''; $('logCount').textContent = '0';
     $('setup').hidden = true; $('scorecard').hidden = true; $('session').hidden = false;
-    $('sTitle').textContent = S.symbol; $('sInterval').textContent = S.interval + ' · ' + (r.source === 'demo' ? 'demo data' : r.source);
-    $('sessNote').hidden = !r.note; $('sessNote').innerHTML = r.note ? '<b>Note</b> ' + esc(r.note) : '';
+    $('sTitle').textContent = S.symbol; $('sInterval').textContent = S.interval + ' · ' + (r.source === 'demo' ? T('demo data') : r.source);
+    $('sessNote').hidden = !r.note; $('sessNote').innerHTML = r.note ? '<b>' + esc(T('Note')) + '</b> ' + esc(r.note) : '';
     $('sessDrillWrap').hidden = !drill; $('sessDrillWrap').open = false; $('sessDrillName').textContent = drill ? drill.title : ''; $('sessDrill').innerHTML = drill ? drillHtml(drill, true) : '';
     $('ticksLive').checked = S.ticks;
     $('speed').value = String(S.speed);
@@ -788,10 +845,11 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     S.log.forEach(onLog);
     renderChart(false); renderAll();
     $('qty').value = String(defaultQty(0.1));
-    $('tmsg').textContent = ''; $('tmsg').className = 'msg';
-    $('thint').textContent = 'Market orders fill at the last revealed price. Limit and stop orders rest until a revealed bar reaches them.';
+    $('tmsg').textContent = ''; $('tmsg').className = 'msg'; showCoach([]);
+    $('thint').textContent = T('Market orders fill at the last revealed price. Limit and stop orders rest until a revealed bar reaches them.');
+    renderRulesPicker(); renderPlan(false);
     window.scrollTo({ top: $('session').offsetTop - 8, behavior: 'smooth' });
-    toast('Replay ready: press Step or Play. The future stays hidden until you reveal it.', 'ok', S.symbol + ' ' + S.interval);
+    toast(T('Replay ready: press Step or Play. The future stays hidden until you reveal it.'), 'ok', S.symbol + ' ' + S.interval);
   }
   function endSession(toSetup) {
     if (S) { S.destroy(); S = null; }
@@ -799,8 +857,25 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     if (toSetup) { $('setup').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
 
-  function onStep(p) { updateChart(p); renderAccount(); renderOrders(); renderProgress(); if (p.fills.length) drawPriceLines(); }
-  function onFill(f) { if (!f || !f.trade) return; toast((f.order.side === 'buy' ? 'Bought ' : 'Sold ') + f.trade.qty + ' @ ' + money(f.trade.price) + (f.trade.realized ? ' · realized ' + signed(f.trade.realized) : ''), f.trade.realized < 0 ? 'warn' : 'ok', 'Fill'); }
+  function onStep(p) { updateChart(p); renderAccount(); renderOrders(); renderProgress(); if (p.fills.length) drawPriceLines(); if ($('planBox').open && !S.playing) renderPlan(false); }
+  function onFill(f) {
+    if (!f || !f.trade) return;
+    var v = { qty: f.trade.qty, price: money(f.trade.price), realized: signed(f.trade.realized) };
+    toast(T(f.order.side === 'buy' ? (f.trade.realized ? 'Bought {qty} @ {price} · realized {realized}' : 'Bought {qty} @ {price}') : (f.trade.realized ? 'Sold {qty} @ {price} · realized {realized}' : 'Sold {qty} @ {price}'), v), f.trade.realized < 0 ? 'warn' : 'ok', T('Fill'));
+    // Coach: review the order behind the fill and, when it closed a position, the round trip.
+    var notes = coachReview('order', f.order);
+    if (f.trade.closedQty > 0) notes = notes.concat(coachReview('trade', f.trade));
+    var seen = {}; notes = notes.filter(function (n) { var k = (n.title || '') + '|' + (n.message || ''); if (seen[k]) return false; seen[k] = 1; return true; });
+    if (notes.length) showCoach(notes);
+    awardXp('firstTrade', 'once');
+    // A planned entry that was resting as a limit / stop: place its protective stop now that it filled.
+    var m = f.order.meta || {};
+    if (m.protectStop && !m.protectPlaced && f.order.status === 'filled') {
+      m.protectPlaced = true;
+      var entryOrder = f.order;
+      setTimeout(function () { placeProtectiveStop(entryOrder, m.protectStop); }, 0);   // outside the engine's fill callback
+    }
+  }
   function onLog(e) {
     var host = $('log');
     var all = S ? S.log : [];
@@ -826,7 +901,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   }
   function renderControls() {
     if (!S) return;
-    $('playBtn').textContent = S.playing ? 'Pause' : 'Play';
+    $('playBtn').textContent = S.playing ? T('Pause') : T('Play');
     $('playBtn').classList.toggle('primary', !S.playing);
     $('stepBtn').disabled = S.playing || S.done; $('playBtn').disabled = S.done; $('jumpBtn').disabled = S.done; $('endBtn').disabled = S.done;
   }
@@ -837,15 +912,15 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     $('aEquity').textContent = money(s.equity);
     $('aPnl').textContent = signed(s.pnl) + ' (' + pct(s.pnlPct) + ')'; $('aPnl').className = 'sub num ' + cls(s.pnl);
     $('aCash').textContent = money(s.cash);
-    $('aOrders').textContent = s.openOrders.length + ' working order' + (s.openOrders.length === 1 ? '' : 's');
+    $('aOrders').textContent = T(s.openOrders.length === 1 ? '{n} working order' : '{n} working orders', { n: s.openOrders.length });
     $('aRealized').textContent = signed(s.realized); $('aRealized').className = 'value num ' + cls(s.realized);
     var st = paper.stats();
-    $('aTrades').textContent = st.trades + ' closed trade' + (st.trades === 1 ? '' : 's') + (st.winRate == null ? '' : ' · ' + st.winRate.toFixed(0) + '% won');
+    $('aTrades').textContent = T(st.trades === 1 ? '{n} closed trade' : '{n} closed trades', { n: st.trades }) + (st.winRate == null ? '' : ' · ' + T('{pct}% won', { pct: st.winRate.toFixed(0) }));
     if (s.position) {
-      $('aPos').textContent = (s.position.qty > 0 ? 'Long ' : 'Short ') + Math.abs(s.position.qty) + ' @ ' + fmt(s.position.avg);
+      $('aPos').textContent = T(s.position.qty > 0 ? 'Long {qty} @ {price}' : 'Short {qty} @ {price}', { qty: Math.abs(s.position.qty), price: fmt(s.position.avg) });
       $('aPos').className = 'value num ' + (s.position.qty > 0 ? 'up' : 'down');
-      $('aUnreal').textContent = 'Unrealized ' + signed(s.position.unrealized) + ' (' + pct(s.position.unrealizedPct) + ')'; $('aUnreal').className = 'sub num ' + cls(s.position.unrealized);
-    } else { $('aPos').textContent = 'flat'; $('aPos').className = 'value num'; $('aUnreal').textContent = 'No open position'; $('aUnreal').className = 'sub'; }
+      $('aUnreal').textContent = T('Unrealized {amount} ({pct})', { amount: signed(s.position.unrealized), pct: pct(s.position.unrealizedPct) }); $('aUnreal').className = 'sub num ' + cls(s.position.unrealized);
+    } else { $('aPos').textContent = T('flat'); $('aPos').className = 'value num'; $('aUnreal').textContent = T('No open position'); $('aUnreal').className = 'sub'; }
     var v = paper.valuation({}); var mc = v.shortValue > 0 && s.cash < v.shortValue * paper.SHORT_MARGIN;
     $('aMargin').hidden = !mc;
     var first = S.visible()[S.startIndex].close;
@@ -854,17 +929,18 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     // ticket buttons by context
     var q = s.position ? s.position.qty : 0;
     $('sellBtn').disabled = !(q > 0); $('coverBtn').disabled = !(q < 0); $('shortBtn').disabled = q > 0; $('buyBtn').disabled = q < 0;
-    $('closeBtn').hidden = !s.position; $('closeBtn').textContent = s.position ? (q > 0 ? 'Sell to close ' : 'Buy to cover ') + Math.abs(q) + ' at market' : '';
+    $('closeBtn').hidden = !s.position; $('closeBtn').textContent = s.position ? T(q > 0 ? 'Sell to close {n} at market' : 'Buy to cover {n} at market', { n: Math.abs(q) }) : '';
     if (S.done) ['buyBtn', 'sellBtn', 'shortBtn', 'coverBtn'].forEach(function (id) { $(id).disabled = true; });
   }
   function renderOrders() {
     if (!S) return;
     var list = S.openOrders();
     $('ordersCount').textContent = String(list.length);
-    if (!list.length) { $('orders').className = 'empty'; $('orders').textContent = 'No working orders. Limit and stop orders rest here until a revealed bar reaches them.'; return; }
+    if (!list.length) { $('orders').className = 'empty'; $('orders').textContent = T('No working orders. Limit and stop orders rest here until a revealed bar reaches them.'); return; }
     $('orders').className = '';
+    var TYPES = { market: 'Market', limit: 'Limit', stop: 'Stop', stop_limit: 'Stop-limit' };
     $('orders').innerHTML = '<table><tbody>' + list.map(function (o) {
-      return '<tr><td class="desc"><b>' + esc(o.side.toUpperCase()) + ' ' + o.qty + '</b> ' + esc(o.type.replace('_', '-')) + (o.limitPrice != null ? ' · limit ' + money(o.limitPrice) : '') + (o.stopPrice != null ? ' · stop ' + money(o.stopPrice) : '') + ' · ' + esc(o.tif.toUpperCase()) + '<small>' + esc(o.reason || paper.describeOrder(o)) + '</small></td><td><button type="button" data-cancel="' + o.id + '">Cancel</button></td></tr>';
+      return '<tr><td class="desc"><b>' + esc(T(o.side === 'buy' ? 'BUY' : 'SELL')) + ' ' + o.qty + '</b> ' + esc(T(TYPES[o.type] || o.type)) + (o.limitPrice != null ? ' · ' + esc(T('limit {price}', { price: money(o.limitPrice) })) : '') + (o.stopPrice != null ? ' · ' + esc(T('stop {price}', { price: money(o.stopPrice) })) : '') + ' · ' + esc(T(o.tif === 'day' ? 'Day' : 'GTC')) + '<small>' + esc(o.reason || paper.describeOrder(o)) + '</small></td><td><button type="button" data-cancel="' + o.id + '">' + esc(T('Cancel')) + '</button></td></tr>';
     }).join('') + '</tbody></table>';
   }
   $('orders').addEventListener('click', function (e) {
@@ -877,10 +953,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   $('stepBtn').onclick = function () { if (S) S.step(); };
   $('playBtn').onclick = function () { if (S) S.toggle(); };
   $('speed').onchange = function () { if (S) S.setSpeed(+$('speed').value); };
-  $('jumpBtn').onclick = function () { if (!S) return; if (!confirm('Reveal every remaining bar now? Working orders will still fill on the way. You can keep trading until the last bar only by stepping.')) return; S.jumpToEnd(); };
+  $('jumpBtn').onclick = function () { if (!S) return; if (!confirm(T('Reveal every remaining bar now? Working orders will still fill on the way. You can keep trading until the last bar only by stepping.'))) return; S.jumpToEnd(); };
   function finishEarly() {
     if (!S || S.done) return;
-    if (S.drill && !confirm('End the drill now? Ending early cannot pass a drill — only a fully revealed session can. Your trades are still scored and saved.')) return;
+    if (S.drill && !confirm(T('End the drill now? Ending early cannot pass a drill — only a fully revealed session can. Your trades are still scored and saved.'))) return;
     S.finish();
   }
   $('endBtn').onclick = finishEarly;
@@ -890,13 +966,150 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     $('moreBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
   };
   $('ticksLive').onchange = function () { if (S) S.setTicks($('ticksLive').checked); renderProgress(); };
-  $('changeSetup').onclick = function () { if (S && !S.done && !confirm('Abandon this replay and go back to the setup? Its trades will not be scored.')) return; endSession(true); };
+  $('changeSetup').onclick = function () { if (S && !S.done && !confirm(T('Abandon this replay and go back to the setup? Its trades will not be scored.'))) return; endSession(true); };
   document.addEventListener('keydown', function (e) {
     if (!S || isTyping(document.activeElement) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); if (!S.playing) S.step(); }
     else if (e.key === 'p' || e.key === 'P') { S.toggle(); }
     else if (e.key === 'e' || e.key === 'E') { finishEarly(); }
   });
+
+  /* ------------------------------------------------------------------ *
+   * Account & rules (v0.5). Replay always trades on its own 'replay' account: a replay is reset at
+   * every start and runs on historical prices, so it must never touch Main or a league account.
+   * What the student can choose is a league's RULES to practise under (BT.leagues.validateOrder).
+   * ------------------------------------------------------------------ */
+  var RULES_KEY = 'bt.replay.rules';
+  function leaguesApi() { return BT.leagues && typeof BT.leagues.validateOrder === 'function' ? BT.leagues : null; }
+  function joinedLeagues() { var L = leaguesApi(); if (!L || typeof L.joined !== 'function') return []; try { return L.joined().filter(Boolean); } catch (e) { return []; } }
+  function rulesLeague() {
+    var code = store.get(RULES_KEY, ''); if (!code) return null;
+    var hit = joinedLeagues().filter(function (lg) { return lg.code === code; })[0];
+    return hit || null;
+  }
+  function localDay(ms) { var d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  /** createSession's validateOrder hook: league rules at the replay's own date (the league's real dates do not apply here). */
+  function practiceRules(req, ctx) {
+    var lg = rulesLeague(); if (!lg) return { ok: true };
+    var day = localDay(ctx.time);
+    var practice = Object.assign({}, lg, { startDate: day, endDate: day });
+    var acct = Object.assign({}, ctx.account || {}, { marks: Object.assign({}, (ctx.account && ctx.account.marks) || {}) });
+    if (S) acct.marks[S.symbol] = ctx.price;
+    try { return BT.leagues.validateOrder(Object.assign({}, req, { time: ctx.time }), practice, acct) || { ok: true }; } catch (e) { return { ok: true }; }
+  }
+  function renderRulesPicker() {
+    var sel = $('rAcct'); if (!sel) return;
+    var lgs = joinedLeagues(), cur = rulesLeague();
+    sel.innerHTML = '<option value="replay">' + esc(T('Replay practice account')) + '</option>' +
+      '<option value="main" disabled>' + esc(T('Main account (not available in Replay)')) + '</option>' +
+      lgs.map(function (lg) { return '<option value="league:' + esc(lg.code) + '">' + esc(T('Replay account · {name} rules', { name: lg.name })) + '</option>'; }).join('');
+    sel.value = cur ? 'league:' + cur.code : 'replay';
+    var note = $('rAcctNote');
+    if (cur) {
+      var r = cur.rules || {}, kinds = { stock: T('stocks'), etf: T('ETFs'), crypto: T('crypto'), option: T('options') };
+      var parts = [T('allowed: {list}', { list: (r.assets || ['stock']).map(function (k) { return kinds[k] || k; }).join(', ') }), T(r.shortSelling ? 'short selling on' : 'short selling off'), T(r.dayTrading ? 'day trading on' : 'day trading off')];
+      if (r.maxPositionPct && r.maxPositionPct < 100) parts.push(T('max {pct}% of equity per position', { pct: r.maxPositionPct }));
+      note.textContent = T('Practising under {name} rules ({rules}). Trades stay on the Replay account and never count in the league.', { name: cur.name, rules: parts.join(' · ') });
+    } else note.textContent = T('Replay trades always use their own practice account, so historical prices never mix with your main account or league standings.');
+    $('acctpill').textContent = cur ? T('account: replay · {name} rules', { name: cur.name }) : T('account: replay');
+  }
+  if ($('rAcct')) $('rAcct').onchange = function () {
+    var v = this.value, code = v.indexOf('league:') === 0 ? v.slice(7) : '';
+    store.set(RULES_KEY, code);
+    renderRulesPicker(); renderPlan(false);
+    toast(code ? T('League rules are now checked before every replay order.') : T('Back to the plain Replay rules.'), 'ok', T('Account & rules'));
+  };
+  renderRulesPicker();
+  window.addEventListener('storage', function (e) { if (e && e.key && /^bt\.leagues/.test(e.key)) renderRulesPicker(); });
+
+  /* ------------------------------------------------------------------ *
+   * "Plan this trade" (BT.risk) — sizes the position from the stop and the risk %
+   * ------------------------------------------------------------------ */
+  function riskApi() { return BT.risk && typeof BT.risk.planTrade === 'function' ? BT.risk : null; }
+  function planNum(id) { var v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) && v > 0 ? v : null; }
+  function planEntry() {
+    if (!S) return null;
+    var t = $('otype').value, lim = +$('limitPx').value, stp = +$('stopPx').value;
+    if (t === 'limit' && lim > 0) return lim;
+    if ((t === 'stop' || t === 'stop_limit') && stp > 0) return t === 'stop_limit' && lim > 0 ? lim : stp;
+    return S.price();
+  }
+  function computePlan() {
+    var R = riskApi(); if (!R || !S) return null;
+    var entry = planEntry(), riskPct = planNum('planRisk') || 1, stop = planNum('planStop'), target = planNum('planTarget');
+    if (!stop || !(entry > 0)) return { state: 'empty', entry: entry, riskPct: riskPct };
+    var lg = rulesLeague(), equity = S.snapshot().equity;
+    var p = R.planTrade({ equity: equity, riskPct: riskPct, entry: entry, stop: stop, target: target, maxPositionPct: lg && lg.rules ? lg.rules.maxPositionPct : 100 });
+    p.state = 'ready'; p.entry = entry; p.stop = stop; p.target = target; p.riskPct = riskPct; p.equity = equity;
+    if (p.size && p.size.error) p.error = p.size.error;
+    return p;
+  }
+  function planMeta(p, qty) {
+    if (!p || p.state !== 'ready' || p.error || !(qty > 0)) return null;
+    var risk = Math.abs(p.entry - p.stop) * qty;
+    return {
+      plan: { stop: p.stop, target: p.target || null, riskPct: p.riskPct, riskPctActual: p.equity > 0 ? risk / p.equity * 100 : null, dollarRisk: Math.round(risk * 100) / 100, entry: p.entry, shares: qty, plannedShares: p.shares, rewardRisk: p.rewardRisk, source: 'replay' },
+      plannedStop: p.stop, plannedTarget: p.target || null, plannedRiskPct: p.equity > 0 ? Math.round(risk / p.equity * 10000) / 100 : null
+    };
+  }
+  function renderPlan(fromInput) {
+    var box = $('planBox'); if (!box) return;
+    if (!riskApi()) { box.hidden = true; return; }
+    var p = computePlan(), out = $('planOut'), warn = $('planWarn'), sum = $('planSummary');
+    $('planStopRow').hidden = !(p && p.state === 'ready' && !p.error && p.shares > 0);
+    if (!p || p.state === 'empty') {
+      out.innerHTML = ''; sum.textContent = '';
+      warn.innerHTML = '<li>' + esc(T('Enter the price where your idea is proven wrong: below {entry} for a long, above it for a short.', { entry: p && p.entry ? money(p.entry) : '—' })) + '</li>';
+      return;
+    }
+    if (p.error) { out.innerHTML = ''; sum.textContent = ''; warn.innerHTML = '<li class="warn">' + esc(p.error) + '</li>'; return; }
+    var rows = [[T('Plan'), T(p.side === 'short' ? 'short (stop above the entry)' : 'long (stop below the entry)')], [T('Entry (about)'), money(p.entry)], [T('Shares for {pct}% risk', { pct: fmt(p.riskPct, p.riskPct % 1 ? 2 : 0) }), String(p.shares)], [T('Loss if the stop is hit'), money(p.lossAtStop)], [T('Position size'), money(p.size.positionValue) + ' (' + fmt(p.size.pctOfEquity, 1) + '%)']];
+    if (p.rewardRisk != null) { rows.push([T('Reward : risk'), fmt(p.rewardRisk, 2) + ' : 1']); rows.push([T('Break-even win rate'), fmt(p.breakevenWinRate * 100, 1) + '%']); }
+    out.innerHTML = rows.map(function (r) { return '<span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span>'; }).join('');
+    var w = (p.warnings || []).map(function (x) { return '<li class="' + (x.level === 'warn' ? 'warn' : '') + '">' + esc(x.message) + '</li>'; });
+    if (!(p.shares > 0)) w.push('<li class="warn">' + esc(T('At this stop distance even one share risks more than {pct}% of your equity. Move the stop closer or accept a smaller position elsewhere.', { pct: fmt(p.riskPct, 2) })) + '</li>');
+    w.push('<li>' + esc(T(p.side === 'short' ? 'Tap Short to use this plan.' : 'Tap Buy to use this plan.')) + '</li>');
+    warn.innerHTML = w.join('');
+    sum.textContent = p.shares > 0 ? T('{n} shares · {pct}% risk', { n: p.shares, pct: fmt(p.riskPct, p.riskPct % 1 ? 2 : 0) }) : '';
+    if (fromInput && p.shares > 0) { $('qty').value = String(p.shares); $('planMsg').textContent = T('Quantity set to {n} shares from your plan.', { n: p.shares }); }
+  }
+  ['planRisk', 'planStop', 'planTarget'].forEach(function (id) { $(id).addEventListener('input', debounce(function () { $('planMsg').textContent = ''; renderPlan(true); }, 250)); });
+  $('planBox').addEventListener('toggle', function () { if ($('planBox').open) renderPlan(false); });
+  /** After a planned entry fills, rest a stop-loss at the planned stop (the replay engine treats it as reduce-only). */
+  function placeProtectiveStop(entry, stopPx) {
+    if (!S || S.done) return;
+    var pos = S.position(); if (!pos) return;
+    var qty = Math.min(entry.filledQty || entry.qty, Math.abs(pos.qty));
+    var so = S.order({ side: pos.qty > 0 ? 'sell' : 'buy', qty: qty, type: 'stop', stopPrice: stopPx, tif: 'gtc', intent: pos.qty > 0 ? 'sell' : 'cover', meta: { protects: entry.id } });
+    if (so && so.status === 'open') toast(T('Stop-loss order placed at {stop} for {qty} shares.', { stop: money(stopPx), qty: qty }), 'ok', T('Protected'));
+    else if (so) toast(T('The stop-loss order could not be placed: {reason}', { reason: so.reason }), 'warn', T('Plan'), 7000);
+    renderOrders(); drawPriceLines();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Coach notes (BT.coach, optional) and XP (BT.xp, optional)
+   * ------------------------------------------------------------------ */
+  function awardXp(event, key) { try { if (BT.xp && typeof BT.xp.award === 'function') BT.xp.award(event, key); } catch (e) { /* never break the replay */ } }
+  function coachReview(kind, subject) {
+    var C = BT.coach; if (!C || !subject || !S) return [];
+    var fn = kind === 'trade' ? C.reviewTrade : C.reviewOrder;
+    if (typeof fn !== 'function') return [];
+    try {
+      var out = fn.call(C, subject, { account: paper.getState(), bars: S.visible(), price: S.price(), time: S.currentTime(), equity: S.snapshot().equity });
+      if (out && !Array.isArray(out) && Array.isArray(out.notes)) out = out.notes;
+      return Array.isArray(out) ? out.filter(function (n) { return n && (n.title || n.message); }) : [];
+    } catch (e) { console.warn('Coach review failed', e); return []; }
+  }
+  function showCoach(notes) {
+    var box = $('rCoach'); if (!box) return;
+    if (!notes || !notes.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="coach-head"><b>' + esc(T('Coach notes')) + '</b><button class="sm ghost" type="button" id="rCoachClose">' + esc(T('Got it')) + '</button></div><ul>' + notes.slice(0, 5).map(function (n) {
+      var lesson = n.lessonId && /^[\w-]+$/.test(String(n.lessonId)) ? ' <a href="learn.html#/lesson/' + esc(n.lessonId) + '">' + esc(T('Related lesson')) + ' ▸</a>' : '';
+      return '<li class="' + (n.level === 'warn' ? 'warn' : '') + '"><b>' + esc(n.title || '') + '</b> ' + esc(n.message || '') + lesson + '</li>';
+    }).join('') + '</ul><p class="note">' + esc(T('The coach checks habits (risk, stops, trend, overtrading). It never tells you what to buy or sell.')) + '</p>';
+    box.hidden = false;
+    $('rCoachClose').onclick = function () { showCoach([]); };
+  }
 
   /* ---- ticket ---- */
   function defaultQty(frac) {
@@ -910,23 +1123,34 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     var needLimit = t === 'limit' || t === 'stop_limit', needStop = t === 'stop' || t === 'stop_limit';
     $('limitField').hidden = !needLimit; $('stopField').hidden = !needStop;
     if (S) { var px = S.price(); if (needLimit && !$('limitPx').value) $('limitPx').value = px.toFixed(2); if (needStop && !$('stopPx').value) $('stopPx').value = px.toFixed(2); }
-    var g = paper.glossary[t]; $('thint').textContent = g || '';
+    var g = paper.glossary[t]; $('thint').textContent = g ? T(g) : '';
   }
-  $('otype').onchange = syncTypeFields; syncTypeFields();
+  $('otype').onchange = function () { syncTypeFields(); renderPlan(false); }; syncTypeFields();
+  $('limitPx').addEventListener('input', debounce(function () { renderPlan(false); }, 250));
+  $('stopPx').addEventListener('input', debounce(function () { renderPlan(false); }, 250));
   function place(side, intent) {
     if (!S) return;
     var qty = Math.floor(+$('qty').value);
     var t = $('otype').value;
-    var o = S.order({ side: side, qty: qty, type: t, tif: $('tif').value, intent: intent,
+    // A plan travels with an opening order whose direction matches it (Buy ↔ long plan, Short ↔ short plan).
+    var opening = intent === 'buy' || intent === 'short';
+    var p = opening ? computePlan() : null;
+    var pm = p && p.state === 'ready' && !p.error && p.side === (intent === 'short' ? 'short' : 'long') ? planMeta(p, qty) : null;
+    var protect = pm && $('planStopOrder').checked ? pm.plan.stop : null;
+    var meta = pm ? Object.assign({}, pm, protect ? { protectStop: protect } : {}) : undefined;
+    var o = S.order({ side: side, qty: qty, type: t, tif: $('tif').value, intent: intent, meta: meta,
       limitPrice: (t === 'limit' || t === 'stop_limit') ? +$('limitPx').value : undefined,
       stopPrice: (t === 'stop' || t === 'stop_limit') ? +$('stopPx').value : undefined });
     var m = $('tmsg');
     if (!o) return;
-    if (o.status === 'filled') { m.className = 'msg ok'; m.textContent = 'Filled ' + o.qty + ' ' + S.symbol + ' @ ' + money(o.fillPrice) + '.'; }
-    else if (o.status === 'open') { m.className = 'msg'; m.textContent = 'Working: ' + paper.describeOrder(o); }
-    else { m.className = 'msg err'; m.textContent = o.reason; }
+    if (o.status === 'filled') { m.className = 'msg ok'; m.textContent = T('Filled {qty} {symbol} @ {price}.', { qty: o.qty, symbol: S.symbol, price: money(o.fillPrice) }); }
+    else if (o.status === 'open') { m.className = 'msg'; m.textContent = T('Working: {order}', { order: paper.describeOrder(o) }); }
+    else { m.className = 'msg err'; m.textContent = o.blockedByRules ? T('League rule: {reason}', { reason: o.reason }) : o.reason; }
+    if (o.status === 'filled' && protect && o.meta && !o.meta.protectPlaced) { o.meta.protectPlaced = true; placeProtectiveStop(o, protect); }
+    if (pm && o.status !== 'rejected') { $('planStop').value = ''; $('planTarget').value = ''; }
+    if (opening && !pm && o.status !== 'rejected' && p && p.state === 'ready' && !p.error) $('planMsg').textContent = T('Your plan was for a {side} trade, so it was not attached to this order.', { side: T(p.side === 'short' ? 'short' : 'long') });
     $('limitPx').value = ''; $('stopPx').value = ''; syncTypeFields();
-    renderAccount(); renderOrders(); drawPriceLines();
+    renderAccount(); renderOrders(); drawPriceLines(); renderPlan(false);
   }
   $('buyBtn').onclick = function () { place('buy', 'buy'); };
   $('sellBtn').onclick = function () { place('sell', 'sell'); };
@@ -935,7 +1159,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   $('closeBtn').onclick = function () {
     if (!S) return;
     var o = S.closePosition(); var m = $('tmsg');
-    if (o && o.status === 'filled') { m.className = 'msg ok'; m.textContent = 'Closed @ ' + money(o.fillPrice) + '.'; }
+    if (o && o.status === 'filled') { m.className = 'msg ok'; m.textContent = T('Closed @ {price}.', { price: money(o.fillPrice) }); }
     else if (o) { m.className = 'msg err'; m.textContent = o.reason; }
     renderAccount(); renderOrders(); drawPriceLines();
   };
@@ -951,48 +1175,50 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     renderHistory();
     var sc = $('scorecard');
     var beat = c.returnPct > c.buyHoldPct;
-    $('verdict').textContent = c.drill ? (c.drill.passed ? 'drill passed' : (c.completed ? 'drill not passed' : 'drill not passed (ended early)')) : (beat ? 'beat buy-and-hold' : 'behind buy-and-hold');
+    $('verdict').textContent = T(c.drill ? (c.drill.passed ? 'drill passed' : (c.completed ? 'drill not passed' : 'drill not passed (ended early)')) : (beat ? 'beat buy-and-hold' : 'behind buy-and-hold'));
+    if (c.drill && c.completed) awardXp('drill', c.drill.id);
     $('verdict').className = 'pill verdict ' + ((c.drill ? c.drill.passed : beat) ? 'up' : 'down');
-    $('scoreSummary').textContent = c.symbol + ' ' + c.interval + ' · ' + c.startLabel + ' → ' + c.endLabel + ' · ' + c.barsRevealed + ' of ' + c.bars + ' bars revealed' + (c.completed ? '' : ' (ended early)') + '.';
+    $('scoreSummary').textContent = c.symbol + ' ' + c.interval + ' · ' + c.startLabel + ' → ' + c.endLabel + ' · ' + T(c.completed ? '{n} of {total} bars revealed.' : '{n} of {total} bars revealed (ended early).', { n: c.barsRevealed, total: c.bars });
     var tiles = [
-      ['Your return', pct(c.returnPct), cls(c.returnPct), signed(c.pnl)],
-      ['Buy & hold', pct(c.buyHoldPct), cls(c.buyHoldPct), 'same period'],
-      ['Alpha', pct(c.alphaPct), cls(c.alphaPct), 'you minus buy & hold'],
-      ['Closed trades', String(c.trades), '', c.fills + ' fills'],
-      ['Win rate', c.winRate == null ? '—' : c.winRate.toFixed(0) + '%', '', c.wins + ' W · ' + c.losses + ' L'],
-      ['Max drawdown', c.maxDrawdownPct.toFixed(2) + '%', c.maxDrawdownPct > 10 ? 'down' : '', money(c.maxDrawdown)],
-      ['Profit factor', c.profitFactor == null ? (c.wins ? '∞' : '—') : c.profitFactor.toFixed(2), '', 'gross win ÷ gross loss'],
-      ['Final equity', money(c.equity), '', 'from ' + money(c.startingCash)],
-      ['Orders', String(c.ordersPlaced), '', c.stopsUsed + ' stops · ' + c.limitsUsed + ' limits']
+      [T('Your return'), pct(c.returnPct), cls(c.returnPct), signed(c.pnl)],
+      [T('Buy & hold'), pct(c.buyHoldPct), cls(c.buyHoldPct), T('same period')],
+      [T('Alpha'), pct(c.alphaPct), cls(c.alphaPct), T('you minus buy & hold')],
+      [T('Closed trades'), String(c.trades), '', T('{n} fills', { n: c.fills })],
+      [T('Win rate'), c.winRate == null ? '—' : c.winRate.toFixed(0) + '%', '', T('{w} W · {l} L', { w: c.wins, l: c.losses })],
+      [T('Max drawdown'), c.maxDrawdownPct.toFixed(2) + '%', c.maxDrawdownPct > 10 ? 'down' : '', money(c.maxDrawdown)],
+      [T('Profit factor'), c.profitFactor == null ? (c.wins ? '∞' : '—') : c.profitFactor.toFixed(2), '', T('gross win ÷ gross loss')],
+      [T('Final equity'), money(c.equity), '', T('from {cash}', { cash: money(c.startingCash) })],
+      [T('Orders'), String(c.ordersPlaced), '', T('{stops} stops · {limits} limits', { stops: c.stopsUsed, limits: c.limitsUsed })]
     ];
     $('scoreTiles').innerHTML = tiles.map(function (t) { return '<div class="stat"><span class="label">' + esc(t[0]) + '</span><span class="value num ' + t[2] + '">' + esc(t[1]) + '</span><span class="sub">' + esc(t[3]) + '</span></div>'; }).join('');
     if (c.drill) {
       $('scoreDrill').hidden = false;
-      $('scoreDrillTitle').textContent = 'Drill: ' + c.drill.title;
+      $('scoreDrillTitle').textContent = T('Drill: {title}', { title: c.drill.title });
       $('scoreCrit').innerHTML = c.drill.results.map(function (r) { return '<li><span class="' + (r.pass ? 'ok' : 'no') + '">' + (r.pass ? '✓' : '✕') + '</span><span>' + esc(r.text) + '<small>' + esc(r.actualText) + '</small></span></li>'; }).join('');
     } else $('scoreDrill').hidden = true;
     var notes = [];
-    if (c.openPosition) notes.push('You still hold ' + c.openPosition.qty + ' shares; their ' + (c.openPosition.unrealized >= 0 ? 'gain' : 'loss') + ' of ' + signed(c.openPosition.unrealized) + ' is counted in equity but not as a closed trade.');
-    if (!c.trades) notes.push('No round trips were completed, so win rate and profit factor are undefined. Sitting out is a valid decision — but make it on purpose.');
-    if (c.trades >= 1 && c.maxDrawdownPct > 15) notes.push('A drawdown above 15 % means at least one position was too large for its stop distance. Revisit position sizing (Module 4).');
-    if (beat && c.trades) notes.push('Beating buy-and-hold once proves little: run the same rules on another period before trusting them.');
-    notes.push('Fills here have no spread, slippage or commission, so real results would be a little worse.');
+    if (c.openPosition) notes.push(T(c.openPosition.unrealized >= 0 ? 'You still hold {qty} shares; their gain of {amount} is counted in equity but not as a closed trade.' : 'You still hold {qty} shares; their loss of {amount} is counted in equity but not as a closed trade.', { qty: c.openPosition.qty, amount: signed(c.openPosition.unrealized) }));
+    if (!c.trades) notes.push(T('No round trips were completed, so win rate and profit factor are undefined. Sitting out is a valid decision — but make it on purpose.'));
+    if (c.trades >= 1 && c.maxDrawdownPct > 15) notes.push(T('A drawdown above 15 % means at least one position was too large for its stop distance. Revisit position sizing (Module 4).'));
+    if (beat && c.trades) notes.push(T('Beating buy-and-hold once proves little: run the same rules on another period before trusting them.'));
+    if (rulesLeague()) notes.push(T('Practised under the rules of {name}. Your league standings are not affected by Replay.', { name: rulesLeague().name }));
+    notes.push(T('Fills here have no spread, slippage or commission, so real results would be a little worse.'));
     $('scoreNote').textContent = notes.join(' ');
     $('scoreMsg').textContent = ''; $('lessons').value = '';
     rating = c.returnPct > 0 ? 4 : 2; $$('#rating button').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-v') === rating); });
-    $('saveJournal').disabled = false; $('saveJournal').textContent = 'Save to journal';
+    $('saveJournal').disabled = false; $('saveJournal').textContent = T('Save to journal');
     sc.hidden = false;
     setTimeout(function () { sc.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
-    toast('Session finished. Scorecard ready.', 'ok', 'Replay');
+    toast(T('Session finished. Scorecard ready.'), 'ok', T('Replay'));
   }
   $('rating').addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (!b) return; rating = +b.getAttribute('data-v'); $$('#rating button').forEach(function (x) { x.classList.toggle('on', x === b); }); });
   $('saveJournal').onclick = function () {
     if (!card) return;
     var entry = replay.saveToJournal(card, { rating: rating, emotion: $('emotion').value, lessons: $('lessons').value, confidence: rating });
     journalSaved = true;
-    $('saveJournal').disabled = true; $('saveJournal').textContent = 'Saved to journal ✓';
-    $('scoreMsg').className = 'msg ok'; $('scoreMsg').innerHTML = 'Saved as a journal entry (' + esc(entry.setup) + '). <a href="journal.html">Open the journal ▸</a>';
-    toast('Journal entry saved.', 'ok', 'Journal');
+    $('saveJournal').disabled = true; $('saveJournal').textContent = T('Saved to journal ✓');
+    $('scoreMsg').className = 'msg ok'; $('scoreMsg').innerHTML = esc(T('Saved as a journal entry ({setup}).', { setup: entry.setup })) + ' <a href="journal.html">' + esc(T('Open the journal')) + ' ▸</a>';
+    toast(T('Journal entry saved.'), 'ok', T('Journal'));
   };
   $('tryAgain').onclick = function () {
     if (!lastLoad || !lastSetup) { endSession(true); return; }
@@ -1008,16 +1234,16 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
   function renderHistory() {
     var list = replay.sessions().slice().reverse().slice(0, 12);
     $('clearHist').hidden = !list.length;
-    if (!list.length) { $('histBody').className = 'empty'; $('histBody').textContent = 'No sessions yet. Your finished replays are listed here and can be saved to the journal.'; return; }
+    if (!list.length) { $('histBody').className = 'empty'; $('histBody').textContent = T('No sessions yet. Your finished replays are listed here and can be saved to the journal.'); return; }
     $('histBody').className = 'table-wrap';
-    $('histBody').innerHTML = '<table><thead><tr><th>When</th><th>Session</th><th class="num">Return</th><th class="num">B&amp;H</th><th class="num">Trades</th><th class="num">Max DD</th><th>Drill</th></tr></thead><tbody>' + list.map(function (s) {
+    $('histBody').innerHTML = '<table><thead><tr><th>' + esc(T('When')) + '</th><th>' + esc(T('Session')) + '</th><th class="num">' + esc(T('Return')) + '</th><th class="num">' + esc(T('B&H')) + '</th><th class="num">' + esc(T('Trades')) + '</th><th class="num">' + esc(T('Max DD')) + '</th><th>' + esc(T('Drill')) + '</th></tr></thead><tbody>' + list.map(function (s) {
       var d = new Date(s.at);
-      return '<tr><td class="num">' + esc(d.toLocaleDateString()) + '</td><td>' + esc(s.symbol) + ' ' + esc(s.interval) + '<br><small class="muted num">' + esc(replay.fmtTime(s.start).slice(0, 10)) + ' → ' + esc(replay.fmtTime(s.end).slice(0, 10)) + '</small></td>' +
+      return '<tr><td class="num">' + esc(d.toLocaleDateString(loc())) + '</td><td>' + esc(s.symbol) + ' ' + esc(s.interval) + '<br><small class="muted num">' + esc(replay.fmtTime(s.start).slice(0, 10)) + ' → ' + esc(replay.fmtTime(s.end).slice(0, 10)) + '</small></td>' +
         '<td class="num ' + cls(s.returnPct) + '">' + pct(s.returnPct) + '</td><td class="num ' + cls(s.buyHoldPct) + '">' + pct(s.buyHoldPct) + '</td><td class="num">' + s.trades + (s.winRate == null ? '' : ' <small class="muted">' + s.winRate.toFixed(0) + '%</small>') + '</td><td class="num">' + (s.maxDrawdownPct == null ? '—' : s.maxDrawdownPct.toFixed(1) + '%') + '</td>' +
-        '<td>' + (s.drill ? '<span class="' + (s.drill.passed ? 'drillok' : 'drillno') + '">' + (s.drill.passed ? '✓ ' : '✕ ') + esc(s.drill.title) + '</span>' : '<span class="muted">free replay</span>') + '</td></tr>';
+        '<td>' + (s.drill ? '<span class="' + (s.drill.passed ? 'drillok' : 'drillno') + '">' + (s.drill.passed ? '✓ ' : '✕ ') + esc(s.drill.title) + '</span>' : '<span class="muted">' + esc(T('free replay')) + '</span>') + '</td></tr>';
     }).join('') + '</tbody></table>';
   }
-  $('clearHist').onclick = function () { if (confirm('Clear your replay history? Journal entries are kept.')) { replay.clearSessions(); renderHistory(); } };
+  $('clearHist').onclick = function () { if (confirm(T('Clear your replay history? Journal entries are kept.'))) { replay.clearSessions(); renderHistory(); } };
   renderHistory();
 
   window.addEventListener('beforeunload', function () { if (S) S.destroy(); });

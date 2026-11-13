@@ -47,13 +47,13 @@ Goal: close the gap between reading a lesson and changing behaviour, and make th
 - [x] Tests for every new module; docs: CHANGELOG, TEACHING_GUIDE, MOBILE, MEMBERSHIP_SETUP, server/README.
 - [x] Published to GitHub Pages through GitHub Actions (tests gate the deploy).
 
-## v0.4 — Classroom tools, Spanish and First Week (current)
+## v0.4 — Classroom tools, Spanish and First Week (done)
 
 Goal: make this usable by an instructor with 30 students, phones only and no IT budget; make it usable by students whose first language is Spanish; give complete beginners a guided first week; teach crypto and ETFs with the same discipline as stocks.
 
 - [x] **Spanish interface** (`js/i18n.js`, `i18n/es.json`, EN / ES toggle in the shell): DOM-based translation with no page rewrites, `BT.t()` for JS strings, `Intl` formatting per locale, extensible language list.
 - [x] **Language-aware course loading** with per-file English fallback and an "English only" badge; `course/es/` mirrors `course/` by filename.
-- [ ] **Spanish course content**: `course/es/index.json`, `m1` to `m9`, `drills.json`, `glossary.json`, `questionbank.json`. Module files land one at a time and are validated by `tests/course-v04.test.js`. Target: Modules 1 to 4 first (the First Week and the most-read lessons), then 7 and 9, then 5, 6, 8.
+- [x] **Spanish course content**: `course/es/index.json`, `m1` to `m9`, `drills.json`, `glossary.json`, `questionbank.json`, `firstweek.json`, validated by `tests/i18n-structure.test.js` and `tests/course-v04.test.js`.
 - [x] **Classroom, student side** (`BT.classroom`): class codes, pseudonymous snapshots, share codes that work with no server, automatic sync with the Worker.
 - [x] **Instructor page** (`instructor.html`): classes, share-code import, roster, student drawer, gradebook with the Teaching Guide's weights, CSV and JSON exports, privacy notice.
 - [x] **Worker classroom routes** (`/classes`, snapshots, roster, delete) with the `CLASSES` KV namespace, rate limits and an instructor secret.
@@ -62,53 +62,72 @@ Goal: make this usable by an instructor with 30 students, phones only and no IT 
 - [x] **Crypto and ETFs** in the data layer (24/7 calendar, provider symbol mapping, ETF metadata with expense ratios) and **Module 9**.
 - [x] **Printing**: `css/print.css`, Print / Save as PDF in the lesson reader, `certificate.html`.
 - [x] **Up next** recommendation and the saved certificate record.
-- [x] **Docs**: I18N, INSTRUCTOR_GUIDE, MARKETING, COMPETITIVE_ANALYSIS; TEACHING_GUIDE additions; README with the live URL and workflow badge.
+- [x] **Accessibility pass**: axe-core audit of every page in both languages, skip link, focus traps, chart text summaries, contrast tokens (`docs/ACCESSIBILITY.md`).
+- [x] **Docs**: I18N, INSTRUCTOR_GUIDE, MARKETING, COMPETITIVE_ANALYSIS, ACCESSIBILITY; TEACHING_GUIDE additions; README with the live URL and workflow badge.
+- [x] Published at <https://mfenickfau.github.io/broward-trading/> with CI-gated deploys; `sw.js` precache, e2e coverage and screenshots updated for the new pages.
 
-### v0.4 release checklist (before tagging)
+Left over from the v0.4 checklist: update the roadmap section of `about.html` to match this file, and install from the live URL on an iPhone and an Android phone and run the First Week on one of them.
 
-- [ ] Fix the three assertions in `tests/classroom.test.js` that assume an eight-module course (module 9 changes the quiz denominator and the module grouping). CI blocks the deploy while they fail.
-- [ ] Bump `VERSION` in `sw.js` to `bt-v0.4.0` and add `start.html`, `instructor.html`, `certificate.html`, `css/print.css`, `js/i18n.js`, `js/classroom.js`, `js/onboarding.js`, `js/instructor.js`, `i18n/es.json`, `course/firstweek.json`, `course/m9-crypto-etf.json` and `course/es/*` to the precache list.
-- [ ] Extend `tests/e2e.playwright.js` to the three new pages (module card count 8 → 9) and refresh `docs/screenshots/`, including one Spanish capture.
-- [ ] Update the roadmap section of `about.html` to match this file (it still marks v0.2 as current and promises a screener in v0.3).
-- [ ] Install from the live URL on an iPhone and an Android phone; run the First Week on one of them.
-- [ ] Add `course/es/index.json` and `course/es/m1-foundations.json` at minimum, so the Spanish toggle shows translated course content on day one.
+## v0.5 — Compete, screen, build, coach (current)
+
+Goal: adopt the features that the best learning and trading products have and we did not, without giving up our rules. Full reasoning and sources in `docs/COMPETITIVE_ANALYSIS.md`; what shipped, file by file, in `docs/CHANGELOG.md` [0.5.0]. Every item has a `CONTRACTS.md` entry ("v0.5 additions") and tests.
+
+- [x] **Competitions and leagues** (`BT.leagues`, `leagues.html`): rules for dates, cash, commission, slippage, asset classes, day trading, max position %, shorting and teams; four presets; a separate paper account per league with rules checked in the dashboard and Replay tickets; standings by return with drawdown, Sharpe and consistency; team standings; **projector view**; offline with `BTL1.` league codes and share codes, online through the Worker's `/leagues` routes. Opt-in, pseudonymous and never a grade. Guide: `docs/LEAGUES.md`.
+- [x] **Screener** (`BT.screener`, `screener.html`): price, % change, volume, RSI, distance to SMA 50 / 200, golden / death cross, Bollinger squeeze, 52-week high / low, candle pattern today, composite signal, ADX, sector and kind; six built-in scans; saved scans; send to watchlist; rate-limit-aware on live data.
+- [x] **No-code strategy builder** (`BT.rules`, `builder.html`): AND / OR rule blocks for entry and exit with stop, target, trailing stop and max bars; one definition feeds the backtester, a `rule` alert kind and the dashboard's **semi-auto** mode, which proposes trades for a one-tap confirmation and never executes on its own; JSON export and import.
+- [x] **Gamification layer** (`BT.xp`, `profile.html`): XP, a seven-step level ladder (Freshman → Portfolio Manager), 28 badges with honest, checkable criteria that never reward profit, streaks, the "What kind of trader are you?" quiz with a recommended path.
+- [x] **Options analyzer** in the Options Lab: what-if sliders, P&L curves at several dates, the 1σ / 2σ probability cone, probability of profit, greeks across the range, assignment and early-exercise warnings.
+- [x] **Trade planner and risk calculator** (`BT.risk`): "Plan this trade" in the dashboard and Replay tickets and a standalone calculator; the planned stop and target are saved with the order.
+- [x] **Paper-engine realism**: volume-limited partial fills, slippage, commission presets, dividends, cash interest, a pattern-day-trader toggle and a short-borrow fee, all off by default.
+- [x] **Coach** (`BT.coach`): free rule-based review of every order and closed trade (risk, stops, reward-to-risk, loss beyond plan, trend, revenge trading, overtrading, size, averaging down) with lesson links. Pro AI coach through the Worker's `/coach` route with an education-only prompt, a daily cap and a rule-based fallback. Guide: `docs/COACH.md`.
+- [x] **CSV upload** for back-testing on your own data (`BT.csv`).
+- [x] **Module 10**, *Your Trading Toolkit: Screeners, Rules & Competitions* (`course/m10-toolkit.json`).
+- [x] **Docs**: LEAGUES, COACH; TEACHING_GUIDE (four-week league assignment, screener lab, rule-builder lab, XP and participation); COMPETITIVE_ANALYSIS Tier 1 marked shipped.
+
+### v0.5 follow-ups (before tagging, or first thing in v0.6)
+
+- [ ] Wire a "Ask the AI coach" button into the coach notes box (dashboard and Replay) for Pro members, labelled as an AI review and shown under the rule-based notes (`docs/COACH.md`, section 6).
+- [ ] Confirm coach findings land in the journal entry's `coach` field after a fill, and show them in the journal's weekly review.
+- [ ] `course/es/m10-toolkit.json` (Spanish Module 10) and Spanish strings for any new league, screener or builder copy found by the e2e Spanish pass.
+- [ ] Extend `tests/e2e.playwright.js` to the four new pages (league create → join → order refused by a rule → standings → projector; a built-in scan; a template backtest in the builder; the profile page) and refresh `docs/screenshots/`.
+- [ ] Screener "open in Replay" from a result row; share a rule as a short code.
+- [ ] XP level and badge count in the classroom snapshot so the instructor roster can show them (opt-in, no new personal data).
+- [ ] Demo stock splits in the paper engine.
+- [ ] Bump `course/index.json` `version` to `0.5.0`.
 
 ### Deferred from v0.3 and v0.4
 
-Still wanted; not built yet. They move into v0.5 unless students ask sooner.
+Still wanted; not built yet.
 
 - **Self-checking exercises** in lessons (expected paper-account state → marked done automatically). First Week checks and Replay drills do this; lesson exercises still rely on the "done" tick.
 - **Portfolio export / import** as JSON (the journal and instructor data export; the portfolio does not).
 - **More patterns and indicators**: harami, piercing line, dark cloud cover, tweezers; Keltner, Donchian, Parabolic SAR, Williams %R, CCI, MFI.
-- **Data accuracy**: adjusted-close toggle, provider delay badge on every price, stale-data warning when cache age exceeds the interval.
-- **Accessibility pass**: WCAG 2.2 AA audit, reduced-motion, screen-reader text summaries of charts.
+- **Data accuracy**: provider delay badge on every price, stale-data warning when cache age exceeds the interval (the adjusted-close toggle shipped for CSV uploads).
 - **Lesson authoring guide** and a standalone JSON validator script (today the validators are tests; see `docs/I18N.md`).
 - **Haitian Creole** interface and course (`ht`), the second most common home language after Spanish in Broward County. The i18n layer is ready; it needs a dictionary and translators.
 - **Assign modules and drills with due dates** from the instructor page; a Canvas-friendly gradebook export.
 
-## v0.5 — Compete, screen, build, coach
+## v0.6 — Daily habit and classroom depth (next)
 
-Goal: adopt the features that the best learning and trading products have and we do not, without giving up our rules. Full reasoning and sources in `docs/COMPETITIVE_ANALYSIS.md`. Each item gets a `CONTRACTS.md` entry and tests before a page.
+Goal: give students a reason to open the app every day and give instructors the assignment tools that classroom games have. Drawn from Tier 2 of `docs/COMPETITIVE_ANALYSIS.md` and the deferred list above.
 
-1. **Competitions and leagues** (`BT.league`, `league.html`). Anyone creates a league: name, start and end dates, starting cash, commission, slippage, allowed asset classes (stocks, ETFs, crypto, options), day trading on or off, max position %, shorting on or off. A separate paper account per league (`BT.paper.use('league:<id>')`). Leaderboard by return, risk-adjusted return (return / max drawdown) and consistency; team accounts; a **projector view** that cycles rankings for a classroom display; join by code. Local or share-code mode without a server; through the Worker's leaderboard store when configured. Inspired by HowTheMarketWorks, the Stock Market Game and the Investopedia Simulator. Stays opt-in, pseudonymous and never a grade.
-2. **Screener** (`BT.screen`, `screener.html`). Filter the demo universe and the watchlist by price, % change, volume, RSI zone, distance to SMA 50 / 200, golden or death cross today, Bollinger squeeze, candlestick pattern today, sector and kind (stock / ETF / crypto). Saved scans, "send to watchlist", "open in Replay". Works on provider data with a key while respecting rate limits. Inspired by TradingView's screener.
-3. **No-code strategy builder** (`BT.rules`). Rule blocks (indicator, comparator, value or other indicator, lookback) joined with AND / OR for entry and exit, plus stop, target and trailing-stop rules. One definition feeds the backtester, the alerts and a "semi-auto" paper mode that proposes trades for one-tap confirmation. Export and import as JSON; share as a code like the classroom share codes. Inspired by TradingView's strategy tester, minus the scripting language.
-4. **Gamification layer** (`BT.progress`). XP for lessons, quizzes, drills, journal entries and streaks; a grade ladder (Freshman → Sophomore → Junior → Senior → Graduate) that maps to module completion; badges with honest, checkable criteria ("Ten journal entries with a specific lesson", never "Made $10,000"); a "What kind of trader are you?" quiz that recommends a learning path; opt-in quiz-score comparison with the cohort. Inspired by Babypips and the mobile trading games.
-5. **Options analyzer** in the options lab. What-if sliders for underlying price, days to expiry and implied volatility; P&L curves at several dates; a probability cone from IV; Greeks across the range; assignment and early-exercise warnings. Inspired by thinkorswim's Analyze tab.
-6. **Trade planner and risk calculator** in the trade ticket and the journal. Entry, stop, target and account risk % → shares, dollar risk, R multiple and the breakeven win rate. The 1 % rule becomes a tool, not a reminder.
-7. **Paper-engine realism**: volume-limited partial fills, configurable slippage model, commission presets, dividends and cash interest, a pattern-day-trader rule toggle, a short-borrow fee, demo corporate actions (splits, dividends).
-8. **Coach** (`BT.coach`). A free rule-based coach that reviews every fill for the mistakes the course warns about (no stop, size above the 1 % rule, trading against the trend the student's own indicators show, re-entry within five bars of a stop, more than N trades a day) and writes a short note into the journal entry. Pro: an AI coach through the Worker using a server-side model key, limited to lesson content and the student's own trades, never to predictions.
-
-Also in v0.5: the deferred items above, **chart of the day** (a detected setup with a two-question check), **multi-chart layouts** (2 and 4 panes) with saved templates, **economic and dividend calendars** with educational notes, **push reminders** for streaks and league deadlines, and a mapping of the course to Florida financial-literacy standards in the Teaching Guide.
+1. **Chart of the day**: a setup detected from the demo or live scan each day (reusing `BT.screener`), with a two-question check and XP.
+2. **Assignments with due dates** in the instructor dashboard (modules, drills, a league), and a Canvas-friendly gradebook CSV.
+3. **Push reminders** (PWA notifications, opt-in) for streaks, assignment due dates and league deadlines.
+4. **Multi-chart layouts** (2 and 4 panes) with saved templates.
+5. **Economic and dividend calendars** (Finnhub) with educational notes on CPI, FOMC and jobs reports; never invented events.
+6. **Share a chart as an image** with annotations.
+7. **Course mapping** to Florida financial-literacy standards and common college syllabi in the Teaching Guide.
+8. The v0.5 follow-ups above that did not make the tag.
 
 ## v1.0 — Pro membership
 
 Goal: a sustainable project. Payment arrives only with this release, and only when there is Pro-only value worth paying for. Full design in `docs/BUSINESS.md` and `docs/MARKETING.md`; the backend already exists in `server/` and is deployed by the site owner following `docs/MEMBERSHIP_SETUP.md`.
 
-- **Turn on the backend** for the public site: magic-link accounts, Stripe Checkout, server-signed certificates that `verify.html` checks, classroom sync, opt-in leaderboards and leagues.
+- **Turn on the backend** for the public site: magic-link accounts, Stripe Checkout, server-signed certificates that `verify.html` checks, classroom sync, online leagues and the Pro AI coach (all built in v0.3 to v0.5 and off by default).
 - **Cloud sync** of portfolio, journal, progress and strategies across devices (currently everything is per-browser).
 - **Graded capstone**: the Module 8 trading plan plus a backtested strategy and a replay record, reviewed by a human with written feedback.
-- **Extra modules**: futures mechanics, forex and futures demo assets with margin explained, tax basics for traders (US), trading psychology deep-dives, reading earnings and news.
+- **Extra modules**: futures mechanics, forex and futures demo assets with margin explained (Tier 2 in `docs/COMPETITIVE_ANALYSIS.md`), tax basics for traders (US), trading psychology deep-dives, reading earnings and news.
 - **Cohort sessions**, a moderated discussion space and a shared chart-ideas feed.
 - **Instructor licences** for schools (bulk seats, roster import, grade export, verified certificates for every qualifying student).
 
@@ -126,9 +145,10 @@ Not tied to a version; picked up whenever there is time.
 ## Explicitly not planned
 
 - Real-money trading or brokerage connections of any kind.
-- Selling trade signals, "alerts" as a product, or anything presented as advice. The in-app alerts and the coach are learning tools evaluated in the student's own browser.
+- Selling trade signals, "alerts" as a product, or anything presented as advice. The in-app alerts, the screener, semi-auto mode and the coach are learning tools evaluated in the student's own browser; semi-auto mode only proposes, and the student confirms every order.
+- XP, badges or league prizes for profit. Gamification rewards learning and process; league standings are discussion tools, never grades.
 - Leveraged or perpetual crypto and forex *trading*. Module 9 teaches crypto and ETF market structure and simulates spot crypto on the paper account; we will not simulate 24/7 leveraged products as if they were beginner-friendly.
-- Fabricated news, prices or "AI predictions". The Pro coach reviews what a student did; it never says what a price will do.
+- Fabricated news, prices or "AI predictions". The Pro AI coach reviews what a student did, under a system prompt that forbids recommendations and predictions (`docs/COACH.md`); it never says what a price will do.
 - Ads, selling student data, or collecting more than the pseudonymous classroom snapshot.
 
 ## How to propose a change

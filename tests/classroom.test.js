@@ -1,5 +1,5 @@
 /* Broward Trading — tests for js/classroom.js (BT.classroom), js/instructor.js
- * (BT.instructor) and the /classes routes of server/worker.js.
+ * (BT.instructor, including the v0.5 Leagues tab helpers) and the /classes routes of server/worker.js.
  * Run with:  node tests/classroom.test.js
  * Plain node + assert, no framework. `window`, `localStorage` and `fetch` are
  * shimmed. Share codes are round-tripped three ways: with Node's native
@@ -752,6 +752,143 @@ test('bulk imports persist once and report a failed save instead of swallowing t
     assert.strictEqual(I.save(), true); assert.strictEqual(I.saveStatus().ok, true);
     A.config.apiBase = ''; fetchImpl = null;
   });
+});
+
+/* ---- v0.5: shareCode alias, league blocks in the snapshot, instructor Leagues tab ---- */
+test('shareCode() is the contract alias for encodeShare(snapshot()) and round-trips', async () => {
+  seedStudent();
+  assert.strictEqual(typeof C.shareCode, 'function');
+  const code = await C.shareCode();
+  assert.ok(C.looksLikeShare(code));
+  const d = await C.decodeShare(code);
+  assert.ok(d.ok, d.error);
+  assert.strictEqual(d.snapshot.studentId, C.studentId());
+  assert.deepStrictEqual(d.snapshot.lessonsDone, C.snapshot().lessonsDone);
+  const given = Object.assign(C.snapshot(), { displayName: 'Given' });
+  assert.strictEqual((await C.decodeShare(await C.shareCode(given))).snapshot.displayName, 'Given', 'accepts an explicit snapshot too');
+});
+
+test('snapshot() has no leagues block without js/leagues.js, or when no league is joined', () => {
+  seedStudent();
+  assert.ok(!window.BT.leagues, 'leagues.js not loaded yet');
+  assert.ok(!('leagues' in C.snapshot()));
+  assert.strictEqual(C._internal.leagueState(), null);
+});
+
+let LG = null, leagueDef = null;
+test('with BT.leagues loaded, snapshot() carries a block per joined league; BT.leagues.snapshot() does not recurse', async () => {
+  seedStudent();
+  require(path.join(__dirname, '..', 'js', 'leagues.js'));
+  LG = window.BT.leagues;
+  assert.ok(!('leagues' in C.snapshot()), 'nothing joined yet');
+  const start = new Date(Date.now() - 7 * DAY).toISOString().slice(0, 10), end = new Date(Date.now() + 21 * DAY).toISOString().slice(0, 10);
+  const made = LG.create({ name: 'Period 3 Cup', createdBy: 'Ms. R', startDate: start, endDate: end, preset: 'classroom' });
+  assert.ok(made.ok, JSON.stringify(made.errors));
+  leagueDef = made.league;
+  const j = LG.join(leagueDef, { displayName: 'Ava' });
+  assert.ok(j.ok, j.error);
+  // trade in the league's own paper account (stored directly: no BT.paper on this page)
+  const key = LG._internal.paperKey(leagueDef.code);
+  const acct = JSON.parse(localStorage.getItem(key));
+  acct.cash = acct.startingCash + 1500;
+  acct.trades = [{ id: 1, closedQty: 5, realized: 1500, time: Date.now() }];
+  acct.equityHistory = [{ t: Date.now() - 2 * DAY, equity: acct.startingCash }, { t: Date.now() - DAY, equity: acct.startingCash + 600 }];
+  localStorage.setItem(key, JSON.stringify(acct));
+  const snap = C.snapshot();
+  assert.ok(snap.leagues && snap.leagues[leagueDef.code], 'league block present');
+  const b = snap.leagues[leagueDef.code];
+  assert.strictEqual(b.equity, acct.startingCash + 1500);
+  assert.strictEqual(b.trades, 1);
+  assert.strictEqual(b.displayName, 'Ava');
+  assert.ok(b.returnPct > 0 && Array.isArray(b.equityHistory) && b.equityHistory.length <= LG.MAX_HISTORY);
+  const viaLeagues = LG.snapshot();
+  assert.deepStrictEqual(Object.keys(viaLeagues.leagues), [leagueDef.code]);
+  assert.strictEqual(viaLeagues.leagues[leagueDef.code].equity, b.equity, 'both paths agree');
+  // the share code carries it to the organiser
+  const d = await C.decodeShare(await C.shareCode());
+  assert.strictEqual(d.snapshot.leagues[leagueDef.code].equity, b.equity);
+  // a broken BT.leagues never breaks the classroom snapshot
+  const savedJoined = LG.joined; LG.joined = () => { throw new Error('boom'); };
+  try { assert.ok(!('leagues' in C.snapshot())); } finally { LG.joined = savedJoined; }
+});
+
+test('instructor leagues: add a BTL1 code, import share codes, standings via BT.leagues.standings, CSV', async () => {
+  assert.ok(I.leagues.available());
+  const studentShare = await C.shareCode();
+  const leagueCode = LG.encodeLeague(leagueDef);
+  // the instructor works on a different device: forget the student's side
+  const savedStore = Object.assign({}, store);
+  localStorage.clear();
+  try {
+    assert.deepStrictEqual(I.leagues.list(), []);
+    assert.strictEqual(I.leagues.add('hello').ok, false);
+    const none = await I.leagues.importShares(leagueDef.code, studentShare);
+    assert.ok(none.error && /Add the league first/.test(none.error));
+    const added = I.leagues.add('Join our league! ' + leagueCode + ' thanks');
+    assert.ok(added.ok && added.added.length === 1 && added.added[0].code === leagueDef.code);
+    assert.strictEqual(I.leagues.list().length, 1);
+    assert.ok(!LG.membership(leagueDef.code), 'adding a league does not join it');
+    // a second student's code with no league block, plus garbage
+    const other = await C.encodeShare({ v: 1, studentId: 's-otherkid01', displayName: 'Ben', updatedAt: new Date().toISOString() });
+    const r = await I.leagues.importShares(leagueDef.code, studentShare + '\n' + other + '\nBT1.notarealcode!!');
+    assert.ok(r.found >= 2, 'both real codes found');
+    assert.ok(r.failed.length <= 1);
+    assert.strictEqual(r.added, 1);
+    assert.strictEqual(r.notInLeague, 1);
+    const st = I.leagues.standings(leagueDef.code);
+    assert.strictEqual(st.league.code, leagueDef.code);
+    assert.strictEqual(st.rows.length, 1);
+    assert.strictEqual(st.rows[0].displayName, 'Ava');
+    assert.strictEqual(st.rows[0].rank, 1);
+    assert.ok(st.rows[0].returnPct > 0);
+    assert.ok(['active', 'upcoming', 'ended'].includes(st.phase));
+    // re-import is an update, never a duplicate
+    const again = await I.leagues.importShares(leagueDef.code, studentShare);
+    assert.strictEqual(again.updated + again.skipped, 1);
+    assert.strictEqual(I.leagues.standings(leagueDef.code).rows.length, 1);
+    // server rows (spark instead of equityHistory) are accepted
+    const srv = I.leagues.standings(leagueDef.code, [{ studentId: 's-server001', displayName: 'Cy', returnPct: 9, maxDrawdownPct: 2, trades: 4, equity: 109000, spark: [100000, 104000, 109000], updatedAt: new Date().toISOString() }]);
+    assert.strictEqual(srv.rows[0].displayName, 'Cy');
+    assert.deepStrictEqual(srv.rows[0].equityHistory.slice(0, 3), [100000, 104000, 109000]);
+    const csv = I.leagues.csv(leagueDef.code);
+    assert.ok(csv.split('\r\n')[0].startsWith('rank,name,student_id,team,return_pct'));
+    assert.ok(/\r\n1,Ava,/.test(csv));
+    assert.strictEqual(I.leagues.csv('ZZZZZZ'), '');
+    assert.strictEqual(I.leagues.standings('ZZZZZZ'), null);
+  } finally {
+    localStorage.clear(); Object.assign(store, savedStore);
+  }
+});
+
+test('instructor leagues are guarded: without BT.leagues every call answers without throwing', async () => {
+  const saved = window.BT.leagues; delete window.BT.leagues;
+  try {
+    assert.strictEqual(I.leagues.available(), false);
+    assert.deepStrictEqual(I.leagues.list(), []);
+    assert.strictEqual(I.leagues.add('BTL1.xyz').ok, false);
+    const r = await I.leagues.importShares('ABCDEF', 'BT1.abcdefghij');
+    assert.ok(r.error && r.found === 0);
+    assert.strictEqual(I.leagues.standings('ABCDEF'), null);
+    assert.strictEqual(I.leagues.csv('ABCDEF'), '');
+  } finally { window.BT.leagues = saved; }
+});
+
+test('instructor.html: Class | Leagues tabs, leagues.js loaded before instructor.js, drawer modules stack on phones', () => {
+  const html = require('fs').readFileSync(path.join(__dirname, '..', 'instructor.html'), 'utf8');
+  assert.ok(/role="tablist" aria-label="Instructor sections"/.test(html));
+  assert.ok(/id="tabLeagues" aria-controls="leaguesPanel" aria-selected="false"/.test(html));
+  assert.ok(/id="leaguesPanel" role="tabpanel" aria-labelledby="tabLeagues" hidden/.test(html));
+  assert.ok(/id="classPanel" role="tabpanel"/.test(html));
+  assert.ok(html.indexOf('js/leagues.js') > 0 && html.indexOf('js/leagues.js') < html.indexOf('js/instructor.js'));
+  ['lgAddIn', 'lgSelect', 'lgImportIn', 'lgImportBtn', 'lgBody', 'lgCsv', 'lgClear'].forEach(id => assert.ok(html.includes('id="' + id + '"'), id));
+  assert.ok(/<label for="lgAddIn">/.test(html) && /<label for="lgImportIn">/.test(html) && /<label for="lgSelect">/.test(html), 'labelled inputs');
+  assert.ok(/@media \(max-width:560px\)\{[\s\S]*?#drawer \.d-sec table\.dense tr\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(html), 'stacked module cards');
+  assert.ok(/td\[data-label\]:not\(:first-child\)::before\{content:attr\(data-label\)/.test(html));
+  assert.ok(/table class="dense" role="table"/.test(html), 'explicit table roles survive display:block');
+  assert.ok(/\.table-wrap table\.lg-standings\{width:100%;min-width:0\}/.test(html), 'standings override the 480px table minimum');
+  const js = require('fs').readFileSync(path.join(__dirname, '..', 'js', 'instructor.js'), 'utf8');
+  assert.ok(/data-label="' \+ esc\(T\('Lessons'\)\)/.test(js) && /data-label="' \+ esc\(T\('Quiz avg'\)\)/.test(js), 'module cells carry labels');
+  assert.ok(/I\.leagues\.standings\(lgUi\.code/.test(js));
 });
 
 /* ---- server/worker.js /classes routes ---------------------------------- */

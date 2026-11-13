@@ -833,5 +833,414 @@ test('deleteAccount() removes a non-main account and refuses to delete main', ()
   assert.ok(!P.accounts().some(a => a.id === 'scratch'));
 });
 
+/* ================================================================== *
+ * v0.5 realism — every switch off by default
+ * ================================================================== */
+const T0 = Date.UTC(2024, 2, 1, 15, 0, 0);   // Friday 1 March 2024, 10 am New York
+const DAY = 86400000;
+function real(settings, cash) {
+  fakeNow = T0;
+  fresh(cash);
+  P.setSettings(Object.assign(P.defaultSettings(), settings || {}));
+  return P.getState();
+}
+function vbar(o, h, l, c, volume, time) { const b = { time: time || '2024-03-01', open: o, high: h, low: l, close: c }; if (volume !== undefined) b.volume = volume; return b; }
+
+test('realism defaults are all off and reproduce the v0.4 engine', () => {
+  const s = real();
+  const d = P.defaultSettings();
+  assert.strictEqual(d.fillModel, 'instant');
+  assert.strictEqual(d.slippageBps, 0);
+  assert.strictEqual(d.commissionPreset, 'per-trade');
+  assert.strictEqual(d.commission, 0);
+  assert.strictEqual(d.dividends, false);
+  assert.strictEqual(d.cashInterestPct, 0);
+  assert.strictEqual(d.borrowFeePct, 0);
+  assert.strictEqual(d.pdtRule, false);
+  assert.strictEqual(d.maxVolumePct, 10);
+  const o = P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 5000, type: 'market' }, 10, { volume: 100 });
+  assert.strictEqual(o.status, 'filled', 'instant model ignores volume');
+  assert.strictEqual(o.fillPrice, 10);
+  assert.strictEqual(s.cash, 50000);
+  assert.strictEqual(s.trades[0].slippage, 0);
+  assert.strictEqual(s.trades[0].commission, 0);
+  P.markToMarket({ AAPL: 10 }, T0 + 30 * DAY);
+  assert.strictEqual(s.cash, 50000, 'no interest or fees when off');
+  assert.deepStrictEqual(P.cashflows(), []);
+});
+
+test('volume fill model: at most 10% of bar volume per bar, remainder stays open and fills across bars', () => {
+  const s = real({ fillModel: 'volume' });
+  const o = P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 250, type: 'market' }, 100, { volume: 1000 });
+  assert.strictEqual(o.status, 'open');
+  assert.strictEqual(o.partial, true);
+  assert.strictEqual(o.filledQty, 100);
+  assert.ok(/Partially filled 100 of 250/.test(o.reason), o.reason);
+  assert.strictEqual(s.positions.XYZ.qty, 100);
+  assert.strictEqual(P.openOrders('XYZ').length, 1);
+  let f = P.processOrders('XYZ', vbar(101, 102, 100, 101, 1000, '2024-03-04'));
+  assert.strictEqual(f.length, 1);
+  assert.strictEqual(f[0].trade.qty, 100);
+  assert.strictEqual(f[0].trade.price, 101, 'remainder of a market order fills at the next open');
+  assert.strictEqual(o.filledQty, 200);
+  assert.strictEqual(o.status, 'open');
+  f = P.processOrders('XYZ', vbar(102, 103, 101, 102, 1000, '2024-03-05'));
+  assert.strictEqual(f[0].trade.qty, 50);
+  assert.strictEqual(o.status, 'filled');
+  assert.strictEqual(o.partial, false);
+  assert.strictEqual(o.filledQty, 250);
+  assert.strictEqual(o.fills.length, 3);
+  near(o.fillPrice, (100 * 100 + 100 * 101 + 50 * 102) / 250);
+  assert.strictEqual(s.positions.XYZ.qty, 250);
+  near(s.positions.XYZ.avg, o.fillPrice);
+  near(s.cash, 100000 - (10000 + 10100 + 5100), 0.001);
+  assert.strictEqual(P.openOrders('XYZ').length, 0);
+});
+
+test('volume fill model: orders on one symbol share the bar; unknown volume fills in full', () => {
+  real({ fillModel: 'volume' });
+  const a = P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 80, type: 'limit', limitPrice: 99 }, 100);
+  const b = P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 80, type: 'limit', limitPrice: 99 }, 100);
+  P.processOrders('XYZ', vbar(99.5, 100, 98, 99, 1000, '2024-03-04'));     // cap 100 shares this bar
+  assert.strictEqual(a.filledQty, 80);
+  assert.strictEqual(a.status, 'filled');
+  assert.strictEqual(b.filledQty, 20);
+  assert.strictEqual(b.status, 'open');
+  assert.strictEqual(b.limitPrice, 99, 'the remainder is still a limit order');
+  P.processOrders('XYZ', vbar(100, 101, 99.5, 100.5, 1000, '2024-03-05'));  // never reaches 99
+  assert.strictEqual(b.filledQty, 20);
+  P.processOrders('XYZ', vbar(99, 99.5, 98, 99, undefined, '2024-03-06'));   // no volume on the bar → no cap
+  assert.strictEqual(b.status, 'filled');
+  assert.strictEqual(b.filledQty, 80);
+  const c = P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 5, type: 'market' }, 100, { volume: 5 }); // 10% of 5 = 0
+  assert.strictEqual(c.status, 'open');
+  assert.strictEqual(c.filledQty, 0);
+  assert.ok(/Waiting for volume/.test(c.reason), c.reason);
+});
+
+test('volume fill model: a triggered stop keeps filling at market; day orders expire with a partial note; cancel keeps the fills', () => {
+  const s = real({ fillModel: 'volume' });
+  P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 300, type: 'market' }, 50);          // instant: no volume given
+  const stop = P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 300, type: 'stop', stopPrice: 45 }, 50);
+  P.processOrders('XYZ', vbar(46, 46, 44, 45, 1000, '2024-03-04'));                    // triggers, 100 shares
+  assert.strictEqual(stop.filledQty, 100);
+  assert.strictEqual(stop.triggered, true);
+  P.processOrders('XYZ', vbar(47, 48, 46.5, 47.5, 1000, '2024-03-05'));                // above the stop again
+  assert.strictEqual(stop.filledQty, 200, 'triggered stop is a market order now');
+  assert.strictEqual(s.trades[s.trades.length - 1].price, 47);
+  P.cancelOrder(stop.id);
+  assert.strictEqual(stop.status, 'cancelled');
+  assert.ok(/200 of 300 filled/.test(stop.reason), stop.reason);
+  assert.strictEqual(s.positions.XYZ.qty, 100);
+  const day = P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 100, type: 'limit', limitPrice: 48, tif: 'day' }, 47.5);
+  P.processOrders('XYZ', vbar(48, 49, 47.8, 48.5, 300, '2024-03-06'));                 // 30 shares
+  assert.strictEqual(day.filledQty, 30);
+  P.processOrders('XYZ', vbar(48, 49, 47.8, 48.5, 300, '2024-03-07'));
+  assert.strictEqual(day.status, 'expired');
+  assert.ok(/partially filled \(30 of 100\)/.test(day.reason), day.reason);
+});
+
+test('slippage: buys fill worse UP, sells worse DOWN; limits never slip past the limit', () => {
+  const s = real({ slippageBps: 10 });
+  const buy = P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 100, type: 'market' }, 100);
+  assert.strictEqual(buy.fillPrice, 100.1);
+  assert.strictEqual(s.trades[0].basePrice, 100);
+  assert.strictEqual(s.trades[0].slippage, 10);
+  assert.ok(/Slippage of 10 bps/.test(buy.reason), buy.reason);
+  near(s.cash, 100000 - 10010, 0.001);
+  const sell = P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 50, type: 'market' }, 100);
+  assert.strictEqual(sell.fillPrice, 99.9);
+  assert.ok(sell.fillPrice < 100 && buy.fillPrice > 100);
+  // sell stop: fills below the stop price
+  P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 50, type: 'stop', stopPrice: 95 }, 100);
+  const f = P.processOrders('XYZ', vbar(98, 98, 94, 95, 1000, '2024-03-04'));
+  assert.strictEqual(f[0].trade.price, 94.905);
+  // limit order: no slippage
+  P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 10, type: 'limit', limitPrice: 90 }, 95);
+  const f2 = P.processOrders('XYZ', vbar(92, 93, 89, 90, 1000, '2024-03-05'));
+  assert.strictEqual(f2[0].trade.price, 90);
+  assert.strictEqual(f2[0].trade.slippage, 0);
+  // stop-limit: slippage capped at the limit
+  P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 10, type: 'stop_limit', stopPrice: 100, limitPrice: 100.05 }, 95);
+  const f3 = P.processOrders('XYZ', vbar(99, 101, 98, 100, 1000, '2024-03-06'));
+  assert.strictEqual(f3[0].trade.price, 100.05);
+  assert.strictEqual(P.slipPrice('buy', 200, 'market'), 200.2);
+  assert.strictEqual(P.slipPrice('sell', 200, 'stop'), 199.8);
+  assert.strictEqual(P.slipPrice('sell', 200, 'limit'), 200);
+  assert.ok(P.stats().slippagePaid > 0);
+});
+
+test('commission presets: zero, per-share (min and cap, options per contract), per-trade once per order', () => {
+  const s = real();
+  P.applyCommissionPreset('per-trade');
+  assert.strictEqual(P.settings.commission, 4.95);
+  let o = P.placeOrder({ symbol: 'AAA', side: 'buy', qty: 10, type: 'market' }, 10);
+  assert.strictEqual(o.commission, 4.95);
+  near(s.cash, 100000 - 100 - 4.95, 0.001);
+
+  P.applyCommissionPreset('zero');
+  assert.strictEqual(P.settings.commissionPreset, 'zero');
+  o = P.placeOrder({ symbol: 'AAA', side: 'buy', qty: 10, type: 'market' }, 10);
+  assert.strictEqual(o.commission, 0);
+
+  P.applyCommissionPreset('per-share');
+  assert.strictEqual(P.commissionFor(100, 50), 1, '100 × $0.005 = $0.50 → $1 minimum');
+  assert.strictEqual(P.commissionFor(1000, 50), 5);
+  assert.strictEqual(P.commissionFor(10, 1), 0.1, 'capped at 1% of a $10 trade');
+  assert.strictEqual(P.commissionFor(2, 3, 100, 'option'), 1.3, '$0.65 per contract');
+  o = P.placeOrder({ symbol: 'BBB', side: 'buy', qty: 1000, type: 'market' }, 50);
+  assert.strictEqual(o.commission, 5);
+  const opt = P.placeOptionOrder({ contract: 'AAPL291221C00200000', side: 'buy', qty: 2 }, 3);
+  assert.strictEqual(opt.status, 'filled', opt.reason);
+  assert.strictEqual(opt.commission, 1.3);
+
+  // per-trade with the volume model: charged on the first fill only
+  P.setSettings({ commissionPreset: 'per-trade', commission: 2, fillModel: 'volume' });
+  const big = P.placeOrder({ symbol: 'CCC', side: 'buy', qty: 150, type: 'market' }, 10, { volume: 1000 });
+  P.processOrders('CCC', vbar(10, 10, 10, 10, 1000, '2024-03-04'));
+  assert.strictEqual(big.status, 'filled');
+  assert.strictEqual(big.commission, 2);
+  assert.deepStrictEqual(s.trades.filter(t => t.symbol === 'CCC').map(t => t.commission), [2, 0]);
+
+  // v0.2 meaning kept: a flat commission while on 'zero' switches back to per-trade
+  P.setSettings({ commissionPreset: 'zero', fillModel: 'instant' });
+  P.setSettings({ commission: 1 });
+  assert.strictEqual(P.settings.commissionPreset, 'per-trade');
+  assert.strictEqual(P.placeOrder({ symbol: 'AAA', side: 'sell', qty: 5, type: 'market' }, 10).commission, 1);
+  assert.ok(P.commissionPresets['per-share'].description.length > 20);
+  assert.strictEqual(P.applyCommissionPreset('nope'), null);
+});
+
+test('dividends: credited to longs and debited from shorts on the ex-date, never on the first bar', () => {
+  assert.deepStrictEqual(P.exDates('KO', '2024-01-01', '2024-12-31'), ['2024-03-14', '2024-06-14', '2024-09-14', '2024-12-14']);
+  assert.strictEqual(P.dividendInfo('TSLA'), null, 'non-payers pay nothing');
+  const s = real({ dividends: true });
+  P.placeOrder({ symbol: 'KO', side: 'buy', qty: 100, type: 'market' }, 60);
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-03-13'));      // first bar: just remembered
+  assert.strictEqual(s.cash, 94000);
+  P.processOrders('KO', vbar(59.6, 60, 59, 59.5, 1e6, '2024-03-14'));  // ex-date
+  const perShare = Math.round(0.029 * 60 / 4 * 1e4) / 1e4;             // 0.435, from the previous close
+  near(s.cash, 94000 + 100 * perShare, 0.001);
+  const cf = P.cashflows();
+  assert.strictEqual(cf.length, 1);
+  assert.strictEqual(cf[0].type, 'dividend');
+  assert.strictEqual(cf[0].symbol, 'KO');
+  assert.strictEqual(cf[0].day, '2024-03-14');
+  near(cf[0].amount, 43.5, 0.001);
+  assert.ok(/credited/.test(cf[0].note), cf[0].note);
+  P.processOrders('KO', vbar(59.6, 60, 59, 59.5, 1e6, '2024-03-15'));  // no double payment
+  assert.strictEqual(P.cashflows().length, 1);
+  near(P.stats().dividends, 43.5, 0.001);
+
+  // short: the dividend is owed to the lender
+  const s2 = real({ dividends: true });
+  P.placeOrder({ symbol: 'KO', side: 'sell', qty: 100, type: 'market' }, 60);
+  const cashAfterShort = s2.cash;
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-06-13'));
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-06-17'));      // ex-date 14 June fell between bars
+  near(s2.cash, cashAfterShort - 43.5, 0.001);
+  assert.ok(P.cashflows()[0].amount < 0);
+  assert.ok(/short/i.test(P.cashflows()[0].note));
+
+  // off by default; buying ON the ex-date bar does not earn that dividend
+  const s3 = real();
+  P.placeOrder({ symbol: 'KO', side: 'buy', qty: 100, type: 'market' }, 60);
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-03-13'));
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-03-14'));
+  assert.strictEqual(s3.cash, 94000);
+  real({ dividends: true });
+  P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-03-13'));
+  P.placeOrder({ symbol: 'KO', side: 'buy', qty: 100, type: 'limit', limitPrice: 59.5 }, 60);
+  P.processOrders('KO', vbar(59.6, 60, 59, 59.5, 1e6, '2024-03-14'));
+  assert.strictEqual(P.getState().positions.KO.qty, 100);
+  assert.strictEqual(P.cashflows().length, 0, 'the position was opened on the ex-date');
+  // explicit dividends (e.g. from live data)
+  assert.strictEqual(P.applyDividend('KO', 0.5).amount, 50);
+  assert.strictEqual(P.applyDividend('NONE', 0.5), null);
+});
+
+test('cash interest accrues daily on free cash, carries fractions of a cent, and never applies retroactively', () => {
+  const s = real({ cashInterestPct: 4 });
+  P.markToMarket({}, T0 + DAY);
+  assert.strictEqual(s.cash, 100010.95, '100,000 × 4% / 365 = 10.958… → 10.95 posted, the rest carried');
+  const cf = P.cashflows();
+  assert.strictEqual(cf.length, 1);
+  assert.strictEqual(cf[0].type, 'interest');
+  P.markToMarket({}, T0 + DAY + 3600000);                             // same day: nothing more
+  assert.strictEqual(P.cashflows().length, 1);
+  P.markToMarket({}, T0 + 10 * DAY);
+  near(P.stats().interest, 100000 * 0.04 * 10 / 365, 0.02);
+  // short-sale proceeds earn nothing
+  const s2 = real({ cashInterestPct: 5 });
+  P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 100, type: 'market' }, 100);  // cash 110,000, 10,000 backs the short
+  P.markToMarket({ XYZ: 100 }, T0 + 365 * DAY);
+  near(s2.income.interest, 100000 * 0.05, 0.05);
+  // switching it on later does not pay for the past
+  const s3 = real();
+  fakeNow = T0 + 100 * DAY;
+  P.setSettings({ cashInterestPct: 4 });
+  P.markToMarket({}, T0 + 101 * DAY);
+  near(s3.income.interest, 10.95, 0.001);
+  fakeNow = T0;
+});
+
+test('short borrow fee accrues daily on short stock value only', () => {
+  const s = real({ borrowFeePct: 10 });
+  P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 100, type: 'market' }, 50);
+  P.placeOrder({ symbol: 'LONG', side: 'buy', qty: 100, type: 'market' }, 50);
+  const cash0 = s.cash;
+  P.markToMarket({ XYZ: 50, LONG: 50 }, T0 + DAY);
+  near(s.cash, cash0 - 1.36, 0.001);                                  // 5,000 × 10% / 365 = 1.369…
+  const cf = P.cashflows();
+  assert.strictEqual(cf[0].type, 'borrow');
+  assert.ok(cf[0].amount < 0);
+  assert.ok(/borrow fee/i.test(cf[0].note));
+  P.markToMarket({ XYZ: 50, LONG: 50 }, T0 + 365 * DAY);
+  near(s.income.borrowFees, 500, 0.02);
+  near(P.stats().borrowFees, 500, 0.02);
+  // no shorts → no fee
+  const s2 = real({ borrowFeePct: 10 });
+  P.placeOrder({ symbol: 'LONG', side: 'buy', qty: 100, type: 'market' }, 50);
+  P.markToMarket({ LONG: 50 }, T0 + 30 * DAY);
+  assert.strictEqual(s2.income.borrowFees, 0);
+});
+
+test('PDT rule blocks the 4th day trade in 5 business days under $25k with a clear reason', () => {
+  const s = real({ pdtRule: true }, 20000);
+  for (let i = 0; i < 3; i++) {
+    P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+    const out = P.placeOrder({ symbol: 'AAPL', side: 'sell', qty: 10, type: 'market' }, 101);
+    assert.strictEqual(out.status, 'filled', out.reason);
+  }
+  assert.strictEqual(P.dayTradeCount(), 3);
+  const st = P.pdtStatus();
+  assert.strictEqual(st.restricted, true);
+  assert.strictEqual(st.remaining, 0);
+  const open = P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+  assert.strictEqual(open.status, 'filled', 'opening a position is not a day trade');
+  const blocked = P.placeOrder({ symbol: 'AAPL', side: 'sell', qty: 10, type: 'market' }, 101);
+  assert.strictEqual(blocked.status, 'rejected');
+  assert.ok(/pattern day trader/i.test(blocked.reason), blocked.reason);
+  assert.ok(/\$25,000/.test(blocked.reason), blocked.reason);
+  assert.ok(/next trading day/.test(blocked.reason), blocked.reason);
+  assert.strictEqual(s.positions.AAPL.qty, 10, 'nothing filled');
+  // closePosition is blocked the same way
+  assert.strictEqual(P.closePosition('AAPL', 101).status, 'rejected');
+  // Monday: closing Friday's position is not a day trade
+  fakeNow = T0 + 3 * DAY;
+  const monday = P.placeOrder({ symbol: 'AAPL', side: 'sell', qty: 10, type: 'market' }, 102);
+  assert.strictEqual(monday.status, 'filled', monday.reason);
+  assert.strictEqual(s.trades[s.trades.length - 1].dayTrade, false);
+  fakeNow = T0;
+  // at or above $25,000 the rule does not restrict
+  real({ pdtRule: true }, 30000);
+  for (let i = 0; i < 5; i++) {
+    P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+    assert.strictEqual(P.placeOrder({ symbol: 'AAPL', side: 'sell', qty: 10, type: 'market' }, 100).status, 'filled');
+  }
+  assert.strictEqual(P.dayTradeCount(), 5);
+  // rule off: never blocks
+  real({}, 20000);
+  for (let i = 0; i < 5; i++) {
+    P.placeOrder({ symbol: 'AAPL', side: 'buy', qty: 10, type: 'market' }, 100);
+    assert.strictEqual(P.placeOrder({ symbol: 'AAPL', side: 'sell', qty: 10, type: 'market' }, 100).status, 'filled');
+  }
+});
+
+test('PDT counts day trades on daily bars by bar date (resting stop on a same-day position)', () => {
+  real({ pdtRule: true }, 20000);
+  const days = ['2024-03-04', '2024-03-05', '2024-03-06'];
+  days.forEach(d => {
+    P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 10, type: 'limit', limitPrice: 100 }, 101);
+    P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 10, type: 'limit', limitPrice: 102 }, 101);
+    P.processOrders('XYZ', vbar(101, 103, 99, 101, 1e6, d));
+  });
+  assert.strictEqual(P.dayTradeCount('2024-03-06'), 3);
+  P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 10, type: 'limit', limitPrice: 100 }, 101);
+  const stop = P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 10, type: 'stop', stopPrice: 98 }, 101);
+  P.processOrders('XYZ', vbar(101, 101, 97, 98, 1e6, '2024-03-07'));
+  assert.strictEqual(stop.status, 'rejected');
+  assert.ok(/PDT/.test(stop.reason), stop.reason);
+  assert.strictEqual(P.dayTradeCount('2024-03-11'), 2, 'the window rolls forward over 5 business days');
+});
+
+test('league:* accounts are isolated from main and from each other, settings included', () => {
+  real();
+  P.placeOrder({ symbol: 'MAIN', side: 'buy', qty: 1, type: 'market' }, 10);
+  P.use('league:ABC234');
+  assert.strictEqual(P.account(), 'league-abc234');
+  assert.strictEqual(P.storageKeyFor('league:ABC234'), 'bt.portfolio.league-abc234');
+  assert.strictEqual(P.getState().trades.length, 0, 'fresh league account');
+  P.reset(50000);
+  P.setSettings({ commission: 1, slippageBps: 5 });
+  P.placeOrder({ symbol: 'LG', side: 'buy', qty: 10, type: 'market' }, 100);
+  assert.strictEqual(P.getState().positions.LG.qty, 10);
+  near(P.getState().cash, 50000 - 1000.5 - 1, 0.001);
+  P.use('league:XYZ789');
+  assert.strictEqual(P.getState().cash, 100000);
+  assert.strictEqual(P.settings.slippageBps, 0, 'settings do not leak between leagues');
+  assert.strictEqual(P.getState().positions.LG, undefined);
+  P.use('main');
+  assert.strictEqual(P.settings.slippageBps, 0);
+  assert.strictEqual(P.settings.commission, 0);
+  assert.strictEqual(P.getState().positions.LG, undefined);
+  assert.strictEqual(P.getState().positions.MAIN.qty, 1);
+  P.use('league:abc234');                                            // same account, any case
+  assert.strictEqual(P.getState().positions.LG.qty, 10);
+  assert.strictEqual(P.settings.slippageBps, 5);
+  assert.strictEqual(P.settings.commission, 1);
+  assert.strictEqual(JSON.parse(localStorage.getItem('bt.portfolio.league-abc234')).positions.LG.qty, 10);
+  assert.strictEqual(JSON.parse(localStorage.getItem('bt.portfolio')).positions.LG, undefined);
+  // accounts() lists each league once and never treats the portfolio UI key as an account
+  localStorage.setItem('bt.portfolio.ui', JSON.stringify({ tab: 'positions' }));
+  const keys = () => Object.keys(store);
+  localStorage.key = i => keys()[i];
+  Object.defineProperty(localStorage, 'length', { configurable: true, get: () => keys().length });
+  try {
+    const ids = P.accounts().map(a => a.id);
+    assert.ok(ids.includes('league-abc234') && ids.includes('league-xyz789'), ids.join());
+    assert.ok(!ids.includes('ui'), ids.join());
+    assert.strictEqual(ids.filter(i => i === 'league-abc234').length, 1);
+  } finally {
+    delete localStorage.key;
+    delete localStorage.length;
+    localStorage.removeItem('bt.portfolio.ui');
+  }
+  P.deleteAccount('league:ABC234');
+  P.deleteAccount('league:XYZ789');
+  assert.strictEqual(P.account(), 'main');
+});
+
+test('realism settings and cash flows persist across reload, survive reset, and ignore bad values', () => {
+  const s = real({ dividends: true, cashInterestPct: 3, fillModel: 'volume', slippageBps: 7, pdtRule: true, borrowFeePct: 2 });
+  P.markToMarket({}, T0 + 2 * DAY);
+  const raw = localStorage.getItem('bt.portfolio');
+  P.reset(1);
+  localStorage.setItem('bt.portfolio', raw);
+  const re = P.load();
+  assert.strictEqual(re.settings.fillModel, 'volume');
+  assert.strictEqual(re.settings.slippageBps, 7);
+  assert.strictEqual(re.settings.dividends, true);
+  assert.strictEqual(re.settings.pdtRule, true);
+  assert.strictEqual(re.settings.cashInterestPct, 3);
+  assert.strictEqual(re.cashflows.length, 1);
+  assert.ok(re.income.interest > 0);
+  const kept = P.reset(5000);
+  assert.strictEqual(kept.settings.slippageBps, 7, 'reset keeps preferences');
+  assert.deepStrictEqual(kept.cashflows, []);
+  P.setSettings({ fillModel: 'teleport', slippageBps: -3, cashInterestPct: 'lots', commissionPreset: 'free-lunch', pdtRule: 'yes' });
+  assert.strictEqual(P.settings.fillModel, 'volume');
+  assert.strictEqual(P.settings.slippageBps, 7);
+  assert.strictEqual(P.settings.cashInterestPct, 3);
+  assert.strictEqual(P.settings.commissionPreset, 'per-trade');
+  assert.strictEqual(P.settings.pdtRule, true);
+  localStorage.setItem('bt.portfolio', JSON.stringify({ cash: 10, settings: { fillModel: 7, slippageBps: 'x' }, cashflows: [null, { type: 'interest', amount: 'x' }] }));
+  const bad = P.load();
+  assert.strictEqual(bad.settings.fillModel, 'instant');
+  assert.strictEqual(bad.settings.slippageBps, 0);
+  assert.deepStrictEqual(bad.cashflows, []);
+  real();
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

@@ -1,6 +1,6 @@
 # Competitive analysis and feature backlog
 
-Reviewed November 2026. Sources are third-party reviews and vendor pages; plan tiers and
+Reviewed November 2026; Tier 1 status updated for the v0.5 release. Sources are third-party reviews and vendor pages; plan tiers and
 counts change often, so re-check before quoting them in marketing.
 
 ## Who we compared against
@@ -24,21 +24,34 @@ counts change often, so re-check before quoting them in marketing.
 - Instructor dashboard that works offline from share codes, with no student emails required.
 - Spanish interface and course.
 - Installable PWA, open source, and no account needed to start.
+- Since v0.5: classroom leagues that run with no server and no student emails (league codes and share codes), a coach that reviews process for free in the browser, and badges that never reward profit.
 
 ## Gaps turned into features
 
-### Tier 1: build next (v0.5)
+### Tier 1: shipped in v0.5
 
-1. **Competitions and leagues.** Instructor or anyone creates a league: name, start and end dates, starting cash, commission, slippage, allowed asset classes, day-trading allowed, max position %, short selling on/off. Separate paper account per league. Leaderboard by return, risk-adjusted return and consistency. Team accounts. "Projector view" that cycles rankings for a classroom display. Student join by code. Backed by the worker when configured; local or share-code mode otherwise.
-2. **Stock screener.** Filter the universe by price, % change, volume, RSI, distance to SMA 50/200, golden cross today, Bollinger squeeze, candlestick pattern today, sector, kind. Saved scans; "send to watchlist". Works on the demo universe out of the box and on provider data with a key, respecting rate limits.
-3. **No-code strategy builder.** Rule blocks (indicator, comparator, value or other indicator, lookback) combined with AND/OR for entry and exit, plus stop/target/trailing rules. Feeds the backtester, alerts, and a "semi-auto" paper mode that proposes trades for one-tap confirmation. Export and import as JSON.
-4. **Gamification layer.** XP for lessons, quizzes, drills, journal entries and streaks; levels named after the Babypips-style ladder (Freshman to Graduate); badges with honest criteria; "What kind of trader are you?" personality quiz that recommends a learning path; optional opt-in quiz score comparison.
-5. **Options analyzer.** What-if sliders for underlying price, days to expiry and implied volatility; P&L curves at multiple dates; probability cone from IV; greeks over the range; assignment and early-exercise warnings.
-6. **Trade planner and risk calculator.** Entry, stop, target, account risk % → shares, dollar risk, R multiple, breakeven win rate. Wired into the trade ticket and the journal.
-7. **Realism upgrades to the paper engine.** Volume-limited partial fills, configurable slippage model, commission presets, dividends and cash interest, pattern day-trader rule toggle, short borrow fee, demo corporate actions (splits, dividends).
-8. **Coach.** Free rule-based coach that reviews every trade (risk/reward, size vs the 1% rule, trading against the trend, revenge trading after a loss, overtrading) and writes a short note into the journal. Pro: AI coach through the worker, using a server-side model key, limited to lesson content and the student's own trades.
+All eight Tier 1 items shipped in v0.5 (`docs/CHANGELOG.md`, [0.5.0]). Each line keeps the original goal and says where it now lives; the few parts still open are marked and carried into `docs/ROADMAP.md`.
 
-### Tier 2: after v0.5
+1. **Competitions and leagues — shipped.** Instructor or anyone creates a league: name, start and end dates, starting cash, commission, slippage, allowed asset classes, day-trading allowed, max position %, short selling on/off. Separate paper account per league. Leaderboard by return, risk-adjusted return and consistency. Team accounts. "Projector view" that cycles rankings for a classroom display. Student join by code. Backed by the worker when configured; local or share-code mode otherwise.
+   *Where:* `leagues.html`, `js/leagues.js`, `js/leagues-ui.js`, the Leagues tab on `instructor.html`, worker routes `/leagues…` with the `LEAGUES` KV namespace. Four rule presets (Classroom 4-week, Day-trading sprint, Long-only investor, Options challenge); rules enforced on the dashboard and Replay tickets; standings by return with drawdown, Sharpe and a consistency score; `leagues.html?projector=1`. Guide: `docs/LEAGUES.md`.
+2. **Stock screener — shipped.** Filter the universe by price, % change, volume, RSI, distance to SMA 50/200, golden cross today, Bollinger squeeze, candlestick pattern today, sector, kind. Saved scans; "send to watchlist". Works on the demo universe out of the box and on provider data with a key, respecting rate limits.
+   *Where:* `screener.html`, `js/screener.js`, `js/screener-ui.js`. Also 52-week highs / lows, ADX and the composite signal state; six built-in scans; "Add to watchlist" and "Open chart"; phone card list. *Still open:* "open in Replay" from a result row.
+3. **No-code strategy builder — shipped.** Rule blocks (indicator, comparator, value or other indicator, lookback) combined with AND/OR for entry and exit, plus stop/target/trailing rules. Feeds the backtester, alerts, and a "semi-auto" paper mode that proposes trades for one-tap confirmation. Export and import as JSON.
+   *Where:* `builder.html`, `js/rules.js`, `js/builder-ui.js`; alert kind `rule` in `js/alerts.js`; the Semi-auto card on the dashboard (proposes, never executes on its own). Four templates and a plain-English (and Spanish) description of every rule. *Still open:* sharing a rule as a short code like the classroom share codes.
+4. **Gamification layer — shipped.** XP for lessons, quizzes, drills, journal entries and streaks; levels named after the Babypips-style ladder (Freshman to Graduate); badges with honest criteria; "What kind of trader are you?" personality quiz that recommends a learning path; optional opt-in quiz score comparison.
+   *Where:* `profile.html`, `js/xp.js`, `course/personality.json`; level chip in the nav. Seven levels (Freshman to Portfolio Manager) and 28 badges whose criteria reward learning, practice habits and reflection, not profit. *Still open:* the opt-in cohort quiz-score comparison (needs the backend).
+5. **Options analyzer — shipped.** What-if sliders for underlying price, days to expiry and implied volatility; P&L curves at multiple dates; probability cone from IV; greeks over the range; assignment and early-exercise warnings.
+   *Where:* the Options Lab on `portfolio.html`; `BT.options.whatIf`, `curves`, `probRange`, `probProfit` and warnings in `js/options.js`.
+6. **Trade planner and risk calculator — shipped.** Entry, stop, target, account risk % → shares, dollar risk, R multiple, breakeven win rate. Wired into the trade ticket and the journal.
+   *Where:* `js/risk.js` (`BT.risk`); the "Plan this trade" panel in the dashboard and Replay tickets (prefills quantity, saves the planned stop and target on the order) and a standalone calculator on `portfolio.html`.
+7. **Realism upgrades to the paper engine — shipped.** Volume-limited partial fills, configurable slippage model, commission presets, dividends and cash interest, pattern day-trader rule toggle, short borrow fee, demo corporate actions (splits, dividends).
+   *Where:* `js/paper.js` settings (all off by default, backward compatible) with a settings panel on `portfolio.html`. *Still open:* demo stock splits; dividends are simulated, splits are not.
+8. **Coach — shipped.** Free rule-based coach that reviews every trade (risk/reward, size vs the 1% rule, trading against the trend, revenge trading after a loss, overtrading) and writes a short note into the journal. Pro: AI coach through the worker, using a server-side model key, limited to lesson content and the student's own trades.
+   *Where:* `js/coach.js` (`BT.coach`), coach notes under the dashboard and Replay tickets, worker route `POST /coach` (Anthropic Messages API, `claude-haiku-5-5`, education-only system prompt, Pro only, daily cap, rule-based fallback). Also checks missing stops, position size, averaging down and losses bigger than planned. Guide: `docs/COACH.md`. *Still open:* the button that requests the AI review from the coach notes box.
+
+Also shipped alongside Tier 1: **Module 10**, *Your Trading Toolkit: Screeners, Rules & Competitions* (`course/m10-toolkit.json`), which teaches each new tool with its limits, and **CSV upload for back-testing** on `backtest.html` (`js/csv.js`).
+
+### Tier 2: next (v0.6 candidates)
 
 9. Chart of the day: an automatically detected setup from the demo or live scan each day, with a two-question check.
 10. Multi-chart layouts (2 and 4 panes) with saved templates.

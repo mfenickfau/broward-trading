@@ -1,0 +1,562 @@
+{
+  "id": "m10-toolkit",
+  "title": "Tu caja de herramientas: screeners, reglas y competencias",
+  "level": "intermediate",
+  "minutes": 61,
+  "summary": "Cómo usar el screener sin caer en la minería de datos, escribir reglas que una computadora pueda probar, llevar una misma regla por el backtest, Market Replay y el paper trading, dimensionar cada operación con la calculadora y el coach, y competir en ligas de forma ética sabiendo lo que una tabla de clasificación no puede decirte sobre la suerte y la habilidad.",
+  "disclaimer": "Contenido solo educativo. Nada en este módulo es asesoría de inversión, y ningún ticker, escaneo, regla o resultado de liga mencionado es una recomendación. Los screeners, backtests, replays y ligas de paper trading usan datos simulados o históricos y no pueden predecir resultados futuros.",
+  "lessons": [
+    {
+      "id": "m10-l1",
+      "title": "Usar un screener sin engañarte a ti mismo",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Para qué sirve un screener\n\nUn screener es un filtro. Le das un universo de símbolos ([[Ticker symbol|tickers]]) y una lista de condiciones, como *precio por encima de su [[Simple moving average (SMA)|SMA]] de 200 días* y *[[Relative Strength Index (RSI)|RSI]] por debajo de 35*, y te devuelve los pocos que cumplen hoy. El screener de este sitio hace exactamente eso sobre el universo demo (acciones, ETFs y cripto) al instante, y sobre datos en vivo de un proveedor cuando agregas una clave, espaciando sus solicitudes para mantenerse dentro de los límites gratuitos.\n\nEso lo convierte en una **máquina de hacer listas cortas**, no en una máquina de predicciones. Responde a *\"¿qué gráficos cumplen mis condiciones ahora mismo?\"*. Nunca responde a *\"¿cuáles de estos van a subir?\"*. Cada fila que devuelve es un gráfico que todavía tienes que leer, una operación que todavía tienes que dimensionar y una idea que tu plan todavía tiene que permitir.\n\nUsado así, un screener ahorra tiempo de verdad. En lugar de revisar cincuenta gráficos cada noche buscando un retroceso ([[Pullback|pullback]]) dentro de una tendencia alcista ([[Uptrend|uptrend]]), describes el retroceso una vez y dejas que el filtro haga la revisión. Los seis escaneos incluidos ('Sobrevendida en tendencia alcista', 'Cruce dorado esta semana', 'Setups de squeeze', 'Máximos de 52 semanas', 'Envolvente alcista hoy', 'Tendencia fuerte (ADX>25)') son ejemplos de condiciones que vienen directamente de módulos anteriores."
+        },
+        {
+          "type": "text",
+          "md": "### La trampa: la minería de datos\n\nAquí está el problema. Un screener hace facilísimo probar condición tras condición hasta que algo se ve increíble. Ajustas el RSI de 35 a 32, agregas un filtro de volumen, cambias la media de 50 días por la de 20, quitas el sector que no te gusta, y pronto la lista es corta y todos los nombres que aparecen han subido sin parar durante un mes. *Se siente* como un descubrimiento. Normalmente es [[Data snooping|data snooping]] (sesgo de búsqueda en los datos): has buscado entre tantas combinaciones que algunas iban a encajar con el pasado reciente por pura casualidad.\n\nUn poco de aritmética muestra por qué. Supón que cada filtro al azar que pruebas tiene un 5% de probabilidad de verse impresionante solo por suerte. Prueba uno y te engañará el 5% de las veces. Prueba veinte y la probabilidad de que **al menos uno** se vea impresionante solo por suerte es 1 − 0.95²⁰, alrededor del **64%**. Cuanto más le das vueltas, más seguro es que encuentres algo, y menos significa ese algo.\n\nEs el mismo sobreajuste ([[Overfitting (curve fitting)|overfitting]]) que viste en el Módulo 6, solo que más rápido, porque un screener te deja probar una docena de ideas en un minuto sin escribir ninguna.\n\n### Señales de que estás minando datos, no filtrando\n\n- Cambiaste un umbral por cómo se veían los resultados, no por una razón que pudieras decir de antemano.\n- Sigues agregando filtros hasta que la lista muestra las acciones que ya querías.\n- No puedes explicar, en una oración, *por qué* la condición debería importarles a compradores y vendedores.\n- Tu mejor escaneo solo funciona en un universo, un mes o un intervalo."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Decide el escaneo antes de ejecutarlo",
+          "md": "Escribe el escaneo **antes** de presionar Ejecutar: el universo, cada filtro con su umbral y una oración sobre por qué debería funcionar. Ejecútalo una vez. Si cambias algo después, anota qué cambiaste y por qué, y trata la nueva versión como una idea completamente nueva que todavía tiene que demostrar su valor en un [[Backtest|backtest]] y en [[Market replay|Market Replay]]. Un escaneo que ajustaste mirando los resultados de hoy no se ha probado en nada."
+        },
+        {
+          "type": "text",
+          "md": "### Una rutina de screening más sana\n\n1. **Parte de un setup que ya entiendes.** El escaneo debe describir algo de tu plan, por ejemplo *'un retroceso a soporte dentro de una tendencia alcista'*, no una expedición de pesca.\n2. **Usa pocos filtros con umbrales redondos y sensatos.** RSI por debajo de 35, precio por encima de la SMA de 200 días, volumen promedio de más de un millón de acciones. Tres filtros que puedes defender valen más que nueve que no puedes.\n3. **Guarda el escaneo y no lo toques.** Los escaneos guardados viven en tu navegador. Ejecuta el mismo cada noche durante unas semanas y anota lo que encuentra, incluidos los fracasos.\n4. **Trata cada resultado como un candidato.** Abre el gráfico, revisa la tendencia ([[Trend|trend]]), el soporte ([[Support|support]]) y la liquidez ([[Liquidity|liquidity]]), y solo entonces decide si cumple tus reglas.\n5. **Revisa los días vacíos.** Un buen escaneo a veces no devuelve nada. Eso es el escaneo haciendo su trabajo, no una razón para aflojarlo hasta que te muestre algo que operar.\n\nRecuerda también el sesgo de supervivencia ([[Survivorship bias|survivorship bias]]). Un screener solo ve lo que cotiza hoy; las empresas que se derrumbaron y dejaron de cotizar no están en el universo, así que un escaneo que se ve genial con 'las acciones de hoy' a lo largo de los últimos años está ignorando en silencio a las perdedoras."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200",
+            "rsi"
+          ],
+          "bars": 300,
+          "caption": "MSFT, diario, con las SMA de 50 y 200 días y el RSI(14). Un escaneo como 'Sobrevendida en tendencia alcista' marcaría los días en que el precio está por encima de la línea de 200 días mientras el RSI baja a la zona de 30 a 35. Encuentra esos días a simple vista y pregúntate qué pasó después: los rebotes *y* las veces que siguió cayendo. Los precios demo son simulados."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Una coincidencia no es una señal de compra",
+          "md": "El screener informa qué condiciones son ciertas hoy. No sabe nada del informe de resultados ([[Earnings report|earnings]]) de mañana, de un catalizador noticioso ([[Catalyst|catalyst]]) ni de si todo el mercado está a punto de girar. Nada en la lista de resultados es una recomendación, ni de este sitio ni de nadie más."
+        },
+        {
+          "type": "exercise",
+          "md": "Ejecuta un escaneo de la forma honesta.\n\n- Antes de abrir el screener, escribe en tu diario: el universo (por ejemplo *Acciones*), cada filtro con su umbral y una oración sobre por qué el setup debería funcionar.\n- Abre el screener, construye exactamente ese escaneo, ejecútalo una vez y guárdalo con un nombre claro.\n- Elige los tres primeros resultados y abre cada gráfico. Para cada uno, escribe si de verdad cumple tu setup cuando miras el gráfico, y por qué sí o por qué no.\n- Luego prueba a propósito cinco 'ajustes' (cambia un umbral, agrega un filtro) y anota cuánto cambia la lista. Escribe una oración sobre lo fácil que habría sido engañarte.",
+          "action": {
+            "page": "screener.html",
+            "label": "Abrir el screener"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Para qué sirve mejor un screener de acciones?",
+              "choices": [
+                "Para predecir qué acciones subirán la próxima semana",
+                "Para producir una lista corta de gráficos que cumplen condiciones que tú definiste, y que luego examinas tú mismo",
+                "Para reemplazar la necesidad de un plan de trading",
+                "Para encontrar acciones que con toda seguridad están sobrevendidas"
+              ],
+              "answer": 1,
+              "explain": "Un screener filtra un universo según condiciones que son ciertas ahora mismo. Ahorra tiempo al buscar candidatos; no pronostica nada, y cada resultado todavía tiene que pasar por tu plan."
+            },
+            {
+              "q": "Si cada filtro al azar que pruebas tiene un 5% de probabilidad de verse impresionante por suerte, ¿qué tan probable es, más o menos, que al menos uno de 20 filtros así se vea impresionante solo por suerte?",
+              "choices": [
+                "5%",
+                "Alrededor del 20%",
+                "100%",
+                "Alrededor del 64%"
+              ],
+              "answer": 3,
+              "explain": "1 − 0.95^20 ≈ 0.64. Cuantas más combinaciones pruebas, más seguro es que encuentres una que encaje con el pasado por casualidad. Eso es data snooping."
+            },
+            {
+              "q": "¿Cuál de estas es una señal de alerta de minería de datos y no de screening?",
+              "choices": [
+                "Seguiste ajustando umbrales hasta que los resultados mostraron las acciones que ya te gustaban",
+                "Usaste tres filtros con umbrales redondos",
+                "Escribiste el escaneo antes de ejecutarlo",
+                "Tu escaneo a veces no devuelve resultados"
+              ],
+              "answer": 0,
+              "explain": "Ajustar el escaneo mirando los resultados lo adapta al pasado reciente. Escribirlo primero, mantenerlo simple y aceptar los días vacíos son hábitos sanos."
+            },
+            {
+              "q": "¿Por qué el sesgo de supervivencia puede hacer que un escaneo se vea mejor de lo que realmente es?",
+              "choices": [
+                "Porque el screener ignora los ETFs",
+                "Porque el RSI se calcula mal con datos antiguos",
+                "Porque el universo solo contiene empresas que todavía cotizan hoy, así que faltan las que fracasaron y dejaron de cotizar",
+                "Porque los escaneos guardados caducan después de una semana"
+              ],
+              "answer": 2,
+              "explain": "Las empresas que se derrumbaron no están en la lista de hoy. Probar un escaneo con las sobrevivientes elimina en silencio muchas de las perdedoras que habría elegido."
+            },
+            {
+              "q": "Cambias un umbral después de ver los resultados del escaneo. ¿Qué deberías hacer con la nueva versión?",
+              "choices": [
+                "Operarla de inmediato, ya que ahora encaja mejor con los datos recientes",
+                "Tratarla como una idea nueva y validarla otra vez con un backtest y Market Replay antes de hacer paper trading con ella",
+                "Borrar la versión vieja y fingir que la nueva era la original",
+                "Nada; los cambios pequeños nunca importan"
+              ],
+              "answer": 1,
+              "explain": "Cualquier cambio hecho después de mirar los resultados es una hipótesis nueva. Anótala y pruébala desde cero para no engañarte."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l2",
+      "title": "Escribir reglas que una computadora pueda probar",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### De una sensación a una regla\n\nLa mayoría de las ideas de trading empiezan como una sensación: *\"Parece que quiere rebotar.\"* *\"Esta se siente fuerte.\"* Las sensaciones sirven para notar cosas, pero no se pueden probar. Una computadora no puede hacer un backtest de \"se ve fuerte\" y, lo que es más importante, tú tampoco, porque el mes que viene recordarás las veces que la sensación funcionó y olvidarás las que no (sesgo de confirmación, [[Confirmation bias|confirmation bias]]).\n\nUna **regla comprobable** es aquella que dos personas distintas, o una persona y una computadora, aplicarían al mismo gráfico y obtendrían exactamente la misma respuesta. Tiene cuatro propiedades:\n\n- **Específica.** Cada número está escrito: qué media, cuántas velas, qué umbral.\n- **Observable en el momento.** Usa solo datos disponibles cuando se toma la decisión. Nada de espiar el cierre de una vela que no ha terminado, y nada de \"el mínimo del movimiento\" antes de que el movimiento acabe. Eso es sesgo de anticipación ([[Look-ahead bias|look-ahead bias]]).\n- **Completa.** Dice cuándo entrar, cuándo salir con ganancia, cuándo salir con pérdida y qué tamaño tiene la posición.\n- **Sin ambigüedad en los tiempos.** Por ejemplo: *las señales se revisan al cierre diario y se ejecutan en la apertura del día siguiente.* El backtester y el constructor de estrategias de este sitio funcionan así."
+        },
+        {
+          "type": "text",
+          "md": "### Un ejemplo resuelto\n\nIdea vaga: *\"Comprar buenas acciones cuando bajan.\"*\n\nVersión comprobable:\n\n- **Universo:** las acciones y ETFs del universo demo, velas diarias.\n- **Entrada:** al cierre diario, si el precio está por encima de su SMA de 200 días **y** el RSI(14) cruza por encima de 30, comprar en la siguiente apertura.\n- **Salida (ganancia):** cuando el RSI(14) cruza por encima de 70.\n- **Salida (tiempo):** después de 30 velas si ninguna otra salida se ha activado.\n- **Salida (pérdida):** un [[Stop order (stop-loss)|stop]] 6% por debajo del precio de entrada.\n- **Tamaño:** arriesgar el 1% del capital por operación, usando la distancia al stop (tamaño de la posición, [[Position sizing|position sizing]], del Módulo 4).\n\nEsa es la plantilla 'Reversión del RSI' del constructor de estrategias, escrita con palabras. Cada línea responde una pregunta que haría una computadora. Fíjate en lo que la regla *no* dice: nada sobre si la empresa es \"buena\", nada sobre cómo te sientes ese día.\n\n### Cruzar frente a estar por encima\n\nUn pequeño detalle confunde a mucha gente. *\"El RSI está por debajo de 30\"* es cierto en cada vela de una caída larga, así que una regla basada en eso compraría una y otra vez en plena bajada. *\"El RSI cruza por encima de 30\"* es cierto en una sola vela: aquella en la que ayer estaba por debajo de 30 y hoy está por encima. Elegir 'cruza por encima' o '>' cambia la estrategia por completo, por eso el constructor te obliga a elegir uno de forma explícita. Un cruce ([[Crossover|crossover]]) compara la vela anterior con la actual, que es exactamente lo que podías saber en ese cierre."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "La prueba de las dos personas",
+          "md": "Léele tu regla a un amigo y dale un gráfico. Si en algún momento te preguntaría *\"entonces, ¿compro aquí o no?\"*, la regla no está terminada. Cada lugar donde duda es un lugar donde tú habrías improvisado en tiempo real, y eliminar la improvisación es justo para lo que existe un plan de trading ([[Trading plan|trading plan]])."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sma200",
+            "rsi"
+          ],
+          "bars": 300,
+          "caption": "SPY, diario, con la SMA de 200 días y el RSI(14). Intenta aplicar a mano la regla de reversión del RSI: marca cada vela donde el precio estaba por encima de la línea de 200 días y el RSI volvió a cruzar por encima de 30, y luego marca dónde el RSI cruzó 70 o pasaron 30 velas. Si dudaste en algún punto, a la regla le falta otra oración. Los precios demo son simulados."
+        },
+        {
+          "type": "text",
+          "md": "### Huecos comunes en las reglas escritas a mano\n\n- **Sin salida.** Muchos principiantes escriben una entrada cuidadosa y luego \"vendo cuando se sienta bien\". Una regla de salida ([[Exit rule|exit rule]]) importa al menos tanto como una regla de entrada ([[Entry rule|entry rule]]).\n- **Sin stop.** \"Lo voy a vigilar\" no es un stop. Escribe el precio o el porcentaje.\n- **Discreción escondida.** \"Comprar rupturas con volumen fuerte\": ¿qué tan fuerte? ¿1.5× el promedio de 20 días? Escríbelo.\n- **Demasiadas condiciones.** Siete condiciones unidas con AND pueden activarse dos veces en cinco años. Una regla que casi nunca opera no se puede juzgar, y a menudo es señal de sobreajuste ([[Overfitting (curve fitting)|overfitting]]).\n- **Ignorar los costos.** Anota la comisión ([[Commission|commission]]) y el deslizamiento ([[Slippage|slippage]]) que vas a suponer. El backtester te deja configurar ambos.\n\nEl constructor de estrategias convierte estas oraciones en bloques: grupos de condiciones AND/OR, comparaciones de cruce, stop, objetivo, trailing stop y máximo de velas. Su resumen en lenguaje sencillo te lee tu regla de vuelta, que es la prueba de las dos personas hecha por una máquina."
+        },
+        {
+          "type": "exercise",
+          "md": "Convierte una idea vaga en una regla comprobable.\n\n- Escribe una idea que hayas tenido, con tus propias palabras, por vaga que sea (por ejemplo *'comprar acciones fuertes cuando bajan'*).\n- Reescríbela con las cuatro propiedades: números específicos, solo datos conocidos al cierre, entrada y ambas salidas más el tamaño, y cuándo se ejecuta la orden.\n- Abre el constructor de estrategias (empieza con la plantilla de reversión del RSI), reconstruye tu regla con sus bloques y compara el resumen en lenguaje sencillo con lo que escribiste. Corrige cualquier línea donde no coincidan.\n- Guarda la regla con un nombre que reconozcas. No ejecutes el backtest todavía; eso es la próxima lección.",
+          "action": {
+            "page": "builder.html",
+            "label": "Abrir el constructor de estrategias",
+            "hash": "template=rsiReversion"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Qué hace que una regla de trading sea 'comprobable'?",
+              "choices": [
+                "Que la recomendó un trader con experiencia",
+                "Que ha funcionado en al menos una acción",
+                "Que dos personas que la apliquen al mismo gráfico siempre llegarían a la misma decisión",
+                "Que usa al menos tres indicadores"
+              ],
+              "answer": 2,
+              "explain": "Una regla comprobable es específica, usa solo información disponible en el momento, está completa y no deja espacio a la interpretación, así que cualquiera (o una computadora) la aplica de forma idéntica."
+            },
+            {
+              "q": "¿Qué regla contiene sesgo de anticipación (look-ahead bias)?",
+              "choices": [
+                "Comprar en la apertura de hoy si el cierre de hoy va a estar por encima de la SMA de 50 días",
+                "Comprar en la siguiente apertura cuando el cierre de hoy está por encima de la SMA de 50 días",
+                "Vender en la siguiente apertura cuando el RSI(14) cruza por encima de 70 al cierre",
+                "Salir después de 30 velas si ninguna otra salida se ha activado"
+              ],
+              "answer": 0,
+              "explain": "En la apertura de hoy no puedes saber el cierre de hoy. Cualquier regla que use datos de una vela que todavía no ha terminado está espiando el futuro."
+            },
+            {
+              "q": "¿Cuál es la diferencia práctica entre 'RSI por debajo de 30' y 'RSI cruza por encima de 30'?",
+              "choices": [
+                "No hay ninguna diferencia",
+                "'Por debajo de 30' usa sesgo de anticipación",
+                "'Cruza por encima' solo se puede usar en gráficos semanales",
+                "'Por debajo de 30' es cierto en cada vela de una caída larga, mientras que 'cruza por encima de 30' solo es cierto en la vela donde pasa de abajo hacia arriba"
+              ],
+              "answer": 3,
+              "explain": "Una condición de nivel puede seguir siendo cierta durante muchas velas; un cruce compara la vela anterior con la actual y se activa una vez. Elegir la equivocada cambia con qué frecuencia, y cuándo, opera la estrategia."
+            },
+            {
+              "q": "Una regla dice: 'Comprar rupturas con volumen fuerte; vender cuando se sienta que tocó techo.' ¿Cuál es el mayor problema?",
+              "choices": [
+                "Usa el volumen, que nunca es útil",
+                "'Fuerte' y 'se sienta que tocó techo' no están definidos, así que la entrada es ambigua y no hay una salida ni un stop reales",
+                "Es demasiado corta",
+                "Las rupturas no se pueden probar con un backtest"
+              ],
+              "answer": 1,
+              "explain": "Las palabras sin definir esconden discreción. Especifica el umbral de volumen (por ejemplo, 1.5× el promedio de 20 días), una salida escrita y un stop."
+            },
+            {
+              "q": "¿Por qué una regla con siete condiciones unidas con AND suele ser una señal de alerta?",
+              "choices": [
+                "Puede operar tan poco que no puedes juzgarla, y las condiciones extra a menudo están ajustadas a datos pasados",
+                "Las computadoras no pueden evaluar más de tres condiciones",
+                "Las condiciones AND siempre pierden dinero",
+                "Es ilegal en la mayoría de los mercados"
+              ],
+              "answer": 0,
+              "explain": "Cada condición extra reduce el número de operaciones y añade una oportunidad de ajustarse al ruido. Pocas operaciones y muchas condiciones afinadas son el sobreajuste clásico."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l3",
+      "title": "De la regla al backtest, al replay y al paper trading",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Cuatro puertas, en orden\n\nUna regla escrita es una hipótesis. Antes de acercarse a tu cuenta principal de paper trading, debería pasar cuatro puertas, cada una más difícil de engañar que la anterior:\n\n1. **Escríbela** (Lección 2). Si no puedes escribirla, no puedes probarla.\n2. **Hazle un backtest.** Ejecuta exactamente la regla sobre años de historia con costos ([[Transaction costs|costs]]) realistas. Esto te dice si la idea tuvo alguna ventaja ([[Expectancy|edge]]) en el pasado, y qué tan doloroso fue mantenerla.\n3. **Hazle un replay.** Opera la regla a mano en [[Market replay|Market Replay]] con el futuro oculto, vela por vela. Esto te dice si *tú* realmente puedes seguirla cuando no sabes qué viene después.\n4. **Opérala en paper trading.** Ejecútala hacia adelante con precios en vivo o con retraso en una cuenta de paper trading durante un número fijo de operaciones. Esto es [[Forward testing (paper trading a strategy)|forward testing]]: la única prueba sobre datos que nadie ha visto, incluido tú.\n\nCada puerta detecta problemas que la anterior no puede. Un backtest no puede sentir miedo. El replay no puede mostrarte el mes que viene. El paper trading es lento pero honesto. Saltar directo de un backtest que se ve bien al dinero real es como mueren la mayoría de las estrategias autodidactas."
+        },
+        {
+          "type": "text",
+          "md": "### Puerta 2: leer el backtest con honestidad\n\nDesde el constructor de estrategias, 'Hacer backtest' (Backtest it) pasa tu regla por el mismo motor que el laboratorio de estrategias, ejecutando cada señal en la **apertura de la siguiente vela** para evitar el sesgo de anticipación. Cuando aparezcan los resultados, mira más allá del retorno principal:\n\n- **Número de operaciones.** Con menos de unas 30, la tasa de acierto ([[Win rate|win rate]]) y los promedios son sobre todo ruido.\n- **Caída máxima ([[Maximum drawdown|Maximum drawdown]]).** ¿De verdad podrías aguantar esa caída? Reduce tu confianza a la mitad si la respuesta es \"probablemente\".\n- **Factor de beneficio ([[Profit factor|Profit factor]]) y expectativa.** Las ganancias brutas divididas entre las pérdidas brutas, y el resultado promedio por operación. Ambos deberían sostenerse después de costos.\n- **Comparado con comprar y mantener ([[Buy and hold|buy and hold]]).** Muchas reglas simplemente rinden menos que tener el [[Benchmark|benchmark]], con más trabajo y más riesgo.\n- **Otros símbolos y periodos.** Ejecútala en algunos tickers y en un tramo de años anterior. Una regla que solo funciona en una acción en un año es un fracaso de robustez ([[Robustness|robustness]]).\n\nUsa el optimizador con moderación, si es que lo usas. Buscar en una cuadrícula de parámetros es el mismo riesgo de minería de datos que juguetear con un screener: la mejor celda de la cuadrícula suele ser la más afortunada. Si miras, prefiere una meseta amplia de resultados decentes antes que un solo pico agudo, y confirma la elección con datos fuera de la muestra ([[Out-of-sample data|out-of-sample data]])."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Usa la misma regla en todas partes",
+          "md": "Mantén la regla idéntica en todas las puertas. Si cambias un umbral después del backtest, vuelves a la puerta 1 con una regla nueva. Guarda cada versión en el constructor con un número de versión en el nombre (por ejemplo *Reversión del RSI v2*) y anota en tu diario qué cambió y por qué. También puedes exportar la regla como JSON para guardar una copia."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "signals"
+          ],
+          "bars": 300,
+          "caption": "MSFT, diario, con las SMA de 20 y 50 días. La plantilla de cruce de SMA compra cuando la de 20 días cruza por encima de la de 50 días y vende cuando vuelve a cruzar hacia abajo. Cuenta los latigazos ([[Whipsaw|whipsaws]]) en los tramos laterales: un backtest te cobra cada uno, y Market Replay te obliga a vivirlos. Los precios demo son simulados."
+        },
+        {
+          "type": "text",
+          "md": "### Puerta 3: el replay, donde el futuro está oculto\n\nUn backtest aplica tu regla a la perfección. Tú no lo harás. En Market Replay el gráfico se detiene en una fecha pasada y avanza una vela a la vez; colocas cada orden tú mismo a través de una cuenta de paper trading separada de la principal. El ejercicio *'Opera el cruce de SMA en MSFT 2024'* está hecho exactamente para esta regla.\n\nMientras haces el replay, anota cada vez que:\n\n- te saltaste una señal porque \"se veía mal\",\n- tomaste una operación que la regla no te dio,\n- moviste o quitaste un stop.\n\nLuego compara tu tarjeta de resultados con el backtest del mismo periodo. Si tu resultado en el replay es mucho peor, la diferencia no es el mercado; es la ejecución. Ese es el número más útil que produce todo este proceso, porque te mide a ti.\n\n### Puerta 4: paper trading, hacia adelante, con una muestra fija\n\nDecide de antemano cuántas operaciones dura la prueba en paper trading. El proyecto final del Módulo 8 sugiere **30 operaciones**, registradas en el diario, con el stop y el tamaño planeados en cada una. No pares antes porque las primeras cinco salieron bien, y no abandones después de tres pérdidas. Una racha de pérdidas ([[Losing streak|losing streak]]) de cuatro o cinco es normal para una regla que gana el 45% de las veces.\n\nAl final, compara tres números: backtest, replay y paper trading. Si coinciden más o menos, tienes una regla que entiendes y puedes seguir. Si los resultados en paper trading son mucho peores que el backtest, los culpables más comunes son el sobreajuste, costos que no modelaste o romper las reglas. Nada de esto significa que la regla vaya a funcionar con dinero real; significa que hiciste la tarea."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Pasar las cuatro puertas no es una garantía",
+          "md": "Los mercados cambian. Una regla que pasó todas las puertas puede dejar de funcionar, y las ejecuciones en paper trading son más amables que las reales. El objetivo de las puertas es descartar ideas que nunca iban a funcionar y enseñarte cómo te comportas, no certificar una máquina de hacer dinero. Este curso nunca recomienda operar con dinero real; si alguna vez lo haces, esa decisión y sus riesgos son solo tuyos."
+        },
+        {
+          "type": "exercise",
+          "md": "Lleva una regla por las puertas.\n\n- En el constructor de estrategias, abre la regla que guardaste en la Lección 2 (o la plantilla de cruce de SMA) y presiona **Hacer backtest**. Anota: operaciones, tasa de acierto, caída máxima, factor de beneficio y el resultado frente a comprar y mantener.\n- Ejecuta la misma regla en otros dos símbolos y anota si los resultados se sostienen.\n- Abre el laboratorio de backtest para ver de otra forma el cruce de SMA en MSFT con los costos activados, y compara.\n- Luego abre Market Replay en el ejercicio *Cruce de SMA en MSFT 2024* y opéralo a mano. Después, anota cada lugar donde rompiste la regla y compara tu tarjeta de resultados con el backtest.\n- Por último, escribe el plan de paper trading: cuántas operaciones, en qué cuenta y qué resultados harían que pararas.",
+          "action": {
+            "page": "backtest.html",
+            "label": "Hacer backtest del cruce de SMA en MSFT",
+            "hash": "sym=MSFT&strategy=smaCross&tf=1day&run=1"
+          }
+        },
+        {
+          "type": "drill",
+          "drillId": "sma-cross-msft-2024",
+          "md": "Haz un replay del cruce de SMA en MSFT durante 2024 con el futuro oculto. Sigue la regla exactamente, registra cada desviación y compara tu tarjeta de resultados con el backtest del mismo periodo."
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál es el orden correcto de las cuatro puertas de validación de esta lección?",
+              "choices": [
+                "Paper trading, backtest, escribir, replay",
+                "Replay, paper trading, backtest, escribir la regla",
+                "Backtest, escribir, paper trading, replay",
+                "Escribir la regla, hacerle un backtest, hacerle un replay, operarla en paper trading"
+              ],
+              "answer": 3,
+              "explain": "No puedes probar lo que no has escrito; el backtest revisa el pasado; el replay revisa si puedes seguirla a ciegas; el paper trading la prueba hacia adelante con datos no vistos."
+            },
+            {
+              "q": "¿Qué prueba Market Replay que un backtest no puede?",
+              "choices": [
+                "Si la regla tuvo ventaja en la historia",
+                "Si de verdad puedes seguir la regla cuando el futuro está oculto",
+                "La comisión exacta que cobra tu bróker",
+                "Si la regla funcionará el próximo año"
+              ],
+              "answer": 1,
+              "explain": "Un backtest aplica la regla a la perfección. El replay te pone en el asiento de las decisiones vela por vela y revela señales saltadas, operaciones impulsivas y stops movidos."
+            },
+            {
+              "q": "Un backtest muestra una tasa de acierto del 70% con 8 operaciones. ¿Cuánto peso deberías darle a esa tasa de acierto?",
+              "choices": [
+                "Mucho; 70% es excelente",
+                "Ninguno, porque la tasa de acierto nunca importa",
+                "Muy poco; con tan pocas operaciones el número es sobre todo ruido",
+                "Demuestra que la regla funcionará en el replay"
+              ],
+              "answer": 2,
+              "explain": "Las muestras pequeñas oscilan muchísimo. Busca al menos unas 30 operaciones antes de sacar conclusiones de la tasa de acierto o los promedios."
+            },
+            {
+              "q": "Después de un backtest cambias el umbral del RSI de 30 a 28 porque los resultados se ven mejor. ¿Qué ha pasado?",
+              "choices": [
+                "Creaste una regla nueva que tiene que pasar otra vez por las puertas",
+                "Mejoraste la misma regla; sigue con el replay",
+                "Nada importante; los cambios pequeños siempre son seguros",
+                "El backtest ahora está libre de sobreajuste"
+              ],
+              "answer": 0,
+              "explain": "Cualquier cambio después de ver los resultados es una hipótesis nueva. Ponle número de versión, anota por qué y valídala otra vez, idealmente con datos que no usaste para ajustarla."
+            },
+            {
+              "q": "Tu backtest ganó +12% en un periodo, pero tu replay del mismo periodo perdió 3%. ¿Cuál es la explicación más probable?",
+              "choices": [
+                "Los datos de mercado del replay son falsos",
+                "Los backtests siempre subestiman los retornos",
+                "La ejecución: señales saltadas, operaciones de más o stops movidos al operar a mano",
+                "El replay cobra comisiones más altas a propósito"
+              ],
+              "answer": 2,
+              "explain": "Misma regla, mismas velas: la diferencia suele estar en cómo se siguió la regla. Eso es exactamente lo que el replay está hecho para revelar."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l4",
+      "title": "Dimensionar el riesgo con la calculadora y el coach",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### El tamaño sale del stop, no de la convicción\n\nEl Módulo 4 presentó [[The 1% rule|the 1% rule]] (la regla del 1%): decide lo máximo que estás dispuesto a perder en una idea, como porcentaje de tu cuenta, *antes* de decidir cuántas acciones comprar. El número de acciones sale entonces de una aritmética simple:\n\n**acciones = (capital × % de riesgo) ÷ (entrada − stop)**\n\nEjemplo: capital $25,000, riesgo 1%, entrada $50.00, stop $47.50.\n\n- Riesgo en dólares: $25,000 × 1% = **$250**.\n- Riesgo por acción: $50.00 − $47.50 = **$2.50**.\n- Acciones: $250 ÷ $2.50 = **100 acciones**, una posición que vale **$5,000** (20% del capital).\n\nSi se activa el stop pierdes unos $250, más el deslizamiento ([[Slippage|slippage]]) y las comisiones ([[Commission|commissions]]). Un stop más amplio significa menos acciones; un stop más ajustado, más. Tu riesgo por operación ([[Risk per trade|risk per trade]]) sigue igual en ambos casos. Esa es toda la idea: el mercado decide dónde va el stop, y el stop decide tu tamaño.\n\n### La calculadora de 'Tamaño de posición'\n\nEl portafolio de paper trading tiene una pestaña de **Tamaño de posición** (Position size) que hace esta aritmética por ti. Rellena el capital desde la cuenta de paper trading activa; tú ingresas el % de riesgo, la entrada, el stop y un objetivo opcional. Muestra las acciones, el riesgo en dólares, el valor de la posición y el porcentaje del capital, además de tu relación beneficio/riesgo ([[Risk/reward ratio|reward-to-risk]]) y la tasa de acierto que necesitas para quedar en equilibrio. La boleta de órdenes del panel tiene la misma calculadora en un panel desplegable 'Planear esta operación' (Plan this trade) que rellena la cantidad y guarda el stop y el objetivo planeados con la orden y con la entrada del diario."
+        },
+        {
+          "type": "text",
+          "md": "### Cuando la regla del 1% no basta\n\nVigila la línea del **valor de la posición**, no solo la del riesgo. La misma cuenta de $25,000, riesgo del 1%, pero ahora entrada $200 y stop $196:\n\n- El riesgo por acción es solo $4, así que la calculadora dice **62 acciones**.\n- Esa posición vale **$12,400**, alrededor de la mitad de la cuenta.\n\nTu pérdida planeada sigue siendo $250, pero solo si el stop se ejecuta donde lo pusiste. De la noche a la mañana una acción puede abrir con un [[Gap|gap]] que salta por encima del stop, y con media cuenta en un solo nombre, un gap del 15% cuesta unos $1,860, más de siete veces lo que planeaste. Un plan sensato limita ambas cosas: el riesgo por operación **y** el tamaño de cualquier posición individual (muchos traders usan entre 20 y 25% como techo). El coach señala las posiciones de más del 25% del capital por esta razón.\n\n### Tasa de acierto de equilibrio y expectativa\n\nVale la pena entender dos números más de la calculadora:\n\n- **Tasa de acierto de equilibrio = 1 ÷ (1 + beneficio/riesgo).** Con 1:1 debes ganar el 50% de las operaciones solo para quedar en equilibrio antes de costos; con 2:1, alrededor del 33%; con 3:1, el 25%.\n- **Expectativa ([[Expectancy|Expectancy]])** es el resultado promedio por operación en R (múltiplos de tu riesgo). Con una tasa de acierto del 45%, ganancia promedio de 2R y pérdida promedio de 1R: 0.45 × 2 − 0.55 × 1 = **+0.35R** por operación, antes de costos.\n\nLa calculadora también muestra una fracción de Kelly, marcada como *solo educativa*. Kelly supone que conoces exactamente tu verdadera tasa de acierto y tu pago, algo que nadie sabe; el Kelly completo produce caídas brutales, así que quien lo usa, si es que lo usa, usa solo una pequeña fracción."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "El riesgo es una decisión que tomas antes de la operación",
+          "md": "Escribe tres números antes de cada orden: entrada, stop y tamaño. Si no puedes nombrar el stop, no puedes dimensionar la operación, y si no puedes dimensionarla, no estás listo para colocarla. La calculadora hace la aritmética; no puede decirte si una operación es una buena idea."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "bb"
+          ],
+          "bars": 250,
+          "caption": "TSLA, diario, con la SMA de 50 días y las Bandas de Bollinger. Unas bandas anchas significan que un stop sensato queda lejos de la entrada, así que el mismo 1% de riesgo compra muchas menos acciones que en una acción tranquila. La volatilidad cambia tu tamaño, no tu regla de riesgo. Los precios demo son simulados."
+        },
+        {
+          "type": "text",
+          "md": "### El coach: un segundo par de ojos\n\nDespués de cada ejecución en paper trading, y cuando envías una orden, el coach basado en reglas revisa la operación y escribe notas breves en tu entrada del diario. Busca los hábitos que hunden a los traders nuevos:\n\n- riesgo de más de aproximadamente 1–2% del capital, o **ningún stop**;\n- una relación beneficio/riesgo por debajo de 1.5;\n- operar en contra de la tendencia de 50 días;\n- una operación de venganza ([[Revenge trading|revenge trade]]) abierta pocos minutos (o dos velas) después de una pérdida;\n- sobreoperar ([[Overtrading|overtrading]]), más de cinco operaciones en un día;\n- una posición de más del 25% del capital;\n- agregar a una posición perdedora (promediar a la baja).\n\nCada nota es un *consejo* o una *advertencia* y enlaza a la lección que lo explica. El coach no sabe si la operación va a funcionar, y nunca te dice que compres o vendas. Revisa tu proceso contra tus propias reglas. Trata una advertencia como una pregunta que responder en tu diario, no como un insulto: *\"¿Por qué me salté el stop esta vez?\"*"
+        },
+        {
+          "type": "exercise",
+          "md": "Dimensiona tres operaciones y deja que el coach las revise.\n\n- Abre la pestaña de **Tamaño de posición** en tu portafolio de paper trading. Dimensiona esta operación: el capital de tu cuenta, 1% de riesgo, entrada $50.00, stop $47.50. Confirma a mano las acciones y el riesgo en dólares.\n- Dimensiona una segunda operación con entrada $200 y stop $196. Anota el valor de la posición como porcentaje del capital y decide qué límite por posición usará tu plan.\n- Coloca una pequeña operación de paper trading en el panel usando 'Planear esta operación' con un stop real. Luego lee las notas del coach en su entrada del diario y escribe una oración sobre cada consejo o advertencia.\n- Agrega tus números de riesgo por operación y de límite por posición a tu plan de trading escrito.",
+          "action": {
+            "page": "portfolio.html",
+            "label": "Abrir la calculadora de tamaño de posición",
+            "hash": "sizing"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Capital $25,000, riesgo 1%, entrada $50.00, stop $47.50. ¿Cuántas acciones da la fórmula?",
+              "choices": [
+                "100",
+                "50",
+                "250",
+                "500"
+              ],
+              "answer": 0,
+              "explain": "El riesgo en dólares es $250 y el riesgo por acción es $2.50, así que $250 ÷ $2.50 = 100 acciones."
+            },
+            {
+              "q": "La misma cuenta y 1% de riesgo, entrada $200, stop $196. La calculadora dice 62 acciones (unos $12,400). ¿Cuál es la principal preocupación?",
+              "choices": [
+                "El riesgo en dólares supera el 1%",
+                "62 no es un número redondo",
+                "La posición es alrededor de la mitad de la cuenta, así que un gap que salte el stop podría costar mucho más de lo planeado",
+                "El stop es demasiado amplio"
+              ],
+              "answer": 2,
+              "explain": "La pérdida planeada sigue siendo de unos $250, pero un stop ajustado produjo una posición enorme. Un gap más allá del stop rompería el plan, por eso muchos planes también limitan el tamaño de cada posición."
+            },
+            {
+              "q": "Con una relación beneficio/riesgo de 2:1, ¿qué tasa de acierto necesitas solo para quedar en equilibrio antes de costos?",
+              "choices": [
+                "Alrededor del 25%",
+                "Alrededor del 33%",
+                "50%",
+                "Alrededor del 67%"
+              ],
+              "answer": 1,
+              "explain": "Tasa de acierto de equilibrio = 1 ÷ (1 + 2) ≈ 33.3%."
+            },
+            {
+              "q": "Una regla gana el 45% de las veces, con ganancia promedio de 2R y pérdida promedio de 1R. ¿Cuál es su expectativa por operación antes de costos?",
+              "choices": [
+                "−0.10R",
+                "+1.45R",
+                "+0.90R",
+                "+0.35R"
+              ],
+              "answer": 3,
+              "explain": "0.45 × 2 − 0.55 × 1 = 0.90 − 0.55 = +0.35R."
+            },
+            {
+              "q": "¿Qué hace el coach basado en reglas?",
+              "choices": [
+                "Te dice qué acciones comprar",
+                "Revisa tus órdenes y ejecuciones contra reglas de proceso (stop, tamaño, tendencia, trading de venganza, sobreoperar) y enlaza la lección correspondiente",
+                "Predice si la operación será rentable",
+                "Cierra automáticamente las operaciones perdedoras"
+              ],
+              "answer": 1,
+              "explain": "El coach revisa tu proceso, no el mercado. Escribe consejos y advertencias con enlaces a lecciones en el diario y nunca recomienda una operación."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l5",
+      "title": "Competir en ligas: ética, suerte y lo que ocultan las clasificaciones",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### ¿Para qué competir?\n\nUna liga convierte el paper trading en un juego compartido: la misma fecha de inicio, el mismo efectivo inicial, las mismas reglas sobre comisiones ([[Commission|commissions]]), deslizamiento ([[Slippage|slippage]]), activos permitidos, venta en corto ([[Short selling|short selling]]) y tamaño máximo de posición, y una tabla de clasificación al final. Bien hecha, añade responsabilidad, una razón para llevar un diario y algo de qué hablar en clase. Cada liga a la que te unes recibe su **propia cuenta de paper trading**, separada de tu cuenta principal y de la de replay, así que nada de lo que hagas en una competencia toca tus otros registros.\n\nMal hecha, una liga enseña justo la lección equivocada: que la persona en la cima de una clasificación de cuatro semanas es el mejor trader. Esta lección trata de conseguir lo primero sin lo segundo."
+        },
+        {
+          "type": "text",
+          "md": "### Suerte frente a habilidad\n\nImagina una liga de 30 estudiantes donde cada uno elige sus operaciones lanzando una moneda. Aun así, alguien termina primero. Si se les permitiera meter toda la cuenta en una sola acción volátil, el ganador de un solo mes podría fácilmente subir un 20% o más, y el último lugar bajar otro tanto. Nada de esa clasificación mide habilidad.\n\nLas competencias cortas están dominadas por la **varianza**, el tamaño de las oscilaciones, no por la ventaja. Tres cosas hacen que la suerte parezca habilidad:\n\n- **Ventanas cortas.** Cuatro semanas son un puñado de operaciones. Incluso una regla realmente buena puede perder en un mes, y una pésima puede ganar.\n- **Concentración.** Una sola apuesta con todo en un nombre de alta volatilidad ([[Volatility|volatility]]) es un boleto de lotería. Gana ligas mucho más a menudo de lo que gana carreras, porque la clasificación solo muestra los boletos que pagaron.\n- **Muchos jugadores.** Cuanta más gente hay en la liga, más extremo será el resultado más afortunado. El puntaje más alto sube con el número de jugadores aunque nadie tenga ventaja.\n\nLa aritmética de las muestras pequeñas también aplica aquí. Con 20 operaciones y una tasa de acierto del 60%, el rango honesto para la tasa de acierto 'verdadera' de esa persona va aproximadamente del 40% al 80%. Una liga no te dice mucho de nadie."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Juzga el proceso, no el puesto",
+          "md": "Antes de que empiece una liga, escribe qué contarás *tú* como un buen resultado: seguir tus reglas en cada operación, no arriesgar más del 1% por idea, una caída máxima ([[Maximum drawdown|maximum drawdown]]) con la que puedas vivir, una entrada del diario por cada operación. Puedes terminar en el puesto 25 y haber llevado un mejor proceso que el ganador. Ese es el resultado que vale la pena repetir."
+        },
+        {
+          "type": "text",
+          "md": "### Lo que una tabla de clasificación no te dice\n\nLa clasificación muestra más que el retorno bruto, y cada columna responde una pregunta distinta:\n\n- **Retorno.** Cuánto creció la cuenta. No dice nada de cuánto riesgo se tomó para lograrlo.\n- **[[Sharpe ratio|Sharpe ratio]] (ratio de Sharpe).** Retorno por unidad de volatilidad (aquí, el cambio diario promedio dividido entre su desviación estándar, anualizado). Dos jugadores con el mismo retorno pero oscilaciones muy diferentes obtienen ratios de Sharpe muy diferentes. En ligas cortas tiene mucho ruido, pero aun así informa más que el retorno solo.\n- **Caída máxima.** La caída más profunda de pico a valle. Los empates en retorno se desempatan por caída máxima; menor es mejor.\n- **Puntaje de consistencia.** Con qué frecuencia subió la línea de capital de un paso al siguiente, combinado con un puntaje de caída máxima.\n- **Operaciones.** Cuántas operaciones completas (de ida y vuelta). Muy pocas significa que el resultado depende de una o dos apuestas.\n\nPiensa en dos jugadores al final de un mes:\n\n- **A:** +18%, caída máxima del 30%, dos operaciones, todo en una sola acción.\n- **B:** +9%, caída máxima del 4%, 14 operaciones, nunca más del 1% de riesgo en cada una.\n\nA encabeza la columna de retorno. B tiene la curva de capital ([[Equity curve|equity curve]]) más estable, una caída máxima mucho mejor y un resultado repartido en suficientes operaciones como para significar algo. Si tuvieras que darle a uno de ellos tu propio dinero durante los próximos diez años, no elegirías a A, y una buena discusión en clase trata de por qué."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "volume"
+          ],
+          "bars": 120,
+          "caption": "NVDA, diario, unos seis meses, con la SMA de 50 días y el volumen. Una acción volátil como esta puede ganar o arruinar una liga de cuatro semanas en unas pocas sesiones. El mismo movimiento que corona a un ganador arruinaría una cuenta que se dimensionó igual en un mal mes. Los precios demo son simulados."
+        },
+        {
+          "type": "text",
+          "md": "### Competir de forma ética\n\nUna liga solo enseña algo si todos juegan con las mismas reglas. Reglas básicas que vale la pena adoptar, aunque nadie esté revisando:\n\n- **Una cuenta, una persona.** No te unas con varios nombres para quedarte con la cuenta que tuvo suerte. Eso convierte una competencia en un truco de supervivencia y no te enseña nada.\n- **Juega dentro de las reglas, no alrededor de ellas.** Si la liga prohíbe el day trading o limita el tamaño de posición, respeta el espíritu de la regla aunque el software deje pasar algo. Si encuentras un error, como una cotización que nunca se actualiza, repórtalo al organizador en lugar de aprovecharlo.\n- **Opera tu plan, no la clasificación.** Duplicar tu riesgo en la última semana para alcanzar al líder es [[FOMO (fear of missing out)|FOMO]] con marcador. Anótalo en tu diario si sientes el impulso; ese impulso es la lección.\n- **Sé amable.** Usa un nombre visible que no te moleste que vea un profesor o un empleador. La vista de proyector pone los nombres en una pantalla del salón; celebra el buen proceso, no solo los números grandes, y nunca te burles de quien va de último.\n- **Sin dinero real.** Las ligas aquí son solo de paper trading. Los premios, si un profesor ofrece alguno, deberían premiar el proceso (calidad del diario, seguir las reglas, control del riesgo) al menos tanto como el retorno."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Ganar en paper trading no es evidencia del mundo real",
+          "md": "Ganar una liga de paper trading no significa que estés listo para operar con dinero real, y nada en este sitio sugiere que debas hacerlo. Las ejecuciones simuladas son generosas, no hay miedo a una pérdida real, y un mes es demasiado corto para separar la habilidad de la suerte. Trata una liga como práctica para seguir reglas bajo un poco de presión, nada más."
+        },
+        {
+          "type": "exercise",
+          "md": "Prepárate para una liga, o revísala, de la forma honesta.\n\n- Abre la página de ligas y mira los ajustes predefinidos de reglas ('Clase de 4 semanas', 'Sprint de day trading', 'Inversionista solo en largo', 'Desafío de opciones'). Elige uno y escribe cada regla que cambiaría tu forma de operar.\n- Antes de unirte a una liga o crearla, escribe tus metas de proceso en tu diario: riesgo máximo por operación, tamaño máximo de posición, número mínimo de operaciones y una regla que prometes no romper.\n- Si ya estás en una liga, abre la clasificación y ordena a los cinco primeros por ratio de Sharpe y por caída máxima en lugar de por retorno. Escribe dos oraciones sobre cómo cambia el orden y qué te dice eso.\n- Al final, califícate según tus metas de proceso antes de mirar tu puesto.",
+          "action": {
+            "page": "leagues.html",
+            "label": "Abrir Ligas"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "En una liga de 30 personas donde todos operan al azar, ¿qué pasa en la cima de la clasificación?",
+              "choices": [
+                "Nadie termina con un retorno positivo",
+                "La clasificación se niega a ordenar a traders que operan al azar",
+                "Alguien igual termina primero, a menudo con un retorno grande, aunque nadie tenía habilidad",
+                "Todos terminan con el mismo retorno"
+              ],
+              "answer": 2,
+              "explain": "Alguien siempre gana. Con posiciones concentradas y volátiles el resultado más afortunado puede verse impresionante, por eso una liga corta dice poco sobre la habilidad."
+            },
+            {
+              "q": "El jugador A ganó +18% con una caída máxima del 30% en dos operaciones con todo. El jugador B ganó +9% con una caída máxima del 4% en 14 operaciones de riesgo pequeño. ¿Qué afirmación es la más precisa?",
+              "choices": [
+                "A es claramente el trader con más habilidad",
+                "Ningún resultado se puede comparar de ninguna forma",
+                "Tienen la misma habilidad porque los dos ganaron dinero",
+                "El resultado de B es más informativo: menor caída máxima, más operaciones y riesgo controlado, aunque el retorno sea menor"
+              ],
+              "answer": 3,
+              "explain": "El retorno solo esconde el riesgo. La curva más estable de B, su caída máxima menor y su muestra más grande de operaciones dicen más sobre el proceso que las dos apuestas afortunadas de A."
+            },
+            {
+              "q": "¿Qué añade el ratio de Sharpe que el retorno bruto no tiene?",
+              "choices": [
+                "El retorno en relación con cuánto osciló la cuenta en el camino",
+                "El número de operaciones",
+                "La comisión del bróker",
+                "Un pronóstico del retorno del próximo mes"
+              ],
+              "answer": 0,
+              "explain": "El Sharpe divide el retorno promedio entre su volatilidad, así que un +9% suave puede quedar por encima de un +18% desenfrenado. En ligas cortas tiene ruido, pero toma en cuenta el riesgo."
+            },
+            {
+              "q": "¿Cuál de estos es un problema ético en una liga de paper trading?",
+              "choices": [
+                "Llevar una entrada del diario por cada operación",
+                "Unirse con varios nombres y quedarse con la cuenta a la que le fue mejor",
+                "Decidir no operar un día sin setups",
+                "Reportar al organizador un error en el flujo de precios"
+              ],
+              "answer": 1,
+              "explain": "Las cuentas múltiples convierten la competencia en un truco de supervivencia: el 'ganador' es solo la más afortunada de tus copias. Eso anula el propósito de la liga."
+            },
+            {
+              "q": "Es la última semana y vas en 6.º lugar. ¿Qué sugiere esta lección?",
+              "choices": [
+                "Duplicar el tamaño de tu posición para alcanzar al líder",
+                "Meter todo en la acción más volátil que encuentres",
+                "Dejar de registrar operaciones para que las pérdidas no cuenten",
+                "Seguir operando tu plan con el mismo riesgo y anotar en el diario cualquier impulso de perseguir la clasificación"
+              ],
+              "answer": 3,
+              "explain": "Perseguir un puesto con más riesgo es FOMO con marcador. El objetivo de una liga es practicar tu proceso bajo presión, no ganar un premio de paper trading."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -10,6 +10,12 @@
  * ticket with inline confirmation, open orders, the account summary, the data
  * settings modal, keyboard shortcuts and the first-run tour.
  *
+ * v0.5: account switcher (Main / Replay / each joined league, league rules checked with
+ * BT.leagues.validateOrder before every order), a "Plan this trade" panel (BT.risk) whose stop and
+ * target are saved on the order meta, coach notes after fills (BT.coach), XP (BT.xp) and a
+ * semi-auto paper mode that PROPOSES trades from a saved BT.rules rule and never executes on its own.
+ * Every optional module is guarded: the dashboard works without any of them.
+ *
  * Plain ES2020, no imports, no framework. Load after lightweight-charts and
  * the three modules above. Exposes a small BT.app surface for other pages,
  * tests and course exercises (BT.app.setSymbol, BT.app.load, BT.app.state()).
@@ -50,7 +56,7 @@
   var isTyping = function (el) { return el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable); };
 
   if (!LW || !ind || !data || !paper) {
-    document.body.insertAdjacentHTML('afterbegin', '<div class="callout danger" style="margin:16px">The dashboard could not start: a required script (lightweight-charts, indicators.js, data.js or paper.js) did not load. Check your connection and reload.</div>');
+    document.body.insertAdjacentHTML('afterbegin', '<div class="callout danger" style="margin:16px">' + esc(T('The dashboard could not start: a required script (lightweight-charts, indicators.js, data.js or paper.js) did not load. Check your connection and reload.')) + '</div>');
     return;
   }
 
@@ -150,8 +156,8 @@
     rsi: {
       title: 'RSI (14)', build: function (ch) {
         var s = ch.addLineSeries(lineOpts(css('--purple'), { lastValueVisible: true, priceLineVisible: false }));
-        s.createPriceLine({ price: 70, color: css('--down'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: 'overbought' });
-        s.createPriceLine({ price: 30, color: css('--up'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: 'oversold' });
+        s.createPriceLine({ price: 70, color: css('--down'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: T('overbought') });
+        s.createPriceLine({ price: 30, color: css('--up'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: T('oversold') });
         return { update: function () { s.setData(ind.toLineData(bars, I.rsi)); }, value: function (i) { return I.rsi[i] == null ? '—' : I.rsi[i].toFixed(1); } };
       }
     },
@@ -165,7 +171,7 @@
             h.setData(bars.map(function (b, i) { var v = I.macd.hist[i]; return v == null ? null : { time: b.time, value: v, color: v >= 0 ? up : dn }; }).filter(Boolean));
             m.setData(ind.toLineData(bars, I.macd.macd)); sg.setData(ind.toLineData(bars, I.macd.signal));
           },
-          value: function (i) { return I.macd.macd[i] == null ? '—' : I.macd.macd[i].toFixed(2) + ' · signal ' + (I.macd.signal[i] == null ? '—' : I.macd.signal[i].toFixed(2)) + ' · hist ' + (I.macd.hist[i] == null ? '—' : I.macd.hist[i].toFixed(2)); }
+          value: function (i) { return I.macd.macd[i] == null ? '—' : T('{macd} · signal {signal} · hist {hist}', { macd: I.macd.macd[i].toFixed(2), signal: I.macd.signal[i] == null ? '—' : I.macd.signal[i].toFixed(2), hist: I.macd.hist[i] == null ? '—' : I.macd.hist[i].toFixed(2) }); }
         };
       }
     },
@@ -176,17 +182,17 @@
         k.createPriceLine({ price: 20, color: css('--up'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false });
         return {
           update: function () { k.setData(ind.toLineData(bars, I.stochastic.k)); d.setData(ind.toLineData(bars, I.stochastic.d)); },
-          value: function (i) { return I.stochastic.k[i] == null ? '—' : '%K ' + I.stochastic.k[i].toFixed(1) + ' · %D ' + (I.stochastic.d[i] == null ? '—' : I.stochastic.d[i].toFixed(1)); }
+          value: function (i) { return I.stochastic.k[i] == null ? '—' : T('%K {k} · %D {d}', { k: I.stochastic.k[i].toFixed(1), d: I.stochastic.d[i] == null ? '—' : I.stochastic.d[i].toFixed(1) }); }
         };
       }
     },
     adx: {
       title: 'ADX (14)', build: function (ch) {
         var a = ch.addLineSeries(lineOpts(css('--fg'), { lineWidth: 2 })), p = ch.addLineSeries(lineOpts(css('--up'))), m = ch.addLineSeries(lineOpts(css('--down')));
-        a.createPriceLine({ price: 25, color: css('--muted'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: 'trending' });
+        a.createPriceLine({ price: 25, color: css('--muted'), lineStyle: 2, lineWidth: 1, axisLabelVisible: false, title: T('trending') });
         return {
           update: function () { a.setData(ind.toLineData(bars, I.adx.adx)); p.setData(ind.toLineData(bars, I.adx.plusDI)); m.setData(ind.toLineData(bars, I.adx.minusDI)); },
-          value: function (i) { var v = I.adx.adx[i]; return v == null ? '—' : v.toFixed(1) + (v >= 25 ? ' strong trend' : v < 20 ? ' no trend' : ' building') + ' · +DI ' + (I.adx.plusDI[i] == null ? '—' : I.adx.plusDI[i].toFixed(0)) + ' · −DI ' + (I.adx.minusDI[i] == null ? '—' : I.adx.minusDI[i].toFixed(0)); }
+          value: function (i) { var v = I.adx.adx[i]; return v == null ? '—' : T(v >= 25 ? '{v} strong trend · +DI {p} · −DI {m}' : v < 20 ? '{v} no trend · +DI {p} · −DI {m}' : '{v} building · +DI {p} · −DI {m}', { v: v.toFixed(1), p: I.adx.plusDI[i] == null ? '—' : I.adx.plusDI[i].toFixed(0), m: I.adx.minusDI[i] == null ? '—' : I.adx.minusDI[i].toFixed(0) }); }
         };
       }
     },
@@ -199,7 +205,7 @@
     atr: {
       title: 'ATR (14)', build: function (ch) {
         var s = ch.addLineSeries(lineOpts(css('--warn'), { lastValueVisible: true }));
-        return { update: function () { s.setData(ind.toLineData(bars, I.atr)); }, value: function (i) { var v = I.atr[i]; return v == null ? '—' : fmt(v) + (bars[i] ? ' (' + (v / bars[i].close * 100).toFixed(2) + '% of price)' : ''); } };
+        return { update: function () { s.setData(ind.toLineData(bars, I.atr)); }, value: function (i) { var v = I.atr[i]; return v == null ? '—' : (bars[i] ? T('{v} ({pct}% of price)', { v: fmt(v), pct: (v / bars[i].close * 100).toFixed(2) }) : fmt(v)); } };
       }
     }
   };
@@ -222,7 +228,7 @@
     var def = PANE_DEFS[key];
     var el = document.createElement('div');
     el.className = 'pane sub'; el.id = 'pane-' + key;
-    el.innerHTML = '<div class="tag">' + esc(def.title) + ' <b></b></div><button class="pane-close" type="button" title="Hide this pane" aria-label="Hide ' + esc(def.title) + '">✕</button>';
+    el.innerHTML = '<div class="tag">' + esc(T(def.title)) + ' <b></b></div><button class="pane-close" type="button" title="' + esc(T('Hide this pane')) + '" aria-label="' + esc(T('Hide {title}', { title: T(def.title) })) + '">✕</button>';
     $('subpanes').appendChild(el);
     var chart = mkChart(el, { rightPriceScale: { scaleMargins: { top: 0.12, bottom: 0.08 } } });
     var api = def.build(chart);
@@ -283,6 +289,7 @@
     return last.time + step * k;
   }
 
+  var OV_NAMES = { sma20: 'SMA 20', sma50: 'SMA 50', ema9: 'EMA 9', ema21: 'EMA 21', vwap: 'VWAP', bb: 'Bollinger Bands', ichi: 'Ichimoku', fib: 'Fibonacci', sr: 'support and resistance', pat: 'candlestick patterns', sig: 'signal arrows' };
   /** Text alternative for the price chart (role="img" via BT.a11y), refreshed on every render. */
   function describePriceChart() {
     if (!BT.a11y || !bars.length) return;
@@ -291,11 +298,11 @@
     var ons = Object.keys(ov).filter(function (k) { return ov[k]; });
     var txt = T('{symbol} {tf} candlestick chart, {n} bars, last close {close}', { symbol: symbol, tf: tfLabel(tf), n: bars.length, close: money(last.close) }) +
       (chg == null ? '' : ', ' + (chg >= 0 ? T('up {pct} versus the previous bar', { pct: Math.abs(chg).toFixed(2) + '%' }) : T('down {pct} versus the previous bar', { pct: Math.abs(chg).toFixed(2) + '%' }))) +
-      (ons.length ? '. ' + T('Overlays: {list}', { list: ons.join(', ') }) : '') + '.';
+      (ons.length ? '. ' + T('Overlays: {list}', { list: ons.map(function (k) { return T(OV_NAMES[k] || k); }).join(', ') }) : '') + '.';
     BT.a11y.describeChart($('price'), txt);
     Object.keys(activePanes).forEach(function (k) {
       var p = activePanes[k];
-      BT.a11y.describeChart(p.el, T('{title} pane for {symbol}: {value}', { title: PANE_DEFS[k].title, symbol: symbol, value: (p.tagEl.textContent || '').trim() || '—' }));
+      BT.a11y.describeChart(p.el, T('{title} pane for {symbol}: {value}', { title: T(PANE_DEFS[k].title), symbol: symbol, value: (p.tagEl.textContent || '').trim() || '—' }));
     });
   }
 
@@ -351,7 +358,7 @@
       var live_ = a.enabled && !a.firedAt;
       alertLines.push(candles.createPriceLine({
         price: a.value, color: live_ ? css('--accent') : css('--faint'), lineStyle: 1, lineWidth: 1,
-        title: (a.kind === 'price_above' ? '▲ alert' : '▼ alert') + (live_ ? '' : ' (fired)'), axisLabelVisible: live_
+        title: T(a.kind === 'price_above' ? (live_ ? '▲ alert' : '▲ alert (fired)') : (live_ ? '▼ alert' : '▼ alert (fired)')), axisLabelVisible: live_
       }));
     });
   }
@@ -388,20 +395,20 @@
     var from = Math.max(0, bars.length - 150), groups = {}, order = [];
     I.patterns.forEach(function (p) {
       if (p.index < from) return;
-      if (!groups[p.name]) { groups[p.name] = { name: p.name, bias: p.bias, count: 0, last: p, description: p.description }; order.push(p.name); }
+      if (!groups[p.name]) { groups[p.name] = { name: p.name, label: p.label || T(p.name), bias: p.bias, count: 0, last: p, description: p.description }; order.push(p.name); }
       groups[p.name].count++; groups[p.name].last = p;
     });
-    if (!order.length) { legend.hidden = false; legend.innerHTML = '<span>No candlestick patterns in the last 150 bars. Patterns are rare by design: a hammer needs a decline before it, an engulfing bar must swallow the previous body.</span>'; detail.hidden = true; return; }
+    if (!order.length) { legend.hidden = false; legend.innerHTML = '<span>' + esc(T('No candlestick patterns in the last 150 bars. Patterns are rare by design: a hammer needs a decline before it, an engulfing bar must swallow the previous body.')) + '</span>'; detail.hidden = true; return; }
     legend.hidden = false;
-    legend.innerHTML = '<span class="muted">Patterns (last 150 bars):</span>' + order.map(function (n) {
+    legend.innerHTML = '<span class="muted">' + esc(T('Patterns (last 150 bars):')) + '</span>' + order.map(function (n) {
       var g = groups[n];
-      return '<span class="k ' + g.bias + '" data-pat="' + esc(n) + '" role="button" tabindex="0" title="' + esc(g.description) + '"><i></i><b>' + esc(patCode(n)) + '</b> ' + esc(n) + ' <span class="n">×' + g.count + '</span></span>';
+      return '<span class="k ' + g.bias + '" data-pat="' + esc(n) + '" role="button" tabindex="0" title="' + esc(g.description) + '"><i></i><b>' + esc(patCode(n)) + '</b> ' + esc(g.label) + ' <span class="n">×' + g.count + '</span></span>';
     }).join('');
     $$('.k', legend).forEach(function (el) {
       var act = function () {
         var g = groups[el.dataset.pat], b = bars[g.last.index];
         detail.hidden = false;
-        detail.innerHTML = '<b>' + esc(g.name) + '</b> (' + (g.bias === 'bull' ? 'bullish' : g.bias === 'bear' ? 'bearish' : 'neutral') + ', latest ' + esc(barLabel(b)) + ') — ' + esc(g.description);
+        detail.innerHTML = '<b>' + esc(g.label) + '</b> (' + esc(T(g.bias === 'bull' ? 'bullish, latest {when}' : g.bias === 'bear' ? 'bearish, latest {when}' : 'neutral, latest {when}', { when: barLabel(b) })) + ') — ' + esc(g.description);
         var n = bars.length, idx = g.last.index;
         chP.timeScale().setVisibleLogicalRange({ from: Math.max(0, idx - 60), to: Math.min(n + 5, idx + 30) });
       };
@@ -412,7 +419,7 @@
     if (!b) return '';
     if (typeof b.time === 'string') return b.time;
     var d = new Date(b.time * 1000);
-    return d.toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET';
+    return d.toLocaleString(loc() || 'en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET';
   }
 
   /* ---- trend lines (two clicks, saved per symbol + interval) ---- */
@@ -428,7 +435,7 @@
     drawing = !!on; drawPts = [];
     $('draw').classList.toggle('on', drawing);
     $('drawhint').hidden = !drawing;
-    $('drawhint').innerHTML = 'Trend line: click <b>two points</b> on the chart · Esc cancels';
+    $('drawhint').innerHTML = T('Trend line: click {points} on the chart · Esc cancels', { points: '<b>' + esc(T('two points')) + '</b>' });
     $('price').style.cursor = drawing ? 'crosshair' : '';
   }
   function onChartClick(p) {
@@ -438,7 +445,7 @@
     var t = normTime(p.time);
     if (indexOfTime(t) < 0) return;                     // clicked in the empty margin right of the last bar
     drawPts.push({ time: t, value: +price });
-    if (drawPts.length === 1) { $('drawhint').innerHTML = 'First point set at <b>' + fmt(price) + '</b> · click the second point'; return; }
+    if (drawPts.length === 1) { $('drawhint').innerHTML = T('First point set at {price} · click the second point', { price: '<b>' + esc(fmt(price)) + '</b>' }); return; }
     if (String(drawPts[0].time) === String(drawPts[1].time)) { drawPts.pop(); toast('Pick a different bar for the second point.', 'warn'); return; }
     drawPts.sort(function (a, b) { return indexOfTime(a.time) - indexOfTime(b.time); });
     var k = lineKey(); savedLines[k] = (savedLines[k] || []).concat([drawPts.slice()]); store.set('bt.lines', savedLines);
@@ -465,7 +472,7 @@
   });
   function setOhlc(b) {
     var d = b.close - b.open;
-    $('ohlc').innerHTML = esc(symbol) + ' · O ' + fmt(b.open) + ' H ' + fmt(b.high) + ' L ' + fmt(b.low) + ' C <span class="' + cls(d) + '">' + fmt(b.close) + '</span>' + (b.volume != null ? ' · Vol ' + volFmt(b.volume) : '');
+    $('ohlc').innerHTML = esc(symbol) + ' · ' + esc(T('O')) + ' ' + fmt(b.open) + ' ' + esc(T('H')) + ' ' + fmt(b.high) + ' ' + esc(T('L')) + ' ' + fmt(b.low) + ' ' + esc(T('C')) + ' <span class="' + cls(d) + '">' + fmt(b.close) + '</span>' + (b.volume != null ? ' · ' + esc(T('Vol')) + ' ' + volFmt(b.volume) : '');
   }
   function volFmt(v) { return v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : String(v); }
 
@@ -487,7 +494,7 @@
     $('chg').textContent = (d >= 0 ? '+' : '−') + fmt(Math.abs(d)) + ' (' + pct(d / pc * 100) + ')';
     $('chg').className = 'num chg ' + cls(d);
     var u = data.lookup(symbol);
-    $('symName').textContent = (u.synthetic ? T('{symbol} — not in the demo universe; prices are simulated', { symbol: symbol }) : u.name + ' · ' + u.exchange + ' · ' + u.sector) + (typeof last.time === 'string' ? '' : ' · vs prior close');
+    $('symName').textContent = (u.synthetic ? T('{symbol} — not in the demo universe; prices are simulated', { symbol: symbol }) : [u.name, u.exchange, u.sector ? T(u.sector) : ''].filter(Boolean).join(' · ')) + (typeof last.time === 'string' ? '' : ' · ' + T('vs prior close'));
     document.title = symbol + ' ' + fmt(last.close) + ' · Broward Trading';
     $('ticketSym').textContent = symbol;
     var tags = [];
@@ -499,12 +506,15 @@
     var pill = $('mode'), txt = $('modeText');
     if (live) {
       pill.className = 'pill live';
-      txt.textContent = 'live · ' + (data.PROVIDER_LABEL[dataInfo.source] || dataInfo.source || '');
-      pill.title = 'Real prices from ' + (data.PROVIDER_LABEL[dataInfo.source] || 'your provider') + (dataInfo.cached ? ' (cached ' + Math.round((dataInfo.ageMs || 0) / 1000) + 's ago)' : '') + (dataInfo.stale ? '. Stale: the last refresh failed, showing the previous download.' : '');
+      var provLabel = data.PROVIDER_LABEL[dataInfo.source] || dataInfo.source || '';
+      txt.textContent = T('live · {provider}', { provider: provLabel });
+      pill.title = T('Real prices from {provider}.', { provider: data.PROVIDER_LABEL[dataInfo.source] || T('your provider') }) +
+        (dataInfo.cached ? ' ' + T('Cached {s}s ago.', { s: Math.round((dataInfo.ageMs || 0) / 1000) }) : '') +
+        (dataInfo.stale ? ' ' + T('Stale: the last refresh failed, showing the previous download.') : '');
     } else {
       pill.className = 'pill demo';
-      txt.textContent = 'demo';
-      pill.title = dataInfo.reason || 'Simulated prices: deterministic per symbol so every student sees the same chart. Add a free API key under Live data for real prices.';
+      txt.textContent = T('demo');
+      pill.title = dataInfo.reason ? T(dataInfo.reason) : T('Simulated prices: deterministic per symbol so every student sees the same chart. Add a free API key under Live data for real prices.');
     }
     var msg = $('msg');
     if (!live && dataInfo.fallback && dataInfo.reason) { msg.className = 'msg'; msg.textContent = T('Showing simulated prices. {reason}', { reason: dataInfo.reason }); }
@@ -519,7 +529,7 @@
     if (!sig) return;
     $('badge').textContent = sig.state; $('badge').className = 'badge ' + sig.state.toLowerCase();
     $('score').textContent = (sig.score > 0 ? '+' : '') + sig.score; $('scoreMax').textContent = sig.max;
-    $('asof').textContent = live ? 'as of last quote' : 'simulated';
+    $('asof').textContent = live ? T('as of last quote') : T('simulated');
     $('reasons').innerHTML = sig.reasons.map(function (r) {
       return '<li><span class="dot ' + (r.pts > 0 ? 'b' : r.pts < 0 ? 's' : '') + '"></span><span>' + esc(r.text) + '<span class="pts">' + (r.pts > 0 ? '+' : '') + (r.pts || '0') + '</span><small>' + esc(r.why) + '</small></span></li>';
     }).join('');
@@ -530,7 +540,7 @@
   $('whyBtn').onclick = function () {
     var card = $('panel-signal'), on = card.classList.toggle('show-why');
     this.setAttribute('aria-expanded', String(on));
-    this.textContent = on ? 'Hide the reasoning' : 'Why? Show the reasoning';
+    this.textContent = on ? T('Hide the reasoning') : T('Why? Show the reasoning');
   };
 
   /* ------------------------------------------------------------------ *
@@ -549,7 +559,7 @@
     side = s; $('tmsg').dataset.kind = '';
     $$('.side').forEach(function (b) { b.classList.toggle('on', b.dataset.side === s); b.setAttribute('aria-checked', String(b.dataset.side === s)); });
     var btn = $('review'); btn.className = 'submit ' + (s === 'buy' || s === 'cover' ? 'buy' : 'sell');
-    btn.textContent = T('Review ' + s + ' order');
+    btn.textContent = T({ buy: 'Review buy order', sell: 'Review sell order', short: 'Review short order', cover: 'Review cover order' }[s] || 'Review order');
     hideConfirm(); renderTicket();
   }
   $$('.side').forEach(function (b) { b.onclick = function () { setSide(b.dataset.side); }; });
@@ -564,9 +574,9 @@
     var px = lastPrice(), q = +$('qty').value || 0;
     if (qtyMode === 'dollars') { $('qty').value = Math.round(q * px) || 1000; $('qty').step = '100'; $('qty').min = '1'; }
     else { $('qty').value = Math.max(1, Math.floor(q / (px || 1))); $('qty').step = '1'; $('qty').min = '1'; }
-    $('qtyLabel').textContent = qtyMode === 'dollars' ? 'Dollar amount' : 'Shares';
+    $('qtyLabel').textContent = qtyMode === 'dollars' ? T('Dollar amount') : T('Shares');
     this.textContent = qtyMode === 'dollars' ? '#' : '$';
-    this.title = qtyMode === 'dollars' ? 'Switch to entering a number of shares' : 'Switch to entering a dollar amount';
+    this.title = qtyMode === 'dollars' ? T('Switch to entering a number of shares') : T('Switch to entering a dollar amount');
     hideConfirm(); renderTicket();
   };
 
@@ -578,13 +588,13 @@
     var raw = +$('qty').value || 0;
     var shares = qtyMode === 'dollars' ? Math.floor(raw / (refPrice || 1)) : Math.floor(raw);
     var pos = position(), held = pos ? pos.qty : 0, error = null;
-    if (!bars.length) error = 'Load a chart first so the order has a price to work against.';
-    else if (!(shares > 0)) error = qtyMode === 'dollars' ? 'That amount buys less than one share at ' + money(refPrice) + '.' : 'Enter a whole number of shares.';
-    else if (side === 'sell' && held <= 0) error = 'You do not own any ' + symbol + '. Use Short if you want to bet on a decline.';
-    else if (side === 'sell' && shares > held) error = 'You own ' + held + ' shares. Selling ' + shares + ' would flip you short — use Short deliberately if that is what you mean.';
-    else if (side === 'cover' && held >= 0) error = 'You are not short ' + symbol + ', so there is nothing to cover.';
-    else if (side === 'cover' && shares > -held) error = 'You are short ' + (-held) + ' shares; covering more than that would open a long.';
-    else if (side === 'short' && held > 0) error = 'You are long ' + held + ' shares. Sell those first; shorting while long just closes the position.';
+    if (!bars.length) error = T('Load a chart first so the order has a price to work against.');
+    else if (!(shares > 0)) error = qtyMode === 'dollars' ? T('That amount buys less than one share at {price}.', { price: money(refPrice) }) : T('Enter a whole number of shares.');
+    else if (side === 'sell' && held <= 0) error = T('You do not own any {symbol}. Use Short if you want to bet on a decline.', { symbol: symbol });
+    else if (side === 'sell' && shares > held) error = T('You own {held} shares. Selling {qty} would flip you short — use Short deliberately if that is what you mean.', { held: held, qty: shares });
+    else if (side === 'cover' && held >= 0) error = T('You are not short {symbol}, so there is nothing to cover.', { symbol: symbol });
+    else if (side === 'cover' && shares > -held) error = T('You are short {held} shares; covering more than that would open a long.', { held: -held });
+    else if (side === 'short' && held > 0) error = T('You are long {held} shares. Sell those first; shorting while long just closes the position.', { held: held });
     var order = { symbol: symbol, side: (side === 'buy' || side === 'cover') ? 'buy' : 'sell', qty: shares, type: type, limitPrice: limitPrice, stopPrice: stopPrice, tif: $('tif').value };
     return { order: order, shares: shares, refPrice: refPrice, error: error, px: px };
   }
@@ -592,15 +602,16 @@
     var type = $('otype').value;
     $('limitField').hidden = !(type === 'limit' || type === 'stop_limit');
     $('stopField').hidden = !(type === 'stop' || type === 'stop_limit');
-    $('otypeHelp').textContent = OTYPE_HELP[type];
+    $('otypeHelp').textContent = T(OTYPE_HELP[type]);
     var t = ticketOrder(), st = paper.state, comm = (st.settings && st.settings.commission) || 0;
     var value = t.shares * t.refPrice, isBuy = t.order.side === 'buy';
     var cashAfter = st.cash + (isBuy ? -value : value) - comm;
-    var rows = [['Shares', t.shares > 0 ? t.shares.toLocaleString(loc()) : '—'], [type === 'market' ? T('At about') : T('Reference price'), t.refPrice ? money(t.refPrice) : '—'], ['Order value', value ? money(value) : '—']];
-    if (comm) rows.push(['Commission', money(comm)]);
-    rows.push(['Cash after', isFinite(cashAfter) && value ? money(cashAfter) : '—']);
-    if (side === 'short') rows.push(['Margin needed', value ? money(value * paper.SHORT_MARGIN) + ' (150%)' : '—']);
+    var rows = [[T('Shares'), t.shares > 0 ? t.shares.toLocaleString(loc()) : '—'], [type === 'market' ? T('At about') : T('Reference price'), t.refPrice ? money(t.refPrice) : '—'], [T('Order value'), value ? money(value) : '—']];
+    if (comm) rows.push([T('Commission'), money(comm)]);
+    rows.push([T('Cash after'), isFinite(cashAfter) && value ? money(cashAfter) : '—']);
+    if (side === 'short') rows.push([T('Margin needed'), value ? money(value * paper.SHORT_MARGIN) + ' (150%)' : '—']);
     $('est').innerHTML = rows.map(function (r) { return '<span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span>'; }).join('');
+    renderPlan(false);
     var tm = $('tmsg');
     if (tm.dataset.kind === 'result') return;          // keep the last fill/reject message until the ticket is edited
     if (t.error && (t.shares > 0 || qtyMode === 'dollars')) { tm.className = 'msg'; tm.textContent = t.error; } else if (!pendingOrder) { tm.textContent = ''; }
@@ -608,11 +619,28 @@
   function hideConfirm() { $('confirm').hidden = true; pendingOrder = null; }
   $('review').onclick = function () {
     var t = ticketOrder(); var tm = $('tmsg');
+    tm.dataset.kind = '';
     if (t.error) { tm.className = 'msg err'; tm.textContent = t.error; return; }
-    pendingOrder = t;
+    // League accounts: the league's rules are checked before the order can even be confirmed.
+    var lg = leagueCheck(t.order, t.refPrice);
+    if (!lg.ok) { tm.className = 'msg err'; tm.textContent = T('League rule: {reason}', { reason: lg.reason }); return; }
+    var p = computePlan();
+    var pm = planMeta(t, p);
+    pendingOrder = Object.assign({}, t, { planMeta: pm, protect: pm && $('planStopOrder') && $('planStopOrder').checked && opensPosition() ? pm.plan.stop : null });
     var desc = paper.describeOrder(Object.assign({}, t.order));
-    var verb = { buy: 'Buy', sell: 'Sell', short: 'Sell short', cover: 'Buy to cover' }[side];
-    $('confirmText').innerHTML = '<b>' + esc(verb) + ' ' + t.shares + ' ' + esc(symbol) + '</b> · ' + esc(desc) + ' Estimated value <b class="num">' + esc(money(t.shares * t.refPrice)) + '</b>' + (t.order.tif === 'day' ? ' · expires at the end of the session.' : ' · good till cancelled.');
+    var verb = { buy: 'Buy {qty} {symbol}', sell: 'Sell {qty} {symbol}', short: 'Sell short {qty} {symbol}', cover: 'Buy to cover {qty} {symbol}' }[side];
+    var html = '<b>' + esc(T(verb, { qty: t.shares, symbol: symbol })) + '</b> · ' + esc(desc) + ' ' + esc(T('Estimated value')) + ' <b class="num">' + esc(money(t.shares * t.refPrice)) + '</b> · ' + esc(T(t.order.tif === 'day' ? 'expires at the end of the session.' : 'good till cancelled.'));
+    if (pm) {
+      html += '<br><span class="plan-line">' + esc(pm.plan.target
+        ? T('Plan: stop {stop}, target {target}, risking {risk} ({pct}% of equity).', { stop: money(pm.plan.stop), target: money(pm.plan.target), risk: money(pm.plan.dollarRisk), pct: fmt(pm.plan.riskPctActual, 2) })
+        : T('Plan: stop {stop}, risking {risk} ({pct}% of equity).', { stop: money(pm.plan.stop), risk: money(pm.plan.dollarRisk), pct: fmt(pm.plan.riskPctActual, 2) })) + '</span>';
+      if (pendingOrder.protect) html += '<br><span class="plan-line">' + esc(t.order.type === 'market'
+        ? T('After the fill, a stop-loss order at {stop} (good till cancelled) is placed for you.', { stop: money(pm.plan.stop) })
+        : T('A stop-loss order at {stop} is placed for you once this order fills.', { stop: money(pm.plan.stop) })) + '</span>';
+    } else if (opensPosition() && bars.length) {
+      html += '<br><span class="plan-line muted">' + esc(T('No stop planned. Open “Plan this trade” to size the position from the amount you are willing to lose.')) + '</span>';
+    }
+    $('confirmText').innerHTML = html;
     $('confirmYes').className = t.order.side === 'buy' ? 'buy' : 'sell';
     $('confirm').hidden = false; tm.textContent = '';
     $('confirmYes').focus();
@@ -621,31 +649,459 @@
   $('confirmYes').onclick = function () {
     if (!pendingOrder) return;
     var t = pendingOrder; hideConfirm();
-    var o = paper.placeOrder(t.order, lastPrice());
+    executeOrder(t.order, { planMeta: t.planMeta, protect: t.protect, refPrice: t.refPrice });
+  };
+
+  /**
+   * executeOrder(order, opts) — the single path every dashboard order takes (ticket confirm and
+   * semi-auto proposals): league rules → BT.paper.placeOrder → plan meta → messages → coach → XP.
+   * opts: {planMeta, protect (stop price for a protective stop after the fill), meta, refPrice, source}
+   */
+  function executeOrder(order, opts) {
+    opts = opts || {};
     var tm = $('tmsg'); tm.dataset.kind = 'result';
+    var lg = leagueCheck(order, opts.refPrice || lastPrice());
+    if (!lg.ok) {
+      tm.className = 'msg err'; tm.textContent = T('League rule: {reason}', { reason: lg.reason });
+      toast(lg.reason, 'err', T('League rule'), 7000);
+      return { status: 'rejected', reason: lg.reason };
+    }
+    var tradesBefore = paper.state.trades.length;
+    var o = paper.placeOrder(order, lastPrice());
+    if (o.status !== 'rejected') {
+      var meta = Object.assign({}, opts.planMeta || {}, opts.meta || {});
+      if (opts.protect) meta.protectStop = opts.protect;
+      if (Object.keys(meta).length) { o.meta = Object.assign({}, o.meta || {}, meta); if (typeof paper.save === 'function') paper.save(); }
+    }
     if (o.status === 'filled') {
       tm.className = 'msg ok'; tm.textContent = T(o.side === 'buy' ? 'Filled: bought {qty} {symbol} @ {price}{commission}.' : 'Filled: sold {qty} {symbol} @ {price}{commission}.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), commission: o.commission ? ' (' + T('commission {fee}', { fee: money(o.commission) }) + ')' : '' });
       toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price}' : 'Sold {qty} {symbol} @ {price}', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice) }), 'ok', 'Order filled');
+      if (opts.protect) { o.meta.protectPlaced = true; placeProtectiveStop(o, opts.protect); }
+      afterFill(o, paper.state.trades.slice(tradesBefore));
     } else if (o.status === 'open') {
       tm.className = 'msg ok'; tm.textContent = T('Working order placed. {reason}', { reason: o.reason });
       toast(paper.describeOrder(o), 'ok', 'Order is working');
+      if (paper.state.trades.length > tradesBefore) afterFill(o, paper.state.trades.slice(tradesBefore)); // partial fill under the volume model
     } else {
       tm.className = 'msg err'; tm.textContent = T('Rejected: {reason}', { reason: o.reason });
       toast(o.reason, 'err', 'Order rejected', 7000);
     }
-    renderAccount(); renderOrders();
-  };
+    if (o.status !== 'rejected' && opts.planMeta) clearPlanPrices();
+    renderAccount(); renderOrders(); checkAuto();
+    return o;
+  }
+
+  /** After an entry fills, rest a stop-loss order at the planned stop (reduce the risk the plan was sized on). */
+  function placeProtectiveStop(entry, stopPx) {
+    var qty = entry.filledQty || entry.qty;
+    var pos = paper.state.positions[entry.symbol];
+    if (!pos || !(qty > 0)) return;
+    qty = Math.min(qty, Math.abs(pos.qty));
+    var exitSide = pos.qty > 0 ? 'sell' : 'buy';
+    var stopOrder = { symbol: entry.symbol, side: exitSide, qty: qty, type: 'stop', stopPrice: stopPx, tif: 'gtc' };
+    var lg = leagueCheck(stopOrder, stopPx);
+    if (!lg.ok) { toast(T('No stop-loss order was placed: {reason} Watch your planned stop at {stop} yourself.', { reason: lg.reason, stop: money(stopPx) }), 'warn', T('Plan'), 8000); return; }
+    var so = paper.placeOrder(stopOrder, lastPrice());
+    if (so.status === 'open') {
+      so.meta = Object.assign({}, so.meta || {}, { protects: entry.id, plan: entry.meta && entry.meta.plan ? entry.meta.plan : undefined });
+      if (typeof paper.save === 'function') paper.save();
+      toast(T('Stop-loss order placed at {stop} for {qty} {symbol}. It sits in Open orders until price reaches it or you cancel it.', { stop: money(stopPx), qty: qty, symbol: entry.symbol }), 'ok', T('Protected'));
+    } else {
+      toast(T('The stop-loss order could not be placed: {reason}', { reason: so.reason }), 'warn', T('Plan'), 8000);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Paper accounts: Main / Replay / one per joined league (BT.paper.accounts)
+   * ------------------------------------------------------------------ */
+  var ACCOUNT_KEY = 'bt.dash.account';
+  function leaguesApi() { return BT.leagues && typeof BT.leagues.validateOrder === 'function' ? BT.leagues : null; }
+  function activeAccount() { try { return typeof paper.account === 'function' ? paper.account() : 'main'; } catch (e) { return 'main'; } }
+  function leagueCode(id) {
+    var L = leaguesApi(); if (!L || typeof L.accountCode !== 'function') return null;
+    try { return L.accountCode(id); } catch (e) { return null; }
+  }
+  function leagueOf(id) {
+    var L = leaguesApi(), code = leagueCode(id); if (!L || !code) return null;
+    try { return (typeof L.get === 'function' ? L.get(code) : null) || (typeof L.leagueForAccount === 'function' ? L.leagueForAccount(id) : null); } catch (e) { return null; }
+  }
+  function accountName(id) {
+    if (id === 'main') return T('Main account');
+    if (id === 'replay') return T('Replay account');
+    var code = leagueCode(id);
+    if (code) { var lg = leagueOf(id); return lg && lg.name ? T('League: {name}', { name: lg.name }) : T('League {code}', { code: code }); }
+    return String(id);
+  }
+  function listAccounts() {
+    var ids = [];
+    try { (typeof paper.accounts === 'function' ? paper.accounts() : []).forEach(function (a) { if (a && a.id && ids.indexOf(a.id) < 0) ids.push(a.id); }); } catch (e) { /* storage blocked */ }
+    // Leagues joined on this device always get a row, even before their account has been opened here.
+    var L = leaguesApi();
+    if (L && typeof L.joined === 'function' && typeof L.accountId === 'function') {
+      try { L.joined().forEach(function (lg) { var id = L.accountId(lg.code); var norm = ids.filter(function (x) { return leagueCode(x) === lg.code; })[0]; if (!norm) ids.push(id); }); } catch (e) { /* ignore */ }
+    }
+    if (ids.indexOf('main') < 0) ids.unshift('main');
+    var cur = activeAccount(); if (ids.indexOf(cur) < 0) ids.push(cur);
+    // League rows only when the leagues module can explain their rules; unknown ids are kept (they are real accounts).
+    return ids.filter(function (id) { return !leagueCode(id) || leaguesApi(); })
+      .sort(function (a, b) { var r = function (x) { return x === 'main' ? 0 : x === 'replay' ? 1 : 2; }; return r(a) - r(b); });
+  }
+  function leagueRulesText(lg) {
+    var r = lg.rules || {}, kinds = { stock: T('stocks'), etf: T('ETFs'), crypto: T('crypto'), option: T('options') };
+    var parts = [T('allowed: {list}', { list: (r.assets || ['stock']).map(function (k) { return kinds[k] || k; }).join(', ') })];
+    parts.push(T(r.shortSelling ? 'short selling on' : 'short selling off'));
+    parts.push(T(r.dayTrading ? 'day trading on' : 'day trading off'));
+    if (r.maxPositionPct && r.maxPositionPct < 100) parts.push(T('max {pct}% of equity per position', { pct: r.maxPositionPct }));
+    return parts.join(' · ');
+  }
+  function renderAccountSwitcher() {
+    var sel = $('acctSel'); if (!sel) return;
+    var ids = listAccounts(), cur = activeAccount();
+    sel.innerHTML = ids.map(function (id) { return '<option value="' + esc(id) + '"' + (id === cur ? ' selected' : '') + '>' + esc(accountName(id)) + '</option>'; }).join('');
+    sel.value = cur;
+    $('acctField').hidden = ids.length < 2 && cur === 'main';
+    var note = $('acctNote'), lg = leagueOf(cur), txt = '';
+    if (lg) {
+      var cd = null; try { cd = BT.leagues.countdown ? BT.leagues.countdown(lg) : null; } catch (e) { cd = null; }
+      txt = T('{name}: {status}. League rules are checked before every order ({rules}).', { name: lg.name, status: cd && cd.label ? cd.label : T('active'), rules: leagueRulesText(lg) });
+    } else if (leagueCode(cur)) txt = T('This league is not saved on this device any more, so its rules cannot be checked. Rejoin it on the Leagues page.');
+    else if (cur === 'replay') txt = T('The Replay account is reset each time you start a Market Replay session, so trades placed here do not last. Use Main for practice that sticks.');
+    else if (cur === 'main') txt = ids.length > 1 ? T('Your main practice account. League and Replay accounts keep separate cash and positions.') : '';
+    note.textContent = txt; note.hidden = !txt;
+    $('panel-account').classList.toggle('league-acct', !!lg);
+    var head = $('acctHead'); if (head) head.textContent = cur === 'main' ? T('Paper account') : accountName(cur);
+  }
+  function switchAccount(id) {
+    if (!id || id === activeAccount()) return;
+    // Re-read the outgoing account from storage first: another tab (portfolio.html) may have traded on it
+    // since this page loaded, and BT.paper.use() saves the outgoing state when it has never been stored.
+    try { if (typeof paper.load === 'function') paper.load(); paper.use(id); } catch (e) { toast(T('Could not switch accounts: {error}', { error: e && e.message }), 'err'); return; }
+    store.set(ACCOUNT_KEY, activeAccount());
+    hideConfirm(); $('tmsg').dataset.kind = ''; $('tmsg').textContent = ''; showCoach([]);
+    if (auto.proposal) hideProposal();
+    renderAccountSwitcher(); renderAccount(); renderOrders(); renderTicket();
+    if (bars.length) processFills(symbol, bars[bars.length - 1]);
+    toast(T('Orders now go to {account}.', { account: accountName(activeAccount()) }), 'ok', T('Account switched'));
+  }
+  if ($('acctSel')) $('acctSel').onchange = function () { switchAccount(this.value); };
+  (function restoreAccount() {
+    var saved = store.get(ACCOUNT_KEY, 'main');
+    if (saved && saved !== 'main' && saved !== activeAccount() && listAccounts().indexOf(saved) >= 0) {
+      try { if (typeof paper.load === 'function') paper.load(); paper.use(saved); } catch (e) { /* stay on main */ }
+    }
+  })();
+  window.addEventListener('storage', function (e) {
+    // A league joined or left in another tab: refresh the switcher (never switch accounts behind the student's back).
+    if (e && e.key && (/^bt\.leagues/.test(e.key) || e.key === 'bt.portfolio.accounts')) renderAccountSwitcher();
+  });
+
+  /** League rules for the active account: {ok, reason}. Main / Replay accounts always pass. */
+  function leagueCheck(order, refPrice) {
+    var lg = leagueOf(activeAccount());
+    if (!lg) return { ok: true, reason: '' };
+    var st = paper.state;
+    var acct = Object.assign({}, st, { marks: Object.assign({}, st.marks || {}, priceMap()) });
+    try {
+      var res = BT.leagues.validateOrder(Object.assign({}, order, { price: refPrice || lastPrice(), time: Date.now() }), lg, acct);
+      return res && res.ok === false ? { ok: false, reason: res.reason || T('This order breaks a league rule.') } : { ok: true, reason: '' };
+    } catch (e) { console.warn('League check failed', e); return { ok: true, reason: '' }; }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * "Plan this trade" (BT.risk): size from the amount you are willing to lose
+   * ------------------------------------------------------------------ */
+  function riskApi() { return BT.risk && typeof BT.risk.planTrade === 'function' ? BT.risk : null; }
+  function opensPosition() { return side === 'buy' || side === 'short'; }
+  function currentEquity() {
+    try { if (typeof paper.valuation === 'function') { var v = paper.valuation(priceMap()); return paper.state.cash + v.marketValue; } } catch (e) { /* fall through */ }
+    return paper.state.cash;
+  }
+  function planNum(id) { var el = $(id); if (!el) return null; var v = parseFloat(String(el.value).replace(',', '.')); return isFinite(v) && v > 0 ? v : null; }
+  /** null when the panel is unavailable; otherwise {state:'closing'|'empty'|'ready', ...BT.risk.planTrade fields}. */
+  function computePlan() {
+    var R = riskApi(); if (!R || !$('planBox')) return null;
+    if (!opensPosition()) return { state: 'closing' };
+    var t = ticketOrder(), entry = t.refPrice;
+    var riskPct = planNum('planRisk') || 1, stop = planNum('planStop'), target = planNum('planTarget');
+    if (!stop || !(entry > 0)) return { state: 'empty', entry: entry, riskPct: riskPct };
+    var lg = leagueOf(activeAccount());
+    var equity = currentEquity();
+    var p = R.planTrade({ equity: equity, riskPct: riskPct, entry: entry, stop: stop, target: target, maxPositionPct: lg && lg.rules ? lg.rules.maxPositionPct : 100 });
+    p.state = 'ready'; p.entry = entry; p.stop = stop; p.target = target; p.riskPct = riskPct; p.equity = equity;
+    var want = side === 'short' ? 'short' : 'long';
+    if (p.size && p.size.error) p.error = p.size.error;
+    else if (p.side && p.side !== want) p.error = T(want === 'long' ? 'For a buy, the stop goes below the entry price ({entry}).' : 'For a short, the stop goes above the entry price ({entry}).', { entry: money(entry) });
+    return p;
+  }
+  /** Order meta for a planned trade, using the quantity actually on the ticket (the student may have changed it). */
+  function planMeta(t, p) {
+    if (!p || p.state !== 'ready' || p.error || !t || !(t.shares > 0)) return null;
+    var dollarRisk = Math.abs(p.entry - p.stop) * t.shares;
+    return {
+      plan: { stop: p.stop, target: p.target || null, riskPct: p.riskPct, riskPctActual: p.equity > 0 ? dollarRisk / p.equity * 100 : null, dollarRisk: Math.round(dollarRisk * 100) / 100, entry: p.entry, shares: t.shares, plannedShares: p.shares, rewardRisk: p.rewardRisk, source: 'dashboard' },
+      plannedStop: p.stop, plannedTarget: p.target || null, plannedRiskPct: p.equity > 0 ? Math.round(dollarRisk / p.equity * 10000) / 100 : null
+    };
+  }
+  function clearPlanPrices() { if ($('planStop')) $('planStop').value = ''; if ($('planTarget')) $('planTarget').value = ''; renderPlan(false); }
+  function renderPlan(fromInput) {
+    var box = $('planBox'); if (!box) return;
+    if (!riskApi()) { box.hidden = true; return; }
+    var p = computePlan(), out = $('planOut'), warn = $('planWarn'), sum = $('planSummary');
+    var rows = [], warnings = [];
+    $('planStopRow').hidden = !(p && p.state === 'ready' && !p.error);
+    if (!p || p.state === 'closing') {
+      out.innerHTML = ''; sum.textContent = '';
+      warn.innerHTML = '<li class="tip">' + esc(T('Planning is for opening a position (Buy or Short). To protect a position you already hold, use a Stop order on the ticket.')) + '</li>';
+      return;
+    }
+    if (p.state === 'empty') {
+      out.innerHTML = ''; sum.textContent = '';
+      warn.innerHTML = '<li class="tip">' + esc(T(side === 'short' ? 'Enter the price where your short idea is proven wrong (above {entry}). The panel works out how many shares keep the loss at your risk %.' : 'Enter the price where your idea is proven wrong (below {entry}). The panel works out how many shares keep the loss at your risk %.', { entry: bars.length ? money(p.entry) : '—' })) + '</li>';
+      return;
+    }
+    if (p.error) {
+      out.innerHTML = ''; sum.textContent = '';
+      warn.innerHTML = '<li class="warn">' + esc(p.error) + '</li>';
+      return;
+    }
+    rows.push([T('Entry (about)'), money(p.entry)]);
+    rows.push([T('Shares for {pct}% risk', { pct: fmt(p.riskPct, p.riskPct % 1 ? 2 : 0) }), p.shares.toLocaleString(loc())]);
+    rows.push([T('Loss if the stop is hit'), money(p.lossAtStop)]);
+    rows.push([T('Position size'), money(p.size.positionValue) + ' (' + fmt(p.size.pctOfEquity, 1) + '%)']);
+    if (p.rewardRisk != null) {
+      rows.push([T('Reward : risk'), fmt(p.rewardRisk, 2) + ' : 1']);
+      rows.push([T('Break-even win rate'), fmt(p.breakevenWinRate * 100, 1) + '%']);
+      if (p.profitAtTarget != null) rows.push([T('Profit at target'), money(p.profitAtTarget)]);
+    }
+    out.innerHTML = rows.map(function (r) { return '<span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span>'; }).join('');
+    (p.warnings || []).forEach(function (w) { warnings.push('<li class="' + (w.level === 'warn' ? 'warn' : 'tip') + '">' + esc(w.message) + '</li>'); });
+    if (!(p.shares > 0)) warnings.push('<li class="warn">' + esc(T('At this stop distance even one share risks more than {pct}% of your equity. Move the stop closer or accept a smaller position elsewhere.', { pct: fmt(p.riskPct, 2) })) + '</li>');
+    warn.innerHTML = warnings.join('');
+    sum.textContent = p.shares > 0 ? T('{n} shares · {pct}% risk', { n: p.shares.toLocaleString(loc()), pct: fmt(p.riskPct, p.riskPct % 1 ? 2 : 0) }) : '';
+    if (fromInput && p.shares > 0) {
+      if (qtyMode !== 'shares') $('qtyMode').click();
+      $('qty').value = String(p.shares);
+      $('planMsg').textContent = T('Quantity set to {n} shares from your plan.', { n: p.shares.toLocaleString(loc()) });
+      hideConfirm(); $('tmsg').dataset.kind = '';
+      renderTicket();
+    }
+  }
+  if ($('planBox')) {
+    ['planRisk', 'planStop', 'planTarget'].forEach(function (id) { $(id).addEventListener('input', debounce(function () { $('planMsg').textContent = ''; renderPlan(true); }, 250)); });
+    $('planBox').addEventListener('toggle', function () { if ($('planBox').open) renderPlan(false); });
+    $('planUseAtr').onclick = function () {
+      // A common starting point: a stop 2 × ATR(14) away from the entry, beyond normal day-to-day noise.
+      if (!I || !I.atr || !bars.length) return;
+      var atr = I.atr[I.atr.length - 1]; if (!(atr > 0)) return;
+      var entry = ticketOrder().refPrice, stop = side === 'short' ? entry + 2 * atr : entry - 2 * atr;
+      $('planStop').value = stop.toFixed(2);
+      $('planMsg').textContent = T('Stop set 2 × ATR ({atr}) from the entry. ATR is the typical bar range, so the stop sits outside normal noise.', { atr: fmt(atr) });
+      renderPlan(true);
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Coach notes after fills (BT.coach, optional) and XP (BT.xp, optional)
+   * ------------------------------------------------------------------ */
+  function awardXp(event, key) { try { if (BT.xp && typeof BT.xp.award === 'function') return BT.xp.award(event, key); } catch (e) { /* never break trading */ } return null; }
+  function coachContext() {
+    return { account: paper.state, accountId: activeAccount(), equity: currentEquity(), symbol: symbol, interval: tf, price: lastPrice(), bars: bars, ind: I, signal: sig, league: leagueOf(activeAccount()) };
+  }
+  function coachReview(kind, subject) {
+    var C = BT.coach; if (!C || !subject) return [];
+    var fn = kind === 'trade' ? C.reviewTrade : C.reviewOrder;
+    if (typeof fn !== 'function') return [];
+    try {
+      var out = fn.call(C, subject, coachContext());
+      if (out && !Array.isArray(out) && Array.isArray(out.notes)) out = out.notes;
+      return Array.isArray(out) ? out.filter(function (n) { return n && (n.title || n.message); }) : [];
+    } catch (e) { console.warn('Coach review failed', e); return []; }
+  }
+  function showCoach(notes) {
+    var box = $('coachNotes'); if (!box) return;
+    if (!notes || !notes.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="coach-head"><b>' + esc(T('Coach notes')) + '</b><button class="sm ghost" type="button" id="coachClose">' + esc(T('Got it')) + '</button></div><ul>' + notes.slice(0, 5).map(function (n) {
+      var lesson = n.lessonId && /^[\w-]+$/.test(String(n.lessonId)) ? ' <a href="learn.html#/lesson/' + esc(n.lessonId) + '">' + esc(T('Related lesson')) + ' ▸</a>' : '';
+      return '<li class="' + (n.level === 'warn' ? 'warn' : 'tip') + '"><b>' + esc(n.title || '') + '</b> ' + esc(n.message || '') + lesson + '</li>';
+    }).join('') + '</ul><p class="note">' + esc(T('The coach checks habits (risk, stops, trend, overtrading). It never tells you what to buy or sell.')) + '</p>';
+    box.hidden = false;
+    $('coachClose').onclick = function () { showCoach([]); };
+  }
+  /** Called after every fill on the dashboard: coach review of the order (and of the closed trade), plus XP. */
+  function afterFill(order, newTrades) {
+    newTrades = (newTrades || []).filter(Boolean);
+    var notes = coachReview('order', order);
+    newTrades.forEach(function (tr) { if (tr.closedQty > 0) notes = notes.concat(coachReview('trade', tr)); });
+    var seen = {};
+    notes = notes.filter(function (n) { var k = (n.title || '') + '|' + (n.message || ''); if (seen[k]) return false; seen[k] = 1; return true; });
+    showCoach(notes);
+    awardXp('firstTrade', 'once');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Semi-auto paper mode (BT.rules): proposes, never executes on its own
+   * ------------------------------------------------------------------ */
+  var auto = { proposal: null, handled: {}, compiled: null, compiledFor: null };
+  function rulesApi() { return BT.rules && typeof BT.rules.list === 'function' && typeof BT.rules.compile === 'function' ? BT.rules : null; }
+  function autoCfg() {
+    var R = rulesApi(); if (!R) return { enabled: false, ruleId: null };
+    try { return R.semiAuto ? R.semiAuto.get() : store.get('bt.dash.auto', { enabled: false, ruleId: null }); } catch (e) { return { enabled: false, ruleId: null }; }
+  }
+  function setAutoCfg(v) {
+    var R = rulesApi(); if (!R) return;
+    try { if (R.semiAuto) R.semiAuto.set(v); else store.set('bt.dash.auto', Object.assign(autoCfg(), v)); } catch (e) { /* ignore */ }
+  }
+  function autoMsg(text, kind) { var m = $('autoMsg'); if (m) { m.textContent = text || ''; m.className = 'msg ' + (kind || ''); } }
+  function renderAutoPanel() {
+    var card = $('panel-auto'); if (!card) return;
+    var R = rulesApi();
+    if (!R) { card.hidden = true; return; }
+    card.hidden = false;
+    var rules = []; try { rules = R.list(); } catch (e) { rules = []; }
+    var cfg = autoCfg(), sel = $('autoRule');
+    $('autoEmpty').hidden = rules.length > 0;
+    $('autoControls').hidden = !rules.length;
+    if (!rules.length) { $('autoState').textContent = ''; hideProposal(); return; }
+    var ruleId = cfg.ruleId && rules.some(function (r) { return r.id === cfg.ruleId; }) ? cfg.ruleId : rules[0].id;
+    sel.innerHTML = rules.map(function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === ruleId ? ' selected' : '') + '>' + esc(r.name || T('Untitled rule')) + '</option>'; }).join('');
+    sel.value = ruleId;
+    $('autoOn').checked = !!cfg.enabled && cfg.ruleId === ruleId;
+    var rule = rules.filter(function (r) { return r.id === ruleId; })[0];
+    var desc = ''; try { desc = R.describe(rule); } catch (e) { desc = ''; }
+    $('autoDesc').textContent = desc;
+    $('autoState').textContent = $('autoOn').checked ? T('watching {symbol}', { symbol: symbol }) : T('off');
+    $('autoState').className = 'score' + ($('autoOn').checked ? ' up' : '');
+  }
+  function hideProposal() { auto.proposal = null; var p = $('autoProposal'); if (p) { p.hidden = true; p.innerHTML = ''; } }
+  function expandCard(card) {
+    if (!card || !card.classList.contains('collapsed')) return;
+    card.classList.remove('collapsed');
+    var b = card.querySelector('.acc-btn'); if (b) b.setAttribute('aria-expanded', 'true');
+  }
+  function proposalQty(prop) {
+    var pos = position();
+    if (prop.intent === 'exit') return pos ? Math.abs(pos.qty) : 0;
+    var p = computePlanFor(prop);
+    if (p && p.shares > 0) return p.shares;
+    var t = ticketOrder();
+    if (t.shares > 0 && (t.order.side === prop.action)) return t.shares;
+    return Math.max(1, Math.floor(currentEquity() * 0.1 / (prop.price || lastPrice() || 1)));
+  }
+  /** If the rule has a stop %, size the proposal with the risk % from the plan panel (default 1 %). */
+  function computePlanFor(prop) {
+    var R = riskApi(), rule = auto.rule; if (!R || !rule || !rule.exit || !(rule.exit.stopPct > 0)) return null;
+    var entry = prop.price || lastPrice(), long = prop.action === 'buy';
+    var stop = long ? entry * (1 - rule.exit.stopPct / 100) : entry * (1 + rule.exit.stopPct / 100);
+    try { var s = R.positionSize({ equity: currentEquity(), riskPct: planNum('planRisk') || 1, entry: entry, stop: stop }); s.stop = stop; return s; } catch (e) { return null; }
+  }
+  function checkAuto() {
+    var R = rulesApi(); if (!R || !$('panel-auto') || !bars.length) return;
+    var cfg = autoCfg();
+    if (!cfg.enabled || !cfg.ruleId) { if (auto.proposal) hideProposal(); return; }
+    var rule = null; try { rule = R.get(cfg.ruleId); } catch (e) { rule = null; }
+    if (!rule) { hideProposal(); autoMsg(T('The saved rule was not found. Pick another one or build it again in the Strategy Builder.'), 'err'); return; }
+    // compile() is the same engine the back-tester runs: no look-ahead, crosses compare the previous bar with this one.
+    if (auto.compiledFor !== rule.id + '|' + (rule.updatedAt || '')) {
+      try { auto.compiled = R.compile(rule); } catch (e) { auto.compiled = null; }
+      auto.compiledFor = rule.id + '|' + (rule.updatedAt || '');
+    }
+    var strat = auto.compiled;
+    if (!strat || (strat.errors && strat.errors.length)) { hideProposal(); autoMsg(T('This rule cannot run yet: {problems}', { problems: strat && strat.errors ? strat.errors.join(' ') : T('it did not compile') }), 'err'); return; }
+    auto.rule = strat.rule || rule;
+    var pos = position();
+    var held = pos ? { side: pos.qty > 0 ? 'long' : 'short', entry: pos.avg, qty: Math.abs(pos.qty) } : null;
+    var prop = null;
+    try {
+      if (typeof R.propose === 'function') prop = R.propose(rule, bars, held);
+      else {
+        var act = strat.onBar({ bars: bars, ind: I, position: held }, bars.length - 1);
+        var rs = (strat.rule && strat.rule.side) || 'long';
+        if (act === 'exit' && held) prop = { action: held.side === 'long' ? 'sell' : 'buy', intent: 'exit', side: held.side, price: lastPrice(), reason: T('exit rule fired') };
+        else if ((act === 'buy' || act === 'sell') && !held) prop = { action: act, intent: 'entry', side: rs, price: lastPrice(), reason: strat.description || '' };
+      }
+    } catch (e) { console.warn('Rule check failed', e); prop = null; }
+    var last = bars[bars.length - 1], barKey = String(last.time);
+    if (!prop) {
+      // The bar is still forming: a proposal from an earlier tick of this bar stays up, marked as no longer true.
+      if (auto.proposal && auto.proposal.bar !== barKey) { hideProposal(); autoMsg(T('The last proposal expired when a new bar started.'), ''); }
+      else if (auto.proposal) $('autoStale').hidden = false;
+      return;
+    }
+    var key = [rule.id, symbol, tf, barKey, prop.intent, prop.action].join('|');
+    if (auto.handled[key]) return;
+    if (auto.proposal && auto.proposal.key === key) { $('autoStale').hidden = true; updateProposalPrice(); return; }
+    showProposal(Object.assign({}, prop, { key: key, bar: barKey, ruleName: rule.name || T('Untitled rule') }));
+  }
+  function proposalVerb(prop) {
+    if (prop.intent === 'exit') return prop.action === 'sell' ? 'Sell {qty} {symbol} to close your long' : 'Buy {qty} {symbol} to cover your short';
+    return prop.action === 'buy' ? 'Buy {qty} {symbol}' : 'Sell short {qty} {symbol}';
+  }
+  function showProposal(prop) {
+    auto.proposal = prop;
+    var qty = proposalQty(prop), box = $('autoProposal');
+    prop.qty = qty;
+    var sized = prop.intent === 'entry' ? computePlanFor(prop) : null;
+    box.innerHTML =
+      '<p class="prop-title"><b>' + esc(T('Your rule “{name}” fired', { name: prop.ruleName })) + '</b></p>' +
+      '<p class="prop-order"><span class="' + (prop.action === 'buy' ? 'up' : 'down') + '">' + esc(T(proposalVerb(prop), { qty: qty, symbol: symbol })) + '</span> ' + esc(T('at about {price} (market order)', { price: money(lastPrice()) })) + '</p>' +
+      (prop.reason ? '<p class="note">' + esc(T('Why: {reason}', { reason: prop.reason })) + '</p>' : '') +
+      (sized && sized.shares > 0 ? '<p class="note">' + esc(T('Sized so the rule’s {pct}% stop ({stop}) risks about {risk}.', { pct: auto.rule.exit.stopPct, stop: money(sized.stop), risk: money(sized.dollarRisk) })) + '</p>' : '') +
+      '<p class="note" id="autoStale" hidden>' + esc(T('On the latest tick the condition is no longer true. The bar has not closed yet, so the signal can still change.')) + '</p>' +
+      '<div class="actions"><button type="button" class="' + (prop.action === 'buy' ? 'buy' : 'sell') + '" id="autoConfirm">' + esc(T('Confirm paper order')) + '</button><button type="button" id="autoDismiss">' + esc(T('Dismiss')) + '</button></div>' +
+      '<p class="note">' + esc(T('A rule firing is not a prediction. You decide: nothing is placed until you tap Confirm.')) + '</p>';
+    box.hidden = false;
+    autoMsg('');
+    expandCard($('panel-auto'));
+    // The phone accordion (js/nav.js) may collapse the card on DOMContentLoaded, after a proposal made during boot.
+    setTimeout(function () { if (auto.proposal === prop) expandCard($('panel-auto')); }, 400);
+    $('autoConfirm').onclick = confirmProposal;
+    $('autoDismiss').onclick = function () { auto.handled[prop.key] = 'dismissed'; hideProposal(); autoMsg(T('Dismissed. The rule will propose again on a later bar if it fires.'), ''); };
+    toast(T(proposalVerb(prop), { qty: qty, symbol: symbol }) + ' — ' + T('review it in the Semi-auto card.'), 'ok', T('Rule “{name}” fired', { name: prop.ruleName }), 7000);
+  }
+  function updateProposalPrice() {
+    var p = auto.proposal; if (!p) return;
+    var el = $('autoProposal') && $('autoProposal').querySelector('.prop-order');
+    if (el) el.innerHTML = '<span class="' + (p.action === 'buy' ? 'up' : 'down') + '">' + esc(T(proposalVerb(p), { qty: p.qty, symbol: symbol })) + '</span> ' + esc(T('at about {price} (market order)', { price: money(lastPrice()) }));
+  }
+  function confirmProposal() {
+    var p = auto.proposal; if (!p) return;
+    auto.handled[p.key] = 'confirmed';
+    hideProposal();
+    if (!(p.qty > 0)) { autoMsg(T('Nothing to trade: the proposed quantity is zero.'), 'err'); return null; }
+    var order = { symbol: symbol, side: p.action, qty: p.qty, type: 'market', tif: 'gtc' };
+    var sized = p.intent === 'entry' ? computePlanFor(p) : null;
+    var meta = { source: 'semi-auto', rule: p.ruleName, intent: p.intent };
+    var pm = null;
+    if (sized && sized.shares > 0 && sized.stop) {
+      var eq = currentEquity(), risk = Math.abs(lastPrice() - sized.stop) * p.qty;
+      pm = { plan: { stop: Math.round(sized.stop * 100) / 100, target: null, riskPct: planNum('planRisk') || 1, riskPctActual: eq > 0 ? risk / eq * 100 : null, dollarRisk: Math.round(risk * 100) / 100, entry: lastPrice(), shares: p.qty, source: 'semi-auto' }, plannedStop: Math.round(sized.stop * 100) / 100 };
+    }
+    var o = executeOrder(order, { meta: meta, planMeta: pm, refPrice: lastPrice() });
+    autoMsg(o.status === 'filled' ? T('Confirmed by you and filled. The rule keeps watching.') : o.status === 'open' ? T('Confirmed by you; the order is working.') : T('Not filled: {reason}', { reason: o.reason }), o.status === 'rejected' ? 'err' : 'ok');
+    return o;
+  }
+  if ($('panel-auto')) {
+    $('autoRule').onchange = function () { setAutoCfg({ ruleId: this.value, enabled: false }); hideProposal(); autoMsg(''); renderAutoPanel(); };
+    $('autoOn').onchange = function () {
+      setAutoCfg({ ruleId: $('autoRule').value, enabled: this.checked });
+      hideProposal(); auto.handled = {};
+      autoMsg(this.checked ? T('Watching {symbol} {tf}. When the rule fires you get a proposal here; nothing is placed without your tap.', { symbol: symbol, tf: tfLabel(tf) }) : T('Semi-auto mode is off.'), 'ok');
+      renderAutoPanel(); checkAuto();
+    };
+    window.addEventListener('storage', function (e) { if (e && e.key === 'bt.rules') { auto.compiledFor = null; renderAutoPanel(); checkAuto(); } });
+  }
 
   /* ------------------------------------------------------------------ *
    * Open orders, account, fills
    * ------------------------------------------------------------------ */
+  var TYPE_NAMES = { market: 'Market', limit: 'Limit', stop: 'Stop', stop_limit: 'Stop-limit' };
   function renderOrders() {
     var open = paper.openOrders();
     $('ordersCount').textContent = open.length ? T('{n} working', { n: open.length }) : '';
     $('orders').innerHTML = open.length ? open.slice().reverse().map(function (o) {
       var trig = o.type === 'limit' ? money(o.limitPrice) : o.type === 'stop' ? money(o.stopPrice) : money(o.stopPrice) + ' / ' + money(o.limitPrice);
-      return '<tr><td><span class="' + (o.side === 'buy' ? 'up' : 'down') + '">' + (o.side === 'buy' ? 'BUY' : 'SELL') + '</span> <b>' + esc(o.symbol) + '</b><span class="type">' + esc(o.type.replace('_', '-')) + ' · ' + esc(o.tif.toUpperCase()) + (o.triggered ? ' · triggered' : '') + '</span></td><td class="num">' + o.qty + '</td><td class="num">' + esc(trig) + '</td><td><button class="sm ghost" data-cancel="' + o.id + '" title="Cancel this order">✕</button></td></tr>';
-    }).join('') : '<tr><td class="muted">No working orders. Try a limit order a little below the price and watch it fill when a bar\'s low reaches it.</td></tr>';
+      return '<tr><td><span class="' + (o.side === 'buy' ? 'up' : 'down') + '">' + esc(T(o.side === 'buy' ? 'BUY' : 'SELL')) + '</span> <b>' + esc(o.symbol) + '</b><span class="type">' + esc(T(TYPE_NAMES[o.type] || o.type)) + ' · ' + esc(T(o.tif === 'day' ? 'Day' : 'GTC')) + (o.triggered ? ' · ' + esc(T('triggered')) : '') + '</span></td><td class="num">' + o.qty + '</td><td class="num">' + esc(trig) + '</td><td><button class="sm ghost" data-cancel="' + o.id + '" title="' + esc(T('Cancel this order')) + '" aria-label="' + esc(T('Cancel this order')) + '">✕</button></td></tr>';
+    }).join('') : '<tr><td class="muted">' + esc(T('No working orders. Try a limit order a little below the price and watch it fill when a bar\'s low reaches it.')) + '</td></tr>';
     $$('[data-cancel]', $('orders')).forEach(function (b) {
       b.onclick = function () { var o = paper.cancelOrder(+b.dataset.cancel); if (o) toast(paper.describeOrder(o), 'warn', 'Order cancelled'); renderOrders(); renderAccount(); };
     });
@@ -657,33 +1113,47 @@
   }
   function renderAccount() {
     var mtm = paper.markToMarket(priceMap());
-    var stat = function (label, value, sub, klass) { return '<div class="stat"><span class="label">' + label + '</span><span class="value ' + (klass || '') + '">' + value + '</span>' + (sub ? '<span class="sub">' + sub + '</span>' : '') + '</div>'; };
+    var stat = function (label, value, sub, klass) { return '<div class="stat"><span class="label">' + esc(label) + '</span><span class="value ' + (klass || '') + '">' + esc(value) + '</span>' + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') + '</div>'; };
     $('acct').innerHTML =
-      stat('Equity', money(mtm.equity), 'cash + positions') +
-      stat('Cash', money(mtm.cash), mtm.marginUsed ? 'margin used ' + money(mtm.marginUsed) : 'buying power') +
-      stat('Total P&amp;L', signed(mtm.totalPnL), pct(mtm.totalPnLPct) + ' since start', cls(mtm.totalPnL)) +
-      stat('Day P&amp;L', signed(mtm.dayPnL), 'unrealized ' + signed(mtm.unrealized), cls(mtm.dayPnL));
+      stat(T('Equity'), money(mtm.equity), T('cash + positions')) +
+      stat(T('Cash'), money(mtm.cash), mtm.marginUsed ? T('margin used {amount}', { amount: money(mtm.marginUsed) }) : T('buying power')) +
+      stat(T('Total P&L'), signed(mtm.totalPnL), T('{pct} since start', { pct: pct(mtm.totalPnLPct) }), cls(mtm.totalPnL)) +
+      stat(T('Day P&L'), signed(mtm.dayPnL), T('unrealized {amount}', { amount: signed(mtm.unrealized) }), cls(mtm.dayPnL));
     var pos = position(), row = $('posRow');
     if (pos && bars.length) {
       var px = lastPrice(), upl = (px - pos.avg) * pos.qty;
       row.hidden = false;
-      row.innerHTML = '<span>' + (pos.qty > 0 ? 'Long' : 'Short') + ' <b class="num">' + Math.abs(pos.qty) + '</b> ' + esc(symbol) + ' @ <span class="num">' + money(pos.avg) + '</span></span><span class="num ' + cls(upl) + '">' + signed(upl) + ' (' + pct((px - pos.avg) / pos.avg * 100 * (pos.qty > 0 ? 1 : -1)) + ')</span><button class="sm" id="closePos" type="button">Close</button>';
+      row.innerHTML = '<span>' + esc(T(pos.qty > 0 ? 'Long' : 'Short')) + ' <b class="num">' + Math.abs(pos.qty) + '</b> ' + esc(symbol) + ' @ <span class="num">' + money(pos.avg) + '</span></span><span class="num ' + cls(upl) + '">' + signed(upl) + ' (' + pct((px - pos.avg) / pos.avg * 100 * (pos.qty > 0 ? 1 : -1)) + ')</span><button class="sm" id="closePos" type="button">' + esc(T('Close')) + '</button>';
       $('closePos').onclick = function () {
-        if (this.dataset.arm) { var o = paper.closePosition(symbol, lastPrice()); toast(o.status === 'filled' ? o.reason : T('Could not close: {reason}', { reason: o.reason }), o.status === 'filled' ? 'ok' : 'err'); renderAccount(); renderOrders(); }
-        else { this.dataset.arm = '1'; this.textContent = 'Confirm close'; var self = this; setTimeout(function () { self.textContent = 'Close'; delete self.dataset.arm; }, 4000); }
+        if (this.dataset.arm) {
+          var lg = leagueCheck({ symbol: symbol, side: pos.qty > 0 ? 'sell' : 'buy', qty: Math.abs(pos.qty), type: 'market' }, lastPrice());
+          if (!lg.ok) { toast(lg.reason, 'err', T('League rule'), 7000); return; }
+          var tradesBefore = paper.state.trades.length;
+          var o = paper.closePosition(symbol, lastPrice());
+          toast(o.status === 'filled' ? o.reason : T('Could not close: {reason}', { reason: o.reason }), o.status === 'filled' ? 'ok' : 'err');
+          if (o.status === 'filled') afterFill(o, paper.state.trades.slice(tradesBefore));
+          renderAccount(); renderOrders();
+        }
+        else { this.dataset.arm = '1'; this.textContent = T('Confirm close'); var self = this; setTimeout(function () { self.textContent = T('Close'); delete self.dataset.arm; }, 4000); }
       };
     } else row.hidden = true;
     var trades = paper.state.trades.slice(-40).reverse();
     $('log').innerHTML = trades.length ? trades.map(function (t) {
       var when = typeof t.time === 'string' ? t.time : new Date((t.time > 1e11 ? t.time : t.time * 1000)).toLocaleString(loc(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      return '<tr><td class="' + (t.side === 'buy' ? 'up' : 'down') + '">' + (t.side === 'buy' ? 'BUY' : 'SELL') + '</td><td>' + esc(t.symbol) + '</td><td class="num">' + t.qty + '</td><td class="num">' + money(t.price) + '</td><td class="num ' + cls(t.realized) + '">' + (t.closedQty ? signed(t.realized) : '') + '</td><td class="muted">' + esc(when) + '</td></tr>';
-    }).join('') : '<tr><td class="muted">No trades yet. Try buying when the signal says BUY and watch what happens — it is play money.</td></tr>';
+      return '<tr><td class="' + (t.side === 'buy' ? 'up' : 'down') + '">' + esc(T(t.side === 'buy' ? 'BUY' : 'SELL')) + '</td><td>' + esc(t.symbol) + '</td><td class="num">' + t.qty + '</td><td class="num">' + money(t.price) + '</td><td class="num ' + cls(t.realized) + '">' + (t.closedQty ? signed(t.realized) : '') + '</td><td class="muted">' + esc(when) + '</td></tr>';
+    }).join('') : '<tr><td class="muted">' + esc(T('No trades yet. Try buying when the signal says BUY and watch what happens — it is play money.')) + '</td></tr>';
     renderTicket();
   }
   $('reset').onclick = function () {
     var b = this;
-    if (b.dataset.arm) { paper.reset(); delete b.dataset.arm; b.textContent = 'Reset'; hideConfirm(); renderAccount(); renderOrders(); toast('Fresh $100,000 paper account. Your trade history was cleared.', 'ok', 'Account reset'); }
-    else { b.dataset.arm = '1'; b.textContent = 'Confirm reset'; setTimeout(function () { b.textContent = 'Reset'; delete b.dataset.arm; }, 4000); }
+    if (b.dataset.arm) {
+      var lgR = leagueOf(activeAccount());
+      if (lgR) { delete b.dataset.arm; b.textContent = T('Reset'); toast(T('League accounts cannot be reset: every member starts with the same cash and keeps their own record until the league ends.'), 'warn', T('League rule'), 7000); return; }
+      var start = paper.state.startingCash || 100000;
+      paper.reset(start); delete b.dataset.arm; b.textContent = T('Reset'); hideConfirm(); renderAccount(); renderOrders(); renderAccountSwitcher();
+      toast(T('Fresh {cash} paper account. Your trade history was cleared.', { cash: money(start) }), 'ok', T('Account reset'));
+    }
+    else { b.dataset.arm = '1'; b.textContent = T('Confirm reset'); setTimeout(function () { b.textContent = T('Reset'); delete b.dataset.arm; }, 4000); }
   };
 
   /** Fill resting orders against a bar and tell the student. */
@@ -692,7 +1162,12 @@
     var fills = paper.processOrders(sym, bar) || [];
     fills.forEach(function (f) {
       var o = f.order;
-      toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — your {type} price was reached.' : 'Sold {qty} {symbol} @ {price} — your {type} price was reached.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), type: o.type.replace('_', '-') }), 'ok', 'Order filled');
+      toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — your {type} price was reached.' : 'Sold {qty} {symbol} @ {price} — your {type} price was reached.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), type: T(TYPE_NAMES[o.type] || o.type).toLowerCase() }), 'ok', 'Order filled');
+      if (o.meta && o.meta.protectStop && !o.meta.protectPlaced && o.status === 'filled') {
+        o.meta.protectPlaced = true;
+        placeProtectiveStop(o, o.meta.protectStop);
+      }
+      afterFill(o, f.trade ? [f.trade] : []);
     });
     // Orders that were rejected at fill time (e.g. cash ran out) or expired (day orders) are not fills, but the student should hear about them.
     var changed = fills.length > 0;
@@ -730,8 +1205,8 @@
     if (!alerts || !$('alertKind')) return;
     var kind = $('alertKind').value, f = ALERT_FIELD[kind], def = alerts.KINDS[kind];
     $('alertSym').textContent = symbol;
-    $('alertValueLabel').textContent = f.label;
-    $('alertValue').placeholder = f.placeholder();
+    $('alertValueLabel').textContent = T(f.label);
+    $('alertValue').placeholder = T(f.placeholder());
     $('alertValue').setAttribute('inputmode', f.mode);
     $('alertHelp').textContent = T(def.help) + (kind === 'price_above' || kind === 'price_below' ? ' ' + T('Current price:') + ' ' + (bars.length ? money(lastPrice()) : '—') + '.' : kind === 'rsi_above' || kind === 'rsi_below' ? ' ' + T('Current RSI:') + ' ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—') + '.' : kind === 'signal_change' && sig ? ' ' + T('Current signal:') + ' ' + sig.state + '.' : '');
   }
@@ -739,10 +1214,10 @@
     if (!alerts || !$('notifBtn')) return;
     var st = alerts.notificationState(), btn = $('notifBtn'), note = $('notifNote');
     btn.hidden = st !== 'default';
-    if (st === 'granted') note.textContent = 'System notifications are on: fired alerts also appear as a notification when this tab is in the background.';
-    else if (st === 'denied') note.textContent = 'Notifications are blocked for this site in your browser settings. Alerts still show as toasts while the page is open.';
-    else if (st === 'unsupported') note.textContent = 'This browser cannot show system notifications (on iPhone, add the site to your Home Screen first). Alerts still show as toasts while the page is open.';
-    else note.textContent = 'Alerts show as toasts while the page is open. Enable notifications to also get one when the tab is in the background.';
+    if (st === 'granted') note.textContent = T('System notifications are on: fired alerts also appear as a notification when this tab is in the background.');
+    else if (st === 'denied') note.textContent = T('Notifications are blocked for this site in your browser settings. Alerts still show as toasts while the page is open.');
+    else if (st === 'unsupported') note.textContent = T('This browser cannot show system notifications (on iPhone, add the site to your Home Screen first). Alerts still show as toasts while the page is open.');
+    else note.textContent = T('Alerts show as toasts while the page is open. Enable notifications to also get one when the tab is in the background.');
   }
   function fmtWhen(t) {
     if (!t) return '';
@@ -761,18 +1236,19 @@
     });
     $('alertList').innerHTML = rows.length ? rows.map(function (a) {
       var fired = !!a.firedAt, def = alerts.KINDS[a.kind];
-      var valTxt = a.kind === 'price_above' || a.kind === 'price_below' ? money(a.value) : a.kind === 'sma_cross' ? 'SMA ' + String(a.value).replace('/', ' / ') : a.kind === 'signal_change' ? (a.value || 'any change') : String(a.value);
-      var at = a.lastValue == null ? '' : a.kind.indexOf('price') === 0 ? ' at ' + money(a.lastValue) : a.kind.indexOf('rsi') === 0 ? ' at RSI ' + (+a.lastValue).toFixed(1) : a.kind === 'sma_cross' ? ' · ' + (a.lastValue > 0 ? 'golden cross' : 'death cross') : a.kind === 'signal_change' ? ' · now ' + esc(String(a.lastValue)) : '';
-      var state = fired ? '<span class="type">fired ' + esc(fmtWhen(a.firedAt)) + at + '</span>' : (!a.enabled ? '<span class="type">paused</span>' : '<span class="type">watching · ' + esc(def.short) + '</span>');
-      return '<tr' + (fired ? ' style="opacity:.65"' : '') + '><td><b' + (a.symbol === symbol ? '' : ' class="muted"') + '>' + esc(a.symbol) + '</b> <span class="' + (a.kind === 'price_below' || a.kind === 'rsi_above' ? 'down' : a.kind === 'price_above' || a.kind === 'rsi_below' ? 'up' : '') + '">' + esc(def.label.replace(' (20/50)', '').replace(' (BUY/SELL/HOLD)', '')) + '</span>' + state + '</td><td class="num">' + esc(valTxt) + '</td><td style="white-space:nowrap">' + (fired ? '<button class="sm ghost" data-rearm="' + a.id + '" title="Watch for this again">↻</button>' : '') + '<button class="sm ghost" data-rmalert="' + a.id + '" title="Remove this alert" aria-label="Remove alert">✕</button></td></tr>';
-    }).join('') : '<tr><td class="muted">No alerts yet. Pick a condition above and tap Add: try “Price falls below” a little under the last price, then watch the dotted line on the chart.</td></tr>';
+      if (!def) def = { label: a.kind, short: a.kind };
+      var valTxt = a.kind === 'price_above' || a.kind === 'price_below' ? money(a.value) : a.kind === 'sma_cross' ? 'SMA ' + String(a.value).replace('/', ' / ') : a.kind === 'signal_change' ? (a.value || T('any change')) : a.kind === 'rule' ? (a.rule && a.rule.name ? a.rule.name : T('rule')) : String(a.value);
+      var at = a.lastValue == null ? '' : a.kind.indexOf('price') === 0 ? T('at {price}', { price: money(a.lastValue) }) : a.kind.indexOf('rsi') === 0 ? T('at RSI {v}', { v: (+a.lastValue).toFixed(1) }) : a.kind === 'sma_cross' ? '· ' + T(a.lastValue > 0 ? 'golden cross' : 'death cross') : a.kind === 'signal_change' ? '· ' + T('now {state}', { state: String(a.lastValue) }) : '';
+      var state = fired ? '<span class="type">' + esc(T('fired {when}', { when: fmtWhen(a.firedAt) }) + (at ? ' ' + at : '')) + '</span>' : (!a.enabled ? '<span class="type">' + esc(T('paused')) + '</span>' : '<span class="type">' + esc(T('watching · {what}', { what: T(def.short) })) + '</span>');
+      return '<tr' + (fired ? ' style="opacity:.65"' : '') + '><td><b' + (a.symbol === symbol ? '' : ' class="muted"') + '>' + esc(a.symbol) + '</b> <span class="' + (a.kind === 'price_below' || a.kind === 'rsi_above' ? 'down' : a.kind === 'price_above' || a.kind === 'rsi_below' ? 'up' : '') + '">' + esc(T(String(def.label).replace(' (20/50)', '').replace(' (BUY/SELL/HOLD)', ''))) + '</span>' + state + '</td><td class="num">' + esc(valTxt) + '</td><td style="white-space:nowrap">' + (fired ? '<button class="sm ghost" data-rearm="' + a.id + '" title="' + esc(T('Watch for this again')) + '" aria-label="' + esc(T('Watch for this again')) + '">↻</button>' : '') + '<button class="sm ghost" data-rmalert="' + a.id + '" title="' + esc(T('Remove this alert')) + '" aria-label="' + esc(T('Remove alert')) + '">✕</button></td></tr>';
+    }).join('') : '<tr><td class="muted">' + esc(T('No alerts yet. Pick a condition above and tap Add: try “Price falls below” a little under the last price, then watch the dotted line on the chart.')) + '</td></tr>';
     $$('[data-rmalert]', $('alertList')).forEach(function (b) {
-      b.onclick = function () { var a = alerts.remove(+b.dataset.rmalert); if (a) alertMsg('Removed: ' + alerts.describe(a) + '.', ''); renderAlerts(); renderAlertLines(); };
+      b.onclick = function () { var a = alerts.remove(+b.dataset.rmalert); if (a) alertMsg(T('Removed: {alert}.', { alert: alerts.describe(a) }), ''); renderAlerts(); renderAlertLines(); };
     });
     $$('[data-rearm]', $('alertList')).forEach(function (b) {
       b.onclick = function () {
         var a = alerts.rearm(+b.dataset.rearm);
-        if (a) alertMsg('Watching again: ' + alerts.describe(a) + '. It fires the next time the condition becomes true.', 'ok');
+        if (a) alertMsg(T('Watching again: {alert}. It fires the next time the condition becomes true.', { alert: alerts.describe(a) }), 'ok');
         renderAlerts(); renderAlertLines();
         if (a && a.symbol === symbol) runAlerts(symbol, bars, I);
       };
@@ -782,16 +1258,22 @@
     if (!alerts) return;
     var kind = $('alertKind').value, raw = $('alertValue').value.trim();
     var def = alerts.KINDS[kind];
-    if (def.needsValue && !raw) { alertMsg('Type a ' + (def.group === 'price' ? 'price' : 'level') + ' first. Current ' + (def.group === 'price' ? 'price is ' + (bars.length ? money(lastPrice()) : '—') : 'RSI is ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—')) + '.', 'err'); $('alertValue').focus(); return; }
+    if (def.needsValue && !raw) {
+      alertMsg(def.group === 'price'
+        ? T('Type a price first. Current price is {price}.', { price: bars.length ? money(lastPrice()) : '—' })
+        : T('Type a level first. Current RSI is {rsi}.', { rsi: I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—' }), 'err');
+      $('alertValue').focus(); return;
+    }
     var a = alerts.add({ symbol: symbol, kind: kind, value: raw });
-    if (a.status === 'rejected') { alertMsg(a.reason, 'err'); $('alertValue').focus(); return; }
+    if (a.status === 'rejected') { alertMsg(T(a.reason), 'err'); $('alertValue').focus(); return; }
+    awardXp('alert', String(a.id));
     var hint = '';
     if (bars.length && (kind === 'price_above' || kind === 'price_below')) {
       var px = lastPrice(), dist = (a.value - px) / px * 100;
-      if ((kind === 'price_above' && a.value <= px) || (kind === 'price_below' && a.value >= px)) hint = ' That level is already ' + (kind === 'price_above' ? 'below' : 'above') + ' the current price, so it will fire on the next tick.';
-      else hint = ' That is ' + Math.abs(dist).toFixed(1) + '% ' + (dist > 0 ? 'above' : 'below') + ' the last price.';
+      if ((kind === 'price_above' && a.value <= px) || (kind === 'price_below' && a.value >= px)) hint = ' ' + T(kind === 'price_above' ? 'That level is already below the current price, so it will fire on the next tick.' : 'That level is already above the current price, so it will fire on the next tick.');
+      else hint = ' ' + T(dist > 0 ? 'That is {pct}% above the last price.' : 'That is {pct}% below the last price.', { pct: Math.abs(dist).toFixed(1) });
     }
-    alertMsg('Saved: ' + alerts.describe(a) + '.' + hint, 'ok');
+    alertMsg(T('Saved: {alert}.', { alert: alerts.describe(a) }) + hint, 'ok');
     $('alertValue').value = '';
     renderAlerts(); renderAlertLines();
     runAlerts(symbol, bars, I);
@@ -811,9 +1293,9 @@
     };
     $('alertsClear').onclick = function () {
       var fired = alerts.list().filter(function (a) { return a.firedAt; });
-      if (!fired.length) { alertMsg('Nothing to clear: no alert has fired yet.', ''); return; }
+      if (!fired.length) { alertMsg(T('Nothing to clear: no alert has fired yet.'), ''); return; }
       fired.forEach(function (a) { alerts.remove(a.id); });
-      alertMsg('Cleared ' + fired.length + ' fired alert' + (fired.length > 1 ? 's' : '') + '.', 'ok');
+      alertMsg(T(fired.length > 1 ? 'Cleared {n} fired alerts.' : 'Cleared {n} fired alert.', { n: fired.length }), 'ok');
       renderAlerts(); renderAlertLines();
     };
     alerts.on(function (fired) {
@@ -842,14 +1324,14 @@
   function saveWatchlist() { store.set('bt.watchlist', watchlist); }
   function renderWatchlist() {
     var ul = $('wlList');
-    if (!watchlist.length) { ul.innerHTML = '<li class="empty">Your watchlist is empty. Search a symbol and press + Add (or W).</li>'; return; }
+    if (!watchlist.length) { ul.innerHTML = '<li class="empty">' + esc(T('Your watchlist is empty. Search a symbol and press + Add (or W).')) + '</li>'; return; }
     ul.innerHTML = watchlist.map(function (s) {
       var u = data.lookup(s), q = wlQuotes[s], px = q && q.price, chg = q && q.prevClose ? (q.price - q.prevClose) / q.prevClose * 100 : null;
       return '<li data-sym="' + esc(s) + '" class="' + (s === symbol ? 'on' : '') + '">' +
         '<button class="pick" type="button" data-pick="' + esc(s) + '" title="' + esc(u.name) + '"' + (s === symbol ? ' aria-current="true"' : '') + '>' +
         '<span class="sym">' + esc(s) + '</span><span class="px" id="wlpx-' + esc(s) + '">' + (px ? fmt(px) : '…') + '</span>' +
         '<span class="nm">' + esc(u.name) + '</span><span class="ch ' + (chg == null ? 'muted' : cls(chg)) + '">' + (chg == null ? '' : pct(chg)) + '</span></button>' +
-        '<button class="rm" type="button" data-rm="' + esc(s) + '" title="Remove ' + esc(s) + ' from the watchlist" aria-label="Remove ' + esc(s) + '">✕</button></li>';
+        '<button class="rm" type="button" data-rm="' + esc(s) + '" title="' + esc(T('Remove {symbol} from the watchlist', { symbol: s })) + '" aria-label="' + esc(T('Remove {symbol}', { symbol: s })) + '">✕</button></li>';
     }).join('');
     $$('[data-pick]', ul).forEach(function (b) { b.onclick = function () { setSymbol(b.dataset.pick); }; });
     $$('[data-rm]', ul).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); removeFromWatchlist(b.dataset.rm); }; });
@@ -921,7 +1403,7 @@
     searchRows = rows; activeRow = rows.length ? 0 : -1;
     results.innerHTML = rows.map(function (r, i) {
       return '<li role="option" data-i="' + i + '" class="' + (i === activeRow ? 'active' : '') + '" aria-selected="' + (i === activeRow) + '"><span class="sym">' + esc(r.symbol) + '</span><span class="nm">' + esc(r.name || '') + '</span><span class="ex">' + esc(r.exchange || '') + '</span></li>';
-    }).join('') + (note ? '<li class="hint">' + esc(note) + '</li>' : '') + (!rows.length ? '<li class="hint">No match in the list. Press Enter to chart “' + esc(symInput.value.toUpperCase()) + '” anyway' + (live ? '.' : ' (simulated for unknown tickers).') + '</li>' : '');
+    }).join('') + (note ? '<li class="hint">' + esc(note) + '</li>' : '') + (!rows.length ? '<li class="hint">' + esc(T(live ? 'No match in the list. Press Enter to chart “{query}” anyway.' : 'No match in the list. Press Enter to chart “{query}” anyway (simulated for unknown tickers).', { query: symInput.value.toUpperCase() })) + '</li>' : '');
     results.hidden = false; searchBox.setAttribute('aria-expanded', 'true');
     $$('li[data-i]', results).forEach(function (li) {
       li.onmousedown = function (e) { e.preventDefault(); pick(+li.dataset.i); };
@@ -939,11 +1421,11 @@
   }
   var doSearch = debounce(async function () {
     var q = symInput.value.trim(), seq = ++searchSeq;
-    if (!q) { showResults((await data.search('')).slice(0, 10), 'Popular symbols — start typing to filter'); return; }
+    if (!q) { showResults((await data.search('')).slice(0, 10), T('Popular symbols — start typing to filter')); return; }
     try {
       var rows = await data.search(q);
       if (seq !== searchSeq) return;
-      showResults(rows.slice(0, 10), rows.fallback ? 'Provider search unavailable (' + rows.reason + '); showing the built-in list.' : null);
+      showResults(rows.slice(0, 10), rows.fallback ? T('Provider search unavailable ({reason}); showing the built-in list.', { reason: rows.reason }) : null);
     } catch (e) { if (seq === searchSeq) showResults([], null); }
   }, 160);
   symInput.addEventListener('input', doSearch);
@@ -979,7 +1461,7 @@
     dataInfo = { source: res.source, reason: res.reason, fallback: !!res.fallback, cached: !!res.cached, stale: !!res.stale, ageMs: res.ageMs };
     allCharts().forEach(function (c) { c.applyOptions({ timeScale: { timeVisible: tf !== '1day' } }); });
     reindex(); compute(); renderSeries(); renderHeader(); renderSignal(); renderMode(); renderAccount(); renderOrders(); renderWatchlist();
-    renderAlertForm(); renderAlerts();
+    renderAlertForm(); renderAlerts(); renderAccountSwitcher(); renderAutoPanel();
     updatePaneTags(bars.length - 1);
     chP.timeScale().fitContent();
     if (tf !== '1day' && bars.length > 160) chP.timeScale().setVisibleLogicalRange({ from: bars.length - 160, to: bars.length + 3 });
@@ -989,6 +1471,7 @@
     scheduleWatchlist(); refreshWatchlist(true);
     processFills(symbol, bars[bars.length - 1]);
     runAlerts(symbol, bars, alertInd());
+    checkAuto();
     updateHash();
   }
   /** Indicators plus the composite signal, in the shape BT.alerts.check expects. */
@@ -1002,6 +1485,7 @@
     wlQuotes[symbol] = { price: lastPrice(), prevClose: prevClose(), time: Date.now() / 1000 };
     paintQuote(symbol);
     renderAccount();
+    checkAuto();
   }
   function demoTick() {
     if (document.hidden || !bars.length) return;
@@ -1029,6 +1513,7 @@
   function setSymbol(s) {
     s = cleanSym(s); if (!s) return;
     symbol = s; store.set('bt.sym', symbol);
+    hideProposal();
     $('ticketSym').textContent = symbol; $('symName').textContent = data.lookup(symbol).name;
     renderWatchlist();
     load();
@@ -1138,22 +1623,22 @@
   function closeSettings() { $('settingsModal').hidden = true; document.body.classList.remove('modal-open'); }
   function renderQuota() {
     var st = data.status(), q = $('quota');
-    if (st.provider === 'demo') { q.textContent = 'Demo mode: no network requests, no quota.'; return; }
+    if (st.provider === 'demo') { q.textContent = T('Demo mode: no network requests, no quota.'); return; }
     var r = st.rate || {}, lim = st.limits || {};
-    var parts = ['Provider: ' + st.label + (st.hasKey ? ' (key saved)' : ' (no key yet)')];
-    if (lim.perMinute && isFinite(lim.perMinute)) parts.push('this minute: ' + (r.minuteUsed != null ? r.minuteUsed : r.usedMinute != null ? r.usedMinute : '?') + '/' + lim.perMinute);
-    if (lim.perDay && isFinite(lim.perDay)) parts.push('today: ' + (r.dayUsed != null ? r.dayUsed : r.usedDay != null ? r.usedDay : '?') + '/' + lim.perDay);
-    parts.push('candles cached 60 s intraday / 10 min daily, quotes 15 s');
+    var parts = [T(st.hasKey ? 'Provider: {provider} (key saved)' : 'Provider: {provider} (no key yet)', { provider: st.label })];
+    if (lim.perMinute && isFinite(lim.perMinute)) parts.push(T('this minute: {used}/{max}', { used: r.minuteUsed != null ? r.minuteUsed : r.usedMinute != null ? r.usedMinute : '?', max: lim.perMinute }));
+    if (lim.perDay && isFinite(lim.perDay)) parts.push(T('today: {used}/{max}', { used: r.dayUsed != null ? r.dayUsed : r.usedDay != null ? r.usedDay : '?', max: lim.perDay }));
+    parts.push(T('candles cached 60 s intraday / 10 min daily, quotes 15 s'));
     q.textContent = parts.join(' · ');
   }
   $('settingsBtn').onclick = openSettings;
   $('settingsClose').onclick = closeSettings;
   $('settingsModal').addEventListener('click', function (e) { if (e.target === this) closeSettings(); });
-  $$('.showkey').forEach(function (b) { b.onclick = function () { var inp = $(b.dataset.for); inp.type = inp.type === 'password' ? 'text' : 'password'; b.textContent = inp.type === 'password' ? 'Show' : 'Hide'; }; });
+  $$('.showkey').forEach(function (b) { b.onclick = function () { var inp = $(b.dataset.for); inp.type = inp.type === 'password' ? 'text' : 'password'; b.textContent = inp.type === 'password' ? T('Show') : T('Hide'); }; });
   $('provider').onchange = function () { $('testOut').textContent = ''; };
   $('testKey').onclick = async function () {
     var p = $('provider').value, out = $('testOut'), btn = this;
-    if (p === 'demo') { out.className = 'test-out ok'; out.textContent = 'Demo needs no key: prices are generated locally.'; return; }
+    if (p === 'demo') { out.className = 'test-out ok'; out.textContent = T('Demo needs no key: prices are generated locally.'); return; }
     var key = $('key-' + p).value.trim();
     if (!key) { out.className = 'test-out err'; out.textContent = T('Paste your {provider} key first.', { provider: data.PROVIDER_LABEL[p] }); return; }
     btn.disabled = true; out.className = 'test-out muted'; out.textContent = T('Asking {provider} for an AAPL quote…', { provider: data.PROVIDER_LABEL[p] });
@@ -1162,14 +1647,14 @@
       out.className = 'test-out up'; out.textContent = T('Success: AAPL {price} from {provider}. Save to switch the dashboard to live prices.', { price: money(q.price), provider: data.PROVIDER_LABEL[p] });
     } catch (e) {
       out.className = 'test-out down';
-      out.textContent = 'Failed: ' + (data.explainError ? data.explainError(e, p) : (e && e.message)) + (e instanceof TypeError ? ' If you are viewing this inside an embedded preview, open the page directly in your browser.' : '');
+      out.textContent = T('Failed: {error}', { error: data.explainError ? data.explainError(e, p) : (e && e.message) }) + (e instanceof TypeError ? ' ' + T('If you are viewing this inside an embedded preview, open the page directly in your browser.') : '');
     } finally { btn.disabled = false; }
   };
   $('clearCache').onclick = function () { data.clearCache(); toast('Cached candles and quotes cleared. The next load fetches fresh data (and counts against your quota).', 'ok'); renderQuota(); };
   $('settingsSave').onclick = function () {
     var keys = {}; PROVIDERS.forEach(function (p) { keys[p] = $('key-' + p).value.trim(); });
     var provider = $('provider').value;
-    if (provider !== 'demo' && !keys[provider]) { $('testOut').className = 'test-out down'; $('testOut').textContent = 'That provider needs a key. Paste one or choose Demo.'; return; }
+    if (provider !== 'demo' && !keys[provider]) { $('testOut').className = 'test-out down'; $('testOut').textContent = T('That provider needs a key. Paste one or choose Demo.'); return; }
     data.setSettings({ provider: provider, keys: keys });
     closeSettings();
     toast(provider === 'demo' ? T('Running on simulated prices.') : T('Switching to {provider} live data.', { provider: data.PROVIDER_LABEL[provider] }), 'ok', 'Settings saved');
@@ -1185,7 +1670,7 @@
     { target: 'panel-watchlist', title: 'Keep a watchlist', body: 'Your watchlist shows live last prices and today\'s change for the names you follow. Click one to chart it, press W (or + Add) to add the current symbol, and hover to remove. Limit and stop orders on watchlist symbols fill against these quotes too.' },
     { target: 'panel-signal', title: 'Understand the signal', body: 'Six classic rules each vote −2 to +2: trend (price vs SMA 50, SMA 20 vs 50), momentum (RSI, MACD histogram), stretch (Bollinger position) and crossovers. +3 or more is BUY, −3 or less is SELL. Click “Why?” to read the reasoning behind every vote, and check the ADX line before trusting a crossover. This is a teaching tool, not advice.' },
     { target: 'panel-alerts', title: 'Set an alert', body: 'Ask to be told when price reaches a level, RSI gets stretched, the moving averages cross or the signal flips. Alerts fire as a toast while the page is open and, if you enable notifications, as a system notification when the tab is in the background. Price alerts draw a dotted line on the chart so you can see how far away your level is. Press A for a quick price alert.' },
-    { target: 'panel-ticket', title: 'Place a practice trade', body: 'Buy, Sell, Short or Cover with market, limit, stop or stop-limit orders, sized in shares or dollars. Review shows exactly what will happen before you confirm. Working orders appear below and fill against each new bar the way a real broker fills them. Shortcuts: B for a buy ticket, S for sell.' },
+    { target: 'panel-ticket', title: 'Place a practice trade', body: 'Buy, Sell, Short or Cover with market, limit, stop or stop-limit orders, sized in shares or dollars. Open “Plan this trade” to size the position from your stop and the % of equity you are willing to lose. Review shows exactly what will happen before you confirm. Working orders appear below and fill against each new bar the way a real broker fills them. If you joined a league, the Account menu switches to its separate account. Shortcuts: B for a buy ticket, S for sell.' },
     { target: 'panel-account', title: 'Track your $100,000', body: 'Equity, cash, total and day P&L update with every tick, and each fill lands in the log. The Portfolio page has the full picture, the Backtest page lets you test a rule on history, and the Learn page turns all of this into a course with quizzes and a certificate. Add a free API key under Live data whenever you want real prices.' }
   ];
   var tourStep = -1;
@@ -1197,7 +1682,7 @@
     var step = TOUR[i], el = $(step.target);
     if (el) { el.classList.add('tour-target'); try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); } }
     $('tourStep').textContent = T('Step {i} of {n}', { i: i + 1, n: TOUR.length });
-    $('tourTitle').textContent = step.title; $('tourBody').textContent = step.body;
+    $('tourTitle').textContent = T(step.title); $('tourBody').textContent = T(step.body);
     $('tourDots').innerHTML = TOUR.map(function (_, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('');
     $('tourPrev').disabled = i === 0;
     $('tourNext').textContent = i === TOUR.length - 1 ? T('Start trading') : T('Next');
@@ -1254,16 +1739,18 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden && bars.length) { if (live) pollQuote(); else demoTick(); refreshWatchlist(); } });
   try { readHash(); } catch (e) { console.warn('Ignoring unreadable URL hash', e); }
   syncToggles();
+  renderAccountSwitcher();
   setSide('buy');
   renderTicket();
   renderWatchlist();
   renderOrders();
+  renderAutoPanel();
   load().then(function () {
     if (!store.get('bt.tour.done', false)) setTimeout(startTour, 900);
   });
 
   BT.app = {
-    version: '0.2.0',
+    version: '0.5.0',
     load: load,
     setSymbol: setSymbol,
     setInterval: setInterval_,
@@ -1272,7 +1759,12 @@
     toast: toast,
     focusAlert: focusAlert,
     checkAlerts: function () { return runAlerts(symbol, bars, alertInd()); },
+    switchAccount: switchAccount,
+    account: activeAccount,
+    plan: function () { return computePlan(); },
+    checkRule: function () { checkAuto(); return auto.proposal ? Object.assign({}, auto.proposal) : null; },
+    confirmProposal: function () { return auto.proposal ? confirmProposal() : null; },
     chart: function () { return chP; },
-    state: function () { return { symbol: symbol, interval: tf, live: live, bars: bars, ind: I, signal: sig, overlays: Object.assign({}, ov), panes: Object.assign({}, panes), watchlist: watchlist.slice(), dataInfo: dataInfo, alerts: alerts ? alerts.list() : [] }; }
+    state: function () { return { symbol: symbol, interval: tf, live: live, bars: bars, ind: I, signal: sig, overlays: Object.assign({}, ov), panes: Object.assign({}, panes), watchlist: watchlist.slice(), dataInfo: dataInfo, alerts: alerts ? alerts.list() : [], account: activeAccount(), proposal: auto.proposal ? Object.assign({}, auto.proposal) : null }; }
   };
 })();

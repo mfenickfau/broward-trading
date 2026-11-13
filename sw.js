@@ -1,4 +1,4 @@
-/* Broward Trading — sw.js (service worker, v0.4)
+/* Broward Trading — sw.js (service worker, v0.5)
  *
  * Goal: the app shell and the course open instantly and work offline; market
  * data is never served stale from here.
@@ -12,7 +12,7 @@
  *   Third-party static (Google Fonts, unpkg chart library): cache first
  *   Market-data and API hosts (api.twelvedata.com, finnhub.io, alphavantage.co,
  *   Stripe, workers.dev) and same-origin API paths (/auth, /me, /checkout,
- *   /certificates, /verify, /leaderboard, /webhook, /classes — for when the Worker is
+ *   /certificates, /verify, /leaderboard, /webhook, /classes, /leagues, /coach — for when the Worker is
  *   mounted on the site's origin): network only. Nothing from them is stored
  *   here, so no response can be older than the 60 s limit in CONTRACTS.md.
  *   Requests carrying an Authorization header are never cached either.
@@ -24,7 +24,7 @@
 /* eslint-env serviceworker */
 'use strict';
 
-const VERSION = 'bt-v0.4.0';
+const VERSION = 'bt-v0.5.0';
 const SHELL_CACHE = VERSION + '-shell';
 const RUNTIME_CACHE = VERSION + '-runtime';
 
@@ -33,22 +33,25 @@ const SHELL = [
   'index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
   'news.html', 'compare.html', 'glossary.html', 'instructor.html', 'pricing.html', 'verify.html',
   'certificate.html', 'about.html',
+  'leagues.html', 'screener.html', 'builder.html', 'profile.html',
   'css/style.css', 'css/print.css',
   'js/nav.js', 'js/i18n.js', 'js/indicators.js', 'js/data.js', 'js/paper.js', 'js/options.js', 'js/backtest.js',
   'js/course.js', 'js/app.js', 'js/learn.js', 'js/portfolio.js', 'js/backtest-ui.js',
   'js/replay.js', 'js/alerts.js', 'js/journal.js', 'js/auth.js', 'js/config.js',
   'js/glossary.js', 'js/news.js', 'js/compare.js',
-  'js/onboarding.js', 'js/classroom.js', 'js/instructor.js',
+  'js/onboarding.js', 'js/classroom.js', 'js/instructor.js', 'js/csv.js',
+  'js/leagues.js', 'js/leagues-ui.js', 'js/screener.js', 'js/screener-ui.js', 'js/rules.js', 'js/builder-ui.js',
+  'js/xp.js', 'js/risk.js', 'js/coach.js',
   'js/vendor/lightweight-charts.standalone.production.js',
   'i18n/es.json',
   'course/index.json', 'course/m1-foundations.json', 'course/m2-charts.json', 'course/m3-indicators.json',
   'course/m4-risk.json', 'course/m5-options.json', 'course/m6-strategy.json', 'course/m7-replay.json',
   'course/m8-capstone.json', 'course/m9-crypto-etf.json', 'course/drills.json', 'course/glossary.json',
-  'course/questionbank.json', 'course/firstweek.json',
+  'course/questionbank.json', 'course/firstweek.json', 'course/personality.json', 'course/m10-toolkit.json',
   'course/es/index.json', 'course/es/m1-foundations.json', 'course/es/m2-charts.json', 'course/es/m3-indicators.json',
   'course/es/m4-risk.json', 'course/es/m5-options.json', 'course/es/m6-strategy.json', 'course/es/m7-replay.json',
   'course/es/m8-capstone.json', 'course/es/m9-crypto-etf.json', 'course/es/drills.json', 'course/es/glossary.json',
-  'course/es/questionbank.json',
+  'course/es/questionbank.json', 'course/es/personality.json', 'course/es/m10-toolkit.json',
   'manifest.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'
 ];
 
@@ -57,7 +60,7 @@ const NETWORK_ONLY_HOSTS = [
   'api.twelvedata.com', 'finnhub.io', 'www.alphavantage.co', 'alphavantage.co',
   'api.stripe.com', 'checkout.stripe.com', 'workers.dev'
 ];
-const NETWORK_ONLY_PATHS = /^\/(auth|me|checkout|certificates|verify|leaderboard|webhook|classes)(\/|$)/;
+const NETWORK_ONLY_PATHS = /^\/(auth|me|checkout|certificates|verify|leaderboard|webhook|classes|leagues|coach)(\/|$)/;
 
 /* Third-party static assets that are safe to keep (versioned URLs, fonts). */
 const STATIC_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'unpkg.com'];

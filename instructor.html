@@ -136,6 +136,62 @@
   .modal footer button,.modal .close{min-height:44px}
   .modal .close{min-width:44px}
   @media (max-width:600px){.modal{max-height:94dvh}}
+  /* Drawer module breakdown on phones (v0.5): the four-column table clipped at 390px, so below 560px each module
+     becomes a stacked card: title on its own line, then Lessons / Progress / Quiz as three labelled cells.
+     Explicit ARIA table roles in the markup keep the table semantics when display changes. */
+  @media (max-width:560px){
+    #drawer .d-sec table.dense,#drawer .d-sec table.dense tbody,#drawer .d-sec table.dense tr,#drawer .d-sec table.dense td{display:block;width:100%}
+    #drawer .d-sec table.dense thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    #drawer .d-sec .table-wrap{overflow:visible}
+    #drawer .d-sec table.dense tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px var(--sp-2);padding:10px 0;border-top:1px solid var(--line)}
+    #drawer .d-sec table.dense tr:first-child{border-top:0}
+    #drawer .d-sec table.dense td{padding:0;border:0;text-align:left;white-space:normal}
+    #drawer .d-sec table.dense td:first-child{grid-column:1/-1;font-weight:500;margin-bottom:4px}
+    #drawer .d-sec table.dense td.num{padding-left:0;font-family:var(--mono);font-size:var(--fs-sm)}
+    #drawer .d-sec table.dense td[data-label]:not(:first-child)::before{content:attr(data-label);display:block;font-family:var(--sans,inherit);font-size:var(--fs-xs);color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+    #drawer .d-sec table.dense .mini{display:block;width:100%;max-width:90px;margin:4px 0 2px}
+  }
+
+  /* section tabs (Class | Leagues) */
+  .in-tabs{margin:0 0 var(--sp-1)}
+  .in-tabs button{font-size:var(--fs-md)}
+  .in-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  [role=tabpanel][hidden]{display:none!important}
+
+  /* leagues */
+  .lg-add{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-2)}
+  .lg-add textarea,.lg-import textarea{font-family:var(--mono);font-size:var(--fs-xs)}
+  .lg-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2);align-items:end;margin-top:var(--sp-3)}
+  .lg-pick select{width:100%}
+  .lg-info{display:flex;flex-wrap:wrap;gap:6px var(--sp-3);align-items:center;margin-top:var(--sp-3);padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);font-size:var(--fs-sm)}
+  .lg-info .lg-name{font-weight:600;font-size:var(--fs-md);flex:1 1 100%}
+  .lg-info .lg-rules{color:var(--muted);flex:1 1 100%;line-height:1.5}
+  .table-wrap table.lg-standings{width:100%;min-width:0}
+  .lg-standings td,.lg-standings th{padding:9px 10px 9px 0;font-size:var(--fs-sm);vertical-align:middle}
+  .lg-standings td.rank{font-family:var(--mono);color:var(--muted);width:2.5em}
+  .lg-standings tr.lead td.rank{color:var(--accent);font-weight:600}
+  .lg-standings td small{display:block;color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono)}
+  .lg-spark{width:96px;height:28px;display:block}
+  .lg-spark path{fill:none;stroke:var(--accent);stroke-width:1.6}
+  .lg-spark.down path{stroke:var(--down)}
+  .lg-teams{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-2)}
+  .lg-teams li{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);font-size:var(--fs-sm)}
+  .lg-teams li b{display:block}
+  .lg-empty{color:var(--muted);font-size:var(--fs-sm);margin:var(--sp-3) 0 0}
+  @media (max-width:760px){
+    .lg-pick{grid-template-columns:minmax(0,1fr)}
+    /* standings become a card list: rank + name on the first line, stats in a labelled grid below */
+    .lg-standings,.lg-standings tbody,.lg-standings tr,.lg-standings td{display:block;width:100%}
+    .lg-standings thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    .lg-standings tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px var(--sp-2);padding:12px;margin-bottom:var(--sp-2);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
+    .lg-standings tr.lead{border-color:var(--accent)}
+    .lg-standings td{padding:0;border:0;text-align:left!important}
+    .lg-standings td.rank{grid-column:1/2;width:auto;font-size:var(--fs-md)}
+    .lg-standings td.who{grid-column:2/-1}
+    .lg-standings td.spark{grid-column:1/-1}
+    .lg-standings td[data-label]::before{content:attr(data-label);display:block;font-size:var(--fs-xs);color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+    .lg-spark{width:100%;max-width:240px}
+  }
 </style>
 </head>
 <body>
@@ -157,6 +213,13 @@
   </header>
 
   <main class="stack">
+
+    <div class="tabs in-tabs" role="tablist" aria-label="Instructor sections">
+      <button type="button" role="tab" id="tabClass" aria-controls="classPanel" aria-selected="true">Class</button>
+      <button type="button" role="tab" id="tabLeagues" aria-controls="leaguesPanel" aria-selected="false" tabindex="-1">Leagues</button>
+    </div>
+
+    <div class="stack" id="classPanel" role="tabpanel" aria-labelledby="tabClass">
 
     <!-- ---------------- Class ---------------- -->
     <section class="card" id="classCard" aria-labelledby="classTitle">
@@ -305,6 +368,62 @@
       </div>
     </section>
 
+    </div><!-- /classPanel -->
+
+    <!-- ---------------- Leagues (v0.5) ---------------- -->
+    <div class="stack" id="leaguesPanel" role="tabpanel" aria-labelledby="tabLeagues" hidden>
+      <section class="card" id="lgCard" aria-labelledby="lgTitle">
+        <h2 id="lgTitle">Leagues</h2>
+        <p class="muted" style="font-size:var(--fs-sm);margin:0 0 var(--sp-3);max-width:70ch">Run a paper-trading competition alongside the class. Create the league on the <a href="leagues.html">Leagues page</a>, give students its league code, then paste their share codes here to see the standings. Standings rank simulated returns for discussion: they are not grades, and the top return often carries the biggest drawdown.</p>
+        <p class="note" id="lgUnavailable" hidden>League tools did not load on this page. Reload it, or open the Leagues page.</p>
+        <div class="lg-add">
+          <div class="field">
+            <label for="lgAddIn">Add a league by its league code</label>
+            <textarea id="lgAddIn" rows="2" placeholder="BTL1.eyJjb2RlIjoi… (the long code that starts with BTL1.)" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+          <div class="row"><button type="button" id="lgAddBtn">Add league</button><span class="msg" id="lgAddMsg" role="status"></span></div>
+        </div>
+        <div class="lg-pick">
+          <div class="field"><label for="lgSelect">League</label><select id="lgSelect"><option value="">No leagues on this device yet</option></select></div>
+          <button type="button" id="lgRefresh" hidden title="Pull the latest standings from the league server">Refresh from server</button>
+        </div>
+        <div class="lg-info" id="lgInfo" hidden></div>
+      </section>
+
+      <section class="card" id="lgImportCard" aria-labelledby="lgImportTitle">
+        <h2 id="lgImportTitle">Import league share codes</h2>
+        <div class="field lg-import">
+          <label for="lgImportIn">Paste students' share codes (the same BT1. codes the roster uses)</label>
+          <textarea id="lgImportIn" rows="4" placeholder="BT1.eJyrVkrOz1PyL… (one per line, or a whole email thread)" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        </div>
+        <div class="row mt-2">
+          <button type="button" class="primary" id="lgImportBtn">Import into this league</button>
+          <span class="msg" id="lgImportMsg" role="status"></span>
+        </div>
+        <div class="import-errors" id="lgImportErrors"></div>
+        <span class="help">Only the league block of each code is kept (equity, return, drawdown, trade count and a short equity curve). A code from a student who has not joined this league is skipped. Newer codes replace older ones for the same student.</span>
+      </section>
+
+      <section class="card" id="lgStandingsCard" aria-labelledby="lgStandTitle">
+        <h2 id="lgStandTitle">Standings <span class="muted" id="lgCount" style="text-transform:none;letter-spacing:0"></span></h2>
+        <div id="lgTeams"></div>
+        <div class="table-wrap mt-2">
+          <table class="lg-standings" role="table" aria-label="League standings">
+            <thead role="rowgroup"><tr role="row"><th role="columnheader">#</th><th role="columnheader">Student</th><th role="columnheader" class="right">Return</th><th role="columnheader" class="right">Max drawdown</th><th role="columnheader" class="right">Sharpe</th><th role="columnheader" class="right">Trades</th><th role="columnheader" class="right">Consistency</th><th role="columnheader">Equity</th></tr></thead>
+            <tbody id="lgBody" role="rowgroup"></tbody>
+          </table>
+        </div>
+        <p class="lg-empty" id="lgEmpty">No standings yet. Add a league, then import share codes.</p>
+        <div class="row mt-3">
+          <button type="button" class="sm" id="lgCsv">Standings CSV</button>
+          <button type="button" class="danger sm" id="lgClear">Clear imported codes for this league</button>
+          <span class="msg" id="lgMsg" role="status"></span>
+        </div>
+        <textarea id="lgCsvOut" readonly hidden aria-label="Standings CSV" style="font-family:var(--mono);font-size:var(--fs-xs);min-height:120px;width:100%;margin-top:var(--sp-2)"></textarea>
+        <p class="note">Ties are broken by the smaller drawdown. Sharpe and consistency come from the short equity curve in each code, so treat them as rough. All prices are simulated or delayed; no real money is involved.</p>
+      </section>
+    </div>
+
   </main>
 </div>
 
@@ -323,9 +442,9 @@
     <div class="d-sec">
       <h3>Modules</h3>
       <div class="table-wrap">
-        <table class="dense" aria-label="Module breakdown">
-          <thead><tr><th>Module</th><th class="right"><span class="full">Lessons</span><span class="short" aria-hidden="true">Done</span></th><th class="right"><span class="full">Progress</span><span class="short" aria-hidden="true">Prog.</span></th><th class="right"><span class="full">Quiz avg</span><span class="short" aria-hidden="true">Quiz</span></th></tr></thead>
-          <tbody id="dModules"></tbody>
+        <table class="dense" role="table" aria-label="Module breakdown">
+          <thead role="rowgroup"><tr role="row"><th role="columnheader">Module</th><th role="columnheader" class="right"><span class="full">Lessons</span><span class="short" aria-hidden="true">Done</span></th><th role="columnheader" class="right"><span class="full">Progress</span><span class="short" aria-hidden="true">Prog.</span></th><th role="columnheader" class="right"><span class="full">Quiz avg</span><span class="short" aria-hidden="true">Quiz</span></th></tr></thead>
+          <tbody id="dModules" role="rowgroup"></tbody>
         </table>
       </div>
     </div>
@@ -357,6 +476,7 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/classroom.js"></script>
+<script src="js/leagues.js"></script>
 <script src="js/instructor.js"></script>
 <script>
 // Page-local: the instructor secret is deployment-wide (worker.js classAuth accepts it for any class), so the

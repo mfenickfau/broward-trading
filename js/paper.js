@@ -26,6 +26,24 @@
  * 'main' (the default) keeps the historical storage key `bt.portfolio`;
  * any other id ('replay' for Market Replay, 'class-a', ...) is stored under
  * `bt.portfolio.<id>`. Every other function acts on the active account.
+ * League accounts use ids 'league:<CODE>' (stored as `bt.portfolio.league-<code>`).
+ *
+ * Realism (v0.5) — every switch lives in `settings` and is OFF by default, so
+ * an account that never touches them behaves exactly as before:
+ *   fillModel      'instant' (default) | 'volume': a fill may take at most
+ *                  maxVolumePct (10 %) of a bar's volume; the rest of the order
+ *                  stays open as a partial fill and keeps filling on later bars.
+ *   slippageBps    basis points added to market/stop fills against you
+ *                  (buys fill higher, sells lower). Limits never fill past the limit.
+ *   commissionPreset 'per-trade' (default: flat `commission` per order, $0 unless
+ *                  set) | 'zero' | 'per-share' ($0.005/share, $1 minimum, capped at
+ *                  1 % of the trade; options $0.65 per contract).
+ *   dividends      true → approximate quarterly dividends for dividend payers on
+ *                  their ex-dates: credited to longs, debited from shorts.
+ *   cashInterestPct annual % paid on free cash, accrued daily.
+ *   borrowFeePct   annual % charged on short stock value, accrued daily.
+ *   pdtRule        true → block a 4th day trade within 5 business days while
+ *                  equity is under $25,000 (the US pattern-day-trader rule).
  */
 (function () {
   'use strict';
@@ -39,6 +57,35 @@
   var NAKED_OPTION_MARGIN = 0.2; // plus 20 % of strike notional for written options
   var MS_PER_MINUTE = 60000;
   var TRADING_DAYS = 252;
+  var MS_PER_DAY = 86400000;
+  var PDT_EQUITY = 25000;        // FINRA pattern-day-trader minimum equity
+  var PDT_MAX_DAY_TRADES = 3;    // a 4th day trade inside 5 business days is blocked
+  var PDT_WINDOW_DAYS = 5;
+  var FILL_MODELS = ['instant', 'volume'];
+  var COMMISSION_PRESETS = {
+    'zero': { label: 'Zero commission', description: 'No commission, like most US app brokers today. You still pay the bid/ask spread and any slippage.', commission: 0 },
+    'per-share': { label: 'Per share', description: '$0.005 per share with a $1.00 minimum and a cap of 1 % of the trade value (options: $0.65 per contract). Common at brokers aimed at active traders.', perShare: 0.005, perShareMin: 1, perShareMaxPct: 1, perContract: 0.65 },
+    'per-trade': { label: 'Flat per trade', description: 'A fixed fee per order, like $4.95, the way most brokers charged before 2019. Small trades become expensive in percentage terms.', commission: 4.95 }
+  };
+  function defaultSettings() {
+    return {
+      commission: 0,               // flat $ per order when commissionPreset is 'per-trade'
+      commissionPreset: 'per-trade',
+      perShare: 0.005, perShareMin: 1, perShareMaxPct: 1, perContract: 0.65,
+      fillModel: 'instant',
+      maxVolumePct: 10,
+      slippageBps: 0,
+      dividends: false,
+      cashInterestPct: 0,
+      borrowFeePct: 0,
+      pdtRule: false
+    };
+  }
+  // Translate a dynamic string when js/i18n.js is loaded; plain interpolation otherwise.
+  function T(s, v) {
+    if (window.BT && typeof window.BT.t === 'function') { try { return window.BT.t(s, v); } catch (e) { /* fall through */ } }
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && k in v ? v[k] : m; });
+  }
 
   /* ------------------------------------------------------------------ *
    * Small helpers
@@ -167,8 +214,34 @@
       dayStart: null,           // {day, equity} for day P&L
       nextId: 1,
       createdAt: now(),
-      settings: { commission: 0 }
+      settings: defaultSettings(),
+      cashflows: [],            // dividends, interest and borrow fees: [{id, type, symbol, amount, time, day, note}]
+      income: { dividends: 0, interest: 0, borrowFees: 0 },
+      accrual: { lastDay: null, carryInterest: 0, carryBorrow: 0 },
+      lastBarDay: {}            // SYM → last bar day seen by processOrders (dividend ex-date detection)
     };
+  }
+
+  function bool(v, d) { return typeof v === 'boolean' ? v : d; }
+  function numIn(v, lo, hi, d) { return isNum(v) && v >= lo && v <= hi ? v : d; }
+  // Merge a (possibly partial or corrupted) settings object onto `base`.
+  function mergeSettings(base, src) {
+    var s = base;
+    if (!src || typeof src !== 'object') return s;
+    if ('commission' in src) s.commission = numIn(src.commission, 0, 1e6, s.commission);
+    if (src.commissionPreset != null && COMMISSION_PRESETS[src.commissionPreset]) s.commissionPreset = src.commissionPreset;
+    if ('perShare' in src) s.perShare = numIn(src.perShare, 0, 100, s.perShare);
+    if ('perShareMin' in src) s.perShareMin = numIn(src.perShareMin, 0, 1e4, s.perShareMin);
+    if ('perShareMaxPct' in src) s.perShareMaxPct = numIn(src.perShareMaxPct, 0, 100, s.perShareMaxPct);
+    if ('perContract' in src) s.perContract = numIn(src.perContract, 0, 1e3, s.perContract);
+    if (FILL_MODELS.indexOf(src.fillModel) !== -1) s.fillModel = src.fillModel;
+    if ('maxVolumePct' in src) s.maxVolumePct = numIn(src.maxVolumePct, 0.01, 100, s.maxVolumePct);
+    if ('slippageBps' in src) s.slippageBps = numIn(src.slippageBps, 0, 1000, s.slippageBps);
+    s.dividends = bool(src.dividends, s.dividends);
+    if ('cashInterestPct' in src) s.cashInterestPct = numIn(src.cashInterestPct, 0, 25, s.cashInterestPct);
+    if ('borrowFeePct' in src) s.borrowFeePct = numIn(src.borrowFeePct, 0, 200, s.borrowFeePct);
+    s.pdtRule = bool(src.pdtRule, s.pdtRule);
+    return s;
   }
 
   var state = freshState(DEFAULT_CASH);
@@ -218,11 +291,24 @@
     if (isNum(saved.nextId)) s.nextId = saved.nextId;
     if (isNum(saved.createdAt)) s.createdAt = saved.createdAt;
     if (saved.settings && typeof saved.settings === 'object') {
+      s.settings = mergeSettings(defaultSettings(), saved.settings);
       s.settings.commission = isNum(saved.settings.commission) && saved.settings.commission >= 0 ? saved.settings.commission : 0;
+    }
+    if (Array.isArray(saved.cashflows)) s.cashflows = saved.cashflows.filter(function (c) { return c && isNum(c.amount) && typeof c.type === 'string'; });
+    if (saved.income && typeof saved.income === 'object') {
+      ['dividends', 'interest', 'borrowFees'].forEach(function (k) { if (isNum(saved.income[k])) s.income[k] = saved.income[k]; });
+    }
+    if (saved.accrual && typeof saved.accrual === 'object') {
+      if (typeof saved.accrual.lastDay === 'string') s.accrual.lastDay = saved.accrual.lastDay;
+      if (isNum(saved.accrual.carryInterest)) s.accrual.carryInterest = saved.accrual.carryInterest;
+      if (isNum(saved.accrual.carryBorrow)) s.accrual.carryBorrow = saved.accrual.carryBorrow;
+    }
+    if (saved.lastBarDay && typeof saved.lastBarDay === 'object') {
+      Object.keys(saved.lastBarDay).forEach(function (k) { if (typeof saved.lastBarDay[k] === 'string') s.lastBarDay[k] = saved.lastBarDay[k]; });
     }
     // nextId must stay ahead of any stored order/trade id
     var maxId = 0;
-    s.orders.concat(s.trades).forEach(function (x) { if (isNum(x.id) && x.id > maxId) maxId = x.id; });
+    s.orders.concat(s.trades, s.cashflows).forEach(function (x) { if (isNum(x.id) && x.id > maxId) maxId = x.id; });
     if (s.nextId <= maxId) s.nextId = maxId + 1;
     return s;
   }
@@ -271,7 +357,8 @@
     var ids = readRegistry();
     storageKeys().forEach(function (k) {
       if (k === STORAGE_KEY) return;
-      if (k.indexOf(STORAGE_KEY + '.') === 0 && k !== ACCOUNTS_KEY && k.indexOf('.', STORAGE_KEY.length + 1) === -1) {
+      // 'bt.portfolio.ui' is the portfolio page's UI preferences, not an account.
+      if (k.indexOf(STORAGE_KEY + '.') === 0 && k !== ACCOUNTS_KEY && k !== STORAGE_KEY + '.ui' && k.indexOf('.', STORAGE_KEY.length + 1) === -1) {
         var id = normAccountId(k.slice(STORAGE_KEY.length + 1));
         if (ids.indexOf(id) === -1) ids.push(id);
       }
@@ -307,18 +394,39 @@
     return true;
   }
   function reset(startingCash) {
-    var keepCommission = state.settings.commission;
+    // Settings are preferences, not history: a reset keeps them (commission, realism switches).
+    var keep = mergeSettings(defaultSettings(), state.settings);
+    keep.commission = state.settings.commission;
     state = freshState(startingCash == null ? DEFAULT_CASH : startingCash);
-    state.settings.commission = keepCommission;
+    state.settings = keep;
     save();
     return state;
   }
   function getState() { return state; }
+  /**
+   * setSettings(patch) → settings
+   * Accepts any subset of the settings documented at the top of this file;
+   * invalid values are ignored. Interest and borrow fees owed under the old
+   * rates are settled first, so a rate change never applies retroactively.
+   * Giving a flat `commission` while the preset is 'zero' switches the preset
+   * to 'per-trade' (so `setSettings({commission: 1})` keeps its v0.2 meaning).
+   */
   function setSettings(patch) {
     patch = patch || {};
-    if (isNum(patch.commission) && patch.commission >= 0) state.settings.commission = patch.commission;
+    accrue(now());
+    var hadPreset = patch.commissionPreset != null && COMMISSION_PRESETS[patch.commissionPreset];
+    mergeSettings(state.settings, patch);
+    if (!hadPreset && isNum(patch.commission) && patch.commission > 0 && state.settings.commissionPreset === 'zero') state.settings.commissionPreset = 'per-trade';
     save();
     return state.settings;
+  }
+  /** applyCommissionPreset(id): switch preset AND load its typical numbers (e.g. $4.95 per trade). */
+  function applyCommissionPreset(id) {
+    var p = COMMISSION_PRESETS[id];
+    if (!p) return null;
+    var patch = { commissionPreset: id };
+    ['commission', 'perShare', 'perShareMin', 'perShareMaxPct', 'perContract'].forEach(function (k) { if (k in p) patch[k] = p[k]; });
+    return setSettings(patch);
   }
 
   /* ------------------------------------------------------------------ *
@@ -373,10 +481,10 @@
   /* ------------------------------------------------------------------ *
    * Pre-trade checks — return a human-readable reason or null when OK
    * ------------------------------------------------------------------ */
-  function checkFill(symbol, side, qty, price, kind, meta) {
+  function checkFill(symbol, side, qty, price, kind, meta, commissionOverride) {
     var pos = state.positions[symbol];
     var mult = pos ? multiplierOf(pos) : ((meta && isNum(meta.multiplier)) ? meta.multiplier : 1);
-    var commission = state.settings.commission;
+    var commission = isNum(commissionOverride) ? commissionOverride : commissionFor(qty, price, mult, kind, true);
     var gross = qty * price * mult;
 
     if (side === 'buy') {
@@ -424,12 +532,117 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Realism helpers: commissions, slippage, pattern-day-trader rule
+   * ------------------------------------------------------------------ */
+  function round4(v) { return Math.round(v * 1e4) / 1e4; }
+
+  /**
+   * commissionFor(qty, price, multiplier, kind, firstFill) → dollars
+   * 'zero' → 0; 'per-trade' → the flat fee, charged once per order (on its
+   * first fill); 'per-share' → perShare × shares with a perShareMin minimum on
+   * the first fill, capped at perShareMaxPct of the trade value; options pay
+   * perContract × contracts.
+   */
+  function commissionFor(qty, price, mult, kind, firstFill) {
+    var s = state.settings;
+    if (firstFill == null) firstFill = true;
+    if (s.commissionPreset === 'zero') return 0;
+    if (s.commissionPreset === 'per-share') {
+      if (kind === 'option' || mult === 100) return cents(s.perContract * qty);
+      var c = s.perShare * qty;
+      if (firstFill) c = Math.max(c, s.perShareMin);
+      var cap = (s.perShareMaxPct / 100) * qty * (isNum(price) ? price : 0) * (mult || 1);
+      if (s.perShareMaxPct > 0 && cap > 0) c = Math.min(c, cap);
+      return cents(c);
+    }
+    return firstFill ? s.commission : 0;
+  }
+
+  /**
+   * slipPrice(side, price, type, limitPrice) → the price you actually get.
+   * Market and stop fills (and anything that becomes a market order) are moved
+   * slippageBps against you: buys higher, sells lower. A plain limit order is
+   * never slipped, and a stop-limit is never slipped past its limit.
+   */
+  function slipPrice(side, price, type, limitPrice) {
+    var bps = state.settings.slippageBps;
+    if (!(bps > 0) || !isNum(price) || type === 'limit') return price;
+    var out = round4(price * (side === 'buy' ? 1 + bps / 10000 : 1 - bps / 10000));
+    if (type === 'stop_limit' && isNum(limitPrice)) out = side === 'buy' ? Math.min(out, limitPrice) : Math.max(out, limitPrice);
+    return Math.max(0, out);
+  }
+
+  // Trading day of a fill: daily bar strings keep their own date; anything else is the local day.
+  function fillDay(time) {
+    if (typeof time === 'string' && /^\d{4}-\d{2}-\d{2}/.test(time)) return time.slice(0, 10);
+    return dayKeyOf(toMs(time == null ? now() : time));
+  }
+  function tradeDay(t) {
+    if (typeof t.barTime === 'string' && /^\d{4}-\d{2}-\d{2}/.test(t.barTime)) return t.barTime.slice(0, 10);
+    return isNum(t.time) ? dayKeyOf(t.time) : null;
+  }
+  // `day` itself (even a weekend: crypto and late-evening clocks trade then)
+  // plus the weekdays before it, `n` days in all, newest first.
+  function businessDays(day, n) {
+    var out = [];
+    var d = new Date(day + 'T12:00:00Z');
+    if (!isNum(d.getTime())) return out;
+    out.push(day);
+    d = new Date(d.getTime() - MS_PER_DAY);
+    while (out.length < n) {
+      var wd = d.getUTCDay();
+      if (wd !== 0 && wd !== 6) out.push(d.toISOString().slice(0, 10));
+      d = new Date(d.getTime() - MS_PER_DAY);
+    }
+    return out;
+  }
+  // Would a `side` fill of `symbol` on `day` close a position that was opened that same day?
+  function isDayTrade(symbol, side, day) {
+    var pos = state.positions[symbol];
+    if (!pos || pos.qty === 0) return false;
+    var closing = side === 'buy' ? pos.qty < 0 : pos.qty > 0;
+    if (!closing) return false;
+    var openSide = pos.qty > 0 ? 'buy' : 'sell';
+    return state.trades.some(function (t) {
+      return t.symbol === symbol && t.side === openSide && t.openedQty > 0 && tradeDay(t) === day;
+    });
+  }
+  /** dayTradeCount(day?) → day trades in the 5 business days ending on `day` (default today). */
+  function dayTradeCount(day) {
+    day = day || fillDay(now());
+    var win = businessDays(day, PDT_WINDOW_DAYS);
+    return state.trades.filter(function (t) { return t.dayTrade && win.indexOf(tradeDay(t)) !== -1; }).length;
+  }
+  /** pdtStatus(day?) → {enabled, dayTrades, max, equity, minEquity, restricted, remaining} */
+  function pdtStatus(day) {
+    var equity = cents(state.cash + valuation({}).marketValue);
+    var count = dayTradeCount(day);
+    var restricted = state.settings.pdtRule && equity < PDT_EQUITY;
+    return {
+      enabled: !!state.settings.pdtRule, dayTrades: count, max: PDT_MAX_DAY_TRADES, windowDays: PDT_WINDOW_DAYS,
+      equity: equity, minEquity: PDT_EQUITY, restricted: restricted,
+      remaining: restricted ? Math.max(0, PDT_MAX_DAY_TRADES - count) : null
+    };
+  }
+  function pdtBlock(symbol, side, time) {
+    if (!state.settings.pdtRule) return null;
+    var day = fillDay(time);
+    if (!isDayTrade(symbol, side, day)) return null;
+    var st = pdtStatus(day);
+    if (!st.restricted || st.dayTrades < PDT_MAX_DAY_TRADES) return null;
+    return T('Blocked by the pattern day trader (PDT) rule: closing {symbol} today would be your {n}th day trade (opening and closing the same position on the same day) in 5 business days, and your equity of {equity} is under {min}. US brokers stop margin accounts below $25,000 from doing that, so this order did not fill. You can close the position on the next trading day; a stop-loss on a position opened today is blocked the same way. You can turn the PDT rule off in the realism settings.', {
+      symbol: symbol, n: st.dayTrades + 1, equity: money(st.equity), min: money(PDT_EQUITY)
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
    * The fill engine — the only place positions and cash change
    * ------------------------------------------------------------------ */
   function applyFill(symbol, side, qty, price, opts) {
     opts = opts || {};
     var kind = opts.kind || (state.positions[symbol] ? state.positions[symbol].kind : 'stock');
     var meta = opts.meta || (state.positions[symbol] ? state.positions[symbol].meta : {});
+    var dayTrade = (isNum(qty) && qty > 0) ? isDayTrade(symbol, side, fillDay(opts.time)) : false;
     if (!(isNum(qty) && qty > 0 && isNum(price) && price >= 0) || (side !== 'buy' && side !== 'sell')) {
       // Never let a malformed fill reach the books: NaN cash would be saved
       // and silently "repaired" on the next reload, erasing the student's P&L.
@@ -437,7 +650,7 @@
     }
     var pos = state.positions[symbol] || { qty: 0, avg: 0, kind: kind, meta: meta };
     var mult = multiplierOf(pos);
-    var commission = isNum(opts.commission) ? opts.commission : state.settings.commission;
+    var commission = isNum(opts.commission) ? opts.commission : commissionFor(qty, price, mult, kind, true);
     var signed = side === 'buy' ? qty : -qty;
     var realized = 0, closedQty = 0, openedQty = 0;
     var prevQty = pos.qty, prevAvg = pos.avg;
@@ -492,7 +705,11 @@
       kind: kind,
       time: toMs(opts.time),      // always wall-clock milliseconds
       barTime: opts.time == null ? null : opts.time, // the bar's own time, as given (seconds or 'YYYY-MM-DD')
-      note: opts.note || ''
+      note: opts.note || '',
+      dayTrade: dayTrade,
+      // price before slippage and the dollars slippage cost you (0 when slippage is off)
+      basePrice: isNum(opts.basePrice) ? opts.basePrice : price,
+      slippage: isNum(opts.basePrice) ? cents(Math.abs(price - opts.basePrice) * qty * mult) : 0
     };
     state.trades.push(trade);
     return trade;
@@ -557,24 +774,62 @@
     return order;
   }
 
-  function fillOrder(order, price, time, note) {
-    var reason = checkFill(order.symbol, order.side, order.qty, price, order.kind, order.meta);
+  function remainingQty(order) { return order.qty - (isNum(order.filledQty) ? order.filledQty : 0); }
+
+  /**
+   * fillOrder(order, basePrice, time, note, fillQty)
+   * Fills `fillQty` (default: everything still unfilled) of `order` at
+   * `basePrice` adjusted for slippage. A fill smaller than the remainder
+   * leaves the order 'open' with `partial: true` (volume fill model).
+   */
+  function fillOrder(order, basePrice, time, note, fillQty) {
+    var remaining = remainingQty(order);
+    var q = isNum(fillQty) && fillQty > 0 ? Math.min(fillQty, remaining) : remaining;
+    var price = slipPrice(order.side, basePrice, order.type, order.limitPrice);
+    var pos = state.positions[order.symbol];
+    var mult = pos ? multiplierOf(pos) : ((order.meta && isNum(order.meta.multiplier) && order.meta.multiplier > 0) ? order.meta.multiplier : 1);
+    var firstFill = !(order.filledQty > 0);
+    var commission = commissionFor(q, price, mult, order.kind, firstFill);
+    var partialPrefix = firstFill ? '' : T('Partially filled {filled} of {qty}, then: ', { filled: order.filledQty, qty: order.qty });
+    var reason = pdtBlock(order.symbol, order.side, time) ||
+      checkFill(order.symbol, order.side, q, price, order.kind, order.meta, commission);
     if (reason) {
       order.status = 'rejected';
-      order.reason = reason;
+      order.reason = partialPrefix + reason;
       return null;
     }
-    var trade = applyFill(order.symbol, order.side, order.qty, price, {
-      orderId: order.id, kind: order.kind, meta: order.meta, time: time, note: note
+    var trade = applyFill(order.symbol, order.side, q, price, {
+      orderId: order.id, kind: order.kind, meta: order.meta, time: time, note: note,
+      commission: commission, basePrice: price !== basePrice ? basePrice : undefined
     });
-    order.status = 'filled';
-    order.fillPrice = price;
-    order.filledQty = order.qty;
+    var prevQty = firstFill ? 0 : order.filledQty;
+    order.fillPrice = firstFill ? price : round6((order.fillPrice * prevQty + price * q) / (prevQty + q)); // volume-weighted average
+    order.filledQty = prevQty + q;
     order.filledAt = trade.time;          // milliseconds, same as trade.time
     order.filledBarTime = trade.barTime;  // the bar's own time, as given
-    order.commission = trade.commission;
-    order.reason = note || ('Filled ' + order.qty + ' @ ' + money(price));
+    order.commission = cents((firstFill ? 0 : (order.commission || 0)) + trade.commission);
+    if (!Array.isArray(order.fills)) order.fills = [];
+    order.fills.push({ qty: q, price: price, time: trade.time, tradeId: trade.id });
+    var slipNote = price !== basePrice ? ' ' + T('Slippage of {bps} bps moved the fill from {from} to {to}.', { bps: state.settings.slippageBps, from: money(basePrice), to: money(price) }) : '';
+    if (order.filledQty >= order.qty) {
+      order.status = 'filled';
+      order.partial = false;
+      order.reason = (note || ('Filled ' + order.qty + ' @ ' + money(price))) + slipNote;
+    } else {
+      order.status = 'open';
+      order.partial = true;
+      order.reason = T('Partially filled {filled} of {qty} (average {avg}). The volume fill model lets an order take at most {pct}% of a bar\'s volume, so the remaining {left} stay open and keep filling on the next bars.', {
+        filled: order.filledQty, qty: order.qty, avg: money(order.fillPrice), pct: state.settings.maxVolumePct, left: order.qty - order.filledQty
+      }) + slipNote;
+    }
     return trade;
+  }
+
+  // How many units the volume fill model allows against a bar of `volume`
+  // (Infinity when the model is off or the volume is unknown).
+  function volumeCap(volume) {
+    if (state.settings.fillModel !== 'volume' || !(isNum(volume) && volume > 0)) return Infinity;
+    return Math.floor(volume * state.settings.maxVolumePct / 100);
   }
 
   // Is a resting order immediately executable at this single price?
@@ -622,7 +877,9 @@
    * rest in `orders` with status 'open' until processOrders() sees a bar that
    * reaches them. Returns the order object.
    */
-  function placeOrder(o, price) {
+  function placeOrder(o, price, ctx) {
+    ctx = ctx || {};
+    var cap = volumeCap(ctx.volume);   // volume fill model: units the current bar can absorb
     var err = validateOrder(o);
     if (err) {
       var bad = makeOrder({ symbol: (o && o.symbol) || '?', side: (o && o.side) || 'buy', qty: (o && isNum(Number(o.qty))) ? Number(o.qty) : 0, type: (o && o.type) || 'market' });
@@ -635,7 +892,12 @@
 
     if (order.type === 'market') {
       if (!hasPrice) return rejectOrder(order, 'A market order needs a current price to fill against. Load a chart (or pass a price) first.');
-      fillOrder(order, price, now());
+      if (cap === 0) {
+        order.reason = T('Waiting for volume: this bar traded too few shares for any fill under the volume model ({pct}% of bar volume). The order stays open and fills at the next bar.', { pct: state.settings.maxVolumePct });
+        state.marks[order.symbol] = price;
+      } else {
+        fillOrder(order, price, now(), undefined, isFinite(cap) ? cap : undefined);
+      }
       state.orders.push(order);
       save();
       return order;
@@ -655,8 +917,8 @@
 
     if (hasPrice) {
       var px = immediatePrice(order, price);
-      if (px != null) {
-        fillOrder(order, px, now(), 'Filled immediately: the ' + order.type.replace('_', '-') + ' price was already reached at ' + money(price));
+      if (px != null && cap !== 0) {
+        fillOrder(order, px, now(), 'Filled immediately: the ' + order.type.replace('_', '-') + ' price was already reached at ' + money(price), isFinite(cap) ? cap : undefined);
         state.orders.push(order);
         save();
         return order;
@@ -693,6 +955,14 @@
     var day = barDay(bar.time);
     var time = bar.time == null ? now() : bar.time;
 
+    // Dividends go to whoever held the stock at the previous close, so they are
+    // settled before this bar's orders can change the position.
+    processDividends(symbol, day, time, open);
+
+    // Volume fill model: every order on this symbol shares the same bar's volume.
+    var barCap = volumeCap(bar.volume);
+    var usedThisBar = 0;
+
     state.orders.forEach(function (order) {
       if (order.status !== 'open' || order.symbol !== symbol) return;
 
@@ -701,7 +971,9 @@
         if (order.firstBarDay == null) order.firstBarDay = day;
         else if (day && order.firstBarDay !== day) {
           order.status = 'expired';
-          order.reason = 'Day order expired unfilled at the end of ' + order.firstBarDay + '.';
+          order.reason = order.filledQty > 0
+            ? T('Day order partially filled ({filled} of {qty}); the remaining {left} expired at the end of {day}.', { filled: order.filledQty, qty: order.qty, left: order.qty - order.filledQty, day: order.firstBarDay })
+            : 'Day order expired unfilled at the end of ' + order.firstBarDay + '.';
           return;
         }
       }
@@ -718,6 +990,7 @@
           if (px != null) note = 'Limit reached (bar ' + (buy ? 'low ' + money(bar.low) : 'high ' + money(bar.high)) + ').' + (px !== order.limitPrice ? ' Price gapped past your limit, so you got the better open price.' : '');
           break;
         case 'stop':
+          if (order.triggered) { px = open; note = 'Stop already triggered: the rest of the order fills at the market (the open of this bar).'; break; }
           if (buy && bar.high >= order.stopPrice) { px = Math.max(order.stopPrice, open); }
           else if (!buy && bar.low <= order.stopPrice) { px = Math.min(order.stopPrice, open); }
           if (px != null) note = 'Stop triggered (bar ' + (buy ? 'high ' + money(bar.high) : 'low ' + money(bar.low)) + ').' + (px !== order.stopPrice ? ' Price gapped through your stop, so you were filled at the worse open price — stops do not guarantee a price.' : '');
@@ -746,8 +1019,18 @@
 
       if (px != null) {
         px = cents(px);
-        var trade = fillOrder(order, px, time, note);
-        if (trade) fills.push({ order: order, trade: trade });
+        var allowed = isFinite(barCap) ? Math.max(0, barCap - usedThisBar) : undefined;
+        if (allowed === 0) {
+          if (order.type === 'stop') order.triggered = true;   // it became a market order; fill the rest later
+          order.reason = T('Waiting for volume: other fills already used this bar\'s share of volume ({pct}% of bar volume). The order stays open for the next bar.', { pct: state.settings.maxVolumePct });
+          return;
+        }
+        var trade = fillOrder(order, px, time, note, allowed);
+        if (trade) {
+          usedThisBar += trade.qty;
+          if (order.status === 'open' && order.type === 'stop') order.triggered = true;
+          fills.push({ order: order, trade: trade });
+        }
       }
     });
 
@@ -762,7 +1045,9 @@
       if (o.id === id) {
         if (o.status !== 'open') return null;
         o.status = 'cancelled';
-        o.reason = 'Cancelled by you.';
+        o.reason = o.filledQty > 0
+          ? T('Cancelled by you after a partial fill: {filled} of {qty} filled, the remaining {left} cancelled.', { filled: o.filledQty, qty: o.qty, left: o.qty - o.filledQty })
+          : 'Cancelled by you.';
         o.cancelledAt = now();
         save();
         return o;
@@ -854,6 +1139,177 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Dividends, cash interest, short borrow fees (cash flows)
+   * ------------------------------------------------------------------ */
+  // Approximate annual dividend yields (fraction of price) and quarterly
+  // ex-date cycles for the dividend payers in the demo universe. Real amounts
+  // and dates differ; this is a teaching approximation so students see that
+  // holding a stock pays (and shorting one costs) dividends. A universe entry
+  // in BT.data with `divYield` (fraction) and optional `divMonths` / `divExDay`
+  // overrides this table.
+  //   cycle: 'jan' → Jan/Apr/Jul/Oct, 'feb' → Feb/May/Aug/Nov, 'mar' → Mar/Jun/Sep/Dec
+  var DIVIDEND_TABLE = {
+    AAPL: [0.004, 'feb', 10], MSFT: [0.007, 'feb', 20], GOOGL: [0.004, 'mar', 9], META: [0.003, 'mar', 14],
+    AVGO: [0.007, 'mar', 20], JPM: [0.02, 'jan', 6], V: [0.007, 'feb', 10], MA: [0.005, 'jan', 9],
+    BAC: [0.022, 'mar', 6], GS: [0.017, 'mar', 1], JNJ: [0.029, 'feb', 25], UNH: [0.025, 'mar', 16],
+    LLY: [0.007, 'feb', 15], PFE: [0.068, 'jan', 25], MRK: [0.038, 'mar', 15], ABBV: [0.03, 'jan', 15],
+    WMT: [0.009, 'mar', 14], COST: [0.005, 'feb', 1], PG: [0.026, 'jan', 20], KO: [0.029, 'mar', 14],
+    PEP: [0.039, 'mar', 6], MCD: [0.024, 'mar', 1], SBUX: [0.029, 'feb', 14], NKE: [0.023, 'mar', 2],
+    HD: [0.023, 'mar', 6], DIS: [0.009, 'jan', 8], XOM: [0.035, 'feb', 14], CVX: [0.044, 'feb', 18],
+    CAT: [0.012, 'jan', 20], GE: [0.005, 'mar', 8], CSCO: [0.024, 'jan', 3], ORCL: [0.007, 'jan', 10],
+    CRM: [0.006, 'mar', 18], INTC: [0.0, 'feb', 7], PYPL: [0.0, 'feb', 1], F: [0.05, 'feb', 1],
+    GM: [0.009, 'mar', 6], T: [0.041, 'jan', 10], VZ: [0.064, 'jan', 10], SPY: [0.012, 'mar', 20],
+    VOO: [0.012, 'mar', 26], VTI: [0.013, 'mar', 26], QQQ: [0.006, 'mar', 22], DIA: [0.015, 'mar', 20],
+    IWM: [0.011, 'mar', 12], EFA: [0.03, 'mar', 12], XLK: [0.006, 'mar', 22], XLF: [0.014, 'mar', 22],
+    XLE: [0.033, 'mar', 22], XLV: [0.016, 'mar', 22], TLT: [0.042, 'mar', 2]
+  };
+  var CYCLES = { jan: [1, 4, 7, 10], feb: [2, 5, 8, 11], mar: [3, 6, 9, 12] };
+
+  /** dividendInfo(symbol) → {symbol, yield, months, exDay, source} or null for non-payers. */
+  function dividendInfo(symbol) {
+    symbol = normSymbol(symbol);
+    var u = null;
+    try {
+      var uni = window.BT && window.BT.data && window.BT.data.universe;
+      if (Array.isArray(uni)) u = uni.filter(function (x) { return x && x.symbol === symbol; })[0] || null;
+    } catch (e) { u = null; }
+    var y = u && isNum(u.divYield) ? u.divYield : (u && isNum(u.dividendYield) ? u.dividendYield : null);
+    if (y != null && y > 1) y = y / 100;                       // accept percent as well as fraction
+    var row = DIVIDEND_TABLE[symbol];
+    if (y == null && row) y = row[0];
+    if (!(isNum(y) && y > 0)) return null;
+    var months = u && Array.isArray(u.divMonths) && u.divMonths.length ? u.divMonths.filter(function (m) { return isNum(m) && m >= 1 && m <= 12; }) : CYCLES[row ? row[1] : 'mar'];
+    var exDay = u && isNum(u.divExDay) ? Math.min(28, Math.max(1, Math.round(u.divExDay))) : (row ? Math.min(28, Math.max(1, row[2])) : 15);
+    return { symbol: symbol, yield: y, months: months.slice().sort(function (a, b) { return a - b; }), exDay: exDay, source: (u && u.divYield != null) ? 'universe' : 'table' };
+  }
+
+  /** exDates(symbol, afterDay, throughDay) → ex-dividend days with afterDay < d <= throughDay. */
+  function exDates(symbol, afterDay, throughDay) {
+    var info = typeof symbol === 'object' && symbol ? symbol : dividendInfo(symbol);
+    var out = [];
+    if (!info || typeof afterDay !== 'string' || typeof throughDay !== 'string' || throughDay <= afterDay) return out;
+    var y0 = Number(afterDay.slice(0, 4)), y1 = Number(throughDay.slice(0, 4));
+    if (!isNum(y0) || !isNum(y1) || y1 - y0 > 30) return out;
+    for (var y = y0; y <= y1; y++) {
+      info.months.forEach(function (m) {
+        var d = y + '-' + (m < 10 ? '0' : '') + m + '-' + (info.exDay < 10 ? '0' : '') + info.exDay;
+        if (d > afterDay && d <= throughDay) out.push(d);
+      });
+    }
+    return out.sort();
+  }
+
+  function pushCashflow(rec) {
+    rec.id = state.nextId++;
+    state.cashflows.push(rec);
+    if (state.cashflows.length > 2000) state.cashflows.splice(0, state.cashflows.length - 2000);
+    return rec;
+  }
+
+  /**
+   * applyDividend(symbol, perShare, {time, day, note}) → cash-flow record or null
+   * Long stock receives qty × perShare; a short pays it to the share lender.
+   */
+  function applyDividend(symbol, perShare, opts) {
+    opts = opts || {};
+    symbol = normSymbol(symbol);
+    var pos = state.positions[symbol];
+    if (!pos || pos.kind === 'option' || !(isNum(perShare) && perShare > 0)) return null;
+    var amount = cents(pos.qty * perShare);
+    if (amount === 0) return null;
+    var day = opts.day || fillDay(opts.time);
+    state.cash = cents(state.cash + amount);
+    state.income.dividends = cents(state.income.dividends + amount);
+    var note = opts.note || (pos.qty > 0
+      ? T('Dividend: {qty} shares × {ps} = {amt} credited to cash (ex-date {day}). The share price usually drops by about the dividend on the ex-date, so it is not free money.', { qty: pos.qty, ps: money(perShare), amt: money(amount), day: day })
+      : T('Dividend on a short: you borrowed {qty} shares, so you pay the lender the {ps} dividend per share. {amt} debited from cash (ex-date {day}).', { qty: -pos.qty, ps: money(perShare), amt: money(-amount), day: day }));
+    var rec = pushCashflow({ type: 'dividend', symbol: symbol, qty: pos.qty, perShare: perShare, amount: amount, time: toMs(opts.time), day: day, note: note });
+    save();
+    return rec;
+  }
+
+  // Called by processOrders before a bar's orders: pays every ex-date passed
+  // since the previous bar seen for this symbol (holders at the prior close).
+  function processDividends(symbol, day, time, fallbackPrice) {
+    if (!day) return [];
+    var prev = state.lastBarDay[symbol];
+    if (!prev || day > prev) state.lastBarDay[symbol] = day;
+    if (!state.settings.dividends || !prev || day <= prev) return [];
+    var pos = state.positions[symbol];
+    if (!pos || pos.kind === 'option') return [];
+    var info = dividendInfo(symbol);
+    if (!info) return [];
+    var ref = isNum(state.marks[symbol]) ? state.marks[symbol] : fallbackPrice;
+    if (!(isNum(ref) && ref > 0)) return [];
+    var perShare = round4(info.yield * ref / 4);
+    var out = [];
+    exDates(info, prev, day).forEach(function (d) {
+      var rec = applyDividend(symbol, perShare, { time: time, day: d });
+      if (rec) out.push(rec);
+    });
+    return out;
+  }
+
+  function daysBetween(a, b) {
+    var ta = Date.parse(a + 'T00:00:00Z'), tb = Date.parse(b + 'T00:00:00Z');
+    return isNum(ta) && isNum(tb) ? Math.round((tb - ta) / MS_PER_DAY) : 0;
+  }
+  function floorCents(v) { return v >= 0 ? Math.floor(v * 100 + 1e-7) / 100 : -Math.floor(-v * 100 + 1e-7) / 100; }
+
+  /**
+   * accrue(at?) → cash-flow records posted
+   * Daily accrual of interest on free cash (cash not backing short sales) and
+   * of the borrow fee on short stock, for each calendar day since the last
+   * accrual, at the current balances. Fractions of a cent are carried forward
+   * so small balances still earn (and owe) the right amount over time.
+   * Called automatically by markToMarket() and before any settings change.
+   */
+  function accrue(at) {
+    var t = isNum(at) ? at : now();
+    var today = dayKeyOf(t);
+    var last = state.accrual.lastDay;
+    if (!last || today > last) state.accrual.lastDay = today;
+    if (!last || today <= last) return [];
+    var days = Math.min(3660, daysBetween(last, today));
+    var ir = state.settings.cashInterestPct / 100, br = state.settings.borrowFeePct / 100;
+    if (days <= 0 || (!(ir > 0) && !(br > 0))) return [];
+    var shortStock = 0, shortAll = 0;
+    Object.keys(state.positions).forEach(function (sym) {
+      var p = state.positions[sym];
+      if (p.qty >= 0) return;
+      var px = markOf(sym);
+      var v = -p.qty * (isNum(px) ? px : p.avg) * multiplierOf(p);
+      shortAll += v;
+      if (p.kind !== 'option') shortStock += v;
+    });
+    var out = [];
+    if (ir > 0) {
+      var base = Math.max(0, state.cash - shortAll);
+      var owedI = state.accrual.carryInterest + base * ir * days / 365;
+      var postI = floorCents(owedI);
+      state.accrual.carryInterest = round6(owedI - postI);
+      if (postI !== 0) {
+        state.cash = cents(state.cash + postI);
+        state.income.interest = cents(state.income.interest + postI);
+        out.push(pushCashflow({ type: 'interest', symbol: null, amount: postI, days: days, time: t, day: today,
+          note: T('Cash interest: {amt} for {days} day(s) at {rate}% a year on {base} of free cash.', { amt: money(postI), days: days, rate: state.settings.cashInterestPct, base: money(base) }) }));
+      }
+    }
+    if (br > 0 && shortStock > 0) {
+      var owedB = state.accrual.carryBorrow + shortStock * br * days / 365;
+      var postB = floorCents(owedB);
+      state.accrual.carryBorrow = round6(owedB - postB);
+      if (postB !== 0) {
+        state.cash = cents(state.cash - postB);
+        state.income.borrowFees = cents(state.income.borrowFees + postB);
+        out.push(pushCashflow({ type: 'borrow', symbol: null, amount: -postB, days: days, time: t, day: today,
+          note: T('Short borrow fee: {amt} for {days} day(s) at {rate}% a year on {base} of borrowed shares. Shorting costs money every day you hold it.', { amt: money(postB), days: days, rate: state.settings.borrowFeePct, base: money(shortStock) }) }));
+      }
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
    * Mark to market, equity history
    * ------------------------------------------------------------------ */
   function valuation(prices) {
@@ -885,6 +1341,8 @@
    */
   function markToMarket(prices, at) {
     var t = isNum(at) ? at : now();
+    if (prices) Object.keys(prices).forEach(function (k) { if (state.positions[k] && isNum(prices[k])) state.marks[k] = prices[k]; });
+    accrue(t);                                  // daily interest / borrow fees (no-op when both are off)
     var v = valuation(prices || {});
     var equity = cents(state.cash + v.marketValue);
 
@@ -1007,6 +1465,11 @@
       bestTrade: best ? best.realized : null,
       worstTrade: worst ? worst.realized : null,
       commissionsPaid: cents(state.trades.reduce(function (s, t) { return s + t.commission; }, 0)),
+      slippagePaid: cents(state.trades.reduce(function (s, t) { return s + (isNum(t.slippage) ? t.slippage : 0); }, 0)),
+      dividends: state.income.dividends,
+      interest: state.income.interest,
+      borrowFees: state.income.borrowFees,
+      dayTrades: dayTradeCount(),
       points: hist.length
     };
   }
@@ -1025,7 +1488,14 @@
     sharpe: 'Sharpe ratio = average return divided by its volatility, annualised. Above 1 is good, above 2 is excellent; it rewards steady gains over wild swings that happen to end higher.',
     drawdown: 'Max drawdown is the largest peak-to-trough fall of your equity. Two accounts can end at the same value; the one with the smaller drawdown took far less pain (and risk of ruin) getting there.',
     profitFactor: 'Profit factor = gross profits ÷ gross losses. Above 1 means you made money overall; a strategy with a 40 % win rate can still have a profit factor of 2 if winners are much bigger than losers.',
-    dayPnL: 'Day P&L compares your equity now with your equity at the start of the day, including both realized trades and the change in open positions.'
+    dayPnL: 'Day P&L compares your equity now with your equity at the start of the day, including both realized trades and the change in open positions.',
+    slippage: 'Slippage is the gap between the price you saw and the price you got. Market and stop orders take whatever the market offers, so buys tend to fill a little higher and sells a little lower, especially in fast or thin markets. A limit order avoids slippage but may not fill.',
+    partialFill: 'A partial fill means only part of your order traded. A real market can only absorb so many shares at once; the volume fill model lets an order take at most 10 % of each bar\'s volume, and the rest waits for later bars.',
+    commission: 'Commissions are what a broker charges to execute a trade. Many US apps charge zero for stocks, others charge per share or a flat fee per order. Fees look tiny, but they add up quickly for frequent traders and small accounts.',
+    dividend: 'A dividend is cash a company pays its shareholders, usually every quarter. You get it if you hold the stock at the close before the ex-dividend date. If you are short on that date you must pay the dividend to the lender of the shares.',
+    cashInterest: 'Brokers pay interest on uninvested cash, quoted as an annual rate and accrued daily. Cash that backs a short sale usually earns nothing, so only free cash counts here.',
+    borrowFee: 'To sell short you borrow shares, and the lender charges a fee: an annual rate accrued every day you stay short. Easy-to-borrow stocks cost well under 1 % a year; hard-to-borrow ones can cost 20 % or much more.',
+    pdt: 'The pattern day trader (PDT) rule: in a US margin account with less than $25,000, making 4 or more day trades (opening and closing the same position on the same day) within 5 business days gets the account restricted. Many brokers simply block the 4th day trade, which is what the simulator does when the rule is on.'
   };
 
   function describeOrder(order) {
@@ -1074,7 +1544,21 @@
     stats: stats,
     describeOrder: describeOrder,
     glossary: glossary,
-    money: money
+    money: money,
+    // v0.5 realism
+    PDT_EQUITY: PDT_EQUITY,
+    commissionPresets: COMMISSION_PRESETS,
+    defaultSettings: defaultSettings,
+    applyCommissionPreset: applyCommissionPreset,
+    commissionFor: function (qty, price, mult, kind, firstFill) { return commissionFor(qty, price, mult || 1, kind || 'stock', firstFill); },
+    slipPrice: slipPrice,
+    dividendInfo: dividendInfo,
+    exDates: exDates,
+    applyDividend: applyDividend,
+    accrue: function (at) { var r = accrue(at); save(); return r; },
+    cashflows: function () { return state.cashflows.slice(); },
+    dayTradeCount: dayTradeCount,
+    pdtStatus: pdtStatus
   };
 
   // Pick up any saved portfolio as soon as the script loads.

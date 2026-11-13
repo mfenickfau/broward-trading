@@ -238,7 +238,7 @@ const GLOSSARY = {
   await test('course/index.json lists nine modules with five lessons each, including m7-replay, m8-capstone and m9-crypto-etf', () => {
     const idx = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', 'course', 'index.json'), 'utf8'));
     const ids = idx.modules.map(m => m.id);
-    assert.deepStrictEqual(ids, ['m1-foundations', 'm2-charts', 'm3-indicators', 'm4-risk', 'm5-options', 'm6-strategy', 'm7-replay', 'm8-capstone', 'm9-crypto-etf']);
+    assert.deepStrictEqual(ids, ['m1-foundations', 'm2-charts', 'm3-indicators', 'm4-risk', 'm5-options', 'm6-strategy', 'm7-replay', 'm8-capstone', 'm9-crypto-etf', 'm10-toolkit']);
     idx.modules.forEach(m => {
       assert.strictEqual(m.lessons.length, 5, m.id + ' lessons');
       assert.ok(/^(beginner|intermediate|advanced)$/.test(m.level), m.id + ' level');
@@ -251,6 +251,9 @@ const GLOSSARY = {
     const m9 = idx.modules[8];
     assert.strictEqual(m9.title, 'Crypto & ETFs: Different Markets, Same Discipline'); assert.strictEqual(m9.level, 'intermediate');
     assert.deepStrictEqual(m9.lessons.map(l => l.id), ['m9-l1', 'm9-l2', 'm9-l3', 'm9-l4', 'm9-l5']);
+    const m10 = idx.modules[9];
+    assert.strictEqual(m10.title, 'Your Trading Toolkit: Screeners, Rules & Competitions'); assert.strictEqual(m10.level, 'intermediate');
+    assert.deepStrictEqual(m10.lessons.map(l => l.id), ['m10-l1', 'm10-l2', 'm10-l3', 'm10-l4', 'm10-l5']);
     const allIds = idx.modules.flatMap(m => m.lessons.map(l => l.id));
     assert.strictEqual(new Set(allIds).size, allIds.length, 'lesson ids unique');
   });

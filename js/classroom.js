@@ -3,7 +3,9 @@
  * Lets a student join an instructor's class with a 6-character class code and
  * hand the instructor a pseudonymous progress snapshot: lessons done, quiz
  * scores, replay drills, paper-account stats, journal activity and the Daily 5
- * streak. No email, no name unless the student types one.
+ * streak. No email, no name unless the student types one. From v0.5, when
+ * js/leagues.js is loaded, the snapshot also carries a `leagues` block per joined
+ * league so one share code serves both the class and its leagues.
  *
  * Two delivery paths, chosen automatically:
  *   - Backend (BT.auth.config.apiBase set): POST /classes/:code/snapshots,
@@ -25,6 +27,7 @@
  *                                             ownerMismatch, backoffUntil, hasOwnerToken}
  *   BT.classroom.snapshot()               → the contract snapshot object (reads localStorage only)
  *   BT.classroom.encodeShare(snapshot?)   → Promise<string>   'BT1.…'
+ *   BT.classroom.shareCode(snapshot?)     → Promise<string>   alias: encodeShare(snapshot()) (v0.5)
  *   BT.classroom.decodeShare(code)        → Promise<{ok, snapshot} | {ok:false, error, reason}>
  *   BT.classroom.parseShareCodes(text)    → ['BT1.…', …] found anywhere in pasted text
  *   BT.classroom.sync(opts?)              → Promise<{ok, sent, skipped?, error?, ownerMismatch?, full?, rateLimited?}>
@@ -61,6 +64,7 @@
   var MAX_DRILLS = 40;
   var MAX_LESSONS = 400;
   var MAX_SHARE_CHARS = 60000;
+  var MAX_LEAGUES = 10;
   var OWNER_TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;   // mirrors server/worker.js OWNER_TOKEN_RE (24 random bytes, base64url)
   var DEFAULT_BACKOFF_SEC = 60;
 
@@ -270,13 +274,40 @@
   }
 
   /**
+   * League blocks for every league this device has joined (v0.5), read through
+   * BT.leagues.leagueSnapshot (storage only, never switches the active paper account).
+   * Uses leagueSnapshot rather than BT.leagues.snapshot(), which itself calls snapshot() here.
+   * → {CODE: {equity, startingCash, returnPct, trades, maxDrawdownPct, equityHistory, displayName, team?}} or null
+   */
+  function leagueState() {
+    var L = BT.leagues;
+    if (!L || typeof L.joined !== 'function' || typeof L.leagueSnapshot !== 'function') return null;
+    var out = {}, n = 0;
+    try {
+      (L.joined() || []).slice(0, MAX_LEAGUES).forEach(function (lg) {
+        if (!lg || !lg.code) return;
+        var block = L.leagueSnapshot(lg.code);
+        if (!block || typeof block !== 'object') return;
+        var mem = typeof L.membership === 'function' ? L.membership(lg.code) : null;
+        if (mem) {
+          block.displayName = cleanName(mem.displayName || '');
+          if (mem.team) block.team = String(mem.team).slice(0, 24);
+        }
+        out[lg.code] = block; n++;
+      });
+    } catch (e) { return null; }
+    return n ? out : null;
+  }
+
+  /**
    * snapshot() → {v, studentId, displayName, classCode, lessonsDone[], quizScores{}, lessonsTotal,
-   *               drills[], paper{}, journalEntries, journal{}, streak, daily{}, lastActive, updatedAt}
+   *               drills[], paper{}, journalEntries, journal{}, streak, daily{}, lastActive, updatedAt,
+   *               leagues? {CODE: block}  (v0.5, only when js/leagues.js is loaded and a league is joined)}
    */
   function snapshot() {
     var s = load();
     var course = courseState(), drills = drillState(), paper = paperState(), journal = journalState(), daily = streakState();
-    return {
+    var snap = {
       v: 1,
       studentId: studentId(),
       displayName: s.displayName || '',
@@ -295,6 +326,9 @@
       lastActive: lastActive({ drills: drills, journal: journal }),
       updatedAt: new Date().toISOString()
     };
+    var leagues = leagueState();
+    if (leagues) snap.leagues = leagues;
+    return snap;
   }
 
   /* ------------------------------------------------------------------ *
@@ -369,6 +403,8 @@
     if (!codec.canDeflate()) return Promise.resolve(plain());
     return codec.deflate(jsonBytes).then(function (z) { return z.length < jsonBytes.length ? PREFIX + b64url(z) : plain(); }, plain);
   }
+  /** shareCode(snapshot?) → Promise<'BT1.…'>: the contract alias for encodeShare(snapshot()). */
+  function shareCode(snap) { return encodeShare(snap || snapshot()); }
   function looksLikeShare(s) { return typeof s === 'string' && s.indexOf(PREFIX) === 0 && /^[A-Za-z0-9_-]+$/.test(s.slice(PREFIX.length)); }
   function validateSnapshot(obj) {
     if (!obj || typeof obj !== 'object') return 'That share code does not hold a progress snapshot.';
@@ -514,8 +550,8 @@
     KEY: KEY, PREFIX: PREFIX, SYNC_INTERVAL_MS: SYNC_INTERVAL_MS, CODE_ALPHABET: CODE_ALPHABET,
     studentId: studentId, normalizeCode: normalizeCode, isValidCode: isValidCode, newCode: newCode, cleanName: cleanName,
     join: join, leave: leave, setDisplayName: setDisplayName, setClassName: setClassName, status: status,
-    snapshot: snapshot, encodeShare: encodeShare, decodeShare: decodeShare, parseShareCodes: parseShareCodes, looksLikeShare: looksLikeShare,
+    snapshot: snapshot, encodeShare: encodeShare, shareCode: shareCode, decodeShare: decodeShare, parseShareCodes: parseShareCodes, looksLikeShare: looksLikeShare,
     sync: sync, fetchClass: fetchClass, hookCourse: hookCourse, codec: codec,
-    _internal: { b64url: b64url, b64urlDecode: b64urlDecode, utf8Encode: utf8Encode, utf8Decode: utf8Decode, courseState: courseState, drillState: drillState, paperState: paperState, journalState: journalState, streakState: streakState, load: load }
+    _internal: { b64url: b64url, b64urlDecode: b64urlDecode, utf8Encode: utf8Encode, utf8Decode: utf8Decode, courseState: courseState, drillState: drillState, paperState: paperState, journalState: journalState, streakState: streakState, leagueState: leagueState, load: load }
   };
 })();

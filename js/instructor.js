@@ -29,6 +29,11 @@
  *   letter(pct), csvRoster(code), csvGradebook(code), exportJson(code), importJson(text)
  *   remote: configured(), createRemote({name, section, term}), refreshRoster(code) (follows the server's cursor pages),
  *           removeRemote(code, id), removeStudents(code, {ids:[…]} | {all:true}) (bulk DELETE, batches of 50)
+ *   leagues (v0.5, guarded: every call answers sensibly without js/leagues.js):
+ *           available(), list(), add(text) (save 'BTL1.' league codes on this device),
+ *           importShares(code, text) → Promise<{found, added, updated, skipped, notInLeague, failed[]}>,
+ *           standings(code, serverRows?) → {league, rows, teams, phase, countdown} | null  (BT.leagues.standings),
+ *           csv(code) → standings CSV
  *
  * Plain ES2020, no imports.
  */
@@ -558,6 +563,94 @@
     if (!cls) return Promise.resolve({ ok: false, error: 'No such class.' });
     return api('DELETE', '/classes/' + encodeURIComponent(cls.code) + '/students/' + encodeURIComponent(id), undefined, cls);
   }
+  /* ------------------------------------------------------------------ *
+   * Leagues (v0.5). Thin, guarded wrappers over BT.leagues (js/leagues.js) so the
+   * instructor page can track a class competition from the same share codes the
+   * roster uses. League data lives in BT.leagues' own store ('bt.leagues'), never
+   * in 'bt.instructor'. Every function degrades to a clear answer without BT.leagues.
+   * ------------------------------------------------------------------ */
+  function T(s, v) {
+    if (BT.t) return BT.t(s, v);
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && k in v ? v[k] : m; });
+  }
+  function leaguesAvailable() { var L = BT.leagues; return !!(L && typeof L.standings === 'function' && typeof L.importShares === 'function' && typeof L.decodeLeague === 'function'); }
+  var NO_LEAGUES = 'League tools did not load on this page. Reload it, or open the Leagues page.';
+  function leagueList() { if (!leaguesAvailable()) return []; try { return BT.leagues.list(); } catch (e) { return []; } }
+  /**
+   * addLeagues(text) → {ok, added:[league], failed:[{code, error}]}: every 'BTL1.' league code in a paste
+   * is decoded and saved on this device (the organiser does not join; no paper account is created).
+   */
+  function addLeagues(text) {
+    if (!leaguesAvailable()) return { ok: false, added: [], failed: [], error: T(NO_LEAGUES) };
+    var L = BT.leagues, out = { ok: true, added: [], failed: [] };
+    var codes = typeof L.parseLeagueCodes === 'function' ? L.parseLeagueCodes(text) : [];
+    if (!codes.length) {
+      var d0 = L.decodeLeague(String(text == null ? '' : text).trim());
+      return { ok: false, added: [], failed: [], error: d0 && d0.error ? d0.error : T('Paste a league code that starts with "BTL1.".') };
+    }
+    codes.forEach(function (c) {
+      var d = L.decodeLeague(c);
+      if (!d || !d.ok) { out.failed.push({ code: c.slice(0, 24) + (c.length > 24 ? '…' : ''), error: (d && d.error) || T('That league code could not be read.') }); return; }
+      var known = L.get(d.league.code);
+      if (known && known.members && known.members.length) {   // keep members this device already knows
+        d.league.members = (d.league.members || []).concat(known.members.filter(function (m) { return !(d.league.members || []).some(function (x) { return x.studentId === m.studentId; }); }));
+      }
+      out.added.push(L.save(d.league) || d.league);
+    });
+    out.ok = out.added.length > 0;
+    return out;
+  }
+  /**
+   * importLeagueShares(code, text) → Promise<{found, added, updated, skipped, notInLeague, failed:[{code, error}]}>
+   * Decodes every 'BT1.' share code in the paste and keeps the ones that carry a block for this league.
+   */
+  function importLeagueShares(code, text) {
+    var empty = { found: 0, added: 0, updated: 0, skipped: 0, notInLeague: 0, failed: [] };
+    if (!leaguesAvailable()) return Promise.resolve(Object.assign(empty, { error: T(NO_LEAGUES) }));
+    var L = BT.leagues, c = L.normalizeCode(code);
+    if (!L.get(c)) return Promise.resolve(Object.assign(empty, { error: T('Add the league first: paste its league code above.') }));
+    var parse = BT.classroom && BT.classroom.parseShareCodes ? BT.classroom.parseShareCodes : L.parseShareCodes;
+    var decode = BT.classroom && BT.classroom.decodeShare ? BT.classroom.decodeShare : L.decodeShare;
+    var codes = parse(text);
+    var out = Object.assign({}, empty, { found: codes.length, failed: [] });
+    if (!codes.length) { out.error = T('No share codes found. A share code starts with "BT1.".'); return Promise.resolve(out); }
+    var snaps = [], chain = Promise.resolve();
+    codes.forEach(function (sc) {
+      chain = chain.then(function () {
+        return decode(sc).then(function (r) {
+          if (!r || !r.ok) { out.failed.push({ code: sc.slice(0, 24) + (sc.length > 24 ? '…' : ''), error: (r && r.error) || T('That share code could not be read.') }); return; }
+          if (!r.snapshot.leagues || !r.snapshot.leagues[c]) { out.notInLeague++; return; }
+          snaps.push(r.snapshot);
+        }, function () { out.failed.push({ code: sc.slice(0, 24), error: T('That share code could not be read.') }); });
+      });
+    });
+    return chain.then(function () {
+      if (snaps.length) { var res = L.importShares(c, snaps); out.added = res.added; out.updated = res.updated; out.skipped = res.skipped; }
+      return out;
+    });
+  }
+  /** leagueStandings(code, serverRows?) → {league, rows, teams, phase, countdown} | null */
+  function leagueStandings(code, serverRows) {
+    if (!leaguesAvailable()) return null;
+    var L = BT.leagues, lg = L.get(code);
+    if (!lg) return null;
+    // Server rows (GET /leagues/:code/standings) carry their sparkline as `spark`; BT.leagues reads equityHistory.
+    var fromServer = Array.isArray(serverRows) ? serverRows.map(function (r) { return r && typeof r === 'object' && !r.equityHistory && Array.isArray(r.spark) ? Object.assign({}, r, { equityHistory: r.spark }) : r; }) : null;
+    var snaps = fromServer || (typeof L.knownSnapshots === 'function' ? L.knownSnapshots(lg.code) : L.imported(lg.code));
+    var rows = L.standings(lg, snaps);
+    var teams = lg.rules && lg.rules.teams && typeof L.teamStandings === 'function' ? L.teamStandings(rows, lg) : [];
+    var phase = null, countdown = null;
+    try { phase = L.phase(lg); countdown = L.countdown(lg); } catch (e) { /* optional */ }
+    return { league: lg, rows: rows, teams: teams, phase: phase, countdown: countdown };
+  }
+  /** csvLeague(code) → standings as CSV (formula-safe cells), '' when unknown. */
+  function csvLeague(code) {
+    var st = leagueStandings(code);
+    if (!st) return '';
+    var head = ['rank', 'name', 'student_id', 'team', 'return_pct', 'max_drawdown_pct', 'sharpe', 'trades', 'consistency_score', 'equity', 'updated_at'];
+    return csv([head].concat(st.rows.map(function (r) { return [r.rank, r.displayName, r.studentId, r.team || '', r.returnPct, r.maxDrawdownPct, r.sharpe, r.trades, r.consistencyScore, r.equity, r.updatedAt || '']; })));
+  }
+
   var REMOVE_BATCH = 50;   // server/worker.js caps {ids} at 50 per call and {all:true} at 50 records per call
   /**
    * removeStudents(code, {ids:[…]} | {all:true}) → Promise<{ok, removed, ids:[…], remaining, calls}>
@@ -609,7 +702,8 @@
     row: row, roster: roster, summary: summary, SORT_KEYS: SORT_KEYS,
     weights: weights, setWeights: setWeights, weightsTotal: weightsTotal, requiredDrills: requiredDrills, setRequiredDrills: setRequiredDrills, autoScores: autoScores, grade: grade, letter: letter,
     csvRoster: csvRoster, csvGradebook: csvGradebook, exportJson: exportJson, importJson: importJson, csvCell: csvCell,
-    remote: { configured: configured, createRemote: createRemote, refreshRoster: refreshRoster, removeRemote: removeRemote, removeStudents: removeStudents, setSecret: setSecret, api: api }
+    remote: { configured: configured, createRemote: createRemote, refreshRoster: refreshRoster, removeRemote: removeRemote, removeStudents: removeStudents, setSecret: setSecret, api: api },
+    leagues: { available: leaguesAvailable, list: leagueList, add: addLeagues, importShares: importLeagueShares, standings: leagueStandings, csv: csvLeague }
   };
 
   /* ================================================================== *
@@ -885,7 +979,11 @@
       ['Daily 5', r.streak + ' day streak', r.dailyDays + ' days total']
     ].map(function (t) { return '<div class="stat"><span class="label">' + esc(t[0]) + '</span><span class="value">' + esc(t[1]) + '</span><span class="sub">' + esc(t[2]) + '</span></div>'; }).join('');
     $('dModules').innerHTML = I.moduleBreakdown(snap).map(function (m) {
-      return '<tr><td>' + esc(m.title) + '</td><td class="right num">' + (m.total ? m.done + '/' + m.total : m.done) + '</td><td class="right num"><span class="mini" aria-hidden="true"><i style="width:' + (m.pct || 0) + '%"></i></span>' + (m.pct == null ? '—' : m.pct + '%') + '</td><td class="right num">' + fmtPct(m.quizAvg) + '</td></tr>';
+      // data-label feeds the stacked phone card (instructor.html, ≤560px); explicit roles keep table semantics there.
+      return '<tr role="row"><td role="cell">' + esc(m.title) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Lessons')) + '">' + (m.total ? m.done + '/' + m.total : m.done) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Progress')) + '"><span class="mini" aria-hidden="true"><i style="width:' + (m.pct || 0) + '%"></i></span>' + (m.pct == null ? '—' : m.pct + '%') + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Quiz avg')) + '">' + fmtPct(m.quizAvg) + '</td></tr>';
     }).join('');
     var req = {}; I.requiredDrills().ids.forEach(function (x) { req[x] = 1; });
     var drills = (snap.drills || []).slice().sort(function (x, y) { return (req[y.id] ? 1 : 0) - (req[x.id] ? 1 : 0) || String(x.id).localeCompare(String(y.id)); });
@@ -924,6 +1022,164 @@
     var done = function () { I.removeStudent(a.code, id); closeDrawer(); renderAll(); toast('Student removed.', 'ok'); };
     if (a.remote && I.remote.configured()) I.remote.removeRemote(a.code, id).then(function (r) { if (!r.ok) toast(r.error || 'The server did not confirm the removal; removed locally only.', 'warn'); done(); }); else done();
   });
+
+  /* ---- section tabs: Class | Leagues (v0.5) ---- */
+  var TAB_KEY = 'bt.instructor.tab';
+  var tabs = [$('tabClass'), $('tabLeagues')].filter(Boolean);
+  function showTab(which, focus) {
+    if (tabs.length < 2) return;
+    tabs.forEach(function (t) {
+      var on = t.id === (which === 'leagues' ? 'tabLeagues' : 'tabClass');
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      t.classList.toggle('on', on);
+      var panel = $(t.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !on;
+      if (on && focus) t.focus();
+    });
+    try { localStorage.setItem(TAB_KEY, JSON.stringify(which === 'leagues' ? 'leagues' : 'class')); } catch (e) { /* ignore */ }
+    if (which === 'leagues') renderLeagues();
+    if (BT.a11y && BT.a11y.markScrollables) { try { BT.a11y.markScrollables(); } catch (e) { /* ignore */ } }
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { showTab(t.id === 'tabLeagues' ? 'leagues' : 'class'); });
+    t.addEventListener('keydown', function (e) {
+      var k = e.key, j = null;
+      if (k === 'ArrowRight' || k === 'ArrowDown') j = (i + 1) % tabs.length;
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') j = (i - 1 + tabs.length) % tabs.length;
+      else if (k === 'Home') j = 0; else if (k === 'End') j = tabs.length - 1;
+      if (j == null) return;
+      e.preventDefault();
+      showTab(tabs[j].id === 'tabLeagues' ? 'leagues' : 'class', true);
+    });
+  });
+
+  /* ---- leagues ---- */
+  var lgUi = { code: null, server: null };
+  var fmtMoney = function (v) { return v == null || !isFinite(+v) ? '—' : '$' + (+v).toLocaleString(loc(), { maximumFractionDigits: 0 }); };
+  function sparkSvg(values, up) {
+    var d = BT.leagues && BT.leagues.sparkPath ? BT.leagues.sparkPath(values, 96, 28, 2) : '';
+    if (!d) return '<span class="muted">—</span>';
+    var v = values.filter(function (x) { return isFinite(+x); });
+    var label = T('Equity curve from {from} to {to}', { from: fmtMoney(v[0]), to: fmtMoney(v[v.length - 1]) });
+    return '<svg class="lg-spark' + (up ? '' : ' down') + '" viewBox="0 0 96 28" preserveAspectRatio="none" role="img" aria-label="' + esc(label) + '"><path d="' + esc(d) + '"/></svg>';
+  }
+  function rulesText(lg) {
+    var r = lg.rules || {};
+    var kinds = (r.assets || []).map(function (k) { return T({ stock: 'stocks', etf: 'ETFs', crypto: 'crypto', option: 'options' }[k] || k); }).join(', ');
+    var parts = [T('Starting cash {cash}', { cash: fmtMoney(r.startingCash) }), kinds ? T('Assets: {kinds}', { kinds: kinds }) : ''];
+    if (r.commission) parts.push(T('Commission {c} per trade', { c: '$' + r.commission }));
+    if (r.maxPositionPct && r.maxPositionPct < 100) parts.push(T('Max position {p}% of the account', { p: r.maxPositionPct }));
+    parts.push(r.shortSelling ? T('Short selling allowed') : T('No short selling'));
+    parts.push(r.dayTrading ? T('Day trading allowed') : T('No day trading'));
+    if (r.teams) parts.push(T('Teams: {teams}', { teams: (r.teamNames || []).join(', ') }));
+    return parts.filter(Boolean).join(' · ');
+  }
+  function renderLeagues() {
+    var panel = $('leaguesPanel'); if (!panel) return;
+    var avail = I.leagues.available();
+    $('lgUnavailable').hidden = avail;
+    ['lgAddBtn', 'lgImportBtn', 'lgCsv', 'lgClear'].forEach(function (id) { if ($(id)) $(id).disabled = !avail; });
+    var list = I.leagues.list();
+    if (!lgUi.code || !list.some(function (l) { return l.code === lgUi.code; })) { lgUi.code = list.length ? list[0].code : null; lgUi.server = null; }
+    var sel = $('lgSelect');
+    sel.innerHTML = list.length ? list.map(function (l) { return '<option value="' + esc(l.code) + '"' + (l.code === lgUi.code ? ' selected' : '') + '>' + esc(l.name) + ' — ' + esc(l.code) + '</option>'; }).join('') : '<option value="">' + esc(T('No leagues on this device yet')) + '</option>';
+    sel.disabled = !list.length;
+    var st = lgUi.code ? I.leagues.standings(lgUi.code, lgUi.server) : null;
+    var info = $('lgInfo');
+    var canRemote = !!(st && st.league.online && BT.leagues.remote && BT.leagues.remote.configured && BT.leagues.remote.configured());
+    $('lgRefresh').hidden = !canRemote;
+    if (!st) {
+      info.hidden = true; $('lgBody').innerHTML = ''; $('lgTeams').innerHTML = ''; $('lgCount').textContent = '';
+      $('lgEmpty').hidden = false; $('lgEmpty').textContent = T(avail ? 'No standings yet. Add a league, then import share codes.' : 'League tools did not load on this page. Reload it, or open the Leagues page.');
+      return;
+    }
+    var lg = st.league;
+    info.hidden = false;
+    info.innerHTML = '<span class="lg-name no-i18n" translate="no">' + esc(lg.name) + '</span>' +
+      '<span class="pill accent no-i18n" translate="no">' + esc(lg.code) + '</span>' +
+      '<span class="pill' + (st.phase === 'active' ? ' up' : st.phase === 'upcoming' ? ' demo' : '') + '">' + esc(st.countdown && st.countdown.label ? st.countdown.label : T(st.phase || '')) + '</span>' +
+      '<span class="muted">' + esc(lg.startDate) + ' → ' + esc(lg.endDate) + '</span>' +
+      (lgUi.server ? '<span class="pill live">' + esc(T('from the league server')) + '</span>' : '') +
+      '<span class="lg-rules">' + esc(rulesText(lg)) + '</span>';
+    var rows = st.rows;
+    $('lgCount').textContent = rows.length ? '· ' + T(rows.length === 1 ? '{n} student' : '{n} students', { n: rows.length }) : '';
+    $('lgEmpty').hidden = rows.length > 0;
+    $('lgEmpty').textContent = T('No standings yet. Paste share codes from students who joined this league.');
+    $('lgBody').innerHTML = rows.map(function (r) {
+      var name = r.displayName || T('Student {id}', { id: String(r.studentId).replace(/^s-/, '').slice(0, 6) });
+      return '<tr role="row" class="' + (r.rank === 1 && rows.length > 1 ? 'lead' : '') + '">' +
+        '<td role="cell" class="rank">' + r.rank + '</td>' +
+        '<td role="cell" class="who"><b class="no-i18n" translate="no">' + esc(name) + '</b><small class="no-i18n" translate="no">' + esc(r.studentId) + (r.team ? ' · ' + esc(r.team) : '') + (r.me ? ' · ' + esc(T('this device')) : '') + '</small></td>' +
+        '<td role="cell" class="right num ' + cls(r.returnPct) + '" data-label="' + esc(T('Return')) + '">' + fmtSigned(r.returnPct) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Max drawdown')) + '">' + fmtPct(r.maxDrawdownPct, 1) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Sharpe')) + '">' + (r.sharpe == null || !isFinite(+r.sharpe) ? '—' : (+r.sharpe).toFixed(2)) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Trades')) + '">' + (+r.trades || 0) + '</td>' +
+        '<td role="cell" class="right num" data-label="' + esc(T('Consistency')) + '">' + (r.consistencyScore == null || !isFinite(+r.consistencyScore) ? '—' : Math.round(+r.consistencyScore)) + '</td>' +
+        '<td role="cell" class="spark" data-label="' + esc(T('Equity')) + '">' + sparkSvg(r.equityHistory || [], (+r.returnPct || 0) >= 0) + '</td></tr>';
+    }).join('');
+    $('lgTeams').innerHTML = st.teams && st.teams.length ? '<ul class="lg-teams" aria-label="' + esc(T('Team standings')) + '">' + st.teams.map(function (t) {
+      return '<li><b>' + t.rank + '. <span class="no-i18n" translate="no">' + esc(t.team) + '</span></b>' +
+        esc(T(t.members === 1 ? '{n} member' : '{n} members', { n: t.members })) + ' · ' + esc(T('avg return')) + ' <span class="' + cls(t.avgReturnPct) + '">' + fmtSigned(t.avgReturnPct) + '</span> · ' + esc(T('avg drawdown')) + ' ' + fmtPct(t.avgDrawdownPct, 1) + '</li>';
+    }).join('') + '</ul>' : '';
+  }
+  if ($('leaguesPanel')) {
+    $('lgSelect').addEventListener('change', function () { lgUi.code = this.value || null; lgUi.server = null; $('lgCsvOut').hidden = true; renderLeagues(); });
+    $('lgAddBtn').addEventListener('click', function () {
+      var r = I.leagues.add($('lgAddIn').value), msg = $('lgAddMsg');
+      if (!r.ok) { flash(msg, r.error || (r.failed[0] && r.failed[0].error) || T('That league code could not be read.'), false); return; }
+      lgUi.code = r.added[r.added.length - 1].code; lgUi.server = null;
+      flash(msg, r.added.length === 1 ? T('Added {name}.', { name: r.added[0].name }) : T('Added {n} leagues.', { n: r.added.length }), !r.failed.length);
+      $('lgAddIn').value = '';
+      renderLeagues();
+    });
+    $('lgImportBtn').addEventListener('click', function () {
+      var msg = $('lgImportMsg');
+      if (!lgUi.code) { flash(msg, T('Add the league first: paste its league code above.'), false); return; }
+      $('lgImportBtn').disabled = true;
+      I.leagues.importShares(lgUi.code, $('lgImportIn').value).then(function (r) {
+        $('lgImportBtn').disabled = false;
+        if (r.error && !r.found) { flash(msg, r.error, false); return; }
+        var parts = [];
+        if (r.added) parts.push(T('{n} new', { n: r.added }));
+        if (r.updated) parts.push(T('{n} updated', { n: r.updated }));
+        if (r.skipped) parts.push(T('{n} older than what you have (kept yours)', { n: r.skipped }));
+        if (r.notInLeague) parts.push(T('{n} not in this league (skipped)', { n: r.notInLeague }));
+        if (r.failed.length) parts.push(T('{n} unreadable', { n: r.failed.length }));
+        flash(msg, T('Found {n} codes: {parts}.', { n: r.found, parts: parts.join(', ') || T('nothing to do') }), !r.failed.length && !r.notInLeague);
+        $('lgImportErrors').innerHTML = r.failed.length ? '<ul>' + r.failed.map(function (f) { return '<li><code>' + esc(f.code) + '</code> ' + esc(f.error) + '</li>'; }).join('') + '</ul>' : '';
+        if (r.added || r.updated) { $('lgImportIn').value = ''; lgUi.server = null; }
+        renderLeagues();
+      });
+    });
+    $('lgRefresh').addEventListener('click', function () {
+      if (!lgUi.code || !BT.leagues || !BT.leagues.remote) return;
+      var btn = $('lgRefresh'); btn.disabled = true;
+      BT.leagues.remote.standings(lgUi.code).then(function (r) {
+        btn.disabled = false;
+        if (!r.ok) { flash($('lgMsg'), r.error || T('Could not reach the league server. Showing the codes saved on this device.'), false); return; }
+        lgUi.server = Array.isArray(r.standings) ? r.standings : [];
+        flash($('lgMsg'), T('Standings updated from the league server.'), true);
+        renderLeagues();
+      });
+    });
+    $('lgCsv').addEventListener('click', function () {
+      if (!lgUi.code) return;
+      var out = $('lgCsvOut'); out.value = I.leagues.csv(lgUi.code); out.hidden = !out.value;
+      if (out.value) copyText(out.value, $('lgMsg'));
+    });
+    $('lgClear').addEventListener('click', function () {
+      if (!lgUi.code || !BT.leagues) return;
+      if (!confirm(T('Forget every share code imported for this league on this device? Students keep their own data.'))) return;
+      BT.leagues.clearImported(lgUi.code); lgUi.server = null; $('lgCsvOut').hidden = true;
+      flash($('lgMsg'), T('Imported codes cleared.'), true);
+      renderLeagues();
+    });
+    root.addEventListener('storage', function (e) { if (BT.leagues && e.key === BT.leagues.KEY && !$('leaguesPanel').hidden) renderLeagues(); });
+  }
+  var startTab = 'class';
+  try { startTab = /^#leagues\b/.test(location.hash) ? 'leagues' : (JSON.parse(localStorage.getItem(TAB_KEY) || '"class"') === 'leagues' ? 'leagues' : 'class'); } catch (e) { /* ignore */ }
+  if (tabs.length === 2) showTab(startTab);
 
   function renderAll() { renderHeader(); renderRoster(); renderGradebook(); }
   renderAll();

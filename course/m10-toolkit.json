@@ -1,0 +1,562 @@
+{
+  "id": "m10-toolkit",
+  "title": "Your Trading Toolkit: Screeners, Rules & Competitions",
+  "level": "intermediate",
+  "minutes": 61,
+  "summary": "How to use the screener without data-mining, write rules a computer could test, carry one rule through backtest, Market Replay and paper trading, size every trade with the calculator and the coach, and compete in leagues ethically while knowing what a leaderboard cannot tell you about luck and skill.",
+  "disclaimer": "Educational content only. Nothing in this module is investment advice, and no ticker, scan, rule or league result mentioned is a recommendation. Screeners, backtests, replays and paper leagues use simulated or historical data and cannot predict future results.",
+  "lessons": [
+    {
+      "id": "m10-l1",
+      "title": "Using a screener without fooling yourself",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### What a screener is for\n\nA screener is a filter. You hand it a universe of [[Ticker symbol|tickers]] and a list of conditions, such as *price above its 200-day [[Simple moving average (SMA)|SMA]]* and *[[Relative Strength Index (RSI)|RSI]] below 35*, and it returns the handful that match today. The screener on this site does exactly that on the demo universe (stocks, ETFs and crypto) instantly, and on live provider data when you add a key, pacing its requests so it stays inside the free rate limits.\n\nThat makes it a **shortlist machine**, not a prediction machine. It answers *\"which charts meet my conditions right now?\"* It never answers *\"which of these will go up?\"* Every row it returns is a chart you still have to read, a trade you still have to size, and an idea your plan still has to allow.\n\nUsed that way, a screener saves real time. Instead of flipping through fifty charts every evening looking for a [[Pullback|pullback]] in an [[Uptrend|uptrend]], you describe the pullback once and let the filter do the flipping. The six built-in scans ('Oversold in an uptrend', 'Golden cross this week', 'Squeeze setups', '52-week highs', 'Bullish engulfing today', 'Strong trend (ADX>25)') are examples of conditions that come straight from earlier modules."
+        },
+        {
+          "type": "text",
+          "md": "### The trap: data-mining\n\nHere is the problem. A screener makes it effortless to try condition after condition until something looks amazing. Tighten RSI from 35 to 32, add a volume filter, swap the 50-day for the 20-day, remove the sector you do not like, and soon the list is short and every name on it has gone straight up for a month. It *feels* like discovery. Usually it is [[Data snooping|data snooping]]: you have searched so many combinations that some of them were bound to fit the recent past by accident.\n\nA quick bit of arithmetic shows why. Suppose each random filter you try has a 5% chance of looking impressive purely by luck. Try one and you will be fooled 5% of the time. Try twenty and the chance that **at least one** looks impressive by luck alone is 1 − 0.95²⁰, about **64%**. The more you fiddle, the more certain you are to find something, and the less that something means.\n\nThis is the same [[Overfitting (curve fitting)|overfitting]] you met in Module 6, just faster, because a screener lets you test a dozen ideas in a minute without ever writing them down.\n\n### Signs you are mining, not screening\n\n- You changed a threshold because of what the results looked like, not because of a reason you could state beforehand.\n- You keep adding filters until the list shows the stocks you already wanted.\n- You cannot explain, in one sentence, *why* the condition should matter to buyers and sellers.\n- Your best scan only works on one universe, one month, or one interval."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Decide the scan before you run it",
+          "md": "Write the scan down **before** you press Run: the universe, every filter and its threshold, and one sentence on why it should work. Run it once. If you change anything afterwards, write down what you changed and why, and treat the new version as a brand-new idea that still has to prove itself in a [[Backtest|backtest]] and in [[Market replay|Market Replay]]. A scan you tuned by looking at today's results has been tested on nothing."
+        },
+        {
+          "type": "text",
+          "md": "### A healthier screening routine\n\n1. **Start from a setup you already understand.** The scan should describe something from your plan, for example *'a pullback to support inside an uptrend'*, not a fishing trip.\n2. **Use few filters with round, sensible thresholds.** RSI below 35, price above the 200-day SMA, average volume above a million shares. Three filters you can defend beat nine you cannot.\n3. **Save the scan and leave it alone.** Saved scans live in your browser. Run the same one every evening for a few weeks and record what it finds, including the duds.\n4. **Treat every result as a candidate.** Open the chart, check the [[Trend|trend]], [[Support|support]] and [[Liquidity|liquidity]], and only then decide whether it matches your rules.\n5. **Check the empty days.** A good scan sometimes returns nothing. That is the scan doing its job, not a reason to loosen it until it shows you something to trade.\n\nRemember [[Survivorship bias|survivorship bias]] too. A screener only sees what is listed today; the companies that collapsed and were delisted are not in the universe, so a scan that looks great on 'today's stocks' over the past years is quietly ignoring the losers."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200",
+            "rsi"
+          ],
+          "bars": 300,
+          "caption": "MSFT, daily, with the 50- and 200-day SMAs and RSI(14). A scan like 'Oversold in an uptrend' would flag the days when price sits above the 200-day line while RSI dips into the low 30s. Find those days by eye, then ask what happened next, both the bounces *and* the times it kept falling. Demo prices are simulated."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "A match is not a signal to buy",
+          "md": "The screener reports which conditions are true today. It does not know about tomorrow's [[Earnings report|earnings]], a news [[Catalyst|catalyst]], or whether the whole market is about to turn. Nothing on the results list is a recommendation, from this site or anyone else."
+        },
+        {
+          "type": "exercise",
+          "md": "Run one scan the honest way.\n\n- Before opening the screener, write in your journal: the universe (for example *Stocks*), each filter and threshold, and one sentence on why the setup should work.\n- Open the screener, build exactly that scan, run it once and save it with a clear name.\n- Pick the first three results and open each chart. For each one, write whether it truly matches your setup when you look at the chart, and why or why not.\n- Then deliberately try five 'tweaks' (change a threshold, add a filter) and note how much the list changes. Write one sentence on how easy it would have been to fool yourself.",
+          "action": {
+            "page": "screener.html",
+            "label": "Open the screener"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What is a stock screener best used for?",
+              "choices": [
+                "Predicting which stocks will rise next week",
+                "Producing a shortlist of charts that meet conditions you defined, which you then examine yourself",
+                "Replacing the need for a trading plan",
+                "Finding stocks that are guaranteed to be oversold"
+              ],
+              "answer": 1,
+              "explain": "A screener filters a universe by conditions that are true right now. It saves time finding candidates; it does not forecast anything, and every result still has to pass your plan."
+            },
+            {
+              "q": "If each random filter you try has a 5% chance of looking impressive by luck, roughly how likely is it that at least one of 20 such filters looks impressive by luck alone?",
+              "choices": [
+                "5%",
+                "About 20%",
+                "100%",
+                "About 64%"
+              ],
+              "answer": 3,
+              "explain": "1 − 0.95^20 ≈ 0.64. The more combinations you try, the more certain you are to find one that fits the past by accident. That is data snooping."
+            },
+            {
+              "q": "Which of these is a warning sign of data-mining rather than screening?",
+              "choices": [
+                "You kept adjusting thresholds until the results showed the stocks you already liked",
+                "You used three filters with round thresholds",
+                "You wrote the scan down before running it",
+                "Your scan sometimes returns no results"
+              ],
+              "answer": 0,
+              "explain": "Tuning the scan by looking at the results fits it to the recent past. Writing it down first, keeping it simple and accepting empty days are all healthy habits."
+            },
+            {
+              "q": "Why can survivorship bias make a scan look better than it really is?",
+              "choices": [
+                "Because the screener ignores ETFs",
+                "Because RSI is calculated incorrectly on old data",
+                "Because the universe contains only companies still listed today, so the ones that failed and were delisted are missing",
+                "Because saved scans expire after a week"
+              ],
+              "answer": 2,
+              "explain": "Companies that collapsed are not in today's list. Testing a scan on survivors quietly removes many of the losers it would have picked."
+            },
+            {
+              "q": "You change a threshold after seeing the scan's results. What should you do with the new version?",
+              "choices": [
+                "Trade it immediately, since it now fits recent data better",
+                "Treat it as a new idea and validate it again with a backtest and Market Replay before paper trading it",
+                "Delete the old version and pretend the new one was the original",
+                "Nothing; small changes never matter"
+              ],
+              "answer": 1,
+              "explain": "Any change made after looking at results is a new hypothesis. Record it and test it from scratch so you are not fooling yourself."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l2",
+      "title": "Writing rules a computer could test",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### From a feeling to a rule\n\nMost trading ideas start as a feeling: *\"It looks like it wants to bounce.\"* *\"This one feels strong.\"* Feelings are fine for noticing things, but you cannot test them. A computer cannot backtest \"looks strong\", and, more importantly, neither can you, because next month you will remember the times the feeling worked and forget the times it did not ([[Confirmation bias|confirmation bias]]).\n\nA **testable rule** is one that two different people, or one person and a computer, would apply to the same chart and get exactly the same answer. It has four properties:\n\n- **Specific.** Every number is written down: which average, how many bars, which threshold.\n- **Observable at the time.** It uses only data available when the decision is made. No peeking at the close of a bar that has not finished, and no \"the low of the move\" before the move is over. That is [[Look-ahead bias|look-ahead bias]].\n- **Complete.** It says when to get in, when to get out with a profit, when to get out with a loss, and how big the position is.\n- **Unambiguous about timing.** For example: *signals are checked at the daily close and filled at the next day's open.* The backtester and the strategy builder on this site both work that way."
+        },
+        {
+          "type": "text",
+          "md": "### A worked example\n\nVague idea: *\"Buy good stocks when they dip.\"*\n\nTestable version:\n\n- **Universe:** the stocks and ETFs in the demo universe, daily bars.\n- **Entry:** at the daily close, if price is above its 200-day SMA **and** RSI(14) crosses above 30, buy at the next open.\n- **Exit (profit):** when RSI(14) crosses above 70.\n- **Exit (time):** after 30 bars if neither exit has fired.\n- **Exit (loss):** a [[Stop order (stop-loss)|stop]] 6% below the entry price.\n- **Size:** risk 1% of equity per trade, using the distance to the stop ([[Position sizing|position sizing]] from Module 4).\n\nThat is the 'RSI reversion' template in the strategy builder, written out in words. Every line answers a question a computer would ask. Notice what the rule does *not* say: nothing about whether the company is \"good\", nothing about how you feel that day.\n\n### Crossing versus being above\n\nOne small detail trips people up. *\"RSI is below 30\"* is true on every bar of a long slide, so a rule built on it would buy again and again on the way down. *\"RSI crosses above 30\"* is true on one bar only: the bar where it was below 30 yesterday and above 30 today. Choosing 'crosses above' or '>' changes the strategy completely, so the builder makes you pick one explicitly. A [[Crossover|crossover]] compares the previous bar with the current one, which is exactly what you could have known at that close."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "The two-person test",
+          "md": "Read your rule to a friend and give them a chart. If they would ever ask *\"so do I buy here or not?\"*, the rule is not finished. Every place they hesitate is a place where you would have improvised in real time, and improvisation is what a [[Trading plan|trading plan]] exists to remove."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sma200",
+            "rsi"
+          ],
+          "bars": 300,
+          "caption": "SPY, daily, with the 200-day SMA and RSI(14). Try applying the RSI reversion rule by hand: mark each bar where price was above the 200-day line and RSI crossed back above 30, then mark where RSI crossed 70 or 30 bars passed. If you hesitated anywhere, the rule needs another sentence. Demo prices are simulated."
+        },
+        {
+          "type": "text",
+          "md": "### Common holes in hand-written rules\n\n- **No exit.** Many beginners write a careful entry and then \"sell when it feels right\". An [[Exit rule|exit rule]] matters at least as much as an [[Entry rule|entry rule]].\n- **No stop.** \"I'll watch it\" is not a stop. Write the price or percentage.\n- **Hidden discretion.** \"Buy breakouts on strong volume\": how strong? 1.5× the 20-day average? Write it.\n- **Too many conditions.** Seven conditions joined by AND may fire twice in five years. A rule that almost never trades cannot be judged, and it is often a sign of [[Overfitting (curve fitting)|overfitting]].\n- **Ignoring costs.** Write down the [[Commission|commission]] and [[Slippage|slippage]] you will assume. The backtester lets you set both.\n\nThe strategy builder turns these sentences into blocks: AND/OR condition groups, crossing comparisons, stop, target, trailing stop and maximum bars. Its plain-English summary reads your rule back to you, which is the two-person test done by a machine."
+        },
+        {
+          "type": "exercise",
+          "md": "Turn a vague idea into a testable rule.\n\n- Write down one idea you have had, in your own words, however vague (for example *'buy strong stocks on a dip'*).\n- Rewrite it with all four properties: specific numbers, only data known at the close, entry and both exits plus size, and when the order fills.\n- Open the strategy builder (it starts on the RSI reversion template), rebuild your rule with its blocks, and compare the plain-English summary with what you wrote. Fix any line where they disagree.\n- Save the rule with a name you will recognise. Do not run the backtest yet; that is the next lesson.",
+          "action": {
+            "page": "builder.html",
+            "label": "Open the strategy builder",
+            "hash": "template=rsiReversion"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What makes a trading rule 'testable'?",
+              "choices": [
+                "It was recommended by an experienced trader",
+                "It has worked on at least one stock",
+                "Two people applying it to the same chart would always reach the same decision",
+                "It uses at least three indicators"
+              ],
+              "answer": 2,
+              "explain": "A testable rule is specific, uses only information available at the time, is complete, and leaves no room for interpretation, so anyone (or a computer) applies it identically."
+            },
+            {
+              "q": "Which rule contains look-ahead bias?",
+              "choices": [
+                "Buy at today's open if today's close will be above the 50-day SMA",
+                "Buy at the next open when today's close is above the 50-day SMA",
+                "Sell at the next open when RSI(14) crosses above 70 at the close",
+                "Exit after 30 bars if no other exit has fired"
+              ],
+              "answer": 0,
+              "explain": "At today's open you cannot know today's close. Any rule that uses data from a bar that has not finished yet is peeking into the future."
+            },
+            {
+              "q": "What is the practical difference between 'RSI below 30' and 'RSI crosses above 30'?",
+              "choices": [
+                "There is no difference",
+                "'Below 30' uses look-ahead bias",
+                "'Crosses above' can only be used on weekly charts",
+                "'Below 30' is true on every bar of a long decline, while 'crosses above 30' is true only on the bar where it moves from below to above"
+              ],
+              "answer": 3,
+              "explain": "A level condition can stay true for many bars; a crossing compares the previous bar with the current one and fires once. Picking the wrong one changes how often, and when, the strategy trades."
+            },
+            {
+              "q": "A rule says: 'Buy breakouts on strong volume; sell when it feels toppy.' What is the biggest problem?",
+              "choices": [
+                "It uses volume, which is never useful",
+                "'Strong' and 'feels toppy' are undefined, so the entry is ambiguous and there is no real exit or stop",
+                "It is too short",
+                "Breakouts cannot be backtested"
+              ],
+              "answer": 1,
+              "explain": "Undefined words hide discretion. Specify the volume threshold (e.g. 1.5× the 20-day average), a written exit, and a stop."
+            },
+            {
+              "q": "Why is a rule with seven conditions joined by AND often a warning sign?",
+              "choices": [
+                "It may trade so rarely that you cannot judge it, and the extra conditions are often fitted to past data",
+                "Computers cannot evaluate more than three conditions",
+                "AND conditions always lose money",
+                "It is illegal in most markets"
+              ],
+              "answer": 0,
+              "explain": "Each extra condition cuts the number of trades and adds a chance to fit noise. Few trades and many tuned conditions are classic overfitting."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l3",
+      "title": "From rule to backtest to replay to paper",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Four gates, in order\n\nA rule on paper is a hypothesis. Before it gets anywhere near your main paper account, it should pass four gates, each one harder to fool than the last:\n\n1. **Write it** (Lesson 2). If you cannot write it, you cannot test it.\n2. **Backtest it.** Run the exact rule on years of history with realistic [[Transaction costs|costs]]. This tells you whether the idea had any [[Expectancy|edge]] in the past, and how painful it was to hold.\n3. **Replay it.** Trade the rule by hand in [[Market replay|Market Replay]] with the future hidden, bar by bar. This tells you whether *you* can actually follow it when you do not know what comes next.\n4. **Paper trade it.** Run it forward on live or delayed prices in a paper account for a fixed number of trades. This is [[Forward testing (paper trading a strategy)|forward testing]]: the only test on data nobody has seen, including you.\n\nEach gate catches problems the previous one cannot. A backtest cannot feel fear. Replay cannot show you next month. Paper trading is slow but honest. Skipping straight from a good-looking backtest to real money is how most self-taught strategies die."
+        },
+        {
+          "type": "text",
+          "md": "### Gate 2: reading the backtest honestly\n\nFrom the strategy builder, 'Backtest it' runs your rule through the same engine as the strategy lab, filling every signal at the **next bar's open** to avoid look-ahead. When the results appear, look past the headline return:\n\n- **Number of trades.** Fewer than about 30 and the [[Win rate|win rate]] and averages are mostly noise.\n- **[[Maximum drawdown|Maximum drawdown]].** Could you really sit through that fall? Halve your confidence if the answer is \"probably\".\n- **[[Profit factor|Profit factor]] and expectancy.** Gross wins divided by gross losses, and the average result per trade. Both should hold up after costs.\n- **Compared with [[Buy and hold|buy and hold]].** Many rules simply underperform owning the [[Benchmark|benchmark]] with more work and more risk.\n- **Different symbols and periods.** Run it on a few tickers and an earlier stretch of years. A rule that works only on one stock in one year is a [[Robustness|robustness]] failure.\n\nUse the optimiser sparingly, if at all. Searching a grid of parameters is the same data-mining risk as fiddling with a screener: the best cell in the grid is usually the luckiest one. If you do look, prefer a broad plateau of decent results over one sharp peak, and confirm the choice on [[Out-of-sample data|out-of-sample data]]."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "Use the same rule everywhere",
+          "md": "Keep the rule identical across the gates. If you change a threshold after the backtest, you are back at gate 1 with a new rule. Save each version in the builder with a version number in the name (for example *RSI reversion v2*) and note in your journal what changed and why. You can also export the rule as JSON to keep a copy."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "signals"
+          ],
+          "bars": 300,
+          "caption": "MSFT, daily, with the 20- and 50-day SMAs. The SMA crossover template buys when the 20-day crosses above the 50-day and sells on the cross back down. Count the [[Whipsaw|whipsaws]] in sideways stretches: a backtest charges you for every one, and Market Replay makes you sit through them. Demo prices are simulated."
+        },
+        {
+          "type": "text",
+          "md": "### Gate 3: replay, where the future is hidden\n\nA backtest applies your rule perfectly. You will not. In Market Replay the chart stops at a past date and moves forward one bar at a time; you place every order yourself through a paper account kept separate from your main one. The drill *'Trade the SMA crossover on MSFT 2024'* is built for exactly this rule.\n\nWhile replaying, write down every time you:\n\n- skipped a signal because it \"looked wrong\",\n- took a trade the rule did not give you,\n- moved or removed a stop.\n\nThen compare your scorecard with the backtest of the same period. If your replay result is much worse, the gap is not the market; it is execution. That is the most useful number this whole process produces, because it measures you.\n\n### Gate 4: paper, forward, for a fixed sample\n\nDecide in advance how many trades the paper test lasts. The capstone in Module 8 suggests **30 trades**, logged in the journal, with the planned stop and size on every one. Do not stop early because the first five went well, and do not quit after three losers. A [[Losing streak|losing streak]] of four or five is normal for a rule that wins 45% of the time.\n\nAt the end, compare three numbers: backtest, replay and paper. If they roughly agree, you have a rule you understand and can follow. If the paper results are far worse than the backtest, the most common culprits are overfitting, costs you did not model, or rule-breaking. None of this means the rule will work with real money; it means you have done the homework."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Passing all four gates is not a guarantee",
+          "md": "Markets change. A rule that passed every gate can stop working, and paper fills are kinder than real ones. The point of the gates is to filter out ideas that were never going to work and to teach you how you behave, not to certify a money-maker. This course never recommends trading real money; if you ever do, that decision and its risks are yours alone."
+        },
+        {
+          "type": "exercise",
+          "md": "Walk one rule through the gates.\n\n- In the strategy builder, open the rule you saved in Lesson 2 (or the SMA crossover template) and press **Backtest it**. Record: trades, win rate, maximum drawdown, profit factor and the result versus buy-and-hold.\n- Run the same rule on two other symbols and note whether the results hold up.\n- Open the backtest lab for a second view of the SMA crossover on MSFT with costs switched on, and compare.\n- Then open Market Replay on the *SMA crossover on MSFT 2024* drill and trade it by hand. Afterwards, write down every place you broke the rule and compare your scorecard with the backtest.\n- Finally, write the paper-trading plan: how many trades, which account, and what results would make you stop.",
+          "action": {
+            "page": "backtest.html",
+            "label": "Backtest the SMA crossover on MSFT",
+            "hash": "sym=MSFT&strategy=smaCross&tf=1day&run=1"
+          }
+        },
+        {
+          "type": "drill",
+          "drillId": "sma-cross-msft-2024",
+          "md": "Replay the SMA crossover on MSFT through 2024 with the future hidden. Follow the rule exactly, log every deviation, and compare your scorecard with the backtest of the same period."
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What is the correct order of the four validation gates in this lesson?",
+              "choices": [
+                "Paper trade, backtest, write, replay",
+                "Replay, paper trade, backtest, write the rule",
+                "Backtest, write, paper trade, replay",
+                "Write the rule, backtest it, replay it, paper trade it"
+              ],
+              "answer": 3,
+              "explain": "You cannot test what you have not written; the backtest checks the past; replay checks whether you can follow it blind; paper trading tests it forward on unseen data."
+            },
+            {
+              "q": "What does Market Replay test that a backtest cannot?",
+              "choices": [
+                "Whether the rule had an edge in history",
+                "Whether you can actually follow the rule when the future is hidden",
+                "The exact commission your broker charges",
+                "Whether the rule will work next year"
+              ],
+              "answer": 1,
+              "explain": "A backtest applies the rule perfectly. Replay puts you in the decision seat bar by bar, revealing skipped signals, impulsive trades and moved stops."
+            },
+            {
+              "q": "A backtest shows a 70% win rate from 8 trades. How much weight should you give that win rate?",
+              "choices": [
+                "A lot; 70% is excellent",
+                "None, because win rate never matters",
+                "Very little; with so few trades the number is mostly noise",
+                "It proves the rule will work in replay"
+              ],
+              "answer": 2,
+              "explain": "Small samples swing wildly. Look for at least about 30 trades before reading much into win rate or averages."
+            },
+            {
+              "q": "After a backtest you change the RSI threshold from 30 to 28 because results look better. What has happened?",
+              "choices": [
+                "You have created a new rule that needs to go through the gates again",
+                "You have improved the same rule; continue to replay",
+                "Nothing important; small changes are always safe",
+                "The backtest is now free of overfitting"
+              ],
+              "answer": 0,
+              "explain": "Any change after seeing results is a new hypothesis. Version it, note why, and validate it again, ideally on data you did not tune on."
+            },
+            {
+              "q": "Your backtest made +12% over a period, but your replay of the same period lost 3%. What is the most likely explanation?",
+              "choices": [
+                "The market data in replay is fake",
+                "Backtests always underestimate returns",
+                "Execution: skipped signals, extra trades or moved stops while trading by hand",
+                "Replay charges higher commissions by design"
+              ],
+              "answer": 2,
+              "explain": "Same rule, same bars: the gap is usually how the rule was followed. That is exactly what replay is meant to reveal."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l4",
+      "title": "Risk sizing with the calculator and the coach",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Size comes from the stop, not the conviction\n\nModule 4 introduced [[The 1% rule|the 1% rule]]: decide the most you are willing to lose on one idea, as a percentage of your account, *before* you decide how many shares to buy. The number of shares then falls out of simple arithmetic:\n\n**shares = (equity × risk %) ÷ (entry − stop)**\n\nExample: equity $25,000, risk 1%, entry $50.00, stop $47.50.\n\n- Dollar risk: $25,000 × 1% = **$250**.\n- Risk per share: $50.00 − $47.50 = **$2.50**.\n- Shares: $250 ÷ $2.50 = **100 shares**, a position worth **$5,000** (20% of equity).\n\nIf the stop is hit you lose about $250, plus [[Slippage|slippage]] and [[Commission|commissions]]. A wider stop means fewer shares; a tighter stop means more. Your [[Risk per trade|risk per trade]] stays the same either way. That is the whole idea: the market decides where the stop belongs, and the stop decides your size.\n\n### The 'Position size' calculator\n\nThe paper portfolio has a **Position size** tab that does this arithmetic for you. It prefills equity from the active paper account; you enter risk %, entry, stop and an optional target. It shows the shares, dollar risk, position value and percentage of equity, plus your [[Risk/reward ratio|reward-to-risk]] and the win rate you need to break even. The dashboard's order ticket has the same calculator as a collapsible 'Plan this trade' panel that fills in the quantity and saves the planned stop and target with the order and the journal entry."
+        },
+        {
+          "type": "text",
+          "md": "### When the 1% rule is not enough\n\nWatch the **position value** line, not just the risk line. Same $25,000 account, 1% risk, but now entry $200 and stop $196:\n\n- Risk per share is only $4, so the calculator says **62 shares**.\n- That position is worth **$12,400**, about half of the account.\n\nYour planned loss is still $250, but only if the stop fills where you placed it. Overnight a stock can [[Gap|gap]] straight past a stop, and with half the account in one name, a 15% gap costs about $1,860, more than seven times your plan. A sensible plan caps both: risk per trade **and** the size of any single position (many traders use 20 to 25% as a ceiling). The coach flags positions above 25% of equity for this reason.\n\n### Breakeven win rate and expectancy\n\nTwo more numbers on the calculator are worth understanding:\n\n- **Breakeven win rate = 1 ÷ (1 + reward-to-risk).** At 1:1 you must win 50% of trades just to break even before costs; at 2:1, about 33%; at 3:1, 25%.\n- **[[Expectancy|Expectancy]]** is the average result per trade in R (multiples of your risk). With a 45% win rate, average win 2R and average loss 1R: 0.45 × 2 − 0.55 × 1 = **+0.35R** per trade, before costs.\n\nThe calculator also shows a Kelly fraction, labelled *educational only*. Kelly assumes you know your true win rate and payoff exactly, which nobody does; full Kelly produces brutal drawdowns, so anyone who uses it at all uses a small fraction of it."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Risk is a decision you make before the trade",
+          "md": "Write three numbers before every order: entry, stop and size. If you cannot name the stop, you cannot size the trade, and if you cannot size it, you are not ready to place it. The calculator does the arithmetic; it cannot tell you whether a trade is a good idea."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "bb"
+          ],
+          "bars": 250,
+          "caption": "TSLA, daily, with the 50-day SMA and Bollinger Bands. Wide bands mean a sensible stop sits far from the entry, so the same 1% risk buys far fewer shares than it would in a calm stock. Volatility changes your size, not your risk rule. Demo prices are simulated."
+        },
+        {
+          "type": "text",
+          "md": "### The coach: a second pair of eyes\n\nAfter each paper fill, and when you submit an order, the rule-based coach reviews the trade and writes short notes into your journal entry. It looks for the habits that sink new traders:\n\n- risk above roughly 1–2% of equity, or **no stop at all**;\n- a reward-to-risk below 1.5;\n- trading against the 50-day trend;\n- a [[Revenge trading|revenge trade]] opened within minutes (or two bars) of a loss;\n- [[Overtrading|overtrading]], more than five trades in a day;\n- one position above 25% of equity;\n- adding to a losing position (averaging down).\n\nEach note is a *tip* or a *warning* and links to the lesson that explains it. The coach does not know whether the trade will work, and it never tells you to buy or sell. It checks your process against your own rules. Treat a warning as a question to answer in your journal, not an insult: *\"Why did I skip the stop this time?\"*"
+        },
+        {
+          "type": "exercise",
+          "md": "Size three trades and let the coach check them.\n\n- Open the **Position size** tab on your paper portfolio. Size this trade: equity from your account, 1% risk, entry $50.00, stop $47.50. Confirm the shares and dollar risk by hand.\n- Size a second trade with entry $200 and stop $196. Write down the position value as a percentage of equity and decide what single-position cap your plan will use.\n- Place one small paper trade on the dashboard using the 'Plan this trade' panel with a real stop. Then read the coach notes in its journal entry and write one sentence on each tip or warning.\n- Add your risk-per-trade and position-cap numbers to your written trading plan.",
+          "action": {
+            "page": "portfolio.html",
+            "label": "Open the position size calculator",
+            "hash": "sizing"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Equity $25,000, risk 1%, entry $50.00, stop $47.50. How many shares does the formula give?",
+              "choices": [
+                "100",
+                "50",
+                "250",
+                "500"
+              ],
+              "answer": 0,
+              "explain": "Dollar risk is $250 and risk per share is $2.50, so $250 ÷ $2.50 = 100 shares."
+            },
+            {
+              "q": "Same account and 1% risk, entry $200, stop $196. The calculator says 62 shares (about $12,400). What is the main concern?",
+              "choices": [
+                "The dollar risk is above 1%",
+                "62 is not a round number",
+                "The position is about half the account, so a gap through the stop could cost far more than planned",
+                "The stop is too wide"
+              ],
+              "answer": 2,
+              "explain": "The planned loss is still about $250, but a tight stop produced a huge position. A gap past the stop would blow through the plan, which is why many plans also cap single-position size."
+            },
+            {
+              "q": "With a reward-to-risk of 2:1, what win rate do you need just to break even before costs?",
+              "choices": [
+                "About 25%",
+                "About 33%",
+                "50%",
+                "About 67%"
+              ],
+              "answer": 1,
+              "explain": "Breakeven win rate = 1 ÷ (1 + 2) ≈ 33.3%."
+            },
+            {
+              "q": "A rule wins 45% of the time, average win 2R, average loss 1R. What is its expectancy per trade before costs?",
+              "choices": [
+                "−0.10R",
+                "+1.45R",
+                "+0.90R",
+                "+0.35R"
+              ],
+              "answer": 3,
+              "explain": "0.45 × 2 − 0.55 × 1 = 0.90 − 0.55 = +0.35R."
+            },
+            {
+              "q": "What does the rule-based coach do?",
+              "choices": [
+                "Tells you which stocks to buy",
+                "Reviews your order and fills against process rules (stop, size, trend, revenge trading, overtrading) and links the relevant lesson",
+                "Predicts whether the trade will be profitable",
+                "Automatically closes losing trades"
+              ],
+              "answer": 1,
+              "explain": "The coach checks your process, not the market. It writes tips and warnings with lesson links into the journal and never recommends a trade."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m10-l5",
+      "title": "Competing in leagues: ethics, luck and what leaderboards hide",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Why compete at all?\n\nA league turns paper trading into a shared game: the same start date, the same starting cash, the same rules on [[Commission|commissions]], [[Slippage|slippage]], allowed assets, [[Short selling|short selling]] and maximum position size, and a leaderboard at the end. Done well, it adds accountability, a reason to keep a journal, and something to talk about in class. Each league you join gets its **own paper account**, separate from your main and replay accounts, so nothing you do in a competition touches your other records.\n\nDone badly, a league teaches exactly the wrong lesson: that the person at the top of a four-week leaderboard is the best trader. This lesson is about getting the first without the second."
+        },
+        {
+          "type": "text",
+          "md": "### Luck versus skill\n\nImagine a league of 30 students where every one of them picks trades by flipping a coin. Someone still finishes first. If they were allowed to put the whole account into one volatile stock, the winner of a single month can easily be up 20% or more, and the person in last place down by as much. Nothing about that ranking measures skill.\n\nShort competitions are dominated by **variance**, the size of the swings, not by edge. Three things make luck look like skill:\n\n- **Short windows.** Four weeks is a handful of trades. Even a genuinely good rule can lose over a month, and a terrible one can win.\n- **Concentration.** One all-in bet on a high-[[Volatility|volatility]] name is a lottery ticket. It wins leagues far more often than it wins careers, because the leaderboard only shows the tickets that paid.\n- **Many players.** The more people in the league, the more extreme the luckiest result will be. The top score rises with the number of players even when nobody has an edge.\n\nThe arithmetic of small samples applies here too. With 20 trades and a 60% win rate, the honest range for that person's 'true' win rate is roughly 40% to 80%. One league does not tell you much about anyone."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Judge the process, not the rank",
+          "md": "Before a league starts, write down what *you* will count as a good result: following your rules on every trade, risking no more than 1% per idea, a [[Maximum drawdown|maximum drawdown]] you can live with, a journal entry for every trade. You can finish 25th and have run a better process than the winner. That is the result worth repeating."
+        },
+        {
+          "type": "text",
+          "md": "### What a leaderboard does not tell you\n\nThe standings show more than raw return, and each column answers a different question:\n\n- **Return.** How much the account grew. Says nothing about how much risk was taken to get there.\n- **[[Sharpe ratio|Sharpe ratio]].** Return per unit of volatility (here, the average daily change divided by its standard deviation, annualised). Two players with the same return but very different swings get very different Sharpe ratios. On short leagues it is noisy, but it is still more informative than return alone.\n- **Max drawdown.** The deepest peak-to-trough fall. Ties on return are broken by drawdown, smaller is better.\n- **Consistency score.** How often the equity line rose step to step, blended with a drawdown score.\n- **Trades.** How many round trips. Very few means the result rests on one or two bets.\n\nConsider two players at the end of a month:\n\n- **A:** +18%, maximum drawdown 30%, two trades, everything in one stock.\n- **B:** +9%, maximum drawdown 4%, 14 trades, never more than 1% risk each.\n\nA tops the return column. B has the steadier [[Equity curve|equity curve]], the far better drawdown, and a result spread over enough trades to mean something. If you had to hand one of them your own money for the next ten years, you would not pick A, and a good classroom discussion is about why."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "volume"
+          ],
+          "bars": 120,
+          "caption": "NVDA, daily, about six months, with the 50-day SMA and volume. A volatile stock like this can make or break a four-week league in a few sessions. The same move that crowns a winner would ruin an account that sized the same way in a bad month. Demo prices are simulated."
+        },
+        {
+          "type": "text",
+          "md": "### Competing ethically\n\nA league only teaches anything if everyone plays by the same rules. Ground rules worth adopting, whether or not anyone is checking:\n\n- **One account, one person.** Do not join under several names and keep whichever account got lucky. That turns a competition into a survivorship trick and teaches you nothing.\n- **Play within the rules, not around them.** If the league bans day trading or caps position size, respect the spirit of the rule even where the software might let something slip. If you find a bug, such as a quote that never updates, report it to the organiser instead of exploiting it.\n- **Trade your plan, not the leaderboard.** Doubling your risk in the last week to catch the leader is [[FOMO (fear of missing out)|FOMO]] with a scoreboard. Note it in your journal if you feel the urge; that urge is the lesson.\n- **Keep it kind.** Use a display name you would be happy for a teacher or an employer to see. Projector view puts names on a classroom screen; celebrate good process, not just big numbers, and never mock someone at the bottom.\n- **No real money.** Leagues here are paper only. Prizes, if a teacher offers any, should reward process (journal quality, rule-following, risk control) at least as much as return."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Paper wins are not real-world evidence",
+          "md": "Winning a paper league does not mean you are ready to trade real money, and nothing on this site suggests you should. Paper fills are generous, there is no fear of real loss, and a month is far too short to separate skill from luck. Treat a league as practice in following rules under a little pressure, nothing more."
+        },
+        {
+          "type": "exercise",
+          "md": "Prepare for, or review, a league the honest way.\n\n- Open the leagues page and look at the rule presets ('Classroom 4-week', 'Day-trading sprint', 'Long-only investor', 'Options challenge'). Pick one and write down every rule that would change how you trade.\n- Before joining or creating a league, write your process goals in your journal: maximum risk per trade, maximum position size, minimum number of trades, and one rule you promise not to break.\n- If you are already in a league, open the standings and rank the top five by Sharpe ratio and by maximum drawdown instead of return. Write two sentences on how the order changes and what that tells you.\n- At the end, grade yourself on your process goals before you look at your rank.",
+          "action": {
+            "page": "leagues.html",
+            "label": "Open Leagues"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "In a 30-person league where everyone trades randomly, what happens at the top of the leaderboard?",
+              "choices": [
+                "Nobody finishes with a positive return",
+                "The leaderboard refuses to rank random traders",
+                "Someone still finishes first, often with a large return, even though no one had skill",
+                "Everyone ends up with the same return"
+              ],
+              "answer": 2,
+              "explain": "Someone always wins. With concentrated, volatile positions the luckiest result can look impressive, which is why one short league says little about skill."
+            },
+            {
+              "q": "Player A made +18% with a 30% maximum drawdown on two all-in trades. Player B made +9% with a 4% drawdown over 14 small-risk trades. Which statement is most accurate?",
+              "choices": [
+                "A is clearly the more skilled trader",
+                "Neither result can be compared in any way",
+                "They are equally skilled because both made money",
+                "B's result is more informative: lower drawdown, more trades and controlled risk, even though the return is lower"
+              ],
+              "answer": 3,
+              "explain": "Return alone hides risk. B's steadier curve, smaller drawdown and larger sample of trades say more about process than A's two lucky bets."
+            },
+            {
+              "q": "What does the Sharpe ratio add that raw return does not?",
+              "choices": [
+                "Return relative to how much the account swung along the way",
+                "The number of trades",
+                "The broker's commission",
+                "A forecast of next month's return"
+              ],
+              "answer": 0,
+              "explain": "Sharpe divides average return by its volatility, so a smooth +9% can rank above a wild +18%. On short leagues it is noisy, but it accounts for risk."
+            },
+            {
+              "q": "Which of these is an ethical problem in a paper league?",
+              "choices": [
+                "Keeping a journal entry for every trade",
+                "Joining under several names and keeping whichever account did best",
+                "Choosing not to trade on a day with no setups",
+                "Reporting a price-feed bug to the organiser"
+              ],
+              "answer": 1,
+              "explain": "Multiple accounts turn the competition into a survivorship trick: the 'winner' is just the luckiest of your copies. It defeats the purpose of the league."
+            },
+            {
+              "q": "It is the last week and you are in 6th place. What does this lesson suggest?",
+              "choices": [
+                "Double your position size to catch the leader",
+                "Put everything into the most volatile stock you can find",
+                "Stop logging trades so the losses do not count",
+                "Keep trading your plan with the same risk, and journal any urge to chase the leaderboard"
+              ],
+              "answer": 3,
+              "explain": "Chasing rank with bigger risk is FOMO with a scoreboard. The point of a league is practising your process under pressure, not winning a paper prize."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

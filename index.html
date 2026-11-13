@@ -112,6 +112,38 @@
 .orders td{font-size:var(--fs-sm)} .orders td .sm{padding:1px 6px;font-size:10px}
 .orders .type{color:var(--muted);font-size:var(--fs-xs);display:block}
 
+/* account switcher, plan panel, coach notes, semi-auto proposals (v0.5) */
+.acct-field{margin:4px 0 8px}
+.acct-field select{width:100%}
+.acct-field .note{margin-top:4px}
+#panel-account.league-acct{box-shadow:inset 3px 0 0 var(--accent)}
+.plan-box{margin-top:8px;background:var(--panel2)}
+.plan-box summary{justify-content:flex-start;flex-wrap:wrap}
+.plan-box .plan-sum{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:var(--fs-xs);font-weight:400}
+.plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:end}
+.plan-grid .field label{font-size:var(--fs-xs)}
+.plan-grid input{width:100%;min-width:0}
+#planUseAtr{margin-top:6px}
+.plan-warn{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs)}
+.plan-warn li{padding:5px 8px;border-radius:var(--r);background:var(--panel);border-left:3px solid var(--accent);color:var(--muted)}
+.plan-warn li.warn{border-left-color:var(--warn);color:var(--fg)}
+.plan-chk{display:flex;gap:8px;align-items:center;font-size:var(--fs-sm);margin-top:8px;cursor:pointer}
+.plan-chk input{flex:0 0 auto}
+.plan-line{display:inline-block;margin-top:4px;font-size:var(--fs-xs)}
+.coach{margin-top:8px;padding:8px 10px;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--panel2);font-size:var(--fs-sm)}
+.coach-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.coach ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.coach li{padding-left:10px;border-left:3px solid var(--accent);line-height:1.45}
+.coach li.warn{border-left-color:var(--warn)}
+.coach li a{white-space:nowrap}
+.coach .note{margin:6px 0 0}
+#autoRule{width:100%}
+.proposal{margin-top:8px;padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--accent);background:var(--accent-soft)}
+.proposal p{margin:0 0 6px;font-size:var(--fs-sm)}
+.proposal .prop-order{font-size:var(--fs-md);font-weight:500}
+.proposal .actions{display:flex;gap:6px;margin:8px 0}
+.proposal .actions button{flex:1}
+
 /* account */
 .acct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
 .acct-grid .stat .value{font-size:var(--fs-lg)}
@@ -166,6 +198,11 @@ body.touring .tour-target{background:var(--panel)}
   .pat-legend{gap:4px 6px}
   .pat-legend .k{min-height:36px;padding:6px 10px}
   .ticket .qtymode button,#qtyMode{min-width:44px}
+  .plan-grid{grid-template-columns:1fr 1fr}
+  .plan-grid .field:last-child{grid-column:1/-1}
+  .plan-chk{min-height:44px}
+  .proposal .actions button,.coach-head button,#planUseAtr{min-height:44px}
+  .coach li a{display:inline-block;min-height:32px;padding-top:4px}
 }
 #qtyMode{min-width:36px}
 /* short landscape phones: a chart that fits between the top bar and the fixed tab bar */
@@ -291,6 +328,11 @@ body.touring .tour-target{background:var(--panel)}
 
     <div class="card ticket" id="panel-ticket" data-acc="open">
       <h2>Trade ticket <span class="score" id="ticketSym"></span></h2>
+      <div class="field acct-field" id="acctField" hidden>
+        <label for="acctSel">Account</label>
+        <select id="acctSel" aria-describedby="acctNote"><option value="main">Main account</option></select>
+        <div class="note" id="acctNote" hidden></div>
+      </div>
       <div class="sides" role="radiogroup" aria-label="Order side">
         <button class="side b on" type="button" role="radio" aria-checked="true" data-side="buy" title="Buy shares (go long)">Buy</button>
         <button class="side s" type="button" role="radio" aria-checked="false" data-side="sell" title="Sell shares you own">Sell</button>
@@ -327,6 +369,30 @@ body.touring .tour-target{background:var(--panel)}
           <input id="stopPx" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
         </div>
       </div>
+      <details class="plan-box" id="planBox">
+        <summary>Plan this trade <span class="plan-sum" id="planSummary"></span></summary>
+        <p class="note">Decide what you are willing to lose first. Put the stop where your idea is proven wrong; the panel turns that into a share count.</p>
+        <div class="plan-grid">
+          <div class="field">
+            <label for="planRisk">Risk (% of equity)</label>
+            <input id="planRisk" type="number" min="0.1" max="10" step="0.05" value="1" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="planStop">Stop-loss price</label>
+            <input id="planStop" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label for="planTarget">Target price <span class="muted">(optional)</span></label>
+            <input id="planTarget" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+          </div>
+        </div>
+        <button class="sm ghost" id="planUseAtr" type="button" title="Place the stop two average true ranges from the entry">Stop at 2 × ATR</button>
+        <div class="est" id="planOut"></div>
+        <ul class="plan-warn" id="planWarn" aria-live="polite"></ul>
+        <label class="plan-chk" id="planStopRow" hidden><input type="checkbox" id="planStopOrder" checked> <span>Also place a stop-loss order at my stop after the fill</span></label>
+        <div class="msg ok" id="planMsg" role="status" aria-live="polite"></div>
+        <p class="note">Arithmetic for practice, not advice. Gaps can jump past a stop, so a real loss can be bigger than planned.</p>
+      </details>
       <div class="est" id="est"></div>
       <button class="submit buy" id="review" type="button">Review order</button>
       <div class="confirm" id="confirm" hidden>
@@ -334,7 +400,25 @@ body.touring .tour-target{background:var(--panel)}
         <div class="actions"><button id="confirmYes" class="buy" type="button">Confirm</button><button id="confirmNo" type="button">Cancel</button></div>
       </div>
       <div class="msg" id="tmsg" role="status" aria-live="polite"></div>
+      <div class="coach" id="coachNotes" role="status" aria-live="polite" hidden></div>
       <div class="note" id="otypeHelp"></div>
+    </div>
+
+    <div class="card ticket" id="panel-auto" data-acc hidden>
+      <h2>Semi-auto mode <span class="score" id="autoState"></span></h2>
+      <p class="note">Pick a rule you saved in the Strategy Builder. When it fires on this chart you get a proposal to confirm or dismiss with one tap. Nothing is ever placed automatically.</p>
+      <div id="autoEmpty" class="note">You have no saved rules yet. <a href="builder.html">Build one in the Strategy Builder ▸</a></div>
+      <div id="autoControls" hidden>
+        <div class="field">
+          <label for="autoRule">Rule to watch</label>
+          <select id="autoRule"></select>
+        </div>
+        <p class="note" id="autoDesc"></p>
+        <label class="plan-chk"><input type="checkbox" id="autoOn"> <span>Propose trades on this chart when the rule fires</span></label>
+      </div>
+      <div class="proposal" id="autoProposal" hidden></div>
+      <div class="msg" id="autoMsg" role="status" aria-live="polite"></div>
+      <p class="note">Rules are checked on every price update, including the bar that is still forming, so a signal can appear and then disappear before the bar closes. Back-test a rule before you trust it.</p>
     </div>
 
     <div class="card" id="panel-orders" data-acc>
@@ -379,7 +463,7 @@ body.touring .tour-target{background:var(--panel)}
     </div>
 
     <div class="card" id="panel-account" data-acc>
-      <h2>Paper account <span class="row" style="gap:4px"><a class="btn sm" href="portfolio.html">Full portfolio</a><button id="reset" class="sm" type="button">Reset</button></span></h2>
+      <h2><span id="acctHead">Paper account</span> <span class="row" style="gap:4px"><a class="btn sm" href="portfolio.html">Full portfolio</a><button id="reset" class="sm" type="button">Reset</button></span></h2>
       <div class="acct-grid" id="acct"></div>
       <div class="pos-row" id="posRow" hidden></div>
       <h2 style="margin-top:12px">Recent fills</h2>
@@ -482,6 +566,11 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/paper.js"></script>
 <script src="js/options.js"></script>
 <script src="js/alerts.js"></script>
+<script src="js/risk.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/leagues.js"></script>
+<script src="js/xp.js"></script>
+<script src="js/coach.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -32,10 +32,11 @@ test('module exposes the contract surface and mount() is a no-op without a DOM',
   assert.strictEqual(N.mount(), false);
 });
 
-test('registry lists the fourteen v0.4 pages in nav order with the right files', () => {
+test('registry lists the eighteen v0.5 pages in nav order with the right files', () => {
   const files = N.pages.map(p => p.file);
-  assert.deepStrictEqual(files, ['index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
-    'news.html', 'compare.html', 'glossary.html', 'pricing.html', 'verify.html', 'instructor.html', 'about.html']);
+  assert.deepStrictEqual(files, ['index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'leagues.html', 'backtest.html',
+    'builder.html', 'screener.html', 'journal.html', 'news.html', 'compare.html', 'glossary.html', 'profile.html', 'pricing.html',
+    'verify.html', 'instructor.html', 'about.html']);
   const labels = Object.fromEntries(N.pages.map(p => [p.file, p.label]));
   assert.strictEqual(labels['pricing.html'], 'Pro');
   assert.strictEqual(labels['verify.html'], 'Verify certificate');
@@ -43,6 +44,62 @@ test('registry lists the fourteen v0.4 pages in nav order with the right files',
   assert.strictEqual(labels['start.html'], 'First Week');
   assert.strictEqual(labels['instructor.html'], 'Instructor');
   assert.ok(!files.includes('certificate.html'), 'certificate.html stays out of the nav');
+  assert.strictEqual(labels['leagues.html'], 'Leagues');
+  assert.strictEqual(labels['screener.html'], 'Screener');
+  assert.strictEqual(labels['builder.html'], 'Strategy Builder');
+  assert.strictEqual(labels['profile.html'], 'Profile');
+  assert.strictEqual(N.pages.find(p => p.file === 'builder.html').short, 'Builder', 'desktop nav uses the short label');
+});
+
+test('v0.5 pages: in the desktop nav and the More sheet (not tabs), each with its own icon and a description', () => {
+  const v05 = ['leagues.html', 'screener.html', 'builder.html', 'profile.html'];
+  const top = N.html.topnav(null), sheet = N.html.sheet(null);
+  v05.forEach(f => {
+    const p = N.pages.find(x => x.file === f);
+    assert.ok(p && !p.tab, f + ' is a More page');
+    assert.ok(p.desc && p.desc.length > 20, f + ' has a description');
+    assert.ok(top.includes('href="' + f + '"'), f + ' in the top nav');
+    assert.ok(sheet.includes('href="' + f + '"'), f + ' in the More sheet');
+  });
+  const icons = ['trophy', 'filter', 'blocks', 'user'];
+  icons.forEach(i => assert.ok(N.pages.some(p => p.icon === i), 'icon ' + i + ' used'));
+  // Every icon referenced by the registry renders a real path (no fallback to the info glyph).
+  const info = N.html.sheet(N.activePage('/about.html')).match(/href="about\.html"[^>]*><svg[^>]*>([\s\S]*?)<\/svg>/)[1];
+  v05.forEach(f => {
+    const m = sheet.match(new RegExp('href="' + f.replace('.', '\\.') + '"[^>]*><svg[^>]*>([\\s\\S]*?)<\\/svg>'));
+    assert.ok(m && m[1] && m[1] !== info, f + ' has its own icon');
+  });
+  assert.strictEqual(N.activePage('/broward-trading/leagues').id, 'leagues');
+  assert.ok(/class="tab on" id="btMore"/.test(N.html.tabbar(N.activePage('/profile.html'))), 'More lights up on Profile');
+});
+
+test('level chip: hidden without BT.xp, filled from a BT.xp summary, sits right before the theme toggle', () => {
+  assert.ok(!('xp' in window.BT), 'no BT.xp in this test');
+  const top = N.html.topnav(null);
+  assert.ok(/<a class="levelchip" id="btLevel" href="profile\.html" hidden/.test(top), 'chip present but hidden until XP loads');
+  assert.ok(/id="btLevel"[\s\S]*?<\/a><button id="themeToggle"/.test(top), 'chip is next to the theme toggle');
+  assert.strictEqual(N.level.info(null), null);
+  const sum = { total: 260, level: { index: 1, number: 2, name: 'Sophomore', xp: 260, pct: 20, toNext: 240, next: { name: 'Junior', min: 500 } } };
+  const info = N.level.info(sum);
+  assert.strictEqual(info.short, 'Lv 2');
+  assert.strictEqual(info.name, 'Sophomore');
+  assert.strictEqual(info.pct, 20);
+  assert.ok(/Level 2: Sophomore, 260 XP, 240 XP to Junior/.test(info.label));
+  const chip = N.html.levelChip(sum);
+  assert.ok(!/ hidden/.test(chip) && /--lv-pct:20%/.test(chip) && />Lv 2</.test(chip) && />Sophomore</.test(chip));
+  const top2 = N.level.info({ total: 6000, level: { index: 6, number: 7, name: 'Portfolio Manager', xp: 6000, pct: 100, toNext: 0, next: null } });
+  assert.ok(/top level/.test(top2.label));
+  const evil = N.html.levelChip({ total: 1, level: { number: 1, name: '<img src=x>', pct: 5, next: null } });
+  assert.ok(!evil.includes('<img'), 'level names are escaped');
+  assert.strictEqual(N.level.src(), 'js/xp.js', 'loads js/xp.js next to nav.js');
+  assert.strictEqual(N.level.bind(), false, 'binding without BT.xp is a safe no-op');
+});
+
+test('nav.js lazily loads js/xp.js (async) and still queues js/i18n.js synchronously', () => {
+  const src = require('fs').readFileSync(path.join(__dirname, '..', 'js', 'nav.js'), 'utf8');
+  assert.ok(/siblingSrc\('xp\.js'\)/.test(src) && /tag\.async = true/.test(src), 'xp.js injected async');
+  assert.ok(/onChange\(function \(sum\)/.test(src) && /immediate: true/.test(src), 'chip subscribes to BT.xp.onChange');
+  assert.ok(/ensureXp\(\);/.test(src) && /ensureI18n\(\);/.test(src));
 });
 
 test('language toggle: EN/ES in the top bar and the More sheet, codes marked no-i18n, cycles through BT.i18n.langs', () => {

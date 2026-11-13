@@ -15,6 +15,10 @@
  *   - Options Lab: synthetic chain, leg builder, presets, payoff canvas,
  *     analysis + greeks, "paper trade this strategy"
  *   - Account settings and a two-step inline reset
+ *   - v0.5: what-if analyzer (price / days / IV sliders, multi-date P&L,
+ *     probability range, greeks over price, assignment warnings), position
+ *     size calculator (BT.risk), simulation settings (BT.paper realism) and
+ *     an account switcher (Main / Replay / leagues via BT.paper.accounts())
  *
  * Plain ES2020, no imports. Exposes a tiny BT.portfolioPage for the theme
  * toggle (re-skins the chart and canvas) and for tests / other pages.
@@ -135,10 +139,10 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('.tip.open').forEach(function (el) { el.classList.remove('open'); }); });
 
   /* ------------------------------------------------------------------ *
-   * Tabs with hash routing: #positions #history #options #settings
+   * Tabs with hash routing: #positions #history #options #sizing #settings
    *   #options/TSLA opens the lab on TSLA.
    * ------------------------------------------------------------------ */
-  var TABS = ['positions', 'history', 'options', 'settings'];
+  var TABS = ['positions', 'history', 'options', 'sizing', 'settings'];
   function switchTab(name, fromHash) {
     if (TABS.indexOf(name) === -1) name = 'positions';
     TABS.forEach(function (t) {
@@ -152,7 +156,8 @@
     if (!fromHash && location.hash.replace('#', '').split('/')[0] !== name) {
       try { history.replaceState(null, '', '#' + name); } catch (e) { /* ignore */ }
     }
-    if (name === 'options') { ensureLab(); drawPayoff(); }
+    if (name === 'options') { ensureLab(); drawPayoff(); renderWhatIf(); }
+    if (name === 'sizing') renderSizing(false);
   }
   document.querySelectorAll('.tabs [role="tab"]').forEach(function (b) {
     b.addEventListener('click', function () { switchTab(b.dataset.tab); });
@@ -688,6 +693,280 @@
   };
 
   /* ------------------------------------------------------------------ *
+   * Account switcher: Main / Replay / one account per joined league
+   * ------------------------------------------------------------------ */
+  function activeAccount() { try { return paper.account ? paper.account() : 'main'; } catch (e) { return 'main'; } }
+  function leagueOf(id) {
+    var L = BT.leagues;
+    try { return L && typeof L.leagueForAccount === 'function' ? L.leagueForAccount(id) : null; } catch (e) { return null; }
+  }
+  function accountLabel(id) {
+    if (id === 'main') return T('Main');
+    if (id === 'replay') return T('Replay');
+    var lg = leagueOf(id);
+    if (lg && lg.name) return T('League: {name}', { name: lg.name });
+    var m = /^league[-:]([a-z0-9]+)$/i.exec(id);
+    if (m) return T('League {code}', { code: m[1].toUpperCase() });
+    return id;
+  }
+  function accountList() {
+    var list = [];
+    try { list = typeof paper.accounts === 'function' ? paper.accounts() : []; } catch (e) { list = []; }
+    var ids = list.map(function (a) { return a.id; });
+    var add = function (id) { if (ids.indexOf(id) === -1) { ids.push(id); list.push({ id: id, equity: null, active: id === activeAccount() }); } };
+    add('main'); add('replay');
+    try {
+      if (BT.leagues && typeof BT.leagues.joined === 'function') {
+        BT.leagues.joined().forEach(function (lg) {
+          var id = paper.storageKeyFor ? String(paper.storageKeyFor(BT.leagues.accountId(lg.code))).replace(/^bt\.portfolio\.?/, '') : 'league-' + String(lg.code).toLowerCase();
+          add(id || 'main');
+        });
+      }
+    } catch (e) { /* leagues optional */ }
+    var order = function (id) { return id === 'main' ? 0 : id === 'replay' ? 1 : 2; };
+    return list.sort(function (a, b) { return order(a.id) - order(b.id) || String(a.id).localeCompare(String(b.id)); });
+  }
+  function renderAccounts() {
+    var sel = $('acct'); if (!sel) return;
+    var cur = activeAccount();
+    sel.innerHTML = accountList().map(function (a) {
+      return '<option value="' + esc(a.id) + '"' + (a.id === cur ? ' selected' : '') + '>' + esc(accountLabel(a.id)) + (isNum(a.equity) ? ' · ' + esc(money(a.equity, 0)) : '') + '</option>';
+    }).join('');
+    sel.value = cur;
+    var sa = $('sim-acct'); if (sa) sa.textContent = accountLabel(cur);
+  }
+  function switchAccount(id) {
+    if (!id || typeof paper.use !== 'function' || id === activeAccount()) return;
+    paper.use(id);
+    ui.account = activeAccount(); saveUi();
+    mtm = null; lastMarkAt = 0;
+    renderAccounts();
+    renderAll();
+    renderSizing(true);
+    var lg = leagueOf(id);
+    toast(lg ? T('League rules apply to orders placed from this page.') : T('Positions, orders and history below now show this account.'), 'ok', T('Switched to {name}', { name: accountLabel(activeAccount()) }));
+    refreshMarks(false);
+  }
+  if ($('acct')) $('acct').addEventListener('change', function () { switchAccount($('acct').value); });
+  // Restore the account last viewed on this page, but never create one that does not exist.
+  (function restoreAccount() {
+    if (!ui.account || ui.account === activeAccount() || typeof paper.use !== 'function') return;
+    var exists = accountList().some(function (a) { return a.id === ui.account && (a.id === 'main' || isNum(a.equity)); });
+    if (exists) paper.use(ui.account); else { ui.account = activeAccount(); saveUi(); }
+  })();
+  // Another tab traded on the active account: repaint from the reloaded state.
+  window.addEventListener('bt:paper-sync', function () { mtm = null; renderAll(); });
+
+  /** League check for orders placed from this page (Options Lab), as the dashboard ticket does. */
+  function leagueCheck(order) {
+    var lg = leagueOf(activeAccount());
+    if (!lg || !BT.leagues || typeof BT.leagues.validateOrder !== 'function') return { ok: true, reason: '' };
+    try { return BT.leagues.validateOrder(order, lg, paper.getState()); } catch (e) { return { ok: true, reason: '' }; }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Simulation settings (BT.paper realism, v0.5)
+   *   Field names follow CONTRACTS.md v0.5; cash interest and borrow fee
+   *   are annual percentages. Older engines that ignore a field are
+   *   detected on save and the user is told plainly.
+   * ------------------------------------------------------------------ */
+  var SIM_DEFAULTS = (function () {
+    var d = { fillModel: 'instant', slippageBps: 0, commissionPreset: 'per-trade', dividends: false, cashInterestPct: 0, pdtRule: false, borrowFeePct: 0 };
+    try { if (typeof paper.defaultSettings === 'function') { var e = paper.defaultSettings(); Object.keys(d).forEach(function (k) { if (e[k] !== undefined) d[k] = e[k]; }); } } catch (err) { /* older engine */ }
+    return d;
+  })();
+  var SIM_ALIASES = { cashInterestPct: ['cashInterestPct', 'cashInterest', 'interestPct'], borrowFeePct: ['borrowFeePct', 'borrowFee', 'shortBorrowFeePct'], dividends: ['dividends', 'payDividends'] };
+  var SIM_FIELDS = {
+    fillModel: { id: 'sim-fill', kind: 'select', label: 'Fill model' },
+    slippageBps: { id: 'sim-slip', kind: 'number', min: 0, max: 500, label: 'Slippage' },
+    commissionPreset: { id: 'sim-comm', kind: 'select', label: 'Commission preset' },
+    dividends: { id: 'sim-div', kind: 'check', label: 'Dividends' },
+    cashInterestPct: { id: 'sim-int', kind: 'number', min: 0, max: 25, label: 'Interest on cash' },
+    pdtRule: { id: 'sim-pdt', kind: 'check', label: 'Pattern day trader rule' },
+    borrowFeePct: { id: 'sim-borrow', kind: 'number', min: 0, max: 200, label: 'Short borrow fee' }
+  };
+  function simRead() {
+    var s = paper.settings || {}, out = {};
+    Object.keys(SIM_DEFAULTS).forEach(function (k) {
+      var v;
+      (SIM_ALIASES[k] || [k]).some(function (n) { if (s[n] !== undefined) { v = s[n]; return true; } return false; });
+      out[k] = v === undefined ? SIM_DEFAULTS[k] : v;
+    });
+    return out;
+  }
+  function renderSim() {
+    if (!$('sim')) return;
+    var v = simRead();
+    Object.keys(SIM_FIELDS).forEach(function (k) {
+      var f = SIM_FIELDS[k], el = $(f.id); if (!el || document.activeElement === el) return;
+      if (f.kind === 'check') el.checked = !!v[k];
+      else el.value = String(v[k]);
+    });
+    renderSimInfo();
+  }
+  /** Live notes under the settings: the chosen commission preset, the day-trade count and income so far. */
+  function renderSimInfo() {
+    var presets = paper.commissionPresets || {}, sel = $('sim-comm'), ci = $('sim-comm-info');
+    if (ci && sel) {
+      var p = presets[sel.value];
+      var fee = Number((paper.settings || {}).commission) || 0;
+      ci.textContent = sel.value === 'per-trade'
+        ? T('Currently {fee} per order (change it under Account settings). Choosing this preset again loads a typical $4.95.', { fee: money(fee) })
+        : (p && p.description ? T(p.description) : '');
+    }
+    var pi = $('sim-pdt-info');
+    if (pi) {
+      var st = null; try { st = typeof paper.pdtStatus === 'function' ? paper.pdtStatus() : null; } catch (e) { st = null; }
+      pi.textContent = st ? T('Day trades in the last {d} business days: {n}. Equity {eq} ({status}).', {
+        d: st.windowDays || 5, n: st.dayTrades,
+        eq: money(st.equity, 0),
+        status: st.equity >= st.minEquity ? T('above $25,000, so the rule would not limit you') : (st.enabled ? T('{r} day trade(s) left this window', { r: st.remaining }) : T('under $25,000; the limit applies only when enforced'))
+      }) : '';
+    }
+    var ii = $('sim-income');
+    if (ii) {
+      var inc = paper.state && paper.state.income;
+      ii.textContent = inc ? T('So far in this account: dividends {d}, cash interest {i}, borrow fees {b}.', { d: signed(inc.dividends || 0), i: signed(inc.interest || 0), b: signed(-(inc.borrowFees || 0)) }) : '';
+    }
+  }
+  function simCollect() {
+    var patch = {}, errors = [];
+    Object.keys(SIM_FIELDS).forEach(function (k) {
+      var f = SIM_FIELDS[k], el = $(f.id); if (!el) return;
+      if (f.kind === 'check') patch[k] = !!el.checked;
+      else if (f.kind === 'select') patch[k] = el.value;
+      else {
+        var n = Number(el.value);
+        if (el.value === '' || !isNum(n) || n < f.min || n > f.max) errors.push(T('{label} must be between {min} and {max}.', { label: T(f.label), min: f.min, max: f.max }));
+        else patch[k] = n;
+      }
+    });
+    return { patch: patch, errors: errors };
+  }
+  function simSave(patch, doneMsg) {
+    if (typeof paper.setSettings !== 'function') { setMsg('sim-msg', T('This version of the paper engine cannot change settings.'), 'err'); return; }
+    var prevPreset = (paper.settings || {}).commissionPreset;
+    if (patch.commissionPreset && patch.commissionPreset !== prevPreset && typeof paper.applyCommissionPreset === 'function' && !patch._keepFee) {
+      // A newly chosen preset loads its typical numbers (e.g. $4.95 per trade), as a broker's price list would.
+      paper.applyCommissionPreset(patch.commissionPreset);
+    }
+    delete patch._keepFee;
+    paper.setSettings(patch);
+    renderSettings();
+    var after = simRead(), ignored = [];
+    // A field the engine does not know (or clamps) reads back differently from what we asked for.
+    Object.keys(patch).forEach(function (k) { if (SIM_FIELDS[k] && after[k] !== patch[k]) ignored.push(T(SIM_FIELDS[k].label)); });
+    renderSim();
+    if (ignored.length) setMsg('sim-msg', T('Saved what this version supports. Not active yet: {list}. They will take effect once the paper engine is updated.', { list: ignored.join(', ') }), 'warn');
+    else setMsg('sim-msg', doneMsg, 'ok');
+  }
+  if ($('sim-save')) $('sim-save').onclick = function () {
+    var c = simCollect();
+    if (c.errors.length) { setMsg('sim-msg', c.errors.join(' '), 'err'); return; }
+    simSave(c.patch, T('Saved for {name}. New fills use these settings.', { name: accountLabel(activeAccount()) }));
+  };
+  if ($('sim-comm')) $('sim-comm').addEventListener('change', renderSimInfo);
+  if ($('sim-defaults')) $('sim-defaults').onclick = function () {
+    simSave(Object.assign({ commission: 0, _keepFee: true }, SIM_DEFAULTS), T('Defaults restored: instant fills, no slippage, $0 commission, and no dividends, interest, day-trade limit or borrow fee.'));
+  };
+
+  /* ------------------------------------------------------------------ *
+   * Position size calculator (BT.risk, js/risk.js)
+   * ------------------------------------------------------------------ */
+  var SIZING_IDS = ['ps-equity', 'ps-risk', 'ps-side', 'ps-entry', 'ps-stop', 'ps-target', 'ps-win'];
+  function currentEquity() {
+    var st = paper.state;
+    if (mtm && isNum(mtm.equity)) return mtm.equity;
+    try { return st.cash + paper.valuation({}).marketValue; } catch (e) { return st.cash; }
+  }
+  function asFraction(v) { return isNum(v) ? (v > 1 ? v / 100 : v) : null; }
+  function riskSize(args) {
+    var R = BT.risk;
+    var res = R.positionSize(args);
+    // Accept either riskPct convention (1 = 1 %, or 0.01): a result risking far more than planned means the
+    // module read our percent as a fraction, so ask again in its units.
+    if (res && isNum(res.dollarRisk) && res.dollarRisk > args.equity * args.riskPct / 100 * 1.5 + 0.01) {
+      res = R.positionSize(Object.assign({}, args, { riskPct: args.riskPct / 100 }));
+    }
+    return res;
+  }
+  function renderSizing(prefill) {
+    var out = $('ps-out'); if (!out) return;
+    var eqEl = $('ps-equity');
+    if (prefill || eqEl.value === '') eqEl.value = Math.round(currentEquity());
+    var num = function (id) { var el = $(id); return el && el.value !== '' ? Number(el.value) : NaN; };
+    var equity = num('ps-equity'), riskPct = num('ps-risk'), entry = num('ps-entry'), stop = num('ps-stop'), target = num('ps-target'), win = num('ps-win');
+    var side = $('ps-side').value === 'short' ? 'short' : 'long';
+    ui.sizing = { risk: $('ps-risk').value, side: side, entry: $('ps-entry').value, stop: $('ps-stop').value, target: $('ps-target').value, win: $('ps-win').value };
+    saveUi();
+    setMsg('ps-msg', '');
+    if (!BT.risk || typeof BT.risk.positionSize !== 'function') {
+      out.innerHTML = '<div class="callout warn compact"><div>' + esc(T('The risk calculator did not load (offline or blocked script). Reload the page to try again.')) + '</div></div>';
+      return;
+    }
+    if (!isNum(entry) || !isNum(stop)) { out.innerHTML = '<p class="emptyline">' + esc(T('Enter an entry and a stop to size the position.')) + '</p>'; return; }
+    var problem = '';
+    if (!(equity > 0)) problem = T('Account equity must be above zero.');
+    else if (!(riskPct > 0) || riskPct > 100) problem = T('Risk per trade must be between 0.1% and 100%.');
+    else if (!(entry > 0) || !(stop > 0)) problem = T('Prices must be above zero.');
+    else if (entry === stop) problem = T('The stop must be different from the entry, or there is no risk to size.');
+    else if (side === 'long' && stop > entry) problem = T('For a long trade the stop goes below the entry.');
+    else if (side === 'short' && stop < entry) problem = T('For a short trade the stop goes above the entry.');
+    if (problem) { setMsg('ps-msg', problem, 'err'); out.innerHTML = '<p class="emptyline">' + esc(T('Fix the highlighted input to see the size.')) + '</p>'; return; }
+    var res;
+    try { res = riskSize({ equity: equity, riskPct: riskPct, entry: entry, stop: stop, side: side }); } catch (e) { res = null; }
+    if (!res || !isNum(res.shares)) { out.innerHTML = '<p class="emptyline">' + esc(T('Could not size this trade. Check the inputs.')) + '</p>'; return; }
+    var perShare = Math.abs(entry - stop);
+    var pctEq = isNum(res.pctOfEquity) ? res.pctOfEquity : (equity ? res.positionValue / equity * 100 : 0);
+    if (pctEq > 0 && pctEq <= 1 && res.positionValue / equity > 0.01 + 1e-9) pctEq *= 100; // fraction → percent
+    var html = '<div class="srcnote">' + esc(side === 'long' ? T('Buy') : T('Sell short')) + '</div>' +
+      '<div class="hero">' + esc(T(res.shares === 1 ? '{n} share' : '{n} shares', { n: Math.floor(res.shares).toLocaleString(loc()) })) + '</div>' +
+      '<div class="statgrid">';
+    var row = function (k, v, cls) { html += '<span class="k">' + esc(k) + '</span><span class="v ' + (cls || '') + '">' + v + '</span>'; };
+    row(T('Risk per share'), money(perShare) + ' <span class="muted">(' + (perShare / entry * 100).toFixed(2) + '%)</span>');
+    row(T('Dollar risk if stopped'), money(res.dollarRisk), 'down');
+    row(T('Position value'), money(res.positionValue));
+    row(T('Share of equity'), (isNum(pctEq) ? pctEq.toFixed(1) : '—') + '%');
+    var notes = [];
+    if (res.shares < 1) notes.push(T('The stop is too far away for this risk budget: even one share would risk more than you planned. Use a closer stop, a larger risk %, or skip the trade.'));
+    if (res.positionValue > equity) notes.push(T('This size is worth more than your whole account, which needs margin (borrowed money). Many traders cap any one position at 20–25% of equity instead.'));
+    else if (pctEq > 25) notes.push(T('More than a quarter of your account in one position: a gap through the stop would hurt far more than planned.'));
+    if (isNum(target)) {
+      var okSide = side === 'long' ? target > entry : target < entry;
+      if (!okSide) notes.push(T('The target is on the wrong side of the entry for this direction.'));
+      else {
+        var rr = Math.abs(target - entry) / perShare;
+        row(T('Reward : risk'), rr.toFixed(2) + ' : 1 <span class="muted">(' + esc(T('{r}R target', { r: rr.toFixed(1) })) + ')</span>', rr >= 1.5 ? 'up' : '');
+        row(T('Profit at target'), signed(Math.floor(res.shares) * Math.abs(target - entry)), 'up');
+        var be = null;
+        try { be = asFraction(typeof BT.risk.breakevenWinRate === 'function' ? BT.risk.breakevenWinRate(rr) : 1 / (1 + rr)); } catch (e) { be = 1 / (1 + rr); }
+        if (isNum(be)) row(T('Breakeven win rate'), (be * 100).toFixed(0) + '%');
+        if (isNum(win) && win > 0 && win < 100 && typeof BT.risk.kellyFraction === 'function') {
+          var kf = null;
+          try { kf = BT.risk.kellyFraction(win / 100, rr); } catch (e) { kf = null; }
+          if (isNum(kf) && Math.abs(kf) > 1.5) kf = kf / 100;
+          if (isNum(kf)) row(T('Kelly fraction (educational)'), kf <= 0 ? T('0% (no edge)') : (kf * 100).toFixed(1) + '%', kf <= 0 ? 'down' : '');
+          if (isNum(kf)) notes.push(kf <= 0
+            ? T('With this win rate and reward-to-risk the math says there is no edge: you would lose money over many trades.')
+            : T('Kelly is a theoretical maximum that assumes your win rate is exact. Traders who use it at all bet a small fraction of it (a quarter or less), because real results vary.'));
+        }
+        if (isNum(be) && isNum(win)) notes.push(win / 100 > be ? T('Your win rate is above the breakeven rate for this reward-to-risk.') : T('Your win rate is below the breakeven rate for this reward-to-risk, so these trades would lose money on average.'));
+      }
+    }
+    html += '</div>';
+    if (notes.length) html += '<ul class="srcnote mt-2" style="padding-left:18px;line-height:1.6">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
+    out.innerHTML = html;
+  }
+  (function initSizing() {
+    if (!$('ps-out')) return;
+    var s = ui.sizing || {};
+    if (s.risk) $('ps-risk').value = s.risk;
+    if (s.side) $('ps-side').value = s.side;
+    ['entry', 'stop', 'target', 'win'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('ps-' + k).value = s[k]; });
+    SIZING_IDS.forEach(function (id) { var el = $(id); if (el) el.addEventListener('input', function () { renderSizing(false); }); });
+  })();
+
+  /* ------------------------------------------------------------------ *
    * Render everything that depends on account state
    * ------------------------------------------------------------------ */
   function renderAll() {
@@ -699,6 +978,9 @@
     renderOrders();
     renderHistory();
     renderSettings();
+    renderSim();
+    renderAccounts();
+    if (ui.tab === 'sizing') renderSizing(false);
   }
 
   /* ================================================================== *
@@ -768,6 +1050,7 @@
       $('opt-src').innerHTML = (u && u.name ? esc(u.name) + ' · ' : '') + (q.fallback ? '<span class="pill demo" style="font-size:9px;padding:0 5px">demo</span> ' + esc(q.reason || 'simulated price') : '<span class="pill live" style="font-size:9px;padding:0 5px">live</span> quote');
       labLoaded = true;
       buildChain();
+      autoDividend();
       renderExpiries();
       renderChain();
       renderLegs();
@@ -902,6 +1185,7 @@
     ui.legs = lab.legs; saveUi();
     renderAnalysis(net);
     drawPayoff();
+    renderWhatIf();
   }
 
   function apiLegs() {
@@ -1007,9 +1291,9 @@
     var xmin = Math.max(0, lo - span * 0.6), xmax = hi + span * 0.6;
     var pts = opt.payoff(legsN, { min: xmin, max: xmax, steps: 160 });
     var a = opt.analyze(legsN, { spot: lab.spot });
-    var T = daysForLegs() / opt.DAYS_PER_YEAR;
-    var showT0 = $('show-t0').checked && T > 0;
-    var t0 = showT0 ? pts.map(function (p) { return { S: p.S, pnl: t0Value(p.S, legsN, T) }; }) : [];
+    var Tyr = daysForLegs() / opt.DAYS_PER_YEAR;
+    var showT0 = $('show-t0').checked && Tyr > 0;
+    var t0 = showT0 ? pts.map(function (p) { return { S: p.S, pnl: t0Value(p.S, legsN, Tyr) }; }) : [];
     var ys = pts.map(function (p) { return p.pnl; }).concat(t0.map(function (p) { return p.pnl; }), [0]);
     var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
     if (ymax - ymin < 1) { ymax += 50; ymin -= 50; }
@@ -1018,6 +1302,28 @@
     var X = function (s) { return L + (s - xmin) / (xmax - xmin) * pw; };
     var Y = function (v) { return Tp + (ymax - v) / (ymax - ymin) * ph; };
     var zeroY = Y(0);
+
+    // probability range bands (1σ darker, 2σ lighter) behind everything else
+    var cone = null;
+    if ($('show-cone') && $('show-cone').checked) {
+      try { cone = opt.probRange(lab.spot, ui.ivBase, Math.max(1, lastLegDays())); } catch (e) { cone = null; }
+      if (cone) {
+        ctx.save(); ctx.beginPath(); ctx.rect(L, Tp, pw, ph); ctx.clip();
+        ctx.fillStyle = C.accent;
+        ctx.globalAlpha = 0.07; ctx.fillRect(X(cone.low2), Tp, X(cone.high2) - X(cone.low2), ph);
+        ctx.globalAlpha = 0.09; ctx.fillRect(X(cone.low1), Tp, X(cone.high1) - X(cone.low1), ph);
+        ctx.globalAlpha = 0.8; ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        var c1 = (X(cone.low1) + X(cone.high1)) / 2;
+        if (X(cone.high1) - X(cone.low1) > 40) ctx.fillText('68%', c1, Tp + 16);
+        ctx.restore();
+      }
+    }
+    canvas.setAttribute('aria-label', T('Payoff at expiration for {n} legs. Max profit {max}, max loss {loss}. {be}', {
+      n: legsN.length,
+      max: a.maxProfit === Infinity ? T('unlimited') : signed(a.maxProfit),
+      loss: a.maxLoss === -Infinity ? T('unlimited') : signed(a.maxLoss),
+      be: a.breakevens.length ? T('Breakevens: {list}.', { list: a.breakevens.map(function (b) { return money(b); }).join(', ') }) : T('No breakeven.')
+    }) + (cone ? ' ' + T('About 68% of the time the stock finishes between {lo} and {hi} under the model.', { lo: money(cone.low1), hi: money(cone.high1) }) : ''));
 
     // grid + axes
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.fillStyle = C.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
@@ -1073,7 +1379,7 @@
     if (hoverX != null && hoverX >= L && hoverX <= L + pw) {
       var S = xmin + (hoverX - L) / pw * (xmax - xmin);
       var pnl = opt.pnlAt(legsN, S);
-      var now = showT0 ? t0Value(S, legsN, T) : null;
+      var now = showT0 ? t0Value(S, legsN, Tyr) : null;
       ctx.save(); ctx.strokeStyle = C.fg; ctx.globalAlpha = 0.5; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(hoverX, Tp); ctx.lineTo(hoverX, Tp + ph); ctx.stroke(); ctx.restore();
       ctx.fillStyle = pnl >= 0 ? C.up : C.down; ctx.beginPath(); ctx.arc(hoverX, Y(pnl), 4, 0, Math.PI * 2); ctx.fill();
       readout.textContent = 'at ' + money(S) + ': ' + signed(pnl) + ' at expiry' + (now != null ? ' · ' + signed(now) + ' today' : '');
@@ -1090,7 +1396,267 @@
     else window.addEventListener('resize', drawPayoff);
   }
   $('show-t0').checked = ui.showT0 !== false;
+  if ($('show-cone')) {
+    $('show-cone').checked = ui.showCone !== false;
+    $('show-cone').onchange = function () { ui.showCone = $('show-cone').checked; saveUi(); drawPayoff(); };
+  }
   $('show-t0').onchange = function () { ui.showT0 = $('show-t0').checked; saveUi(); drawPayoff(); };
+
+  /* ---------------- what-if analyzer (v0.5) ---------------- */
+  // Scenario: price null = follow the live spot; days forward and IV shift (vol points).
+  var wi = { price: null, days: 0, ivShift: 0, greek: ui.wiGreek || 'delta' };
+  var GREEK_NOTES = {
+    delta: 'Delta: dollars gained or lost per $1 move in the stock. Watch how it changes as the price moves; that change is gamma.',
+    gamma: 'Gamma: how fast delta changes. It peaks near the strikes and grows as expiry approaches, which is why short options get jumpy in the last days.',
+    theta: 'Theta: dollars gained or lost per day from time passing alone. Short options collect it; long options pay it.',
+    vega: 'Vega: dollars gained or lost when implied volatility rises one point. Long options want IV up; short options want it down.'
+  };
+  /** Lab legs in BT.options what-if shape: option legs carry their own days to expiry. */
+  function wiLegs() {
+    var fallback = daysForLegs();
+    return lab.legs.map(function (l) {
+      var o = { right: l.right, strike: l.strike, qty: l.qty, premium: l.right === 'S' ? 0 : l.premium };
+      if (l.right !== 'S') {
+        var d = l.expiry ? opt.daysToExpiry(l.expiry) : NaN;
+        o.days = Math.max(0, isNum(d) ? d : fallback);
+      }
+      return o;
+    });
+  }
+  function wiOpts(extra) {
+    return Object.assign({
+      r: RATE, iv: ui.ivBase,
+      // Sticky-strike smile: each strike keeps the vol the chain shows for it today.
+      ivFor: function (leg, T) { return opt.smileIV(lab.spot, leg.strike, Math.max(T, 1 / opt.DAYS_PER_YEAR), ui.ivBase); }
+    }, extra || {});
+  }
+  function lastLegDays() {
+    var L = wiLegs(), m = 0;
+    L.forEach(function (l) { if (l.right !== 'S') m = Math.max(m, l.days); });
+    return m || daysForLegs();
+  }
+  /** Shared x-range for the payoff and what-if charts: strikes and spot with room either side. */
+  function priceRange() {
+    var ks = lab.legs.map(function (l) { return l.strike; });
+    var lo = Math.min.apply(null, ks.concat([lab.spot])), hi = Math.max.apply(null, ks.concat([lab.spot]));
+    var span = Math.max(hi - lo, lab.spot * 0.25);
+    return { min: Math.max(0, lo - span * 0.6), max: hi + span * 0.6 };
+  }
+  function chartColors() {
+    return { panel: css('--panel'), line: css('--line'), fg: css('--fg'), muted: css('--muted'), up: css('--up'), down: css('--down'), accent: css('--accent'), warn: css('--warn'), purple: css('--purple') || css('--s3'), s1: css('--s1'), mono: css('--mono') || 'monospace' };
+  }
+  /**
+   * Small line chart on a canvas. cfg = {xmin, xmax, series:[{pts:[{x,y}], color, width, dash}],
+   * yFmt(v), vline:{x, color, label}, dot:{x, y, color}, empty:'text'}. Returns false when not drawn.
+   */
+  function plotLines(cv, cfg) {
+    if (!cv) return false;
+    var wrap = cv.parentElement, dpr = window.devicePixelRatio || 1;
+    var W = wrap.clientWidth, H = wrap.clientHeight;
+    if (W < 10 || H < 10) return false;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var C = chartColors();
+    ctx.fillStyle = C.panel; ctx.fillRect(0, 0, W, H);
+    ctx.font = '11px ' + C.mono;
+    if (cfg.empty) {
+      ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      wrapText(ctx, cfg.empty, W - 24).forEach(function (ln, i, arr) { ctx.fillText(ln, W / 2, H / 2 + (i - (arr.length - 1) / 2) * 15); });
+      return true;
+    }
+    var ys = [0];
+    cfg.series.forEach(function (s) { s.pts.forEach(function (p) { if (isNum(p.y)) ys.push(p.y); }); });
+    var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+    if (ymax - ymin < 1e-6) { var b = Math.max(1, Math.abs(ymax) * 0.5); ymax += b; ymin -= b; }
+    var padY = (ymax - ymin) * 0.1; ymin -= padY; ymax += padY;
+    var L = 58, R = 10, Tp = 10, B = 24, pw = W - L - R, ph = H - Tp - B;
+    var X = function (x) { return L + (x - cfg.xmin) / (cfg.xmax - cfg.xmin) * pw; };
+    var Y = function (v) { return Tp + (ymax - v) / (ymax - ymin) * ph; };
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.fillStyle = C.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    var ystep = niceStep(ymax - ymin, 4);
+    for (var v = Math.ceil(ymin / ystep) * ystep; v <= ymax; v += ystep) {
+      var yy = Y(v); ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(W - R, yy); ctx.stroke();
+      ctx.fillText(cfg.yFmt(Math.abs(v) < ystep / 1e6 ? 0 : v, ystep), L - 6, yy);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    var xstep = niceStep(cfg.xmax - cfg.xmin, Math.max(3, Math.floor(pw / 80)));
+    for (var s = Math.ceil(cfg.xmin / xstep) * xstep; s <= cfg.xmax; s += xstep) ctx.fillText('$' + (xstep < 1 ? s.toFixed(2) : Math.round(s)), X(s), Tp + ph + 6);
+    ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(L, Y(0)); ctx.lineTo(W - R, Y(0)); ctx.stroke();
+    ctx.save(); ctx.beginPath(); ctx.rect(L, Tp, pw, ph); ctx.clip();
+    cfg.series.forEach(function (sr) {
+      ctx.save(); ctx.strokeStyle = sr.color; ctx.lineWidth = sr.width || 1.5; if (sr.dash) ctx.setLineDash(sr.dash);
+      ctx.beginPath();
+      sr.pts.forEach(function (p, i) { var x = X(p.x), y = Y(p.y); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.restore();
+    });
+    if (cfg.vline && isNum(cfg.vline.x)) {
+      var vx = X(cfg.vline.x);
+      ctx.save(); ctx.strokeStyle = cfg.vline.color; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(vx, Tp); ctx.lineTo(vx, Tp + ph); ctx.stroke(); ctx.restore();
+    }
+    if (cfg.dot && isNum(cfg.dot.y)) { ctx.fillStyle = cfg.dot.color; ctx.beginPath(); ctx.arc(X(cfg.dot.x), Y(cfg.dot.y), 4, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    return true;
+  }
+  function wiDaysLabel(d) { return d === 0 ? T('today') : T(Math.round(d) === 1 ? 'in {n} day' : 'in {n} days', { n: Math.round(d) }); }
+  function syncWhatIfControls(last) {
+    var pEl = $('wi-price'), dEl = $('wi-days'), iEl = $('wi-iv');
+    if (!pEl || !isNum(lab.spot)) return;
+    var step = lab.spot < 20 ? 0.01 : lab.spot < 200 ? 0.05 : 0.25;
+    pEl.min = String(Math.max(0.01, Math.round(lab.spot * 0.7 / step) * step).toFixed(2));
+    pEl.max = String((Math.round(lab.spot * 1.3 / step) * step).toFixed(2));
+    pEl.step = String(step);
+    var price = wi.price == null ? lab.spot : Math.min(Number(pEl.max), Math.max(Number(pEl.min), wi.price));
+    if (document.activeElement !== pEl) pEl.value = String(price);
+    var maxD = Math.max(1, Math.ceil(last));
+    dEl.max = String(maxD);
+    if (wi.days > maxD) wi.days = maxD;
+    if (document.activeElement !== dEl) dEl.value = String(wi.days);
+    if (document.activeElement !== iEl) iEl.value = String(wi.ivShift);
+    var chg = (price / lab.spot - 1) * 100;
+    $('wi-price-v').textContent = money(price) + (Math.abs(chg) >= 0.05 ? ' (' + pct(chg, 1) + ')' : '');
+    $('wi-days-v').textContent = wi.days >= last ? T('{n} · expiry', { n: wi.days }) : String(wi.days);
+    $('wi-iv-v').textContent = (wi.ivShift > 0 ? '+' : wi.ivShift < 0 ? '−' : '+') + Math.abs(wi.ivShift) + ' ' + T('pts') + ' (' + Math.round(Math.max(1, ui.ivBase * 100 + wi.ivShift)) + '%)';
+    return price;
+  }
+  function renderWhatIf() {
+    var card = $('whatif'); if (!card) return;
+    var res = $('wi-result'), warn = $('wi-warn'), legend = $('wi-legend');
+    if (!lab.legs.length || !isNum(lab.spot)) {
+      res.innerHTML = '<span class="k">' + esc(T('Scenario')) + '</span><span class="v">—</span>';
+      warn.innerHTML = ''; legend.innerHTML = '';
+      $('wi-greeks-note').textContent = '';
+      if (!$('panel-options').hidden) {
+        plotLines($('wi-curves'), { empty: T('Add legs to compare the position at different dates') });
+        plotLines($('wi-greeks'), { empty: T('Greeks appear here once you add legs') });
+      }
+      return;
+    }
+    var legs = wiLegs(), last = lastLegDays();
+    var price = syncWhatIfControls(last);
+    var ivShift = wi.ivShift / 100;
+    var o = wiOpts({ ivShift: ivShift });
+    var now = opt.whatIf(legs, wiOpts({ S: lab.spot, daysForward: 0 }));
+    var sc = opt.whatIf(legs, Object.assign({ S: price, daysForward: wi.days }, o));
+    var atmIv = Math.max(0.01, ui.ivBase + ivShift);
+    var range = opt.probRange(lab.spot, atmIv, Math.max(0, last));
+    var pop = opt.probProfit(legs, lab.spot, atmIv, last, o);
+    var popScen = wi.days > 0 && wi.days < last ? opt.probProfit(legs, lab.spot, atmIv, wi.days, o) : null;
+
+    var html = '';
+    var row = function (k, v, cls, tip) {
+      html += '<span class="k">' + esc(k) + (tip ? '<button class="tip" type="button" aria-label="' + esc(T('Explain {label}', { label: k })) + '" data-tip="' + esc(tip) + '"></button>' : '') + '</span><span class="v ' + (cls || '') + '">' + v + '</span>';
+    };
+    row(T('Scenario'), esc(money(price) + ' · ' + wiDaysLabel(wi.days)) + (wi.ivShift ? ' · ' + esc(T('IV {s} pts', { s: (wi.ivShift > 0 ? '+' : '−') + Math.abs(wi.ivShift) })) : ''));
+    row(T('Position value'), money(sc.value), '', T('What you could sell the whole position for in this scenario under the model (negative = what it would cost to buy back the short side).'));
+    row(T('P&L'), signed(sc.pnl), pnlClass(sc.pnl) + ' big', T('Scenario value minus what the position cost to open (premiums paid or received).'));
+    row(T('Change from now'), signed(sc.pnl - now.pnl), pnlClass(sc.pnl - now.pnl));
+    row(T('Delta / gamma'), signed(sc.delta, 1).replace('$', '') + ' / ' + (sc.gamma < -5e-3 ? '−' : '') + Math.abs(sc.gamma).toFixed(2), '', T('Position delta in shares-equivalent and gamma per $1 move, in this scenario.'));
+    row(T('Theta / day'), signed(sc.theta), pnlClass(sc.theta));
+    row(T('Vega / IV pt'), signed(sc.vega), pnlClass(sc.vega));
+    row(T('Chance of profit at expiry'), (pop * 100).toFixed(0) + '%', '', T('Model estimate: the stock follows a lognormal walk with no drift at the chosen implied volatility. Real markets have fatter tails, so treat it as a rough guide.'));
+    if (popScen != null) row(T('Chance of profit {when}', { when: wiDaysLabel(wi.days) }), (popScen * 100).toFixed(0) + '%');
+    row(T('68% range by expiry'), money(range.low1) + ' – ' + money(range.high1), '', T('About two times in three the stock finishes inside this range under the model (one standard deviation). It is symmetric in percentage terms, so the dollar move up is a little bigger than the move down.'));
+    row(T('95% range by expiry'), money(range.low2) + ' – ' + money(range.high2));
+    res.innerHTML = html;
+
+    // warnings
+    var exd = $('wi-exdiv').value === '' ? NaN : Number($('wi-exdiv').value);
+    var dv = $('wi-div').value === '' ? NaN : Number($('wi-div').value);
+    var ws = opt.warnings(legs, Object.assign({ S: price, daysForward: wi.days, exDividendDays: exd, dividend: dv }, o));
+    warn.innerHTML = ws.map(function (w) {
+      return '<div class="callout ' + (w.level === 'warn' ? 'warn' : 'tip') + ' compact"><div><span class="title">' + esc(w.title) + '</span>' + esc(w.message) + '</div></div>';
+    }).join('');
+
+    if ($('panel-options').hidden) return;
+    var C = chartColors(), xr = priceRange();
+    // keep the whole price-slider range (±30 %) on screen so the scenario marker never falls off the chart
+    xr = { min: Math.max(0, Math.min(xr.min, lab.spot * 0.68)), max: Math.max(xr.max, lab.spot * 1.32) };
+    var steps = 120;
+    var dates = [0], mid = Math.round(last / 2);
+    if (mid > 0 && mid < last) dates.push(mid);
+    if (last > 0) dates.push(last);
+    var scenarioOnLine = dates.some(function (d) { return Math.abs(d - wi.days) < 0.5 || (wi.days >= last && d === last); });
+    if (!scenarioOnLine) dates.push(wi.days);
+    var cs = opt.curves(legs, { min: xr.min, max: xr.max, steps: steps }, dates, o);
+    var styleFor = function (c) {
+      if (c.daysForward === 0) return { color: C.accent, dash: [5, 4], width: 1.6, cls: 'dash' };
+      if (c.daysForward >= last) return { color: C.fg, dash: null, width: 2, cls: '' };
+      if (!scenarioOnLine && c.daysForward === wi.days) return { color: C.s1, dash: null, width: 2, cls: '' };
+      return { color: C.purple, dash: [1, 3], width: 1.8, cls: 'dot' };
+    };
+    var series = cs.map(function (c) { var st = styleFor(c); return { pts: c.points.map(function (p) { return { x: p.S, y: p.pnl }; }), color: st.color, dash: st.dash, width: st.width }; });
+    plotLines($('wi-curves'), {
+      xmin: xr.min, xmax: xr.max, series: series,
+      yFmt: function (v) { return (v < 0 ? '−' : '') + '$' + Math.abs(Math.round(v)).toLocaleString(loc()); },
+      vline: { x: price, color: C.fg }, dot: { x: price, y: sc.pnl, color: sc.pnl >= 0 ? C.up : C.down }
+    });
+    legend.innerHTML = cs.map(function (c) {
+      var st = styleFor(c);
+      var name = c.daysForward === 0 ? T('Today') : c.daysForward >= last ? T('At expiration') : (!scenarioOnLine && c.daysForward === wi.days ? T('Scenario ({when})', { when: wiDaysLabel(wi.days) }) : T('In {n} days', { n: Math.round(c.daysForward) }));
+      return '<span><i class="' + st.cls + '" style="color:' + esc(st.color) + '"></i>' + esc(name) + '</span>';
+    }).join('');
+    var atSpot = function (c) { var best = c.points[0]; c.points.forEach(function (p) { if (Math.abs(p.S - lab.spot) < Math.abs(best.S - lab.spot)) best = p; }); return best.pnl; };
+    $('wi-curves').setAttribute('aria-label', T('Profit and loss by stock price at several dates.') + ' ' + cs.map(function (c) {
+      return T('{when}: {pnl} if the stock stays at {spot}', { when: c.daysForward === 0 ? T('Today') : c.daysForward >= last ? T('At expiration') : T('In {n} days', { n: Math.round(c.daysForward) }), pnl: signed(atSpot(c)), spot: money(lab.spot) });
+    }).join('; ') + '. ' + T('Scenario: {pnl} at {price} {when}.', { pnl: signed(sc.pnl), price: money(price), when: wiDaysLabel(wi.days) }));
+
+    // greeks over price
+    var gk = GREEK_NOTES[wi.greek] ? wi.greek : 'delta';
+    var gc = opt.greeksCurve(legs, { min: xr.min, max: xr.max, steps: steps }, Object.assign({ daysForward: wi.days }, o));
+    var gColor = { delta: C.accent, gamma: C.purple, theta: C.s1, vega: css('--teal') || C.accent }[gk];
+    plotLines($('wi-greeks'), {
+      xmin: xr.min, xmax: xr.max,
+      series: [{ pts: gc.map(function (p) { return { x: p.S, y: p[gk] }; }), color: gColor, width: 2 }],
+      yFmt: function (v, step) { return gk === 'gamma' ? v.toFixed(step < 0.1 ? 2 : 1) : (gk === 'delta' ? Math.round(v).toString() : (v < 0 ? '−' : '') + '$' + Math.abs(v).toFixed(Math.abs(step) < 1 ? 1 : 0)); },
+      vline: { x: price, color: C.fg }, dot: { x: price, y: sc[gk], color: gColor }
+    });
+    var gName = { delta: T('Delta'), gamma: T('Gamma'), theta: T('Theta'), vega: T('Vega') }[gk];
+    var gVal = gk === 'gamma' ? sc.gamma.toFixed(3) : gk === 'delta' ? sc.delta.toFixed(1) : signed(sc[gk]);
+    $('wi-greeks').setAttribute('aria-label', T('{greek} of the position across stock prices {when}; {value} at {price}.', { greek: gName, when: wiDaysLabel(wi.days), value: gVal, price: money(price) }));
+    $('wi-greeks-note').textContent = T(GREEK_NOTES[gk]);
+  }
+  /** Prefill the ex-dividend inputs from the paper engine's (approximate) dividend schedule, unless the user typed. */
+  function autoDividend() {
+    var ex = $('wi-exdiv'), dv = $('wi-div'), note = $('wi-div-h');
+    if (!ex || !dv) return;
+    var userTyped = (ex.value !== '' && ex.dataset.auto !== '1') || (dv.value !== '' && dv.dataset.auto !== '1');
+    if (userTyped) return;
+    ex.value = ''; dv.value = ''; ex.dataset.auto = ''; dv.dataset.auto = '';
+    if (note) note.textContent = T('Optional. Enter the next ex-dividend date to check whether a short call might be exercised early to collect the dividend.');
+    var info = null;
+    try { info = typeof paper.dividendInfo === 'function' ? paper.dividendInfo(lab.symbol) : null; } catch (e) { info = null; }
+    if (!info || typeof paper.exDates !== 'function' || !isNum(lab.spot)) return;
+    var iso = function (d) { return d.toISOString().slice(0, 10); };
+    var today = new Date(), until = new Date(today.getTime() + 366 * 86400000);
+    var next = (paper.exDates(info, iso(today), iso(until)) || [])[0];
+    if (!next) return;
+    var days = Math.max(0, Math.round((Date.parse(next + 'T12:00:00Z') - Date.now()) / 86400000));
+    var per = lab.spot * info.yield / Math.max(1, info.months.length);
+    ex.value = String(days); dv.value = per.toFixed(2); ex.dataset.auto = '1'; dv.dataset.auto = '1';
+    if (note) note.textContent = T('Prefilled from the simulator\'s approximate dividend schedule for {sym} (next ex-date {date}, about {yield}% a year). Edit or clear them to test other dates.', { sym: lab.symbol, date: next, yield: (info.yield * 100).toFixed(2) });
+  }
+  (function initWhatIf() {
+    if (!$('whatif')) return;
+    var raf = null;
+    var redraw = function () { if (raf) return; raf = (window.requestAnimationFrame || setTimeout)(function () { raf = null; renderWhatIf(); }); };
+    $('wi-price').addEventListener('input', function () { var v = Number($('wi-price').value); wi.price = isNum(v) && isNum(lab.spot) && Math.abs(v - lab.spot) > 1e-9 ? v : null; redraw(); });
+    $('wi-days').addEventListener('input', function () { wi.days = Math.max(0, Math.round(Number($('wi-days').value) || 0)); redraw(); });
+    $('wi-iv').addEventListener('input', function () { wi.ivShift = Math.round(Number($('wi-iv').value) || 0); redraw(); });
+    ['wi-exdiv', 'wi-div'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).dataset.auto = ''; redraw(); }); });
+    $('wi-reset').onclick = function () { wi.price = null; wi.days = 0; wi.ivShift = 0; renderWhatIf(); };
+    document.querySelectorAll('[data-greek]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.greek === wi.greek ? 'true' : 'false');
+      b.onclick = function () {
+        wi.greek = b.dataset.greek; ui.wiGreek = wi.greek; saveUi();
+        document.querySelectorAll('[data-greek]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        renderWhatIf();
+      };
+    });
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(redraw);
+      ['wi-curves', 'wi-greeks'].forEach(function (id) { ro.observe($(id).parentElement); });
+    } else window.addEventListener('resize', redraw);
+  })();
 
   /* ---------------- lab controls ---------------- */
   (function fillPresets() {
@@ -1116,6 +1682,14 @@
     if (!lab.legs.length) { setMsg('trade-msg', 'Add at least one leg first.', 'err'); return; }
     var lots = Math.max(1, Math.min(50, Math.round(Number($('lots').value) || 1)));
     var ok = [], bad = [];
+    // League accounts: check every leg against the league's rules before anything fills.
+    var refused = null;
+    lab.legs.some(function (l) {
+      var chk = leagueCheck({ symbol: l.right === 'S' ? lab.symbol : l.contract, contract: l.right === 'S' ? undefined : l.contract, kind: l.right === 'S' ? undefined : 'option', side: l.qty > 0 ? 'buy' : 'sell', qty: Math.abs(l.qty) * lots, price: l.right === 'S' ? lab.spot : l.premium });
+      if (!chk.ok) { refused = legLabel(l).replace(/<[^>]+>/g, '') + ': ' + chk.reason; return true; }
+      return false;
+    });
+    if (refused) { setMsg('trade-msg', refused, 'err'); return; }
     // Buys first so that cash and margin checks see the long legs that cover the shorts (e.g. covered call).
     var ordered = lab.legs.slice().sort(function (a, b) { return (b.qty > 0) - (a.qty > 0); });
     ordered.forEach(function (l) {
@@ -1144,7 +1718,9 @@
   setInterval(renderHeader, 30000); // keep the market clock pill current
 
   BT.portfolioPage = {
-    onThemeChange: function () { restyleEquityChart(); drawPayoff(); },
+    onThemeChange: function () { restyleEquityChart(); drawPayoff(); renderWhatIf(); },
+    switchAccount: switchAccount,
+    get whatIf() { return wi; },
     refresh: function () { return refreshMarks(true); },
     switchTab: switchTab,
     get lab() { return lab; },
