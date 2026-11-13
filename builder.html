@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="No-code strategy builder for students: combine RSI, moving averages, MACD, Bollinger Bands, ADX and more into entry and exit rules, read them back in plain English, backtest them and turn them into alerts. Educational, paper only.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.twelvedata.com https://finnhub.io https://www.alphavantage.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Strategy Builder — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and type come from css/style.css tokens */
+  .bd-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .bd-head h1{margin:0;font-size:var(--fs-xl)}
+  .bd-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 0;max-width:72ch}
+  .bd-head .status{margin-left:auto}
+  .bd button,.bd input,.bd select,.bd .btn{min-height:44px}
+  .bd button.sm{min-height:44px;padding:6px 12px;font-size:var(--fs-sm)}
+  .bd h2{margin-top:0}
+  .bd h3{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:var(--sp-4) 0 var(--sp-2);font-weight:600}
+  .bd-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-4);align-items:start}
+  @media (max-width:980px){.bd-grid{grid-template-columns:minmax(0,1fr)}}
+  .bd .stack{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0}
+
+  /* templates */
+  .tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+  .tpl{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;white-space:normal;height:auto;padding:10px 12px;line-height:1.35}
+  .tpl .nm{font-weight:600;color:var(--fg)}
+  .tpl .ds{font-size:var(--fs-xs);color:var(--muted)}
+  .tpl.on{border-color:var(--accent);background:var(--accent-soft)}
+
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-3)}
+  @media (max-width:520px){.two{grid-template-columns:minmax(0,1fr)}}
+  .field input,.field select,.field textarea{width:100%}
+
+  /* condition blocks */
+  .blockhead{display:flex;flex-wrap:wrap;align-items:end;gap:var(--sp-2) var(--sp-3)}
+  .blockhead .field{min-width:200px;flex:1 1 220px;max-width:320px}
+  .conds{list-style:none;margin:var(--sp-3) 0 0;padding:0;display:grid;gap:var(--sp-2)}
+  .cond{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:10px 10px 12px 12px}
+  .cond-head{display:flex;align-items:center;gap:8px}
+  .cond-n{font-weight:600;margin-right:auto}
+  .cond-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.2fr);gap:var(--sp-2);align-items:start;margin-top:6px}
+  @media (max-width:640px){.cond-grid{grid-template-columns:minmax(0,1fr)}}
+  .opnd{display:grid;gap:6px;min-width:0}
+  .params{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+  .params .field label{font-size:var(--fs-xs);font-weight:500;color:var(--muted)}
+  .cond-say{margin:8px 0 0;font-size:var(--fs-sm);color:var(--muted)}
+  .joiner{list-style:none;text-align:center;font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.8px;color:var(--muted)}
+  .addcond{margin-top:var(--sp-3)}
+  .risk{border:0;margin:var(--sp-3) 0 0;padding:0}
+  .risk legend{font-weight:600;padding:0;margin-bottom:6px}
+  .risk .grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2)}
+  @media (max-width:640px){.risk .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .risk .help{margin:6px 0 0;font-size:var(--fs-xs);color:var(--muted)}
+
+  /* summary */
+  .say{margin:0;padding:12px 14px;border-radius:var(--r-md);background:var(--accent-soft);font-size:var(--fs-md);line-height:1.55}
+  .issues{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:grid;gap:4px;font-size:var(--fs-sm)}
+  .issues li{padding-left:18px;position:relative}
+  .issues li::before{position:absolute;left:0;top:0;font-weight:700}
+  .issues.err li{color:var(--down)} .issues.err li::before{content:"✕"}
+  .issues.adv li{color:var(--warn-text)} .issues.adv li::before{content:"!"}
+
+  /* backtest */
+  .btctl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:var(--sp-2);align-items:end}
+  @media (max-width:520px){.btctl{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.btctl .symf{grid-column:1/-1}}
+  .btctl input#btSymbol{font-family:var(--mono);text-transform:uppercase}
+  details.costs{margin-top:var(--sp-2)}
+  details.costs summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--muted);font-size:var(--fs-sm)}
+  .actions{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3);align-items:center}
+  .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3);margin:var(--sp-3) 0}
+  @media (max-width:420px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .tiles .stat .value{font-size:var(--fs-lg)}
+  .chartbox{position:relative;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--panel)}
+  .chartbox.price{height:300px} .chartbox.eq{height:150px;margin-top:var(--sp-2)}
+  @media (max-width:520px){.chartbox.price{height:240px}}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-xs);color:var(--muted);margin:6px 0 0}
+  .legend .sw{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+  .legend .sw.dash{background:repeating-linear-gradient(90deg,currentColor 0 3px,transparent 3px 6px)!important;color:var(--muted)}
+  .coach{margin:var(--sp-3) 0 0;padding-left:20px}
+  .coach li{margin-bottom:4px;line-height:1.5}
+  .trades{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+  .trades th,.trades td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  .trades th:first-child,.trades td:first-child,.trades th:nth-child(2),.trades td:nth-child(2){text-align:left}
+  .trades td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .bd .table-wrap table.trades{min-width:0}
+  @media (max-width:640px){
+    .trades thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+    .trades,.trades tbody,.trades tr,.trades td{display:block;width:100%}
+    .trades tr{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:8px 12px;margin-bottom:8px}
+    .trades td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;text-align:right!important;white-space:normal}
+    .trades td::before{content:attr(data-label);font-family:var(--font);color:var(--muted);text-align:left}
+  }
+  .up{color:var(--up)} .down{color:var(--down)}
+
+  /* saved + json */
+  .saved{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .saved li{display:flex;gap:6px;align-items:stretch}
+  .saved .pick{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;white-space:normal;height:auto;padding:8px 12px;line-height:1.35}
+  .saved .pick .nm{font-weight:600}
+  .saved .pick .ds{font-size:var(--fs-xs);color:var(--muted)}
+  .saved .rm{min-width:44px;padding:0;color:var(--muted)}
+  textarea#jsonBox{width:100%;min-height:180px;font-family:var(--mono);font-size:var(--fs-sm);background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:8px;color:var(--fg);resize:vertical}
+  .notes p,.notes li{line-height:1.6;max-width:72ch}
+  .notes ul{padding-left:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page bd">
+  <header class="bd-head">
+    <div>
+      <h1>Strategy Builder</h1>
+      <p class="sub">Write trading rules without code: pick what to measure, how to compare it and when to get out. Read the rule back in plain English, backtest it on past prices and turn it into an alert. Practice only: nothing here places a real order.</p>
+    </div>
+    <div class="status"><span class="pill demo" id="pillSource" title="Where prices come from">demo data</span></div>
+  </header>
+
+  <main class="stack" id="main">
+    <div class="bd-grid">
+      <!-- ============ editor ============ -->
+      <div class="stack">
+        <section class="card" aria-labelledby="tplTitle">
+          <h2 id="tplTitle">Start from a template</h2>
+          <div class="tpls" id="tplList"></div>
+        </section>
+
+        <section class="card" aria-labelledby="ruleTitle">
+          <h2 id="ruleTitle">Your rule</h2>
+          <div class="two">
+            <div class="field">
+              <label for="ruleName">Name</label>
+              <input type="text" id="ruleName" maxlength="60" autocomplete="off" placeholder="e.g. My pullback rule">
+            </div>
+            <div class="field">
+              <label for="ruleSide">Direction</label>
+              <select id="ruleSide">
+                <option value="long">Long: buy first, sell later</option>
+                <option value="short">Short: sell first, buy back later</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="entryTitle">
+          <h2 id="entryTitle">Entry: when to get in</h2>
+          <div class="blockhead">
+            <div class="field">
+              <label for="entryOp">Combine conditions</label>
+              <select id="entryOp">
+                <option value="and">All must be true (AND)</option>
+                <option value="or">Any one is enough (OR)</option>
+              </select>
+            </div>
+          </div>
+          <ol class="conds" id="entryList" aria-label="Entry conditions"></ol>
+          <button type="button" class="addcond" id="entryAdd">+ Add entry condition</button>
+        </section>
+
+        <section class="card" aria-labelledby="exitTitle">
+          <h2 id="exitTitle">Exit: when to get out</h2>
+          <div class="blockhead">
+            <div class="field">
+              <label for="exitOp">Combine conditions</label>
+              <select id="exitOp">
+                <option value="or">Any one is enough (OR)</option>
+                <option value="and">All must be true (AND)</option>
+              </select>
+            </div>
+          </div>
+          <ol class="conds" id="exitList" aria-label="Exit conditions"></ol>
+          <button type="button" class="addcond" id="exitAdd">+ Add exit condition</button>
+          <fieldset class="risk">
+            <legend>Risk exits (optional)</legend>
+            <div class="grid4">
+              <div class="field"><label for="stopPct">Stop-loss %</label><input type="number" id="stopPct" inputmode="decimal" min="0.1" max="100" step="0.5" placeholder="none"></div>
+              <div class="field"><label for="targetPct">Profit target %</label><input type="number" id="targetPct" inputmode="decimal" min="0.1" max="100" step="0.5" placeholder="none"></div>
+              <div class="field"><label for="trailingPct">Trailing stop %</label><input type="number" id="trailingPct" inputmode="decimal" min="0.1" max="100" step="0.5" placeholder="none"></div>
+              <div class="field"><label for="maxBars">Max bars held</label><input type="number" id="maxBars" inputmode="numeric" min="1" max="5000" step="1" placeholder="none"></div>
+            </div>
+            <p class="help">Risk exits are checked on each bar's closing price and fill at the next bar's open, so a gap can make a loss bigger than the stop.</p>
+          </fieldset>
+        </section>
+      </div>
+
+      <!-- ============ summary, backtest, use ============ -->
+      <div class="stack">
+        <section class="card" aria-labelledby="sayTitle">
+          <h2 id="sayTitle">In plain English</h2>
+          <p class="say" id="summary" aria-live="polite"></p>
+          <ul class="issues err" id="problems" aria-label="Problems to fix"></ul>
+          <ul class="issues adv" id="advice" aria-label="Advice"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="btTitle">
+          <h2 id="btTitle">Backtest it</h2>
+          <div class="btctl">
+            <div class="field symf">
+              <label for="btSymbol">Symbol</label>
+              <input type="text" id="btSymbol" list="symList" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" value="AAPL">
+              <datalist id="symList"></datalist>
+            </div>
+            <div class="field">
+              <label for="btInterval">Bar size</label>
+              <select id="btInterval">
+                <option value="1day">Daily</option>
+                <option value="1h">Hourly</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="btBars">History</label>
+              <select id="btBars">
+                <option value="250">250 bars</option>
+                <option value="500" selected>500 bars</option>
+                <option value="1000">1000 bars</option>
+              </select>
+            </div>
+          </div>
+          <details class="costs">
+            <summary>Account and trading costs</summary>
+            <div class="btctl">
+              <div class="field"><label for="btCash">Starting cash ($)</label><input type="number" id="btCash" inputmode="numeric" min="100" step="100" value="100000"></div>
+              <div class="field"><label for="btComm">Commission per fill ($)</label><input type="number" id="btComm" inputmode="decimal" min="0" step="0.5" value="0"></div>
+              <div class="field"><label for="btSlip">Slippage (basis points)</label><input type="number" id="btSlip" inputmode="numeric" min="0" step="1" value="5"></div>
+            </div>
+          </details>
+          <div class="actions">
+            <button type="button" class="primary" id="btRun">Backtest it</button>
+          </div>
+          <div class="msg" id="btStatus" role="status"></div>
+          <div id="btResults" hidden>
+            <div class="callout warn" id="btWarn" hidden><span class="txt"></span></div>
+            <div class="tiles" id="btTiles"></div>
+            <div class="chartbox price" id="btChart"></div>
+            <div class="legend" id="btLegend"></div>
+            <div class="chartbox eq" id="btEquity"></div>
+            <div class="legend" id="btEqLegend"></div>
+            <ul class="coach" id="btCoach"></ul>
+            <h3 id="tradesTitle">Trades</h3>
+            <div class="table-wrap">
+              <table class="trades" id="btTrades" aria-labelledby="tradesTitle">
+                <thead><tr><th scope="col">#</th><th scope="col">Side</th><th scope="col">Entry</th><th scope="col">Entry price</th><th scope="col">Exit</th><th scope="col">Exit price</th><th scope="col">P&amp;L</th><th scope="col">Bars</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="muted" id="btFoot"></p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="useTitle">
+          <h2 id="useTitle">Use it</h2>
+          <div class="actions">
+            <button type="button" id="saveBtn">Save rule</button>
+            <button type="button" id="alertBtn">Create alert from entry rule</button>
+            <button type="button" class="ghost" id="newBtn">Start a blank rule</button>
+          </div>
+          <div class="msg" id="useMsg" role="status"></div>
+          <p class="muted">An alert watches the symbol in the Backtest box and tells you when every entry condition lines up. Semi-auto paper mode on the Dashboard can propose a paper trade when a saved rule fires; you confirm or skip each one, and nothing is ever placed for you.</p>
+          <h3 id="savedTitle">Saved rules</h3>
+          <p class="muted" id="savedEmpty">None yet. Build a rule and press Save rule.</p>
+          <ul class="saved" id="savedList" aria-labelledby="savedTitle"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="jsonTitle">
+          <h2 id="jsonTitle">Export / import JSON</h2>
+          <div class="field">
+            <label for="jsonBox">Rule as JSON</label>
+            <textarea id="jsonBox" spellcheck="false" autocomplete="off" aria-describedby="jsonHelp"></textarea>
+            <span class="help" id="jsonHelp">Export to share a rule with a classmate or your instructor; paste one here and press Import to load it.</span>
+          </div>
+          <div class="actions">
+            <button type="button" id="exportBtn">Export current rule</button>
+            <button type="button" id="importBtn">Import</button>
+            <button type="button" class="ghost" id="copyBtn">Copy</button>
+          </div>
+          <div class="msg" id="jsonMsg" role="status"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="card notes" aria-labelledby="notesTitle">
+      <h2 id="notesTitle">How to read a backtest of your rule</h2>
+      <ul>
+        <li><b>No peeking.</b> Each decision uses only the bars up to that point. "Crosses above" compares the previous bar with the current one, and every order fills at the next bar's open, the way it would in real life.</li>
+        <li><b>Past is not future.</b> A rule that worked on one stretch of history can lose on the next. Test it on several symbols and periods before you trust it.</li>
+        <li><b>Beware of tuning.</b> If you keep adjusting numbers until the result looks great, you are fitting noise. Prefer simple rules whose results hold up when the numbers move a little.</li>
+        <li><b>Costs matter.</b> Commissions, slippage and taxes turn many small winners into losers. Leave some slippage in the costs box.</li>
+        <li><b>Demo prices are simulated.</b> In demo mode each symbol follows a made-up random walk, so results are for practice only. Add a live data key in Dashboard settings to test on real daily bars.</li>
+      </ul>
+      <p class="muted">Broward Trading is an educational simulator. Nothing on this page is investment advice or a recommendation to buy or sell any security.</p>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js" integrity="sha384-OK7vELvjHdhUFi31JYioPIcRHTROLdcDa6ZsNWgvgLaKj+9JqhU0Ad8g4wz3CXjA" crossorigin="anonymous"></script>
+<script>/* Offline / blocked-CDN / failed-integrity fallback: same version, vendored locally. document.write keeps script order. */
+if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweight-charts.standalone.production.js"><\/script>');</script>
+<script src="js/indicators.js"></script>
+<script src="js/data.js"></script>
+<script src="js/backtest.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/builder-ui.js"></script>
+</body>
+</html>

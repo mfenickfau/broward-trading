@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Your Broward Trading profile: XP and level, badges with honest criteria, your practice streak and the trader personality quiz with a recommended learning path. Free and educational; progress stays in this browser.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Profile — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .pf{max-width:980px}
+  .pf section{margin-top:var(--sp-4)}
+  .pf h2.sec{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);flex-wrap:wrap;font-size:var(--fs-lg);margin:0 0 var(--sp-3)}
+  .pf h2.sec small{font-size:var(--fs-sm);color:var(--muted);font-weight:400}
+  .pf .loading{padding:var(--sp-6) 0;color:var(--muted)}
+
+  /* hero */
+  .pf-hero{display:grid;grid-template-columns:auto 1fr;gap:var(--sp-4);align-items:center;padding-block:var(--sp-5) var(--sp-2)}
+  .pf-hero h1{margin:0;font-size:clamp(24px,5vw,32px);line-height:1.15}
+  .pf-hero .who{color:var(--muted);font-size:var(--fs-md);margin:4px 0 0}
+  .pf-hero .xpline{margin:var(--sp-2) 0 0;font-size:var(--fs-md);line-height:1.5}
+  .pf-hero .xpline b{font-family:var(--mono);font-weight:500}
+  .lvl-ring{--size:112px}
+  .lvl-ring span::after{content:none}
+  .lvl-ring span{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+  .lvl-ring span small{font-family:var(--font);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  .lvl-ring span b{font-size:28px;font-weight:500}
+  .bar{height:8px;border-radius:var(--r-pill);background:var(--line);overflow:hidden;margin-top:var(--sp-2);max-width:420px}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:inherit}
+  .bar.up > i{background:var(--up)}
+  @media (max-width:520px){ .pf-hero{grid-template-columns:1fr;justify-items:start} .lvl-ring{--size:96px} }
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--sp-2)}
+  .stats .card{padding:12px}
+  .honest{font-size:var(--fs-sm);color:var(--muted);line-height:1.55;margin:var(--sp-2) 0 0}
+
+  /* XP chart + recent */
+  .xpchart{display:block;width:100%;height:120px}
+  .xpchart rect.b{fill:var(--accent)}
+  .xpchart rect.hit{fill:transparent}
+  .xpchart rect.hit:hover + rect.b,.xpchart rect.b:hover{fill:var(--fg)}
+  .xpchart line{stroke:var(--line);stroke-width:1}
+  .xpaxis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted);margin-top:4px}
+  .recent{list-style:none;margin:var(--sp-3) 0 0;padding:0;display:flex;flex-direction:column}
+  .recent li{display:grid;grid-template-columns:1fr auto;gap:var(--sp-2);padding:8px 0;border-top:1px solid var(--line);font-size:var(--fs);line-height:1.4}
+  .recent li small{display:block;color:var(--muted);font-size:var(--fs-xs)}
+  .recent .xp{font-family:var(--mono);color:var(--up);white-space:nowrap}
+
+  /* streak calendar */
+  .cal-wrap{overflow:hidden}
+  .cal{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;max-width:100%}
+  .cal i{display:block;aspect-ratio:1;min-width:0;border-radius:3px;background:var(--panel2);border:1px solid var(--line)}
+  .cal i.on{background:var(--up);border-color:var(--up)}
+  .cal i.today{outline:2px solid var(--accent);outline-offset:1px}
+  .cal i.pad{visibility:hidden}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:var(--sp-2);font-size:var(--fs-xs);color:var(--muted)}
+  .cal-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px;background:var(--panel2);border:1px solid var(--line)}
+  .cal-legend i.on{background:var(--up);border-color:var(--up)}
+
+  /* badges */
+  .bgroup + .bgroup{margin-top:var(--sp-4)}
+  .bgroup h3{font-size:var(--fs-sm);letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 var(--sp-2)}
+  .badges{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-2)}
+  .bdg{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);min-height:44px}
+  .bdg .ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:18px;font-weight:600;background:var(--panel2);color:var(--muted);border:1px dashed var(--line2)}
+  .bdg.earned{border-color:var(--up)}
+  .bdg.earned .ic{background:var(--up-soft);color:var(--up);border:1px solid var(--up)}
+  .bdg b{display:block;font-size:var(--fs-md);font-weight:600;line-height:1.3}
+  .bdg p{margin:2px 0 0;font-size:var(--fs-sm);color:var(--muted);line-height:1.45}
+  .bdg .st{display:block;margin-top:4px;font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono)}
+  .bdg.earned .st{color:var(--up)}
+  .bdg .bar{height:5px;margin-top:6px}
+
+  /* ladder */
+  .ladder{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--sp-2)}
+  .ladder li{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);font-size:var(--fs)}
+  .ladder li b{display:block;font-weight:600}
+  .ladder li span{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
+  .ladder li.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .ladder li.past{border-color:var(--up)}
+
+  /* personality */
+  .pq fieldset{border:0;padding:0;margin:0;min-width:0}
+  .pq legend{font-size:var(--fs-md);font-weight:600;line-height:1.4;margin-bottom:var(--sp-3);padding:0}
+  .pq .qn{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted);margin-bottom:var(--sp-2)}
+  .pq .opt{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;padding:12px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);cursor:pointer;min-height:44px;line-height:1.45}
+  .pq .opt:hover{border-color:var(--line2)}
+  .pq .opt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
+  .pq .opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .pq .opt:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+  .pq .nav{display:flex;gap:var(--sp-2);justify-content:space-between;flex-wrap:wrap;margin-top:var(--sp-3)}
+  .pq .nav button,.pf .act button,.pf .act .btn{min-height:44px}
+  .pres h3{font-size:var(--fs-xl);margin:0}
+  .pres .tag{color:var(--muted);font-size:var(--fs-md);margin:4px 0 var(--sp-3)}
+  .pres p{line-height:1.6}
+  .scores{list-style:none;margin:var(--sp-3) 0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .scores li{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:4px 10px;align-items:center;font-size:var(--fs)}
+  .scores li .bar{grid-column:1/-1;margin:0;max-width:none}
+  .scores li span.num{text-align:right;font-family:var(--mono)}
+  .path{list-style:none;margin:var(--sp-2) 0 0;padding:0;counter-reset:p;display:flex;flex-direction:column;gap:8px}
+  .path li{counter-increment:p;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+  .path li::before{content:counter(p);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line);font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
+  .path a{display:inline-flex;align-items:center;min-height:44px;font-weight:500;line-height:1.35}
+  .path li.done a{color:var(--up)}
+  .path small{display:block;color:var(--muted);font-size:var(--fs-sm);line-height:1.45;margin-top:-6px}
+  .steps{margin:var(--sp-2) 0 0;padding-left:20px;line-height:1.6}
+  .act{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:center;margin-top:var(--sp-3)}
+
+  /* name form */
+  .nameform{display:flex;gap:var(--sp-2);flex-wrap:wrap;align-items:flex-end}
+  .nameform label{display:flex;flex-direction:column;gap:4px;flex:1 1 220px;font-size:var(--fs-sm);color:var(--muted)}
+  .nameform input{min-height:44px;font-size:16px}
+  .nameform button{min-height:44px}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page pf">
+  <main id="main">
+    <div id="app" class="loading" aria-busy="true">Loading your profile…</div>
+    <noscript><div class="callout warn">Your profile needs JavaScript. Everything is calculated in this browser from your own progress.</div></noscript>
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="sr-only" id="srLive" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/xp.js"></script>
+<script>
+/* Broward Trading — profile.html page script (UI only; the engine is js/xp.js → BT.xp) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var X = BT.xp;
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $('app');
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var T = function (s, v) {
+    if (X && X.T) return X.T(s, v);
+    return window.BT && BT.t ? BT.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && k in v ? v[k] : m; });
+  };
+  if (!X) { app.className = ''; app.innerHTML = '<div class="callout warn">' + esc(T('Your profile could not start: js/xp.js did not load. Reload the page.')) + '</div>'; return; }
+
+  // Page strings in Spanish, used when i18n/es.json does not have them yet.
+  Object.assign(X.ES, {
+    'Your profile could not start: js/xp.js did not load. Reload the page.': 'Tu perfil no pudo iniciarse: js/xp.js no se cargó. Recarga la página.',
+    'Your profile': 'Tu perfil', 'Level {n}': 'Nivel {n}', 'Level': 'Nivel',
+    '{xp} XP': '{xp} XP', '{n} XP to {level}': 'Faltan {n} XP para {level}', 'Top level reached. Keep practising: XP still counts.': 'Has llegado al nivel máximo. Sigue practicando: los XP siguen contando.',
+    'XP measures practice and study, not trading skill or profits. Nothing here is investment advice, and paper results do not predict real results.': 'Los XP miden la práctica y el estudio, no la habilidad para operar ni las ganancias. Nada de lo que aparece aquí es asesoramiento de inversión, y los resultados simulados no predicen resultados reales.',
+    'Lessons done': 'Lecciones hechas', 'Quizzes passed': 'Cuestionarios aprobados', 'Drills finished': 'Ejercicios terminados',
+    'Badges': 'Insignias', 'Current streak': 'Racha actual', 'Best streak': 'Mejor racha', '{n} days': '{n} días', '{n} day': '{n} día',
+    'of {n}': 'de {n}', 'of {n} total': 'de {n} en total', 'at 80 % or more': 'con un 80 % o más',
+    'XP history': 'Historial de XP', 'Last 30 days': 'Últimos 30 días',
+    'XP earned per day over the last 30 days. {total} XP in this period; most in one day: {max} XP.': 'XP ganados por día en los últimos 30 días. {total} XP en este periodo; el máximo en un día: {max} XP.',
+    'No XP yet in the last 30 days.': 'Todavía no hay XP en los últimos 30 días.',
+    '{date}: {xp} XP': '{date}: {xp} XP', 'Recent XP': 'XP recientes', 'Nothing yet. Finish a lesson, place a paper trade or write a journal entry to earn your first XP.': 'Todavía nada. Termina una lección, haz una operación simulada o escribe una entrada en el diario para ganar tus primeros XP.',
+    'Practice streak': 'Racha de práctica', 'Last 12 weeks': 'Últimas 12 semanas',
+    'Practice calendar for the last 12 weeks: {n} active days. Current streak {cur} days, best {best} days.': 'Calendario de práctica de las últimas 12 semanas: {n} días activos. Racha actual de {cur} días, la mejor de {best} días.',
+    'Active day': 'Día activo', 'No activity': 'Sin actividad',
+    'A day counts when you study or practise: a lesson or quiz, a paper trade, a replay session, a journal entry, flashcards or the Daily 5.': 'Un día cuenta cuando estudias o practicas: una lección o cuestionario, una operación simulada, una sesión de replay, una entrada en el diario, tarjetas o el Daily 5.',
+    '{n} of {of} earned': '{n} de {of} conseguidas', 'Earned {date}': 'Conseguida el {date}', 'Earned': 'Conseguida', 'Locked': 'Bloqueada', '{n} / {of}': '{n} / {of}',
+    'Level ladder': 'Escalera de niveles', 'from {n} XP': 'desde {n} XP',
+    'Trader personality': 'Personalidad de trader', 'Take the quiz': 'Hacer el cuestionario', 'Retake the quiz': 'Repetir el cuestionario',
+    'Question {n} of {of}': 'Pregunta {n} de {of}', 'Back': 'Atrás', 'Next': 'Siguiente', 'See my result': 'Ver mi resultado', 'Cancel': 'Cancelar',
+    'Pick an answer to continue.': 'Elige una respuesta para continuar.',
+    'Your style: {name}': 'Tu estilo: {name}', 'With a strong streak of {name}': 'Con bastante de {name}',
+    'Your answers by style': 'Tus respuestas por estilo', 'Habits to build': 'Hábitos que desarrollar', 'Your learning path': 'Tu ruta de aprendizaje',
+    'Lesson': 'Lección', 'Module': 'Módulo', 'Drill': 'Ejercicio', 'done': 'hecho',
+    'Find out which trading style fits how you think, and get a learning path through the course that starts where you are most curious. Ten questions, about two minutes.': 'Descubre qué estilo de trading encaja con tu forma de pensar y obtén una ruta por el curso que empieza donde más curiosidad tienes. Diez preguntas, unos dos minutos.',
+    'The quiz could not be loaded. Check your connection and try again.': 'No se pudo cargar el cuestionario. Revisa tu conexión e inténtalo de nuevo.',
+    'Try again': 'Reintentar', 'Shown in English: the Spanish version is not available offline yet.': 'Se muestra en inglés: la versión en español aún no está disponible sin conexión.',
+    'Display name': 'Nombre visible', 'Optional. Shown only on this profile, in this browser. Leave it empty to stay anonymous.': 'Opcional. Solo se muestra en este perfil, en este navegador. Déjalo vacío para seguir en el anonimato.',
+    'Your name (optional)': 'Tu nombre (opcional)', 'Save': 'Guardar', 'Clear': 'Borrar', 'Name saved.': 'Nombre guardado.', 'Name cleared.': 'Nombre borrado.',
+    'Your data': 'Tus datos', 'Recalculate XP': 'Recalcular XP',
+    'Everything on this page is calculated from progress saved in this browser. Clearing site data clears it; XP you have earned is never taken away when you reset the paper account.': 'Todo lo que aparece en esta página se calcula a partir del progreso guardado en este navegador. Si borras los datos del sitio, se borra; los XP ganados nunca se pierden al reiniciar la cuenta simulada.',
+    'XP is up to date.': 'Los XP están al día.', '+{n} XP added from your activity.': 'Se han añadido +{n} XP por tu actividad.',
+    'Active day {date}': 'Día activo {date}', 'Flashcards on {date}': 'Tarjetas el {date}', 'League {code}': 'Liga {code}',
+    'Results saved to your profile.': 'Resultados guardados en tu perfil.'
+  });
+
+  var index = null, drills = {}, pdata = null, perr = null;
+  var quiz = null;          // {i, answers[]} while taking the quiz
+  var lessonTitles = {}, moduleTitles = {};
+
+  function lang() { try { return (BT.i18n && BT.i18n.lang && BT.i18n.lang()) || 'en'; } catch (e) { return 'en'; } }
+  function fetchJSON(url) { return fetch(url, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function fetchLocalized(file) {
+    var l = lang();
+    if (l === 'en') return fetchJSON('course/' + file);
+    return fetchJSON('course/' + l + '/' + file).catch(function () { return fetchJSON('course/' + file); });
+  }
+  function loadRefs() {
+    return Promise.all([
+      fetchLocalized('index.json').then(function (j) { index = j; lessonTitles = {}; moduleTitles = {}; (j.modules || []).forEach(function (m) { moduleTitles[m.id] = m.title; (m.lessons || []).forEach(function (l) { lessonTitles[l.id] = l.title; }); }); }).catch(function () { index = null; }),
+      fetchLocalized('drills.json').then(function (j) { drills = {}; (Array.isArray(j) ? j : (j.drills || [])).forEach(function (d) { if (d && d.id) drills[d.id] = d.title; }); }).catch(function () { drills = {}; }),
+      X.personality.load(lang()).then(function (d) { pdata = d; perr = null; }).catch(function (e) { pdata = null; perr = e; })
+    ]);
+  }
+
+  function fmtDate(ms) {
+    try { if (BT.i18n && BT.i18n.fmtDate) return BT.i18n.fmtDate(new Date(ms), { month: 'short', day: 'numeric' }); } catch (e) { /* fall through */ }
+    try { return new Date(ms).toLocaleDateString(lang() === 'es' ? 'es' : 'en-US', { month: 'short', day: 'numeric' }); } catch (e) { return X.dayKey(ms); }
+  }
+  function fmtDay(k) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k); return m ? fmtDate(new Date(+m[1], +m[2] - 1, +m[3]).getTime()) : k; }
+  function fmtNum(n) { try { return BT.i18n && BT.i18n.fmtNumber ? BT.i18n.fmtNumber(n, 0) : Math.round(n).toLocaleString(); } catch (e) { return String(Math.round(n)); } }
+  function plural(n) { return T(n === 1 ? '{n} day' : '{n} days', { n: n }); }
+  function announce(msg) { var el = $('srLive'); if (el) { el.textContent = ''; setTimeout(function () { el.textContent = msg; }, 30); } }
+  function toast(msg, kind) {
+    if (BT.nav && BT.nav.toast) return BT.nav.toast(msg, kind || 'ok');
+    var el = document.createElement('div'); el.className = 'toast ' + (kind || 'ok'); el.innerHTML = '<div class="t-body">' + esc(msg) + '</div>';
+    $('toasts').appendChild(el); setTimeout(function () { el.remove(); }, 4000);
+  }
+
+  /* ---------------- sections ---------------- */
+  function heroHtml(sum, prof) {
+    var L = sum.level;
+    var label = T('Level {n}', { n: L.number }) + ': ' + L.name + ', ' + T('{xp} XP', { xp: fmtNum(sum.total) }) + (L.next ? ', ' + T('{n} XP to {level}', { n: fmtNum(L.toNext), level: L.next.name }) : '');
+    return '<header class="pf-hero">' +
+      '<div class="ring lvl-ring' + (L.next ? '' : ' done') + '" style="--pct:' + L.pct + '" role="img" aria-label="' + esc(label) + '"><span><small>' + esc(T('Level')) + '</small><b>' + L.number + '</b></span></div>' +
+      '<div><h1>' + esc(L.name) + '</h1>' +
+      '<p class="who">' + esc(prof.displayName || T('Your profile')) + '</p>' +
+      '<p class="xpline"><b>' + esc(T('{xp} XP', { xp: fmtNum(sum.total) })) + '</b> · ' + esc(L.next ? T('{n} XP to {level}', { n: fmtNum(L.toNext), level: L.next.name }) : T('Top level reached. Keep practising: XP still counts.')) + '</p>' +
+      '<div class="bar" aria-hidden="true"><i style="width:' + L.pct + '%"></i></div></div>' +
+      '</header>' +
+      '<p class="honest">' + esc(T('XP measures practice and study, not trading skill or profits. Nothing here is investment advice, and paper results do not predict real results.')) + '</p>';
+  }
+  function statsHtml(f, sum) {
+    function tile(label, value, sub) { return '<div class="card stat"><span class="label">' + esc(label) + '</span><span class="value">' + esc(value) + '</span>' + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') + '</div>'; }
+    return '<section aria-label="' + esc(T('Your profile')) + '"><div class="stats">' +
+      tile(T('Lessons done'), String(f.lessons.length), T('of {n}', { n: f.lessonTotal })) +
+      tile(T('Quizzes passed'), String(f.quizPassed.length), T('at 80 % or more')) +
+      tile(T('Drills finished'), String(f.drillsCompleted.length), '') +
+      tile(T('Badges'), String(sum.badgesEarned), T('of {n}', { n: sum.badgesTotal })) +
+      tile(T('Current streak'), plural(f.streak), '') +
+      tile(T('Best streak'), plural(f.bestStreak), '') +
+      '</div></section>';
+  }
+  function itemLabel(h) {
+    var k = h.key;
+    if (h.event === 'lesson' || h.event === 'quiz' || h.event === 'quizPerfect') return lessonTitles[k] || k;
+    if (h.event === 'drill') return drills[k] || k;
+    if (h.event === 'streakDay') return T('Active day {date}', { date: fmtDay(k) });
+    if (h.event === 'flashcards') return T('Flashcards on {date}', { date: fmtDay(k) });
+    if (h.event === 'league') return T('League {code}', { code: k });
+    if (h.event === 'alert' || h.event === 'journal' || h.event === 'firstTrade') return '';
+    return k;
+  }
+  function historyHtml() {
+    var d = X.dailyXp(30);
+    var max = Math.max.apply(null, d.map(function (x) { return x.xp; }).concat([0]));
+    var sum = d.reduce(function (n, x) { return n + x.xp; }, 0);
+    var W = 300, H = 100, bw = W / d.length;
+    var bars = d.map(function (x, i) {
+      var h = max ? Math.max(x.xp ? 3 : 0, Math.round(x.xp / max * (H - 6))) : 0;
+      var tip = esc(T('{date}: {xp} XP', { date: fmtDay(x.date), xp: x.xp }));
+      return '<g><rect class="hit" x="' + (i * bw).toFixed(2) + '" y="0" width="' + bw.toFixed(2) + '" height="' + H + '"><title>' + tip + '</title></rect>' +
+        (h ? '<rect class="b" x="' + (i * bw + 1).toFixed(2) + '" y="' + (H - h) + '" width="' + Math.max(1, bw - 2).toFixed(2) + '" height="' + h + '" rx="2"><title>' + tip + '</title></rect>' : '') + '</g>';
+    }).join('');
+    var summary = sum ? T('XP earned per day over the last 30 days. {total} XP in this period; most in one day: {max} XP.', { total: fmtNum(sum), max: fmtNum(max) }) : T('No XP yet in the last 30 days.');
+    var recent = X.history(10);
+    var list = recent.length ? '<ul class="recent">' + recent.map(function (h) {
+      var sub = itemLabel(h);
+      return '<li><span>' + esc(h.label) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><span class="xp">+' + h.xp + ' · <span class="muted">' + esc(fmtDate(h.at)) + '</span></span></li>';
+    }).join('') + '</ul>' : '<p class="muted">' + esc(T('Nothing yet. Finish a lesson, place a paper trade or write a journal entry to earn your first XP.')) + '</p>';
+    return '<section class="card" aria-labelledby="hXp"><h2 class="sec" id="hXp">' + esc(T('XP history')) + ' <small>' + esc(T('Last 30 days')) + '</small></h2>' +
+      '<svg class="xpchart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + esc(summary) + '"><line x1="0" y1="' + (H - 0.5) + '" x2="' + W + '" y2="' + (H - 0.5) + '"></line>' + bars + '</svg>' +
+      '<div class="xpaxis" aria-hidden="true"><span>' + esc(fmtDay(d[0].date)) + '</span><span>' + esc(fmtDay(d[d.length - 1].date)) + '</span></div>' +
+      '<p class="sr-only">' + esc(summary) + '</p>' +
+      '<h3 class="card-title" style="margin-top:var(--sp-3)">' + esc(T('Recent XP')) + '</h3>' + list + '</section>';
+  }
+  function calendarHtml(f) {
+    var set = {}; f.activityDays.forEach(function (k) { set[k] = true; });
+    var today = new Date(); today.setHours(12, 0, 0, 0);
+    var end = new Date(today); end.setDate(end.getDate() + (6 - end.getDay()));      // the Saturday of this week
+    var start = new Date(end); start.setDate(start.getDate() - 12 * 7 + 1);           // 12 full weeks, Sunday first
+    var cells = [], active = 0, tk = X.dayKey(today);
+    for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      var k = X.dayKey(d);
+      if (k > tk) { cells.push('<i class="pad"></i>'); continue; }
+      var on = !!set[k]; if (on) active++;
+      cells.push('<i class="' + (on ? 'on' : '') + (k === tk ? ' today' : '') + '" title="' + esc(fmtDay(k) + ' · ' + T(on ? 'Active day' : 'No activity')) + '"></i>');
+    }
+    var label = T('Practice calendar for the last 12 weeks: {n} active days. Current streak {cur} days, best {best} days.', { n: active, cur: f.streak, best: f.bestStreak });
+    return '<section class="card" aria-labelledby="hCal"><h2 class="sec" id="hCal">' + esc(T('Practice streak')) + ' <small>' + esc(T('Last 12 weeks')) + '</small></h2>' +
+      '<div class="cal-wrap"><div class="cal" role="img" aria-label="' + esc(label) + '">' + cells.join('') + '</div></div>' +
+      '<div class="cal-legend"><span><i class="on"></i>' + esc(T('Active day')) + '</span><span><i></i>' + esc(T('No activity')) + '</span><span>' + esc(T('Current streak')) + ': <b class="num">' + esc(plural(f.streak)) + '</b></span><span>' + esc(T('Best streak')) + ': <b class="num">' + esc(plural(f.bestStreak)) + '</b></span></div>' +
+      '<p class="note">' + esc(T('A day counts when you study or practise: a lesson or quiz, a paper trade, a replay session, a journal entry, flashcards or the Daily 5.')) + '</p></section>';
+  }
+  function badgesHtml(list) {
+    var earned = list.filter(function (b) { return b.earned; }).length;
+    var groups = [];
+    list.forEach(function (b) { var g = groups.filter(function (x) { return x.id === b.group; })[0]; if (!g) { g = { id: b.group, name: b.groupName, items: [] }; groups.push(g); } g.items.push(b); });
+    return '<section aria-labelledby="hBadges"><h2 class="sec" id="hBadges">' + esc(T('Badges')) + ' <small>' + esc(T('{n} of {of} earned', { n: earned, of: list.length })) + '</small></h2>' +
+      groups.map(function (g) {
+        var items = g.items.slice().sort(function (a, b) { return (b.earned ? 1 : 0) - (a.earned ? 1 : 0); });
+        return '<div class="bgroup"><h3>' + esc(g.name) + '</h3><ul class="badges">' + items.map(function (b) {
+          var pct = Math.round(b.progress.n / b.progress.of * 100);
+          var status = b.earned ? (b.earnedAt ? T('Earned {date}', { date: fmtDate(b.earnedAt) }) : T('Earned')) : T('Locked') + (b.progress.of > 1 ? ' · ' + T('{n} / {of}', { n: b.progress.n, of: b.progress.of }) : '');
+          return '<li class="bdg' + (b.earned ? ' earned' : '') + '"><span class="ic" aria-hidden="true">' + esc(b.icon) + '</span><div><b>' + esc(b.name) + '</b><p>' + esc(b.criteria) + '</p>' +
+            '<span class="st">' + esc(status) + '</span>' +
+            (!b.earned && b.progress.of > 1 ? '<div class="bar up" role="img" aria-label="' + esc(T('{n} / {of}', { n: b.progress.n, of: b.progress.of })) + '"><i style="width:' + pct + '%"></i></div>' : '') +
+            '</div></li>';
+        }).join('') + '</ul></div>';
+      }).join('') + '</section>';
+  }
+  function ladderHtml(sum) {
+    return '<section aria-labelledby="hLadder"><h2 class="sec" id="hLadder">' + esc(T('Level ladder')) + '</h2><ol class="ladder">' +
+      X.LEVELS.map(function (l, i) {
+        var cls = i === sum.level.index ? 'cur' : (i < sum.level.index ? 'past' : '');
+        return '<li class="' + cls + '"' + (cls === 'cur' ? ' aria-current="step"' : '') + '><b>' + esc(T(l.name)) + '</b><span>' + esc(T('from {n} XP', { n: fmtNum(l.min) })) + '</span></li>';
+      }).join('') + '</ol></section>';
+  }
+
+  /* ---------------- personality ---------------- */
+  function profileById(id) { return pdata ? pdata.profiles.filter(function (p) { return p.id === id; })[0] : null; }
+  function pathItemHtml(item, f) {
+    var title = item.type === 'lesson' ? lessonTitles[item.id] : item.type === 'module' ? moduleTitles[item.id] : item.type === 'drill' ? drills[item.id] : item.href;
+    var kind = item.type === 'lesson' ? T('Lesson') : item.type === 'module' ? T('Module') : item.type === 'drill' ? T('Drill') : '';
+    var done = (item.type === 'lesson' && f.lessons.indexOf(item.id) >= 0) || (item.type === 'drill' && f.drillsCompleted.some(function (d) { return d.id === item.id; }));
+    return '<li' + (done ? ' class="done"' : '') + '><div><a href="' + esc(X.pathHref(item)) + '">' + esc((kind ? kind + ': ' : '') + (title || item.id)) + (done ? ' ✓' : '') + '</a>' +
+      (done ? '<span class="sr-only"> (' + esc(T('done')) + ')</span>' : '') + '<small>' + esc(item.why) + '</small></div></li>';
+  }
+  function personalityHtml(f) {
+    var head = '<h2 class="sec" id="hPers">' + esc(T('Trader personality')) + '</h2>';
+    if (!pdata) {
+      return '<section class="card" aria-labelledby="hPers">' + head + '<p class="muted">' + esc(T('The quiz could not be loaded. Check your connection and try again.')) + '</p><div class="act"><button type="button" id="pRetry">' + esc(T('Try again')) + '</button></div></section>';
+    }
+    var note = pdata.englishOnly ? '<p class="note">' + esc(T('Shown in English: the Spanish version is not available offline yet.')) + '</p>' : '';
+    if (quiz) return '<section class="card pq" aria-labelledby="hPers">' + head + note + quizHtml() + '</section>';
+    var res = X.personality.result();
+    var prof = res ? profileById(res.primary) : null;
+    if (!prof) {
+      return '<section class="card" aria-labelledby="hPers">' + head + note + '<h3>' + esc(pdata.title) + '</h3><p>' + esc(T('Find out which trading style fits how you think, and get a learning path through the course that starts where you are most curious. Ten questions, about two minutes.')) + '</p>' +
+        '<p class="note">' + esc(pdata.disclaimer) + '</p><div class="act"><button type="button" class="primary" id="pStart">' + esc(T('Take the quiz')) + '</button></div></section>';
+    }
+    var sec = res.secondary ? profileById(res.secondary) : null;
+    var total = Object.keys(res.scores || {}).reduce(function (n, k) { return n + (+res.scores[k] || 0); }, 0);
+    var scores = pdata.profiles.map(function (p) {
+      var v = +((res.scores || {})[p.id]) || 0, pct = total ? Math.round(v / total * 100) : 0;
+      return '<li><span>' + esc(p.name) + '</span><span class="num">' + pct + '%</span><div class="bar" role="img" aria-label="' + esc(p.name + ': ' + pct + '%') + '"><i style="width:' + pct + '%"></i></div></li>';
+    }).join('');
+    return '<section class="card pres" aria-labelledby="hPers">' + head + note +
+      '<h3>' + esc(T('Your style: {name}', { name: prof.name })) + '</h3>' +
+      '<p class="tag">' + esc(prof.tagline) + (sec ? ' ' + esc(T('With a strong streak of {name}', { name: sec.name })) + '.' : '') + '</p>' +
+      '<p>' + esc(prof.summary) + '</p><p>' + esc(prof.body) + '</p>' +
+      '<div class="callout warn"><div>' + esc(prof.tip) + '</div></div>' +
+      '<h4>' + esc(T('Habits to build')) + '</h4><ul class="steps">' + prof.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>' +
+      '<h4 style="margin-top:var(--sp-4)">' + esc(T('Your learning path')) + '</h4><ol class="path">' + prof.path.map(function (it) { return pathItemHtml(it, f); }).join('') + '</ol>' +
+      '<h4 style="margin-top:var(--sp-4)">' + esc(T('Your answers by style')) + '</h4><ul class="scores">' + scores + '</ul>' +
+      '<p class="note">' + esc(pdata.disclaimer) + '</p>' +
+      '<div class="act"><button type="button" id="pStart">' + esc(T('Retake the quiz')) + '</button></div></section>';
+  }
+  function quizHtml() {
+    var q = pdata.questions[quiz.i], n = pdata.questions.length, sel = quiz.answers[quiz.i];
+    var last = quiz.i === n - 1;
+    return '<form id="pForm" novalidate><div class="qn" aria-hidden="true">' + esc(T('Question {n} of {of}', { n: quiz.i + 1, of: n })) + '</div>' +
+      '<div class="bar" aria-hidden="true" style="margin:0 0 var(--sp-3);max-width:none"><i style="width:' + Math.round(quiz.i / n * 100) + '%"></i></div>' +
+      '<fieldset><legend><span class="sr-only">' + esc(T('Question {n} of {of}', { n: quiz.i + 1, of: n })) + ': </span>' + esc(q.q) + '</legend>' +
+      q.choices.map(function (c, j) {
+        return '<label class="opt"><input type="radio" name="pq" value="' + j + '"' + (sel === j ? ' checked' : '') + '><span>' + esc(c.text) + '</span></label>';
+      }).join('') + '</fieldset>' +
+      '<p class="note" id="pErr" role="alert" hidden>' + esc(T('Pick an answer to continue.')) + '</p>' +
+      '<div class="nav"><span><button type="button" id="pBack"' + (quiz.i === 0 ? ' disabled' : '') + '>' + esc(T('Back')) + '</button> <button type="button" class="ghost" id="pCancel">' + esc(T('Cancel')) + '</button></span>' +
+      '<button type="submit" class="primary">' + esc(T(last ? 'See my result' : 'Next')) + '</button></div></form>';
+  }
+
+  function nameHtml(prof) {
+    return '<section class="card" aria-labelledby="hName"><h2 class="sec" id="hName">' + esc(T('Display name')) + '</h2>' +
+      '<form class="nameform" id="nameForm"><label for="dn">' + esc(T('Optional. Shown only on this profile, in this browser. Leave it empty to stay anonymous.')) +
+      '<input id="dn" name="dn" type="text" maxlength="40" autocomplete="nickname" placeholder="' + esc(T('Your name (optional)')) + '" value="' + esc(prof.displayName) + '"></label>' +
+      '<button type="submit" class="primary">' + esc(T('Save')) + '</button><button type="button" id="dnClear">' + esc(T('Clear')) + '</button></form></section>';
+  }
+  function dataHtml() {
+    return '<section class="card" aria-labelledby="hData"><h2 class="sec" id="hData">' + esc(T('Your data')) + '</h2>' +
+      '<p class="muted" style="line-height:1.55">' + esc(T('Everything on this page is calculated from progress saved in this browser. Clearing site data clears it; XP you have earned is never taken away when you reset the paper account.')) + '</p>' +
+      '<div class="act"><button type="button" id="recalc">' + esc(T('Recalculate XP')) + '</button></div></section>';
+  }
+
+  /* ---------------- render + events ---------------- */
+  function render() {
+    var sum = X.summary(), f = X.facts({ index: index }), prof = X.profile.get();
+    var focusId = document.activeElement && document.activeElement.id;
+    app.className = ''; app.removeAttribute('aria-busy');
+    app.innerHTML = heroHtml(sum, prof) + statsHtml(f, sum) +
+      '<div class="grid cols-2" style="margin-top:var(--sp-4)">' + historyHtml() + calendarHtml(f) + '</div>' +
+      '<div id="persWrap" style="margin-top:var(--sp-4)">' + personalityHtml(f) + '</div>' +
+      badgesHtml(X.badges({ index: index })) + ladderHtml(sum) +
+      '<div class="grid cols-2" style="margin-top:var(--sp-4)">' + nameHtml(prof) + dataHtml() + '</div>';
+    bind();
+    if (focusId && $(focusId)) { try { $(focusId).focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+  }
+  function renderPersonality(focusFirst) {
+    var w = $('persWrap'); if (!w) return render();
+    w.innerHTML = personalityHtml(X.facts({ index: index }));
+    bindPersonality();
+    if (focusFirst) {
+      var el = w.querySelector('input[name="pq"]:checked') || w.querySelector('input[name="pq"]') || w.querySelector('h3') || w.querySelector('h2');
+      if (el) { if (!el.hasAttribute('tabindex') && !/INPUT|BUTTON|A/.test(el.tagName)) el.setAttribute('tabindex', '-1'); try { el.focus({ preventScroll: false }); } catch (e) { el.focus(); } }
+    }
+  }
+  function bindPersonality() {
+    var start = $('pStart'); if (start) start.onclick = function () { quiz = { i: 0, answers: [] }; renderPersonality(true); };
+    var retry = $('pRetry'); if (retry) retry.onclick = function () { loadRefs().then(function () { renderPersonality(true); }); };
+    var form = $('pForm');
+    if (!form) return;
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var picked = form.querySelector('input[name="pq"]:checked');
+      if (!picked) { $('pErr').hidden = false; return; }
+      quiz.answers[quiz.i] = +picked.value;
+      if (quiz.i < pdata.questions.length - 1) { quiz.i++; renderPersonality(true); return; }
+      var r = X.personality.score(pdata, quiz.answers);
+      quiz = null;
+      if (r.complete) { X.personality.save(r, pdata); announce(T('Results saved to your profile.')); }
+      render();
+      var h = document.querySelector('#persWrap h3'); if (h) { h.setAttribute('tabindex', '-1'); h.focus(); }
+    };
+    form.addEventListener('change', function () { $('pErr').hidden = true; var p = form.querySelector('input[name="pq"]:checked'); if (p) quiz.answers[quiz.i] = +p.value; });
+    $('pBack').onclick = function () { if (quiz.i > 0) { quiz.i--; renderPersonality(true); } };
+    $('pCancel').onclick = function () { quiz = null; renderPersonality(true); };
+  }
+  function bind() {
+    bindPersonality();
+    $('nameForm').onsubmit = function (e) { e.preventDefault(); var p = X.profile.set({ displayName: $('dn').value }); toast(T(p.displayName ? 'Name saved.' : 'Name cleared.')); };
+    $('dnClear').onclick = function () { $('dn').value = ''; X.profile.set({ displayName: '' }); toast(T('Name cleared.')); };
+    $('recalc').onclick = function () {
+      var r = X.recompute({ index: index, toast: false });
+      toast(r.gained > 0 ? T('+{n} XP added from your activity.', { n: r.gained }) : T('XP is up to date.'));
+    };
+  }
+
+  var pending = null;
+  X.onChange(function (sum, detail) {
+    if (quiz) return;                       // never re-render under someone answering a question
+    clearTimeout(pending); pending = setTimeout(render, 120);
+  });
+  window.addEventListener('bt:lang', function () { loadRefs().then(function () { if (!quiz) render(); else renderPersonality(false); }); });
+
+  loadRefs().then(function () {
+    try { X.recompute({ index: index }); } catch (e) { /* render what we have */ }
+    render();
+  });
+})();
+</script>
+</body>

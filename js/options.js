@@ -880,6 +880,256 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * What-if analysis (v0.5): value a position at a future date, price
+   * and volatility, P&L curves at several dates, the 1σ/2σ probability
+   * range and a lognormal probability of profit.
+   * ------------------------------------------------------------------ *
+   * Legs are the same shape as payoff() legs, plus an optional time to
+   * expiry per option leg, so calendar spreads work too:
+   *   {right, strike, qty, premium, days?, expiry?, iv?}
+   *   days    calendar days to expiry measured from today
+   *   expiry  'YYYY-MM-DD' (used when days is missing; measured from opts.now)
+   *   iv      the leg's own implied volatility (decimal)
+   * Missing values fall back to opts.days (default 30) and opts.iv
+   * (default 0.25). opts.ivFor(leg, T) may supply a vol per leg, e.g.
+   * the chain's smile. ivShift is added to every leg's vol (0.05 = +5 vol
+   * points) and the result is floored at 1 %.
+   */
+  function legDays(leg, opts) {
+    var d = num(leg.days, NaN);
+    if (!isNum(d) && leg.expiry) d = daysToExpiry(leg.expiry, opts.now);
+    if (!isNum(d)) d = num(opts.days, 30);
+    return Math.max(0, d);
+  }
+  function legIv(leg, T, opts) {
+    var base = num(leg.iv, NaN);
+    if (!isNum(base) && typeof opts.ivFor === 'function') base = num(opts.ivFor(leg, T), NaN);
+    if (!isNum(base)) base = num(opts.iv, 0.25);
+    return Math.max(0.01, base + num(opts.ivShift, 0));
+  }
+  /* Normalise legs and remember each option leg's days to expiry and vol inputs. */
+  function whatIfLegs(legs, opts) {
+    return (legs || []).map(function (raw) {
+      var l = normLeg(raw);
+      if (l.right !== 'S') { l.days = legDays(raw, opts); l.iv = num(raw.iv, NaN); l.raw = raw; }
+      return l;
+    });
+  }
+  function valueLegsAt(L, S, daysForward, opts) {
+    var r = num(opts.r, 0.05), q = num(opts.q, 0);
+    var out = { S: S, daysForward: daysForward, value: 0, cost: 0, pnl: 0, delta: 0, gamma: 0, theta: 0, vega: 0, expired: true, legs: [] };
+    for (var i = 0; i < L.length; i++) {
+      var l = L[i], qm = l.qty * l.multiplier, px, g = null, left = 0, iv = null;
+      if (l.right === 'S') {
+        px = S;
+        out.value += qm * S; out.cost += qm * l.strike; out.delta += qm;
+        out.legs.push({ right: 'S', strike: l.strike, qty: l.qty, price: S, daysLeft: null, iv: null, pnl: qm * (S - l.strike) });
+        continue;
+      }
+      left = Math.max(0, l.days - daysForward);
+      var T = left / DAYS_PER_YEAR;
+      iv = legIv(l.raw || l, T, opts);
+      if (T > 0) {
+        out.expired = false;
+        g = bs({ S: S, K: l.strike, T: T, r: r, q: q, sigma: iv, type: typeOf(l.right) });
+        px = g.price;
+        out.delta += qm * g.delta; out.gamma += qm * g.gamma; out.theta += qm * g.theta; out.vega += qm * g.vega;
+      } else {
+        px = legValueAt(l, S);
+        var itm = l.right === 'C' ? S > l.strike : S < l.strike;
+        if (itm) out.delta += qm * (l.right === 'C' ? 1 : -1);
+      }
+      out.value += qm * px; out.cost += qm * l.premium;
+      out.legs.push({ right: l.right, strike: l.strike, qty: l.qty, price: px, daysLeft: left, iv: T > 0 ? iv : null, pnl: qm * (px - l.premium) });
+    }
+    out.pnl = out.value - out.cost;
+    if (Math.abs(out.pnl) < 1e-9) out.pnl = 0;
+    return out;
+  }
+
+  /**
+   * whatIf(legs, {S, daysForward=0, ivShift=0, r=0.05, q=0, iv, days, ivFor, now})
+   *   → {S, daysForward, value, cost, pnl, delta, gamma, theta, vega, expired, legs:[{price, daysLeft, iv, pnl}]}
+   * value is what the whole position is worth (dollars, multiplier included),
+   * cost what it cost to open (negative for a credit), pnl = value − cost.
+   * At daysForward = 0 the option legs are worth their Black-Scholes value
+   * today; once daysForward reaches a leg's expiry that leg is worth its
+   * intrinsic value, so at the last expiry pnl equals payoff().
+   */
+  function whatIf(legs, opts) {
+    opts = opts || {};
+    var L = whatIfLegs(legs, opts);
+    var S = num(opts.S, NaN);
+    if (!isNum(S)) {
+      var ks = L.map(function (l) { return l.strike; }).filter(isNum);
+      S = ks.length ? ks.reduce(function (a, b) { return a + b; }, 0) / ks.length : 100;
+    }
+    return valueLegsAt(L, Math.max(0, S), Math.max(0, num(opts.daysForward, 0)), opts);
+  }
+
+  /** Days until the last option leg expires (0 for a stock-only position). */
+  function lastExpiryDays(legs, opts) {
+    opts = opts || {};
+    return whatIfLegs(legs, opts).reduce(function (m, l) { return l.right === 'S' ? m : Math.max(m, l.days); }, 0);
+  }
+
+  /**
+   * curves(legs, Srange, dates, opts) → [{daysForward, label, points:[{S, pnl}]}]
+   *   Srange  as payoff(): an array of prices, {min, max, steps} or omitted.
+   *   dates   days forward to draw; default today, half-way and the last expiry.
+   *   opts    as whatIf (r, q, iv, ivShift, ivFor, days, now).
+   * The expiry curve uses intrinsic values, so it matches payoff() exactly.
+   */
+  function curves(legs, Srange, dates, opts) {
+    opts = opts || {};
+    var L = whatIfLegs(legs, opts);
+    if (!L.length) return [];
+    var last = L.reduce(function (m, l) { return l.right === 'S' ? m : Math.max(m, l.days); }, 0);
+    var ds = Array.isArray(dates) && dates.length ? dates.slice() : (last > 0 ? [0, Math.round(last / 2), last] : [0]);
+    var xs = payoff(legs, Srange).map(function (p) { return p.S; });
+    ds = ds.map(function (d) { return Math.max(0, num(d, 0)); })
+      .filter(function (d, i, a) { return a.indexOf(d) === i; });
+    return ds.map(function (d) {
+      var label = d === 0 ? 'Today' : (d >= last && last > 0 ? 'At expiration' : 'In ' + round(d, 0) + ' days');
+      return {
+        daysForward: d,
+        label: label,
+        points: xs.map(function (S) { return { S: S, pnl: round(valueLegsAt(L, S, d, opts).pnl, 4) }; })
+      };
+    });
+  }
+
+  /**
+   * probRange(S, iv, days) → {S, iv, days, sdLog, low1, high1, low2, high2, move1, move2}
+   * The range the stock lands in about 68 % (1σ) and 95 % (2σ) of the time
+   * if it follows a driftless lognormal walk at volatility iv: the bounds
+   * are S·e^(±kσ√t), symmetric in log space (so the dollar move up is a
+   * little larger than the move down). move1/move2 are the simple
+   * S·kσ√t "expected move" numbers traders quote.
+   */
+  function probRange(S, iv, days) {
+    S = num(S, NaN); iv = Math.max(0, num(iv, 0)); days = Math.max(0, num(days, 0));
+    if (!isNum(S) || S <= 0) throw new Error('options.probRange: spot must be > 0');
+    var sd = iv * Math.sqrt(days / DAYS_PER_YEAR);
+    return {
+      S: S, iv: iv, days: days, sdLog: sd,
+      low1: S * Math.exp(-sd), high1: S * Math.exp(sd),
+      low2: S * Math.exp(-2 * sd), high2: S * Math.exp(2 * sd),
+      move1: S * sd, move2: 2 * S * sd
+    };
+  }
+
+  /**
+   * probProfit(legs, S, iv, days, {r=0, daysForward, ivShift, ivFor, now}) → 0..1
+   * Lognormal estimate of the chance the position shows a profit `days`
+   * from now (default: its last expiry). With r = 0 the walk is driftless,
+   * a neutral assumption for teaching; pass r to use the risk-neutral drift.
+   * When every option leg has expired by then the payoff is piecewise
+   * linear and the answer is exact; otherwise (calendars, or a date before
+   * expiry) it integrates the model value over the lognormal density.
+   */
+  function probProfit(legs, S, iv, days, opts) {
+    opts = opts || {};
+    S = num(S, NaN); iv = num(iv, NaN);
+    var L = whatIfLegs(legs, opts);
+    if (!L.length || !isNum(S) || S <= 0) return 0;
+    var last = L.reduce(function (m, l) { return l.right === 'S' ? m : Math.max(m, l.days); }, 0);
+    days = num(days, NaN);
+    if (!isNum(days)) days = last;
+    days = Math.max(0, days);
+    var r = num(opts.r, 0);
+    var T = days / DAYS_PER_YEAR;
+    var sig = Math.max(0, iv);
+    if (T <= 0 || sig <= 0) {
+      // No randomness left: the stock is where it is (or drifts at r).
+      var ST = S * Math.exp(r * T);
+      return valueLegsAt(L, ST, days, opts).pnl > 0 ? 1 : 0;
+    }
+    var allExpired = L.every(function (l) { return l.right === 'S' || l.days <= days + 1e-9; });
+    if (allExpired) return round(probabilityOfProfit(L, S, sig, T, r), 6);
+    // Midpoint rule over log-price from −6σ to +6σ.
+    var sd = sig * Math.sqrt(T), mu = Math.log(S) + (r - 0.5 * sig * sig) * T;
+    var n = 600, lo = -6, hi = 6, step = (hi - lo) / n, p = 0, mass = 0;
+    for (var i = 0; i < n; i++) {
+      var z = lo + (i + 0.5) * step;
+      var w = normCdf(z + step / 2) - normCdf(z - step / 2);
+      mass += w;
+      if (valueLegsAt(L, Math.exp(mu + sd * z), days, opts).pnl > 0) p += w;
+    }
+    return round(Math.min(1, Math.max(0, p / mass)), 6);
+  }
+
+  /**
+   * greeksCurve(legs, Srange, opts) → [{S, delta, gamma, theta, vega}]
+   * Position greeks (dollars, multiplier included) across a price range at
+   * opts.daysForward — the "greeks over price" mini chart.
+   */
+  function greeksCurve(legs, Srange, opts) {
+    opts = opts || {};
+    var L = whatIfLegs(legs, opts);
+    if (!L.length) return [];
+    var xs = payoff(legs, Srange).map(function (p) { return p.S; });
+    var d = Math.max(0, num(opts.daysForward, 0));
+    return xs.map(function (S) {
+      var v = valueLegsAt(L, S, d, opts);
+      return { S: S, delta: v.delta, gamma: v.gamma, theta: v.theta, vega: v.vega };
+    });
+  }
+
+  /**
+   * warnings(legs, {S, daysForward, exDividendDays, dividend, now, days}) → [{level, code, title, message}]
+   * Plain-English risk flags for the analyzer:
+   *   assignment   short option in the money with ≤ 5 days left
+   *   pin          short option within 1 % of the strike with ≤ 2 days left
+   *   earlyExercise short call in the money when an ex-dividend date comes
+   *                before expiry and the dividend exceeds the put's time value
+   *   nakedCall    short calls not covered by long calls or shares
+   */
+  function warnings(legs, opts) {
+    opts = opts || {};
+    var L = whatIfLegs(legs, opts);
+    var S = num(opts.S, NaN), out = [];
+    if (!isNum(S) || !L.length) return out;
+    var fwd = Math.max(0, num(opts.daysForward, 0));
+    var exDiv = num(opts.exDividendDays, NaN), div = num(opts.dividend, NaN);
+    var r = num(opts.r, 0.05);
+    var longCalls = 0, shortCalls = 0, sharesHeld = 0;
+    L.forEach(function (l) {
+      if (l.right === 'S') { sharesHeld += l.qty; return; }
+      if (l.right === 'C') { if (l.qty > 0) longCalls += l.qty * l.multiplier; else shortCalls += -l.qty * l.multiplier; }
+      if (l.qty >= 0) return;
+      var left = Math.max(0, l.days - fwd);
+      var itm = l.right === 'C' ? S > l.strike : S < l.strike;
+      var what = round(l.strike, 2) + (l.right === 'C' ? ' call' : ' put');
+      if (itm && left <= 5) {
+        out.push({ level: 'warn', code: 'assignment', strike: l.strike, right: l.right,
+          title: 'Assignment risk',
+          message: 'Your short ' + what + ' is in the money with ' + round(left, 0) + ' day(s) left. The buyer can exercise at any time, and in-the-money options are exercised automatically at expiration, so you could be assigned ' + (l.right === 'C' ? 'a short stock position' : 'shares you must pay for') + '. Closing or rolling before expiry avoids the surprise.' });
+      } else if (!itm && left <= 2 && Math.abs(S / l.strike - 1) <= 0.01) {
+        out.push({ level: 'tip', code: 'pin', strike: l.strike, right: l.right,
+          title: 'Pin risk',
+          message: 'The stock is within 1% of your short ' + what + ' strike right before expiry. A small move at the close decides whether you are assigned, and you will not know until the next morning.' });
+      }
+      if (l.right === 'C' && itm && isNum(exDiv) && exDiv >= fwd && exDiv < l.days) {
+        var tLeft = Math.max(0, l.days - exDiv) / DAYS_PER_YEAR;
+        var iv = legIv(l.raw || l, tLeft, opts);
+        var putTime = tLeft > 0 ? bs({ S: S, K: l.strike, T: tLeft, r: r, sigma: iv, type: 'put' }).price : 0;
+        if (!isNum(div) || div > putTime) {
+          out.push({ level: 'warn', code: 'earlyExercise', strike: l.strike, right: 'C',
+            title: 'Early exercise before the ex-dividend date',
+            message: 'Your short ' + what + ' is in the money and the stock goes ex-dividend in about ' + round(exDiv - fwd, 0) + ' day(s), before expiry. Call owners often exercise the day before to collect the dividend' + (isNum(div) ? ' (about $' + round(div, 2) + ' a share, more than the option\'s remaining time value)' : '') + ', which would leave you short the shares and owing the dividend.' });
+        }
+      }
+    });
+    var cover = longCalls + Math.max(0, sharesHeld);
+    if (shortCalls > cover + 1e-9) {
+      out.push({ level: 'warn', code: 'nakedCall', title: 'Uncovered short call',
+        message: 'You are short more calls than you own shares or long calls, so the loss grows without limit if the stock keeps rising. Brokers require high option approval and margin for this.' });
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
    * Glossary — short definitions the UI can show as tooltips
    * ------------------------------------------------------------------ */
   var glossary = {
@@ -909,6 +1159,9 @@
     // payoff & analysis
     payoff: payoff, analyze: analyze, pnlAt: function (legs, S) { return pnlAt((legs || []).map(normLeg), S); },
     strategies: strategies, strategyList: strategyList, buildStrategy: buildStrategy,
+    // what-if analyzer (v0.5)
+    whatIf: whatIf, curves: curves, probRange: probRange, probProfit: probProfit,
+    greeksCurve: greeksCurve, warnings: warnings, lastExpiryDays: lastExpiryDays,
     // contract ids & dates
     occ: occ, parseOcc: parseOcc, describeContract: describeContract,
     expiryFromDays: expiryFromDays, monthlyExpiries: monthlyExpiries, daysToExpiry: daysToExpiry, yearsToExpiry: yearsToExpiry,
