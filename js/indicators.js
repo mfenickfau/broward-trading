@@ -14,6 +14,13 @@
  */
 (function () {
   'use strict';
+  /* Reason texts for the composite signal are UI strings: translated through BT.t when js/i18n.js is loaded
+   * (looked up at call time, so load order does not matter); plain {var} interpolation otherwise. */
+  function T(s, v) {
+    var tf = typeof window !== 'undefined' && window.BT && window.BT.t;
+    if (tf) { try { return tf(s, v); } catch (e) { /* fall through */ } }
+    return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s;
+  }
   var root = (typeof window !== 'undefined') ? window : (typeof globalThis !== 'undefined' ? globalThis : this);
   root.BT = root.BT || {};
   var BT = root.BT;
@@ -685,9 +692,9 @@
 
     if (ind.rsi[i] != null) {
       var v = ind.rsi[i];
-      if (v < 30) add(2, 'RSI ' + v.toFixed(0) + ' is oversold', 'Momentum stretched down; sellers may be exhausted (bounce candidate)');
-      else if (v > 70) add(-2, 'RSI ' + v.toFixed(0) + ' is overbought', 'Momentum stretched up; buyers may be exhausted (pullback candidate)');
-      else add(0, 'RSI ' + v.toFixed(0) + ' is neutral', 'Between 30 and 70: no extreme');
+      if (v < 30) add(2, T('RSI {v} is oversold', { v: v.toFixed(0) }), 'Momentum stretched down; sellers may be exhausted (bounce candidate)');
+      else if (v > 70) add(-2, T('RSI {v} is overbought', { v: v.toFixed(0) }), 'Momentum stretched up; buyers may be exhausted (pullback candidate)');
+      else add(0, T('RSI {v} is neutral', { v: v.toFixed(0) }), 'Between 30 and 70: no extreme');
     }
 
     if (hist[i] != null) {
@@ -712,7 +719,7 @@
     // Context (no points): trend strength
     if (ind.adx && ind.adx.adx && ind.adx.adx[i] != null) {
       var ax = ind.adx.adx[i];
-      add(0, 'ADX ' + ax.toFixed(0) + (ax >= 25 ? ': strong trend' : ax < 20 ? ': no clear trend' : ': trend building'),
+      add(0, T(ax >= 25 ? 'ADX {v}: strong trend' : ax < 20 ? 'ADX {v}: no clear trend' : 'ADX {v}: trend building', { v: ax.toFixed(0) }),
         ax >= 25 ? 'Trend-following signals are more reliable; mean-reversion (RSI/Bollinger) less so' : ax < 20 ? 'Range-bound market: mean-reversion signals matter more, crossovers whipsaw' : 'Transitional');
     }
 

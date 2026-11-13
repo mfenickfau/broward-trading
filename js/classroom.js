@@ -18,15 +18,19 @@
  *   BT.classroom.KEY                      'bt.classroom'
  *   BT.classroom.studentId()              random, persisted id (never derived from anything personal)
  *   BT.classroom.normalizeCode(s) / isValidCode(s)
- *   BT.classroom.join(code, displayName?) → {ok, code, displayName} | {ok:false, error}
- *   BT.classroom.leave()                  forgets the class (keeps the studentId)
+ *   BT.classroom.join(code, displayName?, {freshId?}) → {ok, code, displayName, studentId, freshId} | {ok:false, error}
+ *   BT.classroom.leave()                  forgets the class and its ownerToken (keeps the studentId)
  *   BT.classroom.setDisplayName(name)
- *   BT.classroom.status()                 → {joined, code, displayName, studentId, lastSentAt, backend}
+ *   BT.classroom.status()                 → {joined, code, displayName, studentId, lastSentAt, backend,
+ *                                             ownerMismatch, backoffUntil, hasOwnerToken}
  *   BT.classroom.snapshot()               → the contract snapshot object (reads localStorage only)
  *   BT.classroom.encodeShare(snapshot?)   → Promise<string>   'BT1.…'
  *   BT.classroom.decodeShare(code)        → Promise<{ok, snapshot} | {ok:false, error, reason}>
  *   BT.classroom.parseShareCodes(text)    → ['BT1.…', …] found anywhere in pasted text
- *   BT.classroom.sync(opts?)              → Promise<{ok, sent, skipped?, error?}>   opts.reason 'lesson'|'quiz'|'join'|'manual'
+ *   BT.classroom.sync(opts?)              → Promise<{ok, sent, skipped?, error?, ownerMismatch?, full?, rateLimited?}>
+ *                                         opts.reason 'lesson'|'quiz'|'join'|'manual'; opts.force also overrides a 429 back-off
+ *   Stored in bt.classroom: studentId, displayName, classCode, className, joinedAt, lastSentAt, lastSentCode,
+ *   ownerToken + ownerTokenCode (from the server's first 200), ownerMismatch, backoffUntil.
  *   BT.classroom.codec                    {deflate, inflate, available(), use({deflate, inflate}), reset()}
  *                                         (tests inject zlib here; the browser uses CompressionStream)
  *   BT.classroom.SYNC_INTERVAL_MS         5 minutes
@@ -57,6 +61,8 @@
   var MAX_DRILLS = 40;
   var MAX_LESSONS = 400;
   var MAX_SHARE_CHARS = 60000;
+  var OWNER_TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;   // mirrors server/worker.js OWNER_TOKEN_RE (24 random bytes, base64url)
+  var DEFAULT_BACKOFF_SEC = 60;
 
   /* ------------------------------------------------------------------ *
    * storage (safe in private windows / Node)
@@ -74,7 +80,13 @@
       className: typeof s.className === 'string' ? s.className : '',
       joinedAt: s.joinedAt || null,
       lastSentAt: s.lastSentAt || null,
-      lastSentCode: s.lastSentCode || null
+      lastSentCode: s.lastSentCode || null,
+      // Snapshot ownership (server/worker.js v0.4.1): the first POST for (class, studentId) hands back a
+      // random ownerToken exactly once; every later POST must carry it or the server answers 409 {ownerMismatch}.
+      ownerToken: typeof s.ownerToken === 'string' && OWNER_TOKEN_RE.test(s.ownerToken) ? s.ownerToken : null,
+      ownerTokenCode: typeof s.ownerTokenCode === 'string' ? s.ownerTokenCode : null,
+      ownerMismatch: s.ownerMismatch === true,
+      backoffUntil: typeof s.backoffUntil === 'string' && isFinite(Date.parse(s.backoffUntil)) ? s.backoffUntil : null
     };
   }
   function save(s) { return lsSet(KEY, s); }
@@ -110,21 +122,31 @@
   /* ------------------------------------------------------------------ *
    * join / leave / status
    * ------------------------------------------------------------------ */
-  function join(code, displayName) {
+  /**
+   * join(code, displayName?, opts?) → {ok, code, displayName, studentId, freshId}
+   * opts.freshId: mint a new studentId (used after the server reported 409 {ownerMismatch}: this id is bound to
+   * another device, so rejoining with the same id would keep failing). A mismatch recorded by sync() also forces it.
+   */
+  function join(code, displayName, opts) {
+    opts = opts || {};
     var c = normalizeCode(code);
     if (!isValidCode(c)) return { ok: false, error: 'A class code is 6 letters or digits, like K7Q2MX, and never contains 0, O, 1 or I. Ask your instructor for it.' };
     var s = load();
-    if (!s.studentId) s.studentId = 's-' + randomChars(ID_ALPHABET, 10);
+    var fresh = false;
+    if (!s.studentId || opts.freshId === true || s.ownerMismatch) { s.studentId = 's-' + randomChars(ID_ALPHABET, 10); fresh = true; }
+    if (s.classCode !== c || fresh) { s.ownerToken = null; s.ownerTokenCode = null; }   // the token belongs to one (class, id) pair
+    s.ownerMismatch = false; s.backoffUntil = null;
     s.classCode = c;
     s.joinedAt = new Date().toISOString();
     if (displayName !== undefined) s.displayName = cleanName(displayName);
-    if (s.lastSentCode !== c) s.lastSentAt = null;   // a new class gets a snapshot right away
+    if (s.lastSentCode !== c || fresh) s.lastSentAt = null;   // a new class (or a new id) gets a snapshot right away
     save(s);
-    return { ok: true, code: c, displayName: s.displayName, studentId: s.studentId };
+    return { ok: true, code: c, displayName: s.displayName, studentId: s.studentId, freshId: fresh };
   }
   function leave() {
     var s = load();
     s.classCode = null; s.className = ''; s.joinedAt = null; s.lastSentAt = null; s.lastSentCode = null;
+    s.ownerToken = null; s.ownerTokenCode = null; s.ownerMismatch = false; s.backoffUntil = null;
     save(s);
     return { ok: true };
   }
@@ -133,9 +155,26 @@
   function backendConfigured() {
     try { return !!(BT.auth && typeof BT.auth.configured === 'function' && BT.auth.configured()); } catch (e) { return false; }
   }
+  /** backoffUntil as a future timestamp (ms) or null when no 429 back-off is in force. */
+  function backoffActive(s) {
+    var t = s.backoffUntil ? Date.parse(s.backoffUntil) : NaN;
+    return isFinite(t) && t > Date.now() ? t : null;
+  }
+  /**
+   * status() → {joined, code, className, displayName, studentId, joinedAt, lastSentAt, backend,
+   *             ownerMismatch, backoffUntil (ISO|null), hasOwnerToken}
+   * ownerMismatch: the server said this id belongs to another device; join(code, name, {freshId:true}) fixes it.
+   * backoffUntil: a 429 asked us to wait; sync() skips with 'backoff' until then (except opts.force).
+   */
   function status() {
     var s = load();
-    return { joined: !!s.classCode, code: s.classCode, className: s.className, displayName: s.displayName, studentId: s.studentId, joinedAt: s.joinedAt, lastSentAt: s.lastSentAt, backend: backendConfigured() };
+    var until = backoffActive(s);
+    return {
+      joined: !!s.classCode, code: s.classCode, className: s.className, displayName: s.displayName, studentId: s.studentId, joinedAt: s.joinedAt,
+      lastSentAt: s.lastSentAt, backend: backendConfigured(),
+      ownerMismatch: s.ownerMismatch, backoffUntil: until ? new Date(until).toISOString() : null,
+      hasOwnerToken: !!(s.ownerToken && s.ownerTokenCode === s.classCode)
+    };
   }
 
   /* ------------------------------------------------------------------ *
@@ -378,8 +417,15 @@
   }
   var inflight = null;
   /**
-   * sync({reason}) → Promise<{ok, sent, skipped?, error?, status?}>
-   * reason 'lesson' | 'quiz' | 'join' | 'manual' bypasses the 5-minute throttle.
+   * sync({reason, force}) → Promise<{ok, sent, skipped?, error?, status?, ownerMismatch?, full?, rateLimited?, retryAfterSec?, removed?}>
+   * reason 'lesson' | 'quiz' | 'join' | 'manual' bypasses the 5-minute throttle (opts.force:true also bypasses a 429 back-off).
+   * Server answers handled here (server/worker.js):
+   *   200 {ownerToken?}        first snapshot for this (class, id): the token is persisted and sent with every later one
+   *   409 {ownerMismatch:true} this id is bound to another device → recorded; join(code, name, {freshId:true}) mints a new id
+   *   409 {full:true}          class at its student cap → reported, nothing stored
+   *   410 {removed:true}       the instructor removed this student → leave()
+   *   429 {retryAfterSec}      per-student / per-class limit → back-off (default 60 s); lastSentAt stays as it was so the
+   *                            next lesson, quiz or page load after the back-off retries instead of giving up for 5 minutes
    */
   function sync(opts) {
     opts = opts || {};
@@ -388,10 +434,14 @@
     if (!backendConfigured()) return Promise.resolve({ ok: false, sent: false, skipped: 'no-backend' });
     if (typeof glob('fetch') !== 'function') return Promise.resolve({ ok: false, sent: false, skipped: 'no-fetch' });
     var forced = opts.force === true || ['lesson', 'quiz', 'join', 'manual'].indexOf(opts.reason) >= 0;
+    var waitUntil = backoffActive(s);
+    if (waitUntil && opts.force !== true) return Promise.resolve({ ok: false, sent: false, skipped: 'backoff', rateLimited: true, retryAt: new Date(waitUntil).toISOString(), retryAfterSec: Math.ceil((waitUntil - Date.now()) / 1000), error: 'The classroom server asked this device to wait a moment before sending again. Your progress is saved here and will be sent shortly.' });
+    if (s.ownerMismatch && opts.force !== true) return Promise.resolve({ ok: false, sent: false, skipped: 'owner-mismatch', ownerMismatch: true, error: 'This student id is in use on another device. Rejoin the class to get a fresh id.' });
     var last = s.lastSentAt ? Date.parse(s.lastSentAt) : NaN;
     if (!forced && isFinite(last) && s.lastSentCode === s.classCode && Date.now() - last < SYNC_INTERVAL_MS) return Promise.resolve({ ok: true, sent: false, skipped: 'throttled' });
     if (inflight) return inflight;
     var snap = snapshot();
+    if (s.ownerToken && s.ownerTokenCode === s.classCode) snap.ownerToken = s.ownerToken;
     var ctrl = typeof glob('AbortController') === 'function' ? new (glob('AbortController'))() : null;
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
     inflight = glob('fetch')(apiUrl('/classes/' + encodeURIComponent(s.classCode) + '/snapshots'), {
@@ -400,16 +450,32 @@
     }).then(function (res) {
       return res.text().then(function (txt) {
         var data = null; try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = null; }
+        var cur;
         if (res.status === 410 && data && data.removed) {
           // The instructor removed this student: stop sending and forget the class, as asked.
           leave();
           return { ok: false, sent: false, removed: true, status: 410, error: (data && data.error) || 'You were removed from this class.' };
         }
+        if (res.status === 409 && data && data.ownerMismatch) {
+          cur = load(); cur.ownerMismatch = true; cur.ownerToken = null; cur.ownerTokenCode = null; save(cur);
+          return { ok: false, sent: false, status: 409, ownerMismatch: true, error: (data && data.error) || 'This student id already belongs to another device in this class. Rejoin to get a fresh id.' };
+        }
+        if (res.status === 409 && data && data.full) {
+          return { ok: false, sent: false, status: 409, full: true, error: (data && data.error) || 'This class is full. Ask your instructor to remove unused ids.' };
+        }
+        if (res.status === 429) {
+          var hdr = res.headers && typeof res.headers.get === 'function' ? +res.headers.get('Retry-After') : NaN;
+          var secs = data && isFinite(+data.retryAfterSec) && +data.retryAfterSec > 0 ? +data.retryAfterSec : (isFinite(hdr) && hdr > 0 ? hdr : DEFAULT_BACKOFF_SEC);
+          secs = Math.min(3600, Math.max(5, Math.round(secs)));
+          cur = load(); cur.backoffUntil = new Date(Date.now() + secs * 1000).toISOString(); save(cur);
+          return { ok: false, sent: false, status: 429, rateLimited: true, retryAfterSec: secs, retryAt: cur.backoffUntil, error: (data && data.error) || 'The classroom server is busy. Your progress is saved on this device and will be sent in about a minute.' };
+        }
         if (!res.ok) return { ok: false, sent: false, status: res.status, error: (data && data.error) || ('Request failed (' + res.status + ')') };
-        var cur = load(); cur.lastSentAt = new Date().toISOString(); cur.lastSentCode = cur.classCode;
+        cur = load(); cur.lastSentAt = new Date().toISOString(); cur.lastSentCode = cur.classCode; cur.backoffUntil = null; cur.ownerMismatch = false;
         if (data && typeof data.className === 'string') cur.className = cleanName(data.className);
+        if (data && typeof data.ownerToken === 'string' && OWNER_TOKEN_RE.test(data.ownerToken)) { cur.ownerToken = data.ownerToken; cur.ownerTokenCode = cur.classCode; }
         save(cur);
-        return { ok: true, sent: true, status: res.status, className: cur.className };
+        return { ok: true, sent: true, status: res.status, className: cur.className, ownerToken: !!cur.ownerToken };
       });
     }).catch(function (e) {
       return { ok: false, sent: false, network: true, error: e && e.name === 'AbortError' ? 'The classroom server took too long to answer.' : 'Could not reach the classroom server.' };

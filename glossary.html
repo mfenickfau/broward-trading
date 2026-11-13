@@ -30,7 +30,7 @@
   .modes button[aria-selected="true"]{background:var(--accent-soft);color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
   .modes button .ico{width:18px;height:18px}
   .modes .cnt{font-family:var(--mono);font-size:var(--fs-xs);padding:1px 7px;border-radius:var(--r-pill);background:var(--panel2);color:var(--muted)}
-  .modes button[aria-selected="true"] .cnt{background:var(--accent);color:var(--accent-fg)}
+  .modes button[aria-selected="true"] .cnt{background:var(--accent-btn);color:var(--accent-fg)}
   .modes .cnt:empty{display:none}
   @media (max-width:420px){ .modes button{font-size:var(--fs-sm);padding:8px 2px} .modes button .ico{display:none} }
 
@@ -47,7 +47,7 @@
   .az{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px;margin:2px 0 var(--sp-3)}
   .az button{padding:0;font-family:var(--mono);font-weight:500;font-size:var(--fs-sm)}
   .az button:disabled{opacity:.3}
-  .az button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .az button.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
   .count{color:var(--muted);font-size:var(--fs-sm);margin:0 0 var(--sp-2)}
   .letter{position:sticky;top:calc(var(--topnav-h) + 66px);z-index:10;font-family:var(--mono);font-size:var(--fs-sm);letter-spacing:.6px;color:var(--muted);background:var(--bg);padding:10px 0 6px;margin:var(--sp-2) 0 4px;border-bottom:1px solid var(--line);scroll-margin-top:calc(var(--topnav-h) + 70px)}
   .letter small{font-family:var(--font);letter-spacing:0;text-transform:none;color:var(--faint);margin-left:8px}
@@ -102,7 +102,7 @@
   .fcard .flip{width:100%;min-height:52px;font-size:var(--fs-md)}
   .grades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .grades button{flex-direction:column;gap:2px;min-height:56px;padding:8px 6px;font-weight:500;border-width:1px}
-  .grades button small{font-family:var(--mono);font-size:var(--fs-xs);font-weight:400;opacity:.85}
+  .grades button small{font-family:var(--mono);font-size:var(--fs-xs);font-weight:400}
   .grades .again{border-color:var(--down);color:var(--down)} .grades .again:hover{background:var(--down-soft)}
   .grades .hard{border-color:var(--warn);color:var(--warn-text,var(--warn))} .grades .hard:hover{background:var(--warn-soft)}
   .grades .good{border-color:var(--up);color:var(--up)} .grades .good:hover{background:var(--up-soft)}
@@ -133,8 +133,8 @@
   .options .option .txt{min-width:0;overflow-wrap:anywhere}
   .options .option:hover{border-color:var(--accent)}
   .options .option:disabled{opacity:1;cursor:default}
-  .options .option.correct{border-color:var(--up);background:var(--up-soft)} .options .option.correct .key{background:var(--up);border-color:var(--up);color:#fff}
-  .options .option.wrong{border-color:var(--down);background:var(--down-soft)} .options .option.wrong .key{background:var(--down);border-color:var(--down);color:#fff}
+  .options .option.correct{border-color:var(--up);background:var(--up-soft)} .options .option.correct .key{background:var(--up-btn);border-color:var(--up-btn);color:#fff}
+  .options .option.wrong{border-color:var(--down);background:var(--down-soft)} .options .option.wrong .key{background:var(--down-btn);border-color:var(--down-btn);color:#fff}
   .options .option.dim{opacity:.55}
   .explain{margin-top:12px;padding:10px 12px;border-radius:var(--r);background:var(--panel2);font-size:var(--fs);line-height:1.55}
   .explain b{display:block;margin-bottom:2px} .explain.ok b{color:var(--up)} .explain.bad b{color:var(--down)}
@@ -191,7 +191,8 @@
     <p class="sub">Every term the course uses, in plain English with a worked example and a link to the lesson that teaches it. Study them as flashcards, or take today's Daily&nbsp;5 and keep your streak alive.</p>
   </header>
 
-  <nav class="modes" role="tablist" aria-label="Glossary modes">
+  <main id="main">
+  <div class="modes" role="tablist" aria-label="Glossary modes">
     <button role="tab" id="tab-browse" aria-selected="true" aria-controls="view-browse" data-mode="browse">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
       Browse <span class="cnt" id="cntBrowse"></span></button>
@@ -201,9 +202,8 @@
     <button role="tab" id="tab-daily" aria-selected="false" aria-controls="view-daily" data-mode="daily">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
       Daily 5 <span class="cnt" id="cntDaily"></span></button>
-  </nav>
+  </div>
 
-  <main>
     <!-- ============================ BROWSE ============================ -->
     <section id="view-browse" role="tabpanel" aria-labelledby="tab-browse">
       <div class="searchbar">
@@ -258,6 +258,8 @@
   'use strict';
   var G = window.BT.glossary;
   var nav = window.BT.nav || {};
+  /* i18n for JS-built strings with numbers in them (BT.t when js/i18n.js is loaded; plain {var} interpolation otherwise). */
+  function T(s, v) { var tf = window.BT && window.BT.t; if (tf) { try { return tf(s, v); } catch (e) { /* fall through */ } } return v ? String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
   var $ = function (id) { return document.getElementById(id); };
   var esc = G.util.esc;
   function toast(msg, kind, title) { if (nav.toast) nav.toast(msg, kind, title); }
@@ -352,7 +354,7 @@
       var L0 = state.letter, idx = pl.indexOf(L0), sect = pg[L0] || [];
       var prev = idx > 0 ? pl[idx - 1] : '', next = idx < pl.length - 1 ? pl[idx + 1] : '';
       var lname = function (L) { return L === '#' ? 'Symbols' : L; };
-      $('count').textContent = list.length + ' terms' + (catLabel ? ' in ' + catLabel : '') + '. Tap a letter above, or a term to expand it.';
+      $('count').textContent = catLabel ? T('{n} terms in {cat}. Tap a letter above, or a term to expand it.', { n: list.length, cat: T(catLabel) }) : T('{n} terms. Tap a letter above, or a term to expand it.', { n: list.length });
       res.innerHTML = '<h2 class="letter" id="L-' + (L0 === '#' ? 'sym' : L0) + '">' + esc(lname(L0)) +
           '<small>' + sect.length + (sect.length === 1 ? ' term' : ' terms') + '</small></h2>' +
         sect.map(termCard).join('') +
@@ -502,10 +504,10 @@
     $('fcTiles').innerHTML =
       '<div class="card stat"><span class="label">Due now</span><span class="value">' + st.due + '</span><span class="sub">' + (st.due ? 'ready to review' : 'all caught up') + '</span></div>' +
       '<div class="card stat"><span class="label">New</span><span class="value">' + st.unseen + '</span><span class="sub">never studied</span></div>' +
-      '<div class="card stat"><span class="label">Learned</span><span class="value">' + st.learned + '</span><span class="sub">' + st.mature + ' mature (3+ wk)</span></div>' +
+      '<div class="card stat"><span class="label">Learned</span><span class="value">' + st.learned + '</span><span class="sub">' + esc(T('{n} mature (3+ wk)', { n: st.mature })) + '</span></div>' +
       '<div class="card stat"><span class="label">Today</span><span class="value">' + st.reviewedToday + '</span><span class="sub">' + st.reviews + ' all time · ' + st.daysActive + ' day' + (st.daysActive === 1 ? '' : 's') + '</span></div>';
     var n = G.flashcards.queue({ limit: 20, newLimit: +$('fcNew').value, category: cat }).length;
-    $('fcStart').textContent = n ? 'Start session (' + n + ' card' + (n === 1 ? '' : 's') + ')' : 'Nothing to study right now';
+    $('fcStart').textContent = n ? (n === 1 ? T('Start session (1 card)') : T('Start session ({n} cards)', { n: n })) : T('Nothing to study right now');
     $('fcStart').disabled = !n;
     if (!fcS) { $('fcSetup').hidden = false; $('fcSession').hidden = true; }
   }

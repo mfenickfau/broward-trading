@@ -50,6 +50,15 @@ id = "PASTE_TOKENS_ID"
 binding = "LEADERBOARD"
 id = "PASTE_LEADERBOARD_ID"
 
+# Optional: Classroom sync (instructor rosters). Without it every /classes
+# route answers 503 {notConfigured:true} and the instructor page works from
+# pasted share codes. Create with: npx wrangler kv namespace create CLASSES
+# Rate-limit counters for the /classes routes live in TOKENS (or, failing
+# that, in CLASSES itself under rl:* keys), so one of the two must exist.
+# [[kv_namespaces]]
+# binding = "CLASSES"
+# id = "PASTE_CLASSES_ID"
+
 # ---------------------------------------------------------------------------
 # Secrets are NEVER written in this file. Set each one with
 #   npx wrangler secret put NAME
@@ -124,6 +133,33 @@ id = "PASTE_LEADERBOARD_ID"
 # type = "ratelimit"
 # namespace_id = "1007"
 # simple = { limit = 120, period = 60 }
+#
+# Classroom (v0.4.1). Snapshot limits are per student and per class, not per
+# person-behind-a-NAT: a whole class on campus Wi-Fi shares one IP, so the
+# per-IP bucket is only a loose flood ceiling.
+# [[unsafe.bindings]]
+# name = "RL_SNAP"            # snapshots per (class, student) per minute
+# type = "ratelimit"
+# namespace_id = "1008"
+# simple = { limit = 6, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_SNAP_NEW"        # new student ids per class per minute
+# type = "ratelimit"
+# namespace_id = "1009"
+# simple = { limit = 120, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_SNAP_IP"         # snapshots per IP per minute (flood ceiling only)
+# type = "ratelimit"
+# namespace_id = "1010"
+# simple = { limit = 600, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_ROSTER"          # roster reads / student removals per IP per minute
+# type = "ratelimit"
+# namespace_id = "1011"
+# simple = { limit = 60, period = 60 }
 
 [observability]
 enabled = true

@@ -20,6 +20,8 @@
   var BT = window.BT;
   /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
   function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
+  /* Active Intl locale ('en-US' / 'es-419') when js/i18n.js is loaded, else the browser default. */
+  function loc() { try { return BT.i18n && typeof BT.i18n.locale === 'function' ? BT.i18n.locale() : undefined; } catch (e) { return undefined; } }
   var LW = window.LightweightCharts;
   var ind = BT.ind, data = BT.data, paper = BT.paper;
   var alerts = BT.alerts || null;                       // js/alerts.js (v0.3); the dashboard still works without it
@@ -38,7 +40,7 @@
   var fmt = function (v, dp) {
     if (v == null || !isFinite(v)) return '—';
     if (dp == null) dp = Math.abs(v) < 1 ? 4 : 2;
-    return v.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    return v.toLocaleString(loc(), { minimumFractionDigits: dp, maximumFractionDigits: dp });
   };
   var money = function (v) { return (v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2); };
   var signed = function (v, suffix) { return (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + fmt(Math.abs(v), 2) + (suffix || ''); };
@@ -227,7 +229,7 @@
     chart.timeScale().subscribeVisibleLogicalRangeChange(syncFrom(chart));
     activePanes[key] = { el: el, chart: chart, api: api, tagEl: el.querySelector('.tag b') };
     el.querySelector('.pane-close').onclick = function () { togglePane(key, false); };
-    if (I) { api.update(); updatePaneTags(bars.length - 1); }
+    if (I) { api.update(); updatePaneTags(bars.length - 1); describePriceChart(); }
     var r = chP.timeScale().getVisibleLogicalRange(); if (r) chart.timeScale().setVisibleLogicalRange(r);
   }
   function removePane(key) {
@@ -281,10 +283,27 @@
     return last.time + step * k;
   }
 
+  /** Text alternative for the price chart (role="img" via BT.a11y), refreshed on every render. */
+  function describePriceChart() {
+    if (!BT.a11y || !bars.length) return;
+    var last = bars[bars.length - 1], prev = bars.length > 1 ? bars[bars.length - 2] : null;
+    var chg = prev && prev.close ? (last.close - prev.close) / prev.close * 100 : null;
+    var ons = Object.keys(ov).filter(function (k) { return ov[k]; });
+    var txt = T('{symbol} {tf} candlestick chart, {n} bars, last close {close}', { symbol: symbol, tf: tfLabel(tf), n: bars.length, close: money(last.close) }) +
+      (chg == null ? '' : ', ' + (chg >= 0 ? T('up {pct} versus the previous bar', { pct: Math.abs(chg).toFixed(2) + '%' }) : T('down {pct} versus the previous bar', { pct: Math.abs(chg).toFixed(2) + '%' }))) +
+      (ons.length ? '. ' + T('Overlays: {list}', { list: ons.join(', ') }) : '') + '.';
+    BT.a11y.describeChart($('price'), txt);
+    Object.keys(activePanes).forEach(function (k) {
+      var p = activePanes[k];
+      BT.a11y.describeChart(p.el, T('{title} pane for {symbol}: {value}', { title: PANE_DEFS[k].title, symbol: symbol, value: (p.tagEl.textContent || '').trim() || '—' }));
+    });
+  }
+
   function renderSeries() {
     if (!bars.length || !I) return;
     var up = css('--up'), dn = css('--down');
     candles.setData(bars);
+    describePriceChart();
     vol.setData(bars.map(function (b) { return { time: b.time, value: b.volume || 0, color: (b.close >= b.open ? up : dn) + '55' }; }));
 
     var L = function (key, arr, on, colorVar, extra) { var s = line(key, colorVar, extra); s.setData(on ? ind.toLineData(bars, arr) : []); };
@@ -577,7 +596,7 @@
     var t = ticketOrder(), st = paper.state, comm = (st.settings && st.settings.commission) || 0;
     var value = t.shares * t.refPrice, isBuy = t.order.side === 'buy';
     var cashAfter = st.cash + (isBuy ? -value : value) - comm;
-    var rows = [['Shares', t.shares > 0 ? t.shares.toLocaleString() : '—'], [type === 'market' ? 'At about' : 'Reference price', t.refPrice ? money(t.refPrice) : '—'], ['Order value', value ? money(value) : '—']];
+    var rows = [['Shares', t.shares > 0 ? t.shares.toLocaleString(loc()) : '—'], [type === 'market' ? T('At about') : T('Reference price'), t.refPrice ? money(t.refPrice) : '—'], ['Order value', value ? money(value) : '—']];
     if (comm) rows.push(['Commission', money(comm)]);
     rows.push(['Cash after', isFinite(cashAfter) && value ? money(cashAfter) : '—']);
     if (side === 'short') rows.push(['Margin needed', value ? money(value * paper.SHORT_MARGIN) + ' (150%)' : '—']);
@@ -656,7 +675,7 @@
     } else row.hidden = true;
     var trades = paper.state.trades.slice(-40).reverse();
     $('log').innerHTML = trades.length ? trades.map(function (t) {
-      var when = typeof t.time === 'string' ? t.time : new Date((t.time > 1e11 ? t.time : t.time * 1000)).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      var when = typeof t.time === 'string' ? t.time : new Date((t.time > 1e11 ? t.time : t.time * 1000)).toLocaleString(loc(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       return '<tr><td class="' + (t.side === 'buy' ? 'up' : 'down') + '">' + (t.side === 'buy' ? 'BUY' : 'SELL') + '</td><td>' + esc(t.symbol) + '</td><td class="num">' + t.qty + '</td><td class="num">' + money(t.price) + '</td><td class="num ' + cls(t.realized) + '">' + (t.closedQty ? signed(t.realized) : '') + '</td><td class="muted">' + esc(when) + '</td></tr>';
     }).join('') : '<tr><td class="muted">No trades yet. Try buying when the signal says BUY and watch what happens — it is play money.</td></tr>';
     renderTicket();
@@ -728,7 +747,7 @@
   function fmtWhen(t) {
     if (!t) return '';
     var d = new Date(t), today = new Date();
-    return d.toDateString() === today.toDateString() ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return d.toDateString() === today.toDateString() ? d.toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(loc(), { month: 'short', day: 'numeric' });
   }
   function renderAlerts() {
     if (!alerts || !$('alertList')) return;
@@ -826,16 +845,13 @@
     if (!watchlist.length) { ul.innerHTML = '<li class="empty">Your watchlist is empty. Search a symbol and press + Add (or W).</li>'; return; }
     ul.innerHTML = watchlist.map(function (s) {
       var u = data.lookup(s), q = wlQuotes[s], px = q && q.price, chg = q && q.prevClose ? (q.price - q.prevClose) / q.prevClose * 100 : null;
-      return '<li data-sym="' + esc(s) + '" class="' + (s === symbol ? 'on' : '') + '" role="button" tabindex="0" title="' + esc(u.name) + '">' +
+      return '<li data-sym="' + esc(s) + '" class="' + (s === symbol ? 'on' : '') + '">' +
+        '<button class="pick" type="button" data-pick="' + esc(s) + '" title="' + esc(u.name) + '"' + (s === symbol ? ' aria-current="true"' : '') + '>' +
         '<span class="sym">' + esc(s) + '</span><span class="px" id="wlpx-' + esc(s) + '">' + (px ? fmt(px) : '…') + '</span>' +
-        '<span class="nm">' + esc(u.name) + '</span><span class="ch ' + (chg == null ? 'muted' : cls(chg)) + '">' + (chg == null ? '' : pct(chg)) + '</span>' +
-        '<button class="rm" data-rm="' + esc(s) + '" title="Remove ' + esc(s) + ' from the watchlist" aria-label="Remove ' + esc(s) + '">✕</button></li>';
+        '<span class="nm">' + esc(u.name) + '</span><span class="ch ' + (chg == null ? 'muted' : cls(chg)) + '">' + (chg == null ? '' : pct(chg)) + '</span></button>' +
+        '<button class="rm" type="button" data-rm="' + esc(s) + '" title="Remove ' + esc(s) + ' from the watchlist" aria-label="Remove ' + esc(s) + '">✕</button></li>';
     }).join('');
-    $$('li[data-sym]', ul).forEach(function (li) {
-      var go = function () { setSymbol(li.dataset.sym); };
-      li.onclick = function (e) { if (e.target.closest('.rm')) return; go(); };
-      li.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
-    });
+    $$('[data-pick]', ul).forEach(function (b) { b.onclick = function () { setSymbol(b.dataset.pick); }; });
     $$('[data-rm]', ul).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); removeFromWatchlist(b.dataset.rm); }; });
   }
   function addToWatchlist(s) {
@@ -855,7 +871,6 @@
     if (wlBusy || (document.hidden && !force)) return;
     wlBusy = true;
     try {
-      var today = data.marketStatus().nyDate;
       for (var k = 0; k < watchlist.length; k++) {
         var s = watchlist[k];
         if (s === symbol && bars.length) {
@@ -863,6 +878,8 @@
           paintQuote(s); continue;
         }
         try {
+          // "Today" is per market: NYSE rows roll on the New York date, crypto rows at 00:00 UTC.
+          var ms = data.marketStatus(s), today = ms.always && ms.utcDate ? ms.utcDate : ms.nyDate;
           if (!wlPrev[s] || wlPrev[s].day !== today) {
             var d = await data.candles(s, '1day', 3), n = d.length, pc = null;
             // Prior close = the last completed session. If today's bar is already in the series, step back one more.
@@ -1074,19 +1091,32 @@
   $$('.pn').forEach(function (b) { b.onclick = function () { togglePane(b.dataset.pn); }; });
 
   /* ------------------------------------------------------------------ *
-   * NYSE clock
+   * Market clock (NYSE for stocks and ETFs; crypto never closes)
    * ------------------------------------------------------------------ */
   function tickClock() {
-    var st = data.marketStatus(), el = $('clock'), t = $('clockText');
-    var label = { open: 'Open', pre: 'Pre-market', after: 'After hours', closed: 'Closed' }[st.phase];
-    var extra = '';
-    if (st.phase === 'open') extra = ' · closes ' + st.closesAt;
-    else if (st.phase === 'pre') extra = ' · opens 09:30';
+    var st = data.marketStatus(symbol), el = $('clock'), t = $('clockText');
+    if (st.always) {
+      // Crypto spot markets have no bell: no phase, no next open, daily candles roll at 00:00 UTC.
+      t.textContent = T('Crypto {time} · Open 24/7', { time: st.utcTime });
+      el.className = 'clock open';
+      el.title = st.note || T('Crypto trades 24 hours a day, 7 days a week. Daily candles roll at 00:00 UTC.');
+      return;
+    }
+    // Built through T() with the variable parts interpolated: the pill is rewritten every second, so the
+    // DOM translator (exact-string matches) could never keep up with it. English output is unchanged.
+    var text;
+    if (st.phase === 'open') text = T('NYSE {time} · Open · closes {at}', { time: st.nyTime, at: st.closesAt });
+    else if (st.phase === 'pre') text = T('NYSE {time} · Pre-market · opens 09:30', { time: st.nyTime });
     else {
       var secs = st.nextOpen - Math.floor(Date.now() / 1000), hrs = Math.floor(secs / 3600), mins = Math.floor((secs % 3600) / 60);
-      extra = ' · ' + (st.reason ? st.reason + ' · ' : '') + 'opens in ' + (hrs >= 24 ? Math.floor(hrs / 24) + 'd ' + (hrs % 24) + 'h' : hrs + 'h ' + mins + 'm');
+      var wait = hrs >= 24 ? Math.floor(hrs / 24) + 'd ' + (hrs % 24) + 'h' : hrs + 'h ' + mins + 'm';
+      var label = st.phase === 'after' ? T('After hours') : T('Closed');
+      var reason = st.reason ? (/^Holiday: /.test(st.reason) ? T('Holiday: {holiday}', { holiday: st.reason.slice(9) }) : T(st.reason)) : '';
+      text = reason
+        ? T('NYSE {time} · {label} · {reason} · opens in {wait}', { time: st.nyTime, label: label, reason: reason, wait: wait })
+        : T('NYSE {time} · {label} · opens in {wait}', { time: st.nyTime, label: label, wait: wait });
     }
-    t.textContent = 'NYSE ' + st.nyTime + ' · ' + label + extra;
+    t.textContent = text;
     el.className = 'clock ' + st.phase;
     el.title = st.holiday ? T('Market holiday: {holiday}', { holiday: st.holiday }) : st.earlyClose ? T('Early close today at {time}', { time: st.closesAt }) : T('New York Stock Exchange regular session is 9:30–16:00 ET, Monday to Friday except holidays.');
   }
@@ -1170,13 +1200,22 @@
     $('tourTitle').textContent = step.title; $('tourBody').textContent = step.body;
     $('tourDots').innerHTML = TOUR.map(function (_, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('');
     $('tourPrev').disabled = i === 0;
-    $('tourNext').textContent = i === TOUR.length - 1 ? 'Start trading' : 'Next';
+    $('tourNext').textContent = i === TOUR.length - 1 ? T('Start trading') : T('Next');
     $('tour').hidden = false; document.body.classList.add('touring');
   }
   function startTour() { showTour(0); }
-  function endTour() { tourClear(); $('tour').hidden = true; document.body.classList.remove('touring'); tourStep = -1; store.set('bt.tour.done', true); }
+  /**
+   * endTour(finished?) — closes the tour. bt.tour.done is written on ANY close (Skip, backdrop, Escape, last step)
+   * so the first-run auto-start never shows again; bt.tour.finished is written only when the student reached the
+   * last step and tapped 'Start trading'. js/onboarding.js ticks the First Week 'Take the tour' task on the latter.
+   */
+  function endTour(finished) {
+    tourClear(); $('tour').hidden = true; document.body.classList.remove('touring'); tourStep = -1;
+    store.set('bt.tour.done', true);
+    if (finished === true) store.set('bt.tour.finished', true);
+  }
   $('tourBtn').onclick = startTour;
-  $('tourNext').onclick = function () { showTour(tourStep + 1); };
+  $('tourNext').onclick = function () { if (tourStep >= TOUR.length - 1) endTour(true); else showTour(tourStep + 1); };
   $('tourPrev').onclick = function () { showTour(tourStep - 1); };
   $('tourSkip').onclick = endTour;
   $('tourBackdrop').onclick = endTour;

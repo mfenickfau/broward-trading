@@ -95,6 +95,13 @@ test('normSymbol folds provider spellings into BASE-USD and leaves stocks alone'
   assert.strictEqual(D.normSymbol('BINANCE:BTCUSDT'), 'BTC-USD');
   assert.strictEqual(D.normSymbol('COINBASE:ETH-USD'), 'ETH-USD');
   assert.strictEqual(D.normSymbol('sol-usdt'), 'SOL-USD');
+  assert.strictEqual(D.normSymbol('BTCUSD'), 'BTC-USD', 'bare exchange spelling of a known coin folds');
+  assert.strictEqual(D.normSymbol('ethusdt'), 'ETH-USD', 'stablecoin-quoted bare spelling folds');
+  assert.strictEqual(D.normSymbol('XRPUSD'), 'XRP-USD');
+  assert.strictEqual(D.kindOf('BTCUSD'), 'crypto');
+  assert.strictEqual(D.lookup('btcusd').symbol, 'BTC-USD', 'same universe entry / cache key as BTC-USD');
+  assert.strictEqual(D.normSymbol('ZZUSD'), 'ZZUSD', 'an unknown ticker ending in USD stays a stock');
+  assert.strictEqual(D.kindOf('ZZUSD'), 'stock');
   assert.strictEqual(D.normSymbol(' brk.b '), 'BRK.B');
   assert.strictEqual(D.normSymbol('aapl'), 'AAPL');
   assert.strictEqual(D.normSymbol(null), '');
@@ -174,6 +181,13 @@ test('marketStatus(crypto): open 24/7 — weekend, holiday, 3 am — with no nex
     assert.ok(/^\d{2}:\d{2} ET$/.test(s.nyTime)); assert.ok(/^\d{2}:\d{2} UTC$/.test(s.utcTime));
   }
   assert.strictEqual(D.marketStatus('BTC-USD', SAT_NOON_UTC).utcDate, '2025-07-05');
+  // Early-UTC weekend instant: Sat 14 Nov 2026 03:07 UTC is still Fri 22:07 in New York.
+  const earlySat = D.marketStatus('BTC-USD', Date.UTC(2026, 10, 14, 3, 7));
+  assert.strictEqual(earlySat.utcDate, '2026-11-14');
+  assert.strictEqual(earlySat.weekday, 'Sat', 'weekday names the UTC session day, not the NY evening');
+  assert.strictEqual(earlySat.utcWeekday, 'Sat');
+  assert.strictEqual(earlySat.nyDate, '2026-11-13'); assert.strictEqual(earlySat.nyWeekday, 'Fri');
+  assert.strictEqual(earlySat.nyTime, '22:07 ET'); assert.strictEqual(earlySat.utcTime, '03:07 UTC');
   assert.strictEqual(D.marketStatus('DOGE-USD', SAT_NOON_UTC).open, true, 'unknown pairs are 24/7 too');
   assert.strictEqual(D.marketStatus('IBIT', SAT_NOON_UTC).open, false, 'but the bitcoin ETF keeps NYSE hours');
 });

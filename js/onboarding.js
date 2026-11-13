@@ -20,16 +20,23 @@
  *                                              orderType is given
  *   replay    {min=1, completed?, drill?|drillId?}  bt.replay.sessions (js/replay.js)
  *   journal   {min=1, field?, reviewed?, review?, source?}  bt.journal (js/journal.js):
- *                                              entries, or .reviews when review:true
+ *                                              {entries, reviews} or the legacy bare array of
+ *                                              entries that js/replay.js saveToJournal() writes
  *   alert     {min=1, kind?, symbol?}          bt.alerts (js/alerts.js)
- *   glossary  {mode:'flashcards'|'daily5', min} bt.flashcards / bt.daily5 (js/glossary.js)
- *   tour      —                                bt.tour.done (js/app.js first-run tour)
+ *   glossary  {mode:'flashcards'|'daily5', min} bt.flashcards / bt.daily5 (js/glossary.js);
+ *                                              flashcards counts distinct cards graded, not grades
+ *   tour      {any?}                           bt.tour.finished (js/app.js: 'Start trading' on the
+ *                                              last step); any:true also accepts the legacy
+ *                                              bt.tour.done flag, which Skip/Escape set too
  *   manual    —                                ticked by the student on start.html
  * Any auto task can also be overridden by the student ("I did this elsewhere").
  *
  * Progress lives in localStorage 'bt.onboarding':
  *   { version, startedAt, manual:{taskId:true}, overrides:{taskId:true},
  *     unlocked:{dayNumber:true}, dayDone:{dayNumber:iso}, completedAt, lastSeenDay }
+ * `unlocked` holds both days the student skipped ahead to and days earned by finishing the
+ * previous one, so a finished day stays reachable when an earlier day's live check later flips
+ * back (paper account reset, an expired day-TIF stop, cleared replay history).
  */
 (function () {
   'use strict';
@@ -47,7 +54,10 @@
 
   var KEYS = {
     course: 'bt.course', watchlist: 'bt.watchlist', portfolio: 'bt.portfolio', replay: 'bt.replay.sessions',
-    journal: 'bt.journal', alerts: 'bt.alerts', flashcards: 'bt.flashcards', daily5: 'bt.daily5', tour: 'bt.tour.done'
+    journal: 'bt.journal', alerts: 'bt.alerts', flashcards: 'bt.flashcards', daily5: 'bt.daily5',
+    // bt.tour.done is written by every way of closing the tour (Skip, backdrop, Escape, the last
+    // step); bt.tour.finished only when the student reached the last step and tapped 'Start trading'.
+    tour: 'bt.tour.done', tourFinished: 'bt.tour.finished'
   };
 
   /* ------------------------------------------------------------------ *
@@ -250,8 +260,10 @@
         if (!isObj(o)) return false;
         if (types.indexOf(str(o.type).toLowerCase()) === -1) return false;
         if (c.side && str(o.side).toLowerCase() !== str(c.side).toLowerCase()) return false;
+        // The task is about *placing* the order, so one that later filled, was cancelled or
+        // expired (a day-TIF stop on the next session) still counts; only rejected ones do not.
         var st = str(o.status).toLowerCase();
-        return st === 'filled' || st === 'open';
+        return !!st && st !== 'rejected';
       }).length;
       return result(n >= min, Math.min(n, min), min, n ? T('{n} matching orders placed', { n: n }) : T('No {type} order yet', { type: types.join('/') }));
     }
@@ -282,13 +294,17 @@
   function evalJournal(c) {
     var j = lsGet(KEYS.journal, null);
     var min = countOf(c, 1);
-    if (!isObj(j)) return result(false, 0, min, c.review ? T('No weekly review saved yet') : T('No journal entries yet'));
+    // journal.html stores {entries, reviews}; replay.js saveToJournal() creates a bare array of
+    // entries when the journal page has never been opened. Both are real data.
+    var entries = Array.isArray(j) ? j : (isObj(j) ? arr(j.entries) : null);
+    var reviews = isObj(j) && isObj(j.reviews) ? j.reviews : {};
+    if (!entries) return result(false, 0, min, c.review ? T('No weekly review saved yet') : T('No journal entries yet'));
     var n;
     if (c.review) {
-      n = isObj(j.reviews) ? Object.keys(j.reviews).filter(function (k) { return isObj(j.reviews[k]); }).length : 0;
+      n = Object.keys(reviews).filter(function (k) { return isObj(reviews[k]); }).length;
       return result(n >= min, Math.min(n, min), min, n ? plural(n, T('weekly review saved'), T('weekly reviews saved')) : T('No weekly review saved yet'));
     }
-    n = arr(j.entries).filter(function (e) {
+    n = entries.filter(function (e) {
       if (!isObj(e)) return false;
       if (c.source && str(e.source) !== str(c.source)) return false;
       if (c.reviewed && !(str(e.setup).trim() && str(e.emotion).trim())) return false;
@@ -320,17 +336,31 @@
       return result(n >= min, Math.min(n, min), min, n ? plural(n, T('Daily 5 completed'), T('Daily 5s completed')) : T('No Daily 5 yet'));
     }
     var f = lsGet(KEYS.flashcards, null);
-    if (isObj(f)) {
-      var cards = isObj(f.cards) ? f.cards : {};
-      var rated = Object.keys(cards).filter(function (id) { var cd = cards[id]; return isObj(cd) && isNum(cd.reps) && cd.reps > 0; }).length;
-      n = Math.max(rated, isNum(f.reviews) ? f.reviews : 0);
+    if (isObj(f) && isObj(f.cards)) {
+      // Distinct cards that have been graded at least once. glossary.js rate() sets `last` on
+      // every grade and resets `reps` to 0 on 'again' (bumping `lapses`), so any of the three
+      // marks a card as seen. The global `reviews` counter is deliberately ignored: grading one
+      // card five times is not "five cards reviewed".
+      var cards = f.cards;
+      n = Object.keys(cards).filter(function (id) {
+        var cd = cards[id];
+        return isObj(cd) && ((isNum(cd.reps) && cd.reps > 0) || (isNum(cd.lapses) && cd.lapses > 0) || (isNum(cd.last) && cd.last > 0));
+      }).length;
     }
     return result(n >= min, Math.min(n, min), min, n ? T('{n} of {of} cards reviewed', { n: Math.min(n, min), of: min }) : T('No flashcards reviewed yet'));
   }
-  function evalTour() {
+  function truthyFlag(v) { return v === true || v === 'true' || v === 1; }
+  function evalTour(c) {
+    // 'Finished' means the student walked through to the last step and tapped 'Start trading'
+    // (bt.tour.finished, or bt.tour.done stored as {finished:true}). bt.tour.done alone is also
+    // set by Skip, a backdrop tap and Escape, so it only counts when the plan asks for {any:true}.
+    var fin = lsGet(KEYS.tourFinished, null);
     var v = lsGet(KEYS.tour, null);
-    var done = v === true || v === 'true' || v === 1;
-    return result(done, done ? 1 : 0, 1, done ? T('Tour finished') : T('Tour not finished yet'));
+    var finished = truthyFlag(fin) || (isObj(fin) && fin.finished === true) || (isObj(v) && v.finished === true);
+    var dismissed = truthyFlag(v) || (isObj(v) && v.done === true);
+    var done = finished || (!!(c && c.any) && dismissed);
+    var detail = done ? T('Tour finished') : dismissed ? T('Tour closed early. Tap the Tour button on the dashboard and go through to the last step') : T('Tour not finished yet');
+    return result(done, done ? 1 : 0, 1, detail);
   }
   function evalManual(c, task, state) {
     var done = !!(state && isObj(state.manual) && state.manual[task.id] === true);
@@ -380,6 +410,10 @@
       var unlocked = i === 0 || prevComplete || s.unlocked[d.day] === true;
       if (complete && !s.dayDone[d.day]) { s.dayDone[d.day] = iso(); changed = true; }
       if (!complete && s.dayDone[d.day]) { delete s.dayDone[d.day]; changed = true; }
+      // Unlocking is sticky: finishing a day earns the next one for good, so a later regression
+      // of this day's live checks (paper Reset, expired stop, cleared replay history) does not
+      // hide the days the student already worked through.
+      if (complete && i + 1 < p.days.length && s.unlocked[p.days[i + 1].day] !== true) { s.unlocked[p.days[i + 1].day] = true; changed = true; }
       var row = {
         day: d.day, id: d.id, title: d.title, minutes: d.minutes, intro: d.intro, tasks: tasks,
         done: done, total: total, pct: total ? Math.round(done / total * 100) : 0,

@@ -77,7 +77,8 @@
 
   /* calendar heatmap */
   .heat-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scroll-snap-type:x proximity}
-  .heat-wrap{--cell:14px;--gap:3px}
+  /* desktop cells are 24px so every day meets the WCAG 2.5.8 minimum target size; the strip scrolls sideways */
+  .heat-wrap{--cell:24px;--gap:2px}
   /* phones: each day is a primary tap target ("Tap a day to see its trades"), so cells are 40px on a 6px gap
      (46px pitch, >= 44px hit pitch); the grid is width:max-content and scrolls sideways, newest week on the right */
   @media (max-width:760px){.heat-wrap{--cell:40px;--gap:6px}.heat .cell{border-radius:6px;scroll-snap-align:end}.heat .cell.sel{outline-width:3px}}
@@ -125,8 +126,8 @@
   .ed-fill b{color:var(--fg);font-family:var(--mono);font-weight:500}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm);white-space:normal}
-  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-  .chip.good.on{background:var(--up);border-color:var(--up)} .chip.bad.on{background:var(--down);border-color:var(--down)} .chip.warn.on{background:var(--warn);border-color:var(--warn);color:#141a22}
+  .chip.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
+  .chip.good.on{background:var(--up-btn);border-color:var(--up-btn)} .chip.bad.on{background:var(--down-btn);border-color:var(--down-btn)} .chip.warn.on{background:var(--warn);border-color:var(--warn);color:#141a22}
   .chip.sug{color:var(--muted);border-style:dashed}
   .chip .x{font-size:12px;opacity:.8}
   .tagbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);min-height:44px}
@@ -134,7 +135,7 @@
   .tagbox input:focus{box-shadow:none}
   .seg{display:flex;gap:4px}
   .seg button{flex:1 1 0;min-width:0;padding:6px 0;font-family:var(--mono)}
-  .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .seg button.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
   .stars-in{display:flex;gap:2px}
   .stars-in button{flex:1 1 0;min-width:0;font-size:20px;line-height:1;color:var(--muted);background:transparent;border-color:transparent;padding:6px 0}
   .stars-in button.on{color:var(--warn)}
@@ -264,7 +265,7 @@
       <h2 id="calTitle">Daily P&amp;L calendar</h2>
       <div class="heat-wrap" id="heatWrap">
         <div class="heat-months" id="heatMonths" aria-hidden="true"></div>
-        <div class="heat" id="heat" role="grid" aria-label="Daily P&L heatmap, newest week on the right"></div>
+        <div class="heat" id="heat" role="group" aria-label="Daily P&L heatmap, newest week on the right"></div>
       </div>
       <div class="heat-legend" id="heatLegend"></div>
       <div class="heat-detail" id="heatDetail">Tap a day to see its trades.</div>
@@ -324,7 +325,7 @@
 <!-- ---------------- Entry editor ---------------- -->
 <div class="modal-backdrop" id="editor" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edTitle">
-    <header><h2 id="edTitle">Edit entry</h2><button type="button" class="close ghost" id="edClose" aria-label="Close">✕</button></header>
+    <div class="modal-head"><h2 id="edTitle">Edit entry</h2><button type="button" class="close ghost" id="edClose" aria-label="Close">✕</button></div>
     <form id="edForm" novalidate>
       <div class="ed-fill" id="edFill" hidden></div>
       <div class="ed-grid mt-2">
@@ -379,12 +380,12 @@
       </div>
       <span class="msg" id="edMsg" role="alert"></span>
     </form>
-    <footer>
+    <div class="modal-foot">
       <button type="button" class="danger" id="edDelete">Delete</button>
       <span class="spacer"></span>
       <button type="button" class="ghost" id="edCancel">Cancel</button>
       <button type="button" class="primary" id="edSave">Save</button>
-    </footer>
+    </div>
   </div>
 </div>
 
@@ -399,6 +400,8 @@
   'use strict';
   var BT = window.BT || {};
   var J = BT.journal, paper = BT.paper;
+  /* i18n for JS-built strings with numbers in them (BT.t when js/i18n.js is loaded; plain {var} interpolation otherwise). */
+  function T(s, v) { var tf = window.BT && window.BT.t; if (tf) { try { return tf(s, v); } catch (e) { /* fall through */ } } return v ? String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var $ = function (id) { return document.getElementById(id); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -481,7 +484,7 @@
     try { r = J.sync(paper); } catch (e) { r = { added: 0, updated: 0, accounts: [] }; }
     var pill = $('pillSync');
     var n = r.accounts.length;
-    pill.textContent = 'synced · ' + n + ' account' + (n === 1 ? '' : 's');
+    pill.textContent = n === 1 ? T('synced · 1 account') : T('synced · {n} accounts', { n: n });
     pill.className = 'pill live';
     pill.title = 'Fills copied from: ' + r.accounts.map(function (a) { return a.id + ' (' + a.trades + ' fills)'; }).join(', ');
     if (manual) flash($('actionMsg'), r.added ? 'Added ' + r.added + ' new fill' + (r.added === 1 ? '' : 's') + '.' : 'Nothing new. Every fill is already in the journal.', true);
@@ -494,7 +497,9 @@
    * ------------------------------------------------------------------ */
   function fillSelect(sel, values, current, labelFn) {
     var first = sel.options[0].outerHTML;
-    sel.innerHTML = first + values.map(function (v) { return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(labelFn ? labelFn(v) : v) + '</option>'; }).join('');
+    // Raw values (account names, setups, tags) are the student's own words: never machine-translated.
+    var guard = labelFn ? '' : ' class="no-i18n" translate="no"';
+    sel.innerHTML = first + values.map(function (v) { return '<option value="' + esc(v) + '"' + guard + (v === current ? ' selected' : '') + '>' + esc(labelFn ? labelFn(v) : v) + '</option>'; }).join('');
     if (current && values.indexOf(current) === -1) sel.value = '';
   }
   function refreshFilterOptions() {
@@ -540,26 +545,26 @@
   function renderSummary() {
     var s = J.summary(view);
     var st = J.streaks(view);
-    $('sumScope').textContent = hasFilters() ? '· ' + view.length + ' of ' + all.length + ' entries' : '';
+    $('sumScope').textContent = hasFilters() ? T('· {shown} of {total} entries', { shown: view.length, total: all.length }) : '';
     $('tiles').innerHTML = [
-      tile('Closed trades', String(s.closed), s.count + ' entries, ' + (s.count - s.closed) + ' opening fills'),
+      tile('Closed trades', String(s.closed), T('{n} entries, {open} opening fills', { n: s.count, open: s.count - s.closed })),
       tile('Win rate', s.winRate == null ? '—' : s.winRate.toFixed(0) + '%', s.wins + ' W · ' + s.losses + ' L' + (s.scratches ? ' · ' + s.scratches + ' flat' : '')),
       tile('Expectancy', s.expectancy == null ? '—' : signed(s.expectancy), 'avg $ per closed trade', cls(s.expectancy)),
       tile('Total P&L', s.closed ? signed(s.total) : '—', s.profitFactor == null ? (s.wins && !s.losses ? 'no losing trades yet' : 'profit factor —') : 'profit factor ' + s.profitFactor.toFixed(2), cls(s.total)),
       tile('Avg win / loss', s.closed ? money(s.avgWin) + ' / ' + money(s.avgLoss) : '—', s.avgLoss > 0 ? 'ratio ' + (s.avgWin / s.avgLoss).toFixed(2) : ''),
-      tile('Streak', st.current.kind ? st.current.n + ' ' + st.current.kind + (st.current.n === 1 ? '' : st.current.kind === 'win' ? 's' : 'es') : '—', 'longest: ' + st.longestWin + ' wins, ' + st.longestLoss + ' losses', st.current.kind === 'win' ? 'gain' : st.current.kind === 'loss' ? 'loss' : ''),
+      tile('Streak', st.current.kind ? st.current.n + ' ' + st.current.kind + (st.current.n === 1 ? '' : st.current.kind === 'win' ? 's' : 'es') : '—', T('longest: {w} wins, {l} losses', { w: st.longestWin, l: st.longestLoss }), st.current.kind === 'win' ? 'gain' : st.current.kind === 'loss' ? 'loss' : ''),
       tile('Reviewed', s.reviewedPct + '%', 'entries with setup + emotion'),
-      tile('Decision quality', s.avgRating == null ? '—' : s.avgRating.toFixed(1) + ' / 5', 'avg confidence ' + (s.avgConfidence == null ? '—' : s.avgConfidence.toFixed(1)))
+      tile('Decision quality', s.avgRating == null ? '—' : s.avgRating.toFixed(1) + ' / 5', T('avg confidence {v}', { v: s.avgConfidence == null ? '—' : s.avgConfidence.toFixed(1) }))
     ].join('');
     var note;
-    if (!s.count) note = 'No entries yet. Place a paper trade on the Dashboard, Portfolio or Replay page and it appears here automatically; or add a manual entry.';
-    else if (s.closed < 10) note = 'Expectancy = win rate × average win − loss rate × average loss: the dollars an average trade "should" make. With fewer than ten closed trades it is mostly noise; keep logging before you trust it.';
-    else if (s.expectancy > 0) note = 'Positive expectancy over ' + s.closed + ' closed trades. The breakdown below shows which setups and emotions are carrying it; protect those and cut the rest.';
-    else note = 'Negative expectancy over ' + s.closed + ' closed trades. That is normal early on. Look for the red lines in the emotion and setup breakdowns: removing one bad habit often flips the sign.';
+    if (!s.count) note = T('No entries yet. Place a paper trade on the Dashboard, Portfolio or Replay page and it appears here automatically; or add a manual entry.');
+    else if (s.closed < 10) note = T('Expectancy = win rate × average win − loss rate × average loss: the dollars an average trade "should" make. With fewer than ten closed trades it is mostly noise; keep logging before you trust it.');
+    else if (s.expectancy > 0) note = T('Positive expectancy over {n} closed trades. The breakdown below shows which setups and emotions are carrying it; protect those and cut the rest.', { n: s.closed });
+    else note = T('Negative expectancy over {n} closed trades. That is normal early on. Look for the red lines in the emotion and setup breakdowns: removing one bad habit often flips the sign.', { n: s.closed });
     $('sumNote').textContent = note;
     $('pillCount').textContent = all.length + ' entr' + (all.length === 1 ? 'y' : 'ies');
     var full = J.summary(all);
-    $('pillReviewed').textContent = full.reviewedPct + '% reviewed';
+    $('pillReviewed').textContent = T('{pct}% reviewed', { pct: full.reviewedPct });
     $('pillReviewed').className = 'pill ' + (full.reviewedPct >= 80 ? 'up' : full.count ? 'demo' : '');
   }
 
@@ -575,19 +580,23 @@
     var role = t.role === 'close' ? (t.side === 'sell' ? ' · closed long' : ' · covered short') : t.role === 'reverse' ? ' · reversed' : (t.side === 'buy' ? ' · opened long' : ' · opened short');
     return verb + ' ' + fmt(t.qty, 0) + (t.kind === 'option' ? ' contract' + (t.qty === 1 ? '' : 's') : '') + ' @ ' + money(t.price) + role;
   }
+  // Anything the student typed (setup, notes, lessons, tags, account names, symbols) is rendered
+  // inside .no-i18n / translate="no" so the i18n DOM walker never rewrites their own words.
+  var UT = ' no-i18n" translate="no"';
+  function userSpan(cls, text) { return '<span class="' + cls + UT + '>' + esc(text) + '</span>'; }
   function entryCard(e) {
     var em = emotionOf(e.emotion);
     var reviewed = !!(e.setup && e.emotion);
     var acc = e.account || e.source;
     return '<article class="entry' + (reviewed ? '' : ' unreviewed') + '" data-id="' + esc(e.id) + '" tabindex="0" role="button" aria-label="Edit entry ' + esc(e.symbol) + ' ' + esc(niceDate(e.date)) + '">' +
-      '<div class="e-top"><span class="sym">' + esc(e.symbol || '—') + '</span><span class="pill solid">' + esc(acc) + '</span><span class="fill num">' + esc(fillText(e)) + '</span>' +
+      '<div class="e-top">' + userSpan('sym', e.symbol || '—') + userSpan('pill solid', acc) + '<span class="fill num">' + esc(fillText(e)) + '</span>' +
       (e.pnl != null ? '<span class="pnl num ' + cls(e.pnl) + '">' + signed(e.pnl) + '</span>' : '') + '</div>' +
-      '<div class="e-mid">' + (e.setup ? '<span class="setup">' + esc(e.setup) + '</span>' : '<span class="setup none">Add a setup</span>') +
-      (em ? '<span class="emo ' + em.tone + '">' + esc(em.label) + '</span>' : (e.emotion ? '<span class="emo">' + esc(e.emotion) + '</span>' : '<span class="emo">emotion?</span>')) +
+      '<div class="e-mid">' + (e.setup ? userSpan('setup', e.setup) : '<span class="setup none">Add a setup</span>') +
+      (em ? '<span class="emo ' + em.tone + '">' + esc(em.label) + '</span>' : (e.emotion ? userSpan('emo', e.emotion) : '<span class="emo">emotion?</span>')) +
       stars(e.rating) + '<span class="muted xs">conf ' + e.confidence + '/5</span>' +
-      e.tags.slice(0, 8).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + (e.tags.length > 8 ? '<span class="tag">+' + (e.tags.length - 8) + '</span>' : '') + '</div>' +
-      (e.notes ? '<div class="notes">' + esc(e.notes) + '</div>' : '') +
-      (e.lessons ? '<div class="lesson">' + esc(e.lessons) + '</div>' : '') +
+      e.tags.slice(0, 8).map(function (t) { return userSpan('tag', t); }).join('') + (e.tags.length > 8 ? '<span class="tag">+' + (e.tags.length - 8) + '</span>' : '') + '</div>' +
+      (e.notes ? '<div class="notes' + UT + '>' + esc(e.notes) + '</div>' : '') +
+      (e.lessons ? '<div class="lesson' + UT + '>' + esc(e.lessons) + '</div>' : '') +
       '<div class="e-foot"><span>' + esc(niceDate(e.date)) + (e.trade && isNum(e.trade.time) ? ' ' + new Date(e.trade.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '') + '</span>' +
       '<button type="button" class="edit sm" data-edit="' + esc(e.id) + '">' + (reviewed ? 'Edit' : 'Review') + '</button></div></article>';
   }
@@ -709,7 +718,7 @@
     var tb = $('bdTable').querySelector('tbody');
     if (!rows.length) tb.innerHTML = '<tr><td colspan="7" class="muted">Nothing to group yet.</td></tr>';
     else tb.innerHTML = rows.map(function (r) {
-      return '<tr><td title="' + esc(r.label) + '">' + esc(r.label) + '</td><td class="right num">' + r.count + '</td><td class="right num">' + (r.winRate == null ? '—' : r.winRate.toFixed(0) + '%') + '</td>' +
+      return '<tr><td class="no-i18n" translate="no" title="' + esc(r.label) + '">' + esc(r.label) + '</td><td class="right num">' + r.count + '</td><td class="right num">' + (r.winRate == null ? '—' : r.winRate.toFixed(0) + '%') + '</td>' +
         '<td class="right num">' + (r.wins ? money(r.avgWin) : '—') + '</td><td class="right num">' + (r.losses ? money(r.avgLoss) : '—') + '</td>' +
         '<td class="right num ' + cls(r.expectancy) + '">' + (r.expectancy == null ? '—' : signed(r.expectancy)) + '</td><td class="right num ' + cls(r.total) + '">' + (r.closed ? signed(r.total) : '—') + '</td></tr>';
     }).join('');
@@ -875,12 +884,12 @@
     $$('.chip', box).forEach(function (c) { c.remove(); });
     ed.tags.forEach(function (t) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip on'; b.setAttribute('data-tag', t); b.setAttribute('aria-label', 'Remove tag ' + t);
+      b.type = 'button'; b.className = 'chip on no-i18n'; b.setAttribute('translate', 'no'); b.setAttribute('data-tag', t); b.setAttribute('aria-label', 'Remove tag ' + t);
       b.innerHTML = esc(t) + ' <span class="x" aria-hidden="true">✕</span>';
       box.insertBefore(b, input);
     });
     var sug = J.tagSuggestions(all).filter(function (t) { return ed.tags.indexOf(t) === -1; }).slice(0, 12);
-    $('edTagSug').innerHTML = sug.map(function (t) { return '<button type="button" class="chip sug sm" data-add="' + esc(t) + '">+ ' + esc(t) + '</button>'; }).join('');
+    $('edTagSug').innerHTML = sug.map(function (t) { return '<button type="button" class="chip sug sm no-i18n" translate="no" data-add="' + esc(t) + '">+ ' + esc(t) + '</button>'; }).join('');
     $('edEmotion').innerHTML = J.EMOTIONS.map(function (e) {
       return '<button type="button" class="chip ' + e.tone + (ed.emotion === e.id ? ' on' : '') + '" data-emotion="' + e.id + '" aria-pressed="' + (ed.emotion === e.id ? 'true' : 'false') + '">' + esc(e.label) + '</button>';
     }).join('');
@@ -931,8 +940,8 @@
     var fill = $('edFill');
     if (e && !manual) {
       fill.hidden = false;
-      fill.innerHTML = '<b>' + esc(e.symbol) + '</b> · ' + esc(fillText(e)) + (e.pnl != null ? ' · realized <b class="' + cls(e.pnl) + '">' + signed(e.pnl) + '</b>' : '') +
-        ' · account <b>' + esc(e.account || e.source) + '</b>' + (t && isNum(t.time) ? ' · ' + new Date(t.time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') +
+      fill.innerHTML = '<b class="no-i18n" translate="no">' + esc(e.symbol) + '</b> · ' + esc(fillText(e)) + (e.pnl != null ? ' · realized <b class="' + cls(e.pnl) + '">' + signed(e.pnl) + '</b>' : '') +
+        ' · account <b class="no-i18n" translate="no">' + esc(e.account || e.source) + '</b>' + (t && isNum(t.time) ? ' · ' + new Date(t.time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') +
         '<br><span class="xs">Copied from your paper account; the fill itself cannot be edited here. Add the thinking around it.</span>';
     } else fill.hidden = true;
     $('setupList').innerHTML = J.setupSuggestions(all).map(function (s) { return '<option value="' + esc(s) + '"></option>'; }).join('');

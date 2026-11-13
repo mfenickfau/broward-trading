@@ -1159,13 +1159,13 @@
       "lessonId": "m3-l5",
       "q": "El cierre está por encima de la SMA 50, la SMA 20 está por encima de la SMA 50, el RSI es 27, el histograma del MACD es positivo y creciente, el cierre está dentro de las Bandas de Bollinger y no hubo cruce en esta barra. ¿Qué puntúa la señal compuesta?",
       "choices": [
-        "+3, COMPRA",
-        "+4, COMPRA",
-        "+5, COMPRA",
+        "+3, COMPRAR",
+        "+4, COMPRAR",
+        "+5, COMPRAR",
         "+2, MANTENER"
       ],
       "answer": 2,
-      "explain": "+1 (precio frente a SMA 50) +1 (alineación) +2 (RSI en sobreventa) +1 (histograma positivo y creciente) +0 (dentro de las bandas) +0 (sin cruce) = +5, una COMPRA.",
+      "explain": "+1 (precio frente a SMA 50) +1 (alineación) +2 (RSI en sobreventa) +1 (histograma positivo y creciente) +0 (dentro de las bandas) +0 (sin cruce) = +5, COMPRAR.",
       "difficulty": "medium",
       "source": "lesson"
     },
@@ -1176,12 +1176,12 @@
       "q": "El precio está por debajo de una SMA 50 que baja, la SMA 20 está por debajo de la SMA 50, el RSI es 73, el histograma del MACD es positivo y creciente, y el cierre está por encima de la banda superior de Bollinger. ¿Cuál es la puntuación y el estado?",
       "choices": [
         "−2, MANTENER",
-        "−3, VENTA",
-        "−4, VENTA",
+        "−3, VENDER",
+        "−4, VENDER",
         "0, MANTENER"
       ],
       "answer": 2,
-      "explain": "−1 (debajo de la SMA 50) −1 (alineación bajista) −2 (RSI en sobrecompra) +1 (histograma creciente) −1 (encima de la banda superior) = −4, VENTA. Un rebote brusco en una tendencia bajista es exactamente lo que señalan los componentes de reversión a la media.",
+      "explain": "−1 (debajo de la SMA 50) −1 (alineación bajista) −2 (RSI en sobrecompra) +1 (histograma creciente) −1 (encima de la banda superior) = −4, VENDER. Un rebote brusco en una tendencia bajista es exactamente lo que señalan los componentes de reversión a la media.",
       "difficulty": "medium",
       "source": "lesson"
     },
@@ -1205,7 +1205,7 @@
       "id": "m3-l5-q5",
       "moduleId": "m3-indicators",
       "lessonId": "m3-l5",
-      "q": "La insignia mostró COMPRA en +5 ayer y +3 hoy, aunque el gráfico se ve igual. ¿Cuál es la explicación más probable?",
+      "q": "La insignia mostró COMPRAR en +5 ayer y +3 hoy, aunque el gráfico se ve igual. ¿Cuál es la explicación más probable?",
       "choices": [
         "El RSI debe haber subido por encima de 70",
         "El bono del cruce dorado (+2) cuenta solo en la barra en que ocurre",
@@ -1413,7 +1413,7 @@
       "id": "m4-l3-q3",
       "moduleId": "m4-risk",
       "lessonId": "m4-l3",
-      "q": "Después de tres operaciones perdedoras seguidas, un trader duplica el tamaño de la siguiente operación para quedar a mano rápido. ¿Qué sesgo es este?",
+      "q": "Después de tres operaciones perdedoras seguidas, un trader duplica el tamaño de la siguiente operación para recuperar lo perdido rápidamente. ¿Qué sesgo es este?",
       "choices": [
         "Sesgo de confirmación",
         "Sesgo de lo reciente",

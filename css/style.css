@@ -30,15 +30,20 @@
   /* text */
   --fg:#e6ebf2;
   --muted:#8a97a8;
-  --faint:#5c6878;
+  --faint:#7a8696;     /* 4.6:1 on --panel, 4.2:1 on --panel2: fine for 11px captions (WCAG AA for text) */
 
   /* semantic colour */
-  --accent:#4f8cff;    /* brand / interactive */
+  --accent:#4f8cff;    /* brand / interactive (links, outlines, series) */
   --accent-fg:#ffffff;
   --accent-soft:rgba(79,140,255,.14);
+  /* filled buttons carry white text, so their backgrounds are a shade deeper than the
+     text colours above (white on #4f8cff is only 3.2:1; these are >= 4.5:1) */
+  --accent-btn:#2f6fe8;
+  --up-btn:#15803d;
+  --down-btn:#dc2626;
   --up:#22c55e;        /* gains, buy, bullish, correct */
   --up-soft:rgba(34,197,94,.14);
-  --down:#ef4444;      /* losses, sell, bearish, wrong */
+  --down:#f36b6b;      /* losses, sell, bearish, wrong (5.3:1 on --panel2, 4.6:1 on a selected row) */
   --down-soft:rgba(239,68,68,.14);
   --warn:#f5b84d;      /* demo mode, caution */
   --warn-text:#f5b84d; /* warn tone for small text (darkened in light theme) */
@@ -81,10 +86,11 @@
   :root:not([data-theme="dark"]){
     --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --panel3:#e3e8ef;
     --line:#d6dce5; --line2:#bfc8d4;
-    --fg:#141a22; --muted:#5f6b7a; --faint:#8a95a3;
+    --fg:#141a22; --muted:#5f6b7a; --faint:#637080;
     --accent:#2563eb; --accent-soft:rgba(37,99,235,.10);
-    --up:#16a34a; --up-soft:rgba(22,163,74,.12);
-    --down:#dc2626; --down-soft:rgba(220,38,38,.12);
+    --accent-btn:#2563eb; --up-btn:#167a3b; --down-btn:#c42323;
+    --up:#167a3b; --up-soft:rgba(22,163,74,.12);
+    --down:#c42323; --down-soft:rgba(220,38,38,.12);
     --warn:#b7791f; --warn-soft:rgba(183,121,31,.14); --warn-text:#8a5a0f;
     --purple:#7c3aed; --teal:#0d9488;
     --s1:#b7791f; --s2:#2563eb; --s3:#7c3aed; --s4:#0d9488; --s5:#e11d48; --s6:#65a30d;
@@ -98,10 +104,11 @@
 :root[data-theme="light"]{
   --bg:#f3f5f8; --panel:#ffffff; --panel2:#eef1f5; --panel3:#e3e8ef;
   --line:#d6dce5; --line2:#bfc8d4;
-  --fg:#141a22; --muted:#5f6b7a; --faint:#8a95a3;
+  --fg:#141a22; --muted:#5f6b7a; --faint:#637080;
   --accent:#2563eb; --accent-soft:rgba(37,99,235,.10);
-  --up:#16a34a; --up-soft:rgba(22,163,74,.12);
-  --down:#dc2626; --down-soft:rgba(220,38,38,.12);
+  --accent-btn:#2563eb; --up-btn:#167a3b; --down-btn:#c42323;
+  --up:#167a3b; --up-soft:rgba(22,163,74,.12);
+  --down:#c42323; --down-soft:rgba(220,38,38,.12);
   --warn:#b7791f; --warn-soft:rgba(183,121,31,.14); --warn-text:#8a5a0f;
   --purple:#7c3aed; --teal:#0d9488;
   --s1:#b7791f; --s2:#2563eb; --s3:#7c3aed; --s4:#0d9488; --s5:#e11d48; --s6:#65a30d;
@@ -128,6 +135,11 @@ h1{font-size:var(--fs-2xl)} h2{font-size:var(--fs-xl)} h3{font-size:var(--fs-lg)
 p{margin:0 0 var(--sp-3)}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
+/* links inside running text are underlined, so they do not rely on colour alone (WCAG 1.4.1) */
+:is(p,li,td,dd,small,figcaption,.note,.caption,.help,.fine,.empty,.msg,.lede,.sub,.muted) a:not(.btn):not(.pill):not(.go):not(.tab){text-decoration:underline;text-underline-offset:2px;text-decoration-color:color-mix(in srgb,currentColor 55%,transparent)}
+:is(p,li,td,dd,small,figcaption,.note,.caption,.help,.fine,.empty,.msg,.lede,.sub,.muted) a:not(.btn):not(.pill):not(.go):not(.tab):hover{text-decoration-color:currentColor}
+/* links on tinted callouts take the text colour: blue on an amber or green tint is below 4.5:1 */
+:is(.callout,.disclaimer,.emptyline) a:not(.btn):not(.pill){color:inherit;text-decoration:underline;text-underline-offset:2px;font-weight:500}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
   outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)
 }
@@ -143,7 +155,12 @@ img,svg,canvas,video{max-width:100%;height:auto}
 ::selection{background:var(--accent);color:var(--accent-fg)}
 .muted{color:var(--muted)} .faint{color:var(--faint)}
 .up,.pnl.up,.chg.up{color:var(--up)} .down,.pnl.down,.chg.down{color:var(--down)} .warnc{color:var(--warn-text,var(--warn))}
-.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.sr-only,.sr-live{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* skip link (injected by js/nav.js): visible only while focused */
+.skip-link{position:absolute;left:var(--gutter);top:-100px;z-index:200;padding:10px 14px;border-radius:var(--r-md);background:var(--accent-btn);color:var(--accent-fg);font-weight:500;text-decoration:none;box-shadow:var(--shadow-2)}
+.skip-link:focus,.skip-link:focus-visible{top:8px;outline:2px solid var(--fg);outline-offset:2px}
+/* scrollable regions nav.js made keyboard-reachable */
+.table-wrap:focus-visible,.log:focus-visible,.heat-wrap:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
 [hidden]{display:none!important}
 
 /* ------------------------------------------------------------------ */
@@ -265,11 +282,11 @@ button.option,button.choice,.quiz .choice,.quiz .option{white-space:normal;min-w
 .quiz .choice>span:last-child,.option>span:last-child,.option .txt{min-width:0;overflow-wrap:anywhere}
 button:active,.btn:active{transform:translateY(1px)}
 button:disabled,.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed;transform:none}
-button.on,.btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-.primary,button.primary,.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:500}
-.primary:hover{filter:brightness(1.1);border-color:var(--accent)}
-.buy,button.buy,.btn.buy{background:var(--up);border-color:var(--up);color:#fff;font-weight:500}
-.sell,button.sell,.btn.sell{background:var(--down);border-color:var(--down);color:#fff;font-weight:500}
+button.on,.btn.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
+.primary,button.primary,.btn.primary{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg);font-weight:500}
+.primary:hover{filter:brightness(1.1);border-color:var(--accent-btn)}
+.buy,button.buy,.btn.buy{background:var(--up-btn);border-color:var(--up-btn);color:#fff;font-weight:500}
+.sell,button.sell,.btn.sell{background:var(--down-btn);border-color:var(--down-btn);color:#fff;font-weight:500}
 .buy:hover,.sell:hover{filter:brightness(1.08)}
 .ghost,button.ghost,.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
 .ghost:hover{color:var(--fg);background:var(--panel2);border-color:transparent}
@@ -280,7 +297,7 @@ button.on,.btn.on{background:var(--accent);border-color:var(--accent);color:var(
 .btn-group{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .btn-group button{border:0;border-radius:0;border-right:1px solid var(--line)}
 .btn-group button:last-child{border-right:0}
-.btn-group button.on{background:var(--accent);color:var(--accent-fg)}
+.btn-group button.on{background:var(--accent-btn);color:var(--accent-fg)}
 
 /* pills (status chips) */
 .pill{
@@ -301,7 +318,7 @@ button.on,.btn.on{background:var(--accent);border-color:var(--accent);color:var(
 
 /* signal badge */
 .badge{font-size:20px;font-weight:600;padding:8px 16px;border-radius:var(--r-md);min-width:96px;text-align:center;color:#fff;background:var(--muted)}
-.badge.buy{background:var(--up)} .badge.sell{background:var(--down)}
+.badge.buy{background:var(--up-btn)} .badge.sell{background:var(--down-btn)}
 .badge.hold{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
 .signal{display:flex;align-items:center;gap:var(--sp-3)}
 .score{color:var(--muted);font-size:var(--fs-sm)}
@@ -327,7 +344,7 @@ th:not(:last-child),td:not(:last-child){padding-right:10px}
 td:last-child,th:last-child{text-align:right}
 tr:last-child td{border-bottom:0}
 td.num,th.num,.table-num td{font-family:var(--mono)}
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;position:relative}  /* clips absolutely positioned .sr-only cells */
 .table-wrap table{min-width:480px}
 table.dense td,table.dense th{padding:3px 0;font-size:var(--fs-sm)}
 table.striped tbody tr:nth-child(even){background:color-mix(in srgb,var(--panel2) 60%,transparent)}
@@ -433,7 +450,7 @@ aside{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
 .steps li:last-child{border-bottom:0}
 .steps li::before{content:counter(step);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
   background:var(--panel2);border:1px solid var(--line);font-family:var(--mono);font-size:var(--fs-sm);color:var(--muted)}
-.steps li.done::before{content:"✓";background:var(--up);border-color:var(--up);color:#fff}
+.steps li.done::before{content:"✓";background:var(--up-btn);border-color:var(--up-btn);color:#fff}
 .steps li.current::before{border-color:var(--accent);color:var(--accent)}
 .steps li b{display:block}
 .steps li small{color:var(--muted)}
@@ -457,9 +474,9 @@ aside{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
 .option.selected{border-color:var(--accent);background:var(--accent-soft)}
 .option.selected .key{border-color:var(--accent);color:var(--accent)}
 .option.correct{border-color:var(--up);background:var(--up-soft)}
-.option.correct .key{background:var(--up);border-color:var(--up);color:#fff}
+.option.correct .key{background:var(--up-btn);border-color:var(--up-btn);color:#fff}
 .option.wrong{border-color:var(--down);background:var(--down-soft)}
-.option.wrong .key{background:var(--down);border-color:var(--down);color:#fff}
+.option.wrong .key{background:var(--down-btn);border-color:var(--down-btn);color:#fff}
 .option.correct .key::before{content:"✓"} .option.wrong .key::before{content:"✕"}
 .option.correct .key span,.option.wrong .key span{display:none}
 .option:disabled,.option[aria-disabled="true"]{cursor:default}
@@ -497,7 +514,7 @@ aside{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
   margin:var(--sp-3) 0;color:var(--fg)
 }
 @supports not (background:color-mix(in srgb,red 50%,blue)){ .callout{border-color:var(--line)} }
-.callout::before{content:"i";width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:var(--fs-sm);margin-top:1px}
+.callout::before{content:"i";width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--bg);display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:var(--fs-sm);margin-top:1px}
 .callout.tip{--c:var(--up);--c-soft:var(--up-soft)} .callout.tip::before{content:"✓"}
 .callout.warn{--c:var(--warn);--c-soft:var(--warn-soft)} .callout.warn::before{content:"!"}
 .callout.key{--c:var(--purple);--c-soft:color-mix(in srgb,var(--purple) 14%,transparent)} .callout.key::before{content:"★";font-size:11px}
@@ -797,9 +814,10 @@ body.sheet-open{overflow:hidden}
   #nav{position:static}                                  /* the tab bar navigates; the top bar may scroll away */
   .topnav .links{display:none}                           /* 12 links do not fit; they live in the tab bar + More sheet */
   .topnav{flex-wrap:nowrap;padding-bottom:0}
-  .topnav .brand{padding-block:10px}
-  .topnav .brand small{display:block}
-  .topnav .right{margin-left:auto}
+  /* the brand must shrink before the EN/ES + theme buttons do, or long taglines (ES) push .right past the viewport */
+  .topnav .brand{padding-block:10px;margin-right:0;min-width:0;flex:1 1 auto;overflow:hidden}
+  .topnav .brand small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topnav .right{margin-left:auto;flex:0 0 auto}
   .topnav .themebtn{min-width:44px;min-height:44px}
 
   /* room for the fixed tab bar */

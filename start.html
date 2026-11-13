@@ -32,7 +32,8 @@
   /* days */
   .days{display:flex;flex-direction:column;gap:var(--sp-3)}
   .day{padding:0;overflow:hidden}
-  .day.locked{opacity:.78}
+  .day.locked{opacity:1;border-style:dashed} .day.locked .day-head .ttl b{color:var(--muted)}   /* .card.locked fades to 60 % in style.css; keep the text readable here */
+  .day-head:disabled{opacity:1;cursor:not-allowed}
   .day.current{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   .day.complete{border-color:var(--up)}
   .day-head{display:grid;grid-template-columns:auto 1fr auto;gap:var(--sp-3);align-items:center;width:100%;padding:12px 14px;background:transparent;border:0;border-radius:0;text-align:left;color:inherit;cursor:pointer;min-height:64px}
@@ -59,7 +60,7 @@
   .task{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
   .task.done{border-color:var(--up)}
   .task .mark{width:28px;height:28px;border-radius:50%;border:2px solid var(--line2);display:grid;place-items:center;font-family:var(--mono);font-size:13px;color:var(--muted);background:var(--panel);margin-top:2px}
-  .task.done .mark{background:var(--up);border-color:var(--up);color:#fff}
+  .task.done .mark{background:var(--up-btn);border-color:var(--up-btn);color:#fff}
   .task .t-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
   .task .t-top h3{margin:0;font-size:var(--fs-md);font-weight:600;line-height:1.35}
   .task .t-top .min{color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);white-space:nowrap}

@@ -1,0 +1,357 @@
+{
+  "version": "0.4.0",
+  "id": "firstweek",
+  "title": "Tu primera semana",
+  "summary": "Siete días cortos que te llevan de 'nunca he mirado un gráfico' a tu primera operación de práctica planificada, un ejercicio de Replay y una revisión escrita. Unos veinte minutos al día. Todo es simulado, así que lo único que puedes perder es un hábito que todavía no has construido.",
+  "minutesPerDay": 20,
+  "honesty": "Esta semana no te convertirá en un trader rentable. Nadie lo consigue en siete días, y quien te lo prometa está vendiendo algo. Lo que sí hará es que las herramientas, las palabras y los hábitos te resulten familiares, para que el curso completo y tu cuenta de práctica te enseñen algo cada vez que los abras.",
+  "outcomes": [
+    "Leer un gráfico de velas y decir, con palabras sencillas, qué hicieron compradores y vendedores ese día",
+    "Explicar qué es una acción, una cotización, el spread entre bid y ask y los tres tipos principales de órdenes",
+    "Colocar una operación de práctica con una orden de mercado, protegerla con un stop y saber por qué está ahí el stop",
+    "Dimensionar una posición para que una operación perdedora cueste alrededor del 1% de la cuenta, no el 10%",
+    "Activar una media móvil y el RSI y leer lo que dice la tarjeta de señal, sin tratarla como una predicción",
+    "Operar un gráfico histórico vela a vela en Market Replay y compararte con comprar y mantener",
+    "Llevar una entrada en el diario y una revisión semanal, los dos hábitos que separan la práctica del juego de azar"
+  ],
+  "days": [
+    {
+      "day": 1,
+      "id": "d1",
+      "title": "Ubícate",
+      "minutes": 20,
+      "intro": "Hoy no hay maratón de teoría. Vas a abrir el simulador, dejar que te muestre dónde está cada cosa, leer una lección corta y hacer tuya la lista de seguimiento. Si terminas en quince minutos, perfecto; lo importante es volver mañana.",
+      "tasks": [
+        {
+          "id": "d1-tour",
+          "title": "Haz el recorrido por el panel",
+          "minutes": 5,
+          "why": "El panel es donde ocurre casi todo: el gráfico, los indicadores, la lista de seguimiento y la boleta de operaciones de práctica. Siete pasos cortos ahora te ahorran buscar botones toda la semana.",
+          "steps": [
+            "Abre el Panel. En la primera visita el recorrido empieza solo al cabo de un segundo.",
+            "¿Ya lo cerraste? Toca el botón Recorrido en la cabecera (con teclado, pulsa ?).",
+            "Lee cada paso y toca Siguiente. Termina con 'Empezar a operar'."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "tour" }
+        },
+        {
+          "id": "d1-lesson",
+          "title": "Lee 'Qué es realmente una acción'",
+          "minutes": 10,
+          "why": "Cada precio que mires en tu vida es el precio de un trozo de una empresa real. Empezar por ahí mantiene el resto del curso con los pies en la tierra cuando lleguen las líneas y las siglas.",
+          "steps": [
+            "Abre la lección y léela a tu ritmo.",
+            "Baja hasta el cuestionario del final y respóndelo. Hoy una nota baja está bien; puedes repetirlo cuando quieras.",
+            "Toca 'Marcar como completa' al final de la lección (después del cuestionario dice 'Marcar lección como completa')."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l1", "label": "Abrir la lección 1.1" },
+          "check": { "type": "lesson", "lessonId": "m1-l1" }
+        },
+        {
+          "id": "d1-watchlist",
+          "title": "Agrega tres empresas que conozcas a tu lista de seguimiento",
+          "minutes": 5,
+          "why": "Aprendes más rápido mirando nombres sobre los que ya tienes una opinión. La lista de seguimiento muestra su último precio y el cambio de hoy cada vez que abres el panel.",
+          "steps": [
+            "En el Panel, escribe una empresa o un ticker en el buscador (prueba DIS, NKE, KO, SBUX o tu marca favorita).",
+            "Elígela en la lista y toca '+ Agregar' (o pulsa W) para ponerla en la lista de seguimiento.",
+            "Repite hasta haber agregado tres propias. Quita con la x las que vienen por defecto y no te interesen."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "watchlist", "added": 3 }
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "id": "d2",
+      "title": "Lee un gráfico",
+      "minutes": 25,
+      "intro": "Hoy aprendes a leer las dos cosas que hay en toda pantalla de trading: la cotización y la vela. Al terminar podrás mirar un gráfico y describir quién tenía el control.",
+      "tasks": [
+        {
+          "id": "d2-quote",
+          "title": "Lee 'Leer una cotización: bid, ask y el spread'",
+          "minutes": 10,
+          "why": "El spread es el primer costo que paga todo trader y el que la mayoría de principiantes nunca nota. Saber por qué el precio de compra y el de venta son distintos explica buena parte de '¿por qué ya voy perdiendo?'.",
+          "steps": [
+            "Lee la lección y prueba el ejercicio en el panel.",
+            "Haz el cuestionario y luego marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l3", "label": "Abrir la lección 1.3" },
+          "check": { "type": "lesson", "lessonId": "m1-l3" }
+        },
+        {
+          "id": "d2-candles",
+          "title": "Lee 'Anatomía de una vela y cómo elegir un marco temporal'",
+          "minutes": 10,
+          "why": "Una vela son cuatro números dibujados como una forma: apertura, máximo, mínimo y cierre. Cuando sabes leer una, el gráfico entero pasa de ser un patrón de colores a ser una historia.",
+          "steps": [
+            "Lee la lección. Detente en el diagrama hasta que puedas nombrar el cuerpo y las dos mechas.",
+            "Haz el cuestionario y marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m2-l1", "label": "Abrir la lección 2.1" },
+          "check": { "type": "lesson", "lessonId": "m2-l1" }
+        },
+        {
+          "id": "d2-timeframes",
+          "title": "Mira una acción en tres marcos temporales",
+          "minutes": 5,
+          "why": "La misma acción puede estar en tendencia alcista en el gráfico diario y bajista en el de 15 minutos. Verlo con tus propios ojos es la mejor protección contra leer un solo gráfico demasiado al pie de la letra.",
+          "steps": [
+            "En el Panel, elige un símbolo de tu lista de seguimiento y mira el gráfico 1D. ¿El precio está más alto o más bajo que hace tres meses?",
+            "Cambia a 1H y después a 15min. ¿La dirección parece la misma?",
+            "Di en voz alta (o escribe) qué dirección muestra cada marco temporal. Después marca la casilla aquí."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "manual" }
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "id": "d3",
+      "title": "Tu primera operación de práctica",
+      "minutes": 25,
+      "intro": "Las órdenes son la forma en que una idea se convierte en una posición. Aprenderás los tres tipos de órdenes y usarás la más sencilla para comprar diez acciones con dinero simulado. Aquí nunca se envía una orden real.",
+      "tasks": [
+        {
+          "id": "d3-orders",
+          "title": "Lee 'Tipos de órdenes: mercado, límite y stop'",
+          "minutes": 12,
+          "why": "Las órdenes de mercado, límite y stop son todo el vocabulario de la ejecución. La mayoría de los errores caros de principiante son un tipo de orden usado en la situación equivocada.",
+          "steps": [
+            "Lee la lección; la tabla comparativa es la parte que conviene recordar.",
+            "Marca la lección como hecha. El cuestionario es la siguiente tarea."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l4", "label": "Abrir la lección 1.4" },
+          "check": { "type": "lesson", "lessonId": "m1-l4" }
+        },
+        {
+          "id": "d3-quiz",
+          "title": "Consigue un 60% o más en el cuestionario de tipos de órdenes",
+          "minutes": 5,
+          "why": "Estás a punto de usar estas órdenes con tu cuenta de práctica. Comprobar en cinco minutos que mercado, límite y stop están claros en tu cabeza vale la pena.",
+          "steps": [
+            "Baja hasta el cuestionario al final de la lección 1.4.",
+            "Responde las cinco preguntas y toca Comprobar. Lee las explicaciones de las que falles.",
+            "¿Menos del 60%? Vuelve a leer la tabla e inténtalo otra vez; se guarda la mejor nota."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l4", "label": "Abrir el cuestionario" },
+          "check": { "type": "quiz", "lessonId": "m1-l4", "minPct": 60 }
+        },
+        {
+          "id": "d3-trade",
+          "title": "Compra 10 acciones con una orden de mercado",
+          "minutes": 5,
+          "why": "Una orden de mercado pequeña es la operación más simple que existe. Colocar una te muestra cómo cambian a la vez la ejecución, la posición y el efectivo, antes de añadir cualquier estrategia encima.",
+          "steps": [
+            "En el Panel, elige un símbolo de tu lista de seguimiento.",
+            "En la boleta de operaciones pon Lado: Comprar, Cantidad: 10, Tipo: Mercado, y toca el botón de comprar.",
+            "Mira el panel de Cuenta de práctica: tu efectivo bajó y apareció una posición. Ese es todo el ciclo."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "trade", "account": "main", "side": "buy", "kind": "stock", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "id": "d4",
+      "title": "Riesgo antes que recompensa",
+      "minutes": 25,
+      "intro": "Gran parte del trading consiste en decidir cuánto puedes permitirte equivocarte. Hoy aprendes la regla del 1%, proteges la posición de ayer con un stop y pones una alerta para que el mercado te avise en vez de quedarte mirando la pantalla.",
+      "tasks": [
+        {
+          "id": "d4-sizing",
+          "title": "Lee 'Tamaño de posición y la regla del 1%'",
+          "minutes": 11,
+          "why": "El tamaño de la posición, no la elección de acciones, decide si una racha perdedora normal se puede sobrevivir. Es la lección que la mayoría de traders nuevos se saltan y la que la mayoría de traders con experiencia desearían haber leído primero.",
+          "steps": [
+            "Lee la lección y repite el ejemplo de dimensionamiento con tus propios números (una cuenta de práctica de $100,000 que arriesga el 1% son $1,000 por operación).",
+            "Haz el cuestionario y marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m4-l1", "label": "Abrir la lección 4.1" },
+          "check": { "type": "lesson", "lessonId": "m4-l1" }
+        },
+        {
+          "id": "d4-stop",
+          "title": "Coloca una orden stop debajo de tu posición abierta",
+          "minutes": 7,
+          "why": "Un stop decide tu salida antes de que la emoción tenga voto. Colocar uno sobre una posición de práctica te enseña la mecánica sin que haya nada en juego.",
+          "steps": [
+            "En el Panel, abre el símbolo que compraste ayer.",
+            "En la boleta de operaciones pon Lado: Vender, Cantidad: 10, Tipo: Stop, y un precio de stop un pequeño porcentaje por debajo del precio actual.",
+            "Toca el botón de vender. La orden aparece como abierta en la lista de Órdenes; solo se ejecuta si el precio cae hasta tu nivel."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "trade", "account": "main", "orderType": ["stop", "stop_limit"], "min": 1 }
+        },
+        {
+          "id": "d4-alert",
+          "title": "Crea una alerta de precio",
+          "minutes": 5,
+          "why": "Las alertas te permiten seguir un plan sin vigilar la pantalla, que es como empiezan la mayoría de las operaciones emocionales. En el simulador también te muestran con qué frecuencia tus niveles realmente se alcanzan.",
+          "steps": [
+            "En el Panel, busca el panel de Alertas.",
+            "Elige un símbolo de tu lista de seguimiento, escoge 'El precio sube por encima de' o 'El precio baja por debajo de' y escribe un nivel cercano al precio actual.",
+            "Toca Agregar. La alerta aparece como aviso mientras la página está abierta (y como notificación si las permites)."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "alert", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "id": "d5",
+      "title": "Indicadores, con honestidad",
+      "minutes": 25,
+      "intro": "Los indicadores son aritmética sobre precios pasados, ni más ni menos. Hoy aprendes el más usado, ves cómo el panel combina varios en una señal y empiezas a construir vocabulario con flashcards.",
+      "tasks": [
+        {
+          "id": "d5-ma",
+          "title": "Lee 'Medias móviles y cruces'",
+          "minutes": 12,
+          "why": "Una media móvil es la forma más simple de ver la tendencia a través del ruido. Los cruces son el primer 'sistema' que casi todos los traders prueban, así que conviene entender exactamente qué pueden y qué no pueden decirte.",
+          "steps": [
+            "Lee la lección y estudia el gráfico con la SMA 20 y la SMA 50.",
+            "Haz el cuestionario y marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m3-l1", "label": "Abrir la lección 3.1" },
+          "check": { "type": "lesson", "lessonId": "m3-l1" }
+        },
+        {
+          "id": "d5-signal",
+          "title": "Activa la SMA 20/50 y el RSI, y lee los motivos de la tarjeta de señal",
+          "minutes": 6,
+          "why": "La tarjeta de señal describe lo que dicen los indicadores ahora mismo; no predice lo que pasará después. Leer sus motivos línea por línea es como aprendes a usarla como lista de comprobación en vez de como oráculo.",
+          "steps": [
+            "En el Panel, activa las superposiciones SMA 20 y SMA 50 y el panel de RSI.",
+            "Busca la tarjeta de señal (COMPRAR / VENDER / MANTENER) y lee cada motivo que aparece debajo.",
+            "Pregúntate: ¿qué motivo cambiaría primero si el precio cayera un 3% mañana? Después marca la casilla aquí."
+          ],
+          "link": { "href": "index.html", "label": "Abrir el panel" },
+          "check": { "type": "manual" }
+        },
+        {
+          "id": "d5-flashcards",
+          "title": "Repasa cinco flashcards del glosario",
+          "minutes": 5,
+          "why": "El trading tiene mucha jerga y cada lección se vuelve más fácil cuando las palabras dejan de frenarte. Con cinco tarjetas al día basta; el espaciado se encarga de recordar por ti.",
+          "steps": [
+            "Abre el Glosario y cambia a Flashcards.",
+            "Lee el término, adivina la definición, gira la tarjeta y califícate con honestidad: Otra vez, Difícil o Bien.",
+            "La meta son cinco tarjetas. Para ahí si quieres; la app trae antes las difíciles."
+          ],
+          "link": { "href": "glossary.html#flashcards", "label": "Abrir las flashcards" },
+          "check": { "type": "glossary", "mode": "flashcards", "min": 5 }
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "id": "d6",
+      "title": "Viaja atrás en el tiempo",
+      "minutes": 30,
+      "intro": "Market Replay oculta el futuro y te deja operar un gráfico histórico real vela a vela. Comprime meses de experiencia en media hora, y tus errores salen gratis. El ejercicio de hoy es de principiante a propósito.",
+      "tasks": [
+        {
+          "id": "d6-replay-lesson",
+          "title": "Lee 'Cómo usar Market Replay con honestidad'",
+          "minutes": 10,
+          "why": "Replay solo te enseña si te niegas a espiar. Esta lección corta explica la regla del futuro oculto, la tarjeta de resultados y cómo compararte con simplemente comprar y mantener.",
+          "steps": [
+            "Lee la lección y la nota de honestidad sobre las velas futuras ocultas.",
+            "Marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m7-l1", "label": "Abrir la lección 7.1" },
+          "check": { "type": "lesson", "lessonId": "m7-l1" }
+        },
+        {
+          "id": "d6-drill",
+          "title": "Termina un ejercicio de Replay (prueba 'Sigue la tendencia: NVDA 2023')",
+          "minutes": 15,
+          "why": "Hacer gana a leer. Un ejercicio terminado te da una tarjeta de resultados: tu rentabilidad, la de comprar y mantener, tu tasa de acierto y tu peor drawdown. Digan lo que digan los números, habrás sentido lo que una tendencia le hace a una posición.",
+          "steps": [
+            "Abre Replay y elige el ejercicio 'Sigue la tendencia: NVDA 2023' (principiante). Cualquier ejercicio cuenta.",
+            "Avanza paso a paso o reproduce las velas. Compra cuando tu regla lo diga, vende cuando lo diga, y no saltes hacia adelante.",
+            "Llega al final y lee la tarjeta de resultados. Se guarda sola en tu historial de Replay; toca también 'Guardar en el diario' para que la siguiente tarea tenga con qué trabajar."
+          ],
+          "link": { "href": "replay.html#drill=ride-the-trend-nvda-2023", "label": "Abrir el ejercicio" },
+          "check": { "type": "replay", "drill": true, "completed": true, "min": 1 }
+        },
+        {
+          "id": "d6-journal",
+          "title": "Escribe una lección en tu diario",
+          "minutes": 5,
+          "why": "Tu cuenta registra lo que pasó; solo el diario registra por qué. Una frase honesta después de una sesión de Replay vale más que la propia tarjeta de resultados.",
+          "steps": [
+            "Abre el Diario. Si guardaste la sesión de Replay desde la tarjeta de resultados ya está ahí; si no, toca '+ Nueva entrada manual'.",
+            "Abre la entrada, elige cómo te sentiste (emoción) y escribe una frase en el campo Lección: qué harías distinto.",
+            "Guarda. Eso es una entrada de diario completa."
+          ],
+          "link": { "href": "journal.html", "label": "Abrir el diario" },
+          "check": { "type": "journal", "field": "lessons", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "id": "d7",
+      "title": "Conviértelo en hábito",
+      "minutes": 25,
+      "intro": "El último día trata de lo que seguirás haciendo cuando esta semana termine: un cuestionario diario de cinco preguntas, un plan para usar bien la cuenta de práctica y la revisión semanal que convierte operaciones en lecciones.",
+      "tasks": [
+        {
+          "id": "d7-daily5",
+          "title": "Haz el cuestionario Daily 5 de hoy",
+          "minutes": 5,
+          "why": "Cinco preguntas sacadas de todo el curso, cada día. Es la forma más barata de descubrir qué ideas se han quedado y cuáles necesitan otro repaso.",
+          "steps": [
+            "Abre el Glosario y cambia a Daily 5.",
+            "Responde las cinco preguntas y lee las explicaciones.",
+            "Vuelve mañana por un juego nuevo; la página lleva la cuenta de tu racha."
+          ],
+          "link": { "href": "glossary.html#daily", "label": "Abrir el Daily 5" },
+          "check": { "type": "glossary", "mode": "daily5", "min": 1 }
+        },
+        {
+          "id": "d7-plan",
+          "title": "Lee 'Tu plan de trading, el diario y cómo usar bien la cuenta de paper trading'",
+          "minutes": 12,
+          "why": "Una cuenta de práctica solo sirve si la tratas como dinero real y la revisas como un científico. Esta lección te da las reglas para las semanas que vienen después de esta.",
+          "steps": [
+            "Lee la lección y anota las tres reglas para hacer paper trading con honestidad.",
+            "Haz el cuestionario y marca la lección como hecha."
+          ],
+          "link": { "href": "learn.html#/lesson/m4-l5", "label": "Abrir la lección 4.5" },
+          "check": { "type": "lesson", "lessonId": "m4-l5" }
+        },
+        {
+          "id": "d7-review",
+          "title": "Guarda tu primera revisión semanal",
+          "minutes": 8,
+          "why": "La revisión semanal es donde miras lo que hiciste tú, no solo lo que hizo el mercado. Diez minutos cada semana se acumulan más rápido que cualquier indicador.",
+          "steps": [
+            "Abre el Diario y baja hasta Revisión semanal.",
+            "Marca los puntos de la lista que de verdad hiciste esta semana y responde las cuatro preguntas cortas. Con una línea honesta en cada una basta.",
+            "Toca 'Guardar revisión'."
+          ],
+          "link": { "href": "journal.html#review", "label": "Abrir la revisión semanal" },
+          "check": { "type": "journal", "review": true, "min": 1 }
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "Terminaste tu primera semana",
+    "body": "Veintiuna tareas pequeñas, hechas. Sabes leer un gráfico, colocar y proteger una operación de práctica, dimensionarla con sentido, correr un ejercicio de Replay y revisar tus propias decisiones. Eso es más de lo que aprende la mayoría de la gente que abre una cuenta en un bróker. El curso completo profundiza en cada uno de estos temas, y terminarlo te da un certificado que puedes verificar en línea.",
+    "next": [
+      { "href": "learn.html", "label": "Continuar con el curso completo" },
+      { "href": "learn.html#/certificate", "label": "Ver los requisitos del certificado" },
+      { "href": "replay.html", "label": "Hacer otro ejercicio de Replay" }
+    ]
+  }
+}

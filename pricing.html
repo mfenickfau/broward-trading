@@ -37,7 +37,7 @@
   .billing{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin:var(--sp-4) 0 var(--sp-3)}
   .billing .btn-group{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:360px}
   .billing .btn-group button{padding:10px 12px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
-  .billing .btn-group button small{font-weight:400;font-size:var(--fs-xs);opacity:.85}
+  .billing .btn-group button small{font-weight:400;font-size:var(--fs-xs);color:var(--muted)} .billing .btn-group button.on small{color:var(--accent-fg)}
   .billing .note{color:var(--muted);font-size:var(--fs-sm)}
 
   /* plans */
@@ -55,15 +55,15 @@
   .pill.planned{color:var(--purple);border-color:var(--purple)}
 
   /* comparison */
-  .cmp{display:grid;grid-template-columns:1fr 64px 64px;gap:0;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--panel)}
-  .cmp > div{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;min-height:44px;font-size:var(--fs-sm)}
-  .cmp > div:nth-last-child(-n+3){border-bottom:0}
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--panel);font-variant-numeric:normal}
+  .cmp th,.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);height:44px;font-size:var(--fs-sm);text-align:left;font-weight:400;color:var(--fg);vertical-align:middle;text-transform:none;letter-spacing:0}
+  .cmp tbody tr:last-child th,.cmp tbody tr:last-child td{border-bottom:0}
   .cmp .h{background:var(--panel2);text-transform:uppercase;letter-spacing:.5px;font-size:var(--fs-xs);color:var(--muted);font-weight:500}
-  .cmp .c{justify-content:center;font-family:var(--mono);border-left:1px solid var(--line)}
-  .cmp .yes{color:var(--up)} .cmp .no{color:var(--faint)} .cmp .partial{color:var(--warn)}
-  .cmp .f{flex-direction:column;align-items:flex-start;gap:2px}
-  .cmp .f small{color:var(--muted)}
-  .cmp .group{grid-column:1 / -1;background:var(--panel2);color:var(--fg);font-weight:500;min-height:36px;padding-block:6px}
+  .cmp .c{text-align:center;width:64px;font-family:var(--mono);border-left:1px solid var(--line)}
+  .cmp td.c:last-child{text-align:center}
+  .cmp .yes{color:var(--up)} .cmp .no{color:var(--faint)} .cmp .partial{color:var(--warn-text,var(--warn))}
+  .cmp .f small{display:block;color:var(--muted);margin-top:2px}
+  .cmp tr.group th{background:var(--panel2);color:var(--fg);font-weight:500;height:36px;padding-block:6px}
 
   /* faq */
   .faq details{padding:0}
@@ -82,7 +82,7 @@
 <div id="nav"></div>
 <script src="js/nav.js"></script>
 
-<div class="page pr">
+<main class="page pr" id="main">
   <header class="pr-head">
     <div class="pills"><span class="pill up"><span class="dot"></span>Everything is free today</span><span class="pill planned">Pro: planned</span></div>
     <h1>Free for every student. Pro, when it arrives, pays for proof and people.</h1>
@@ -145,31 +145,29 @@
   <!-- Comparison -->
   <h2 class="section-title">What is included</h2>
   <p>Honest status for every feature. "Soon" means it is designed and on the roadmap but not built; "planned" means it is a goal, not a promise.</p>
-  <div class="cmp" role="table" aria-label="Free versus Pro comparison">
-    <div class="h" role="columnheader">Feature</div><div class="h c" role="columnheader">Free</div><div class="h c" role="columnheader">Pro</div>
-
-    <div class="group">Learning</div>
-    <div class="f">Full course and every quiz<small>8 modules including Replay drills and the Capstone</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Glossary, flashcards, Daily 5</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Self-issued certificate<small>PNG drawn in your browser, id starts BT-YYYY-L…</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Verified certificate<small>Stored on our server, checkable at verify.html</small></div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
-    <div class="f">Lesson PDFs</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
-
-    <div class="group">Trading tools</div>
-    <div class="f">Dashboard, indicators, signals, drawings</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Paper account, options lab, alerts, journal</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Market Replay and backtester</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Live data<small>Bring your own free API key (Twelve Data, Finnhub, Alpha Vantage)</small></div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Cloud sync across devices</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="planned">planned</div>
-
-    <div class="group">Classrooms</div>
-    <div class="f">Opt-in leaderboard by class code<small>Nicknames only, no emails shown</small></div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
-    <div class="f">Instructor dashboard</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
-
-    <div class="group">Support</div>
-    <div class="f">Public issue tracker</div><div class="c yes" aria-label="included">✓</div><div class="c yes" aria-label="included">✓</div>
-    <div class="f">Priority email support</div><div class="c no" aria-label="not included">–</div><div class="c partial" aria-label="coming soon">soon</div>
-  </div>
+  <table class="cmp"><caption class="sr-only">Free versus Pro comparison</caption>
+    <thead><tr><th scope="col" class="h">Feature</th><th scope="col" class="h c">Free</th><th scope="col" class="h c">Pro</th></tr></thead>
+    <tbody>
+    <tr class="group"><th scope="rowgroup" colspan="3">Learning</th></tr>
+    <tr><th scope="row" class="f">Full course and every quiz<small>8 modules including Replay drills and the Capstone</small></th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Glossary, flashcards, Daily 5</th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Self-issued certificate<small>PNG drawn in your browser, id starts BT-YYYY-L…</small></th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Verified certificate<small>Stored on our server, checkable at verify.html</small></th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">soon</span><span class="sr-only">coming soon</span></td></tr>
+    <tr><th scope="row" class="f">Lesson PDFs</th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">soon</span><span class="sr-only">coming soon</span></td></tr>
+    <tr class="group"><th scope="rowgroup" colspan="3">Trading tools</th></tr>
+    <tr><th scope="row" class="f">Dashboard, indicators, signals, drawings</th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Paper account, options lab, alerts, journal</th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Market Replay and backtester</th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Live data<small>Bring your own free API key (Twelve Data, Finnhub, Alpha Vantage)</small></th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Cloud sync across devices</th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">planned</span><span class="sr-only">planned</span></td></tr>
+    <tr class="group"><th scope="rowgroup" colspan="3">Classrooms</th></tr>
+    <tr><th scope="row" class="f">Opt-in leaderboard by class code<small>Nicknames only, no emails shown</small></th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">soon</span><span class="sr-only">coming soon</span></td></tr>
+    <tr><th scope="row" class="f">Instructor dashboard</th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">soon</span><span class="sr-only">coming soon</span></td></tr>
+    <tr class="group"><th scope="rowgroup" colspan="3">Support</th></tr>
+    <tr><th scope="row" class="f">Public issue tracker</th><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td><td class="c yes"><span aria-hidden="true">✓</span><span class="sr-only">included</span></td></tr>
+    <tr><th scope="row" class="f">Priority email support</th><td class="c no"><span aria-hidden="true">–</span><span class="sr-only">not included</span></td><td class="c partial"><span aria-hidden="true">soon</span><span class="sr-only">coming soon</span></td></tr>
+    </tbody>
+  </table>
 
   <!-- FAQ -->
   <h2 class="section-title">Questions</h2>
@@ -212,7 +210,7 @@
     <p><b>Certificates.</b> A certificate, verified or self-issued, recognises completion of a free online course. It is not a licence, qualification, or endorsement of any kind and does not certify competence to trade or advise.</p>
     <p><b>Disclaimer.</b> Broward Trading is a free educational simulator. No real orders are placed and no money changes hands in the simulator. Demo prices are generated, not real; live prices come from the provider you configure and may be delayed. Past performance, including back-test and replay results, does not predict future results. Nothing on this site is investment, tax or legal advice.</p>
   </section>
-</div>
+</main>
 
 <div id="footer"></div>
 

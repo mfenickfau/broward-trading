@@ -31,8 +31,20 @@ const TRANSLATABLE_KEYS = new Set([
   'definition', 'def', 'description', 'why', 'steps', 'name', 'text', 'hint',
   'subtitle', 'tagline', 'note', 'prompt', 'answerText', 'section', 'short',
   'long', 'example', 'see', 'tip', 'warning', 'goal', 'body', 'intro', 'outro',
-  'hints', 'disclaimer', 'objective'
+  'hints', 'disclaimer', 'objective',
+  // course/firstweek.json (onboarding plan)
+  'honesty', 'outcomes'
 ]);
+// Per-file exceptions. The glossary's display names ARE the translation (a Spanish
+// student browses 'Media móvil (moving average)', not 'Moving average'), and the
+// Spanish file may add aliases ('bróker', 'racha'), so for course/es/glossary.json
+// `term` is translatable and `aliases` arrays may differ in length. Ids stay identical,
+// and a separate test below checks the English headwords survive as aliases so
+// [[English term|label]] markers in course/es lessons keep resolving.
+const FILE_RULES = {
+  'glossary.json': { translatable: ['term', 'aliases'], freeArrays: ['aliases'] }
+};
+const NO_RULES = { translatable: [], freeArrays: [] };
 
 function glossaryMarkers(s) {
   const out = [];
@@ -50,13 +62,19 @@ function markdownShape(s) {
   };
 }
 
-function walk(en, es, where, parentKey, problems) {
+function walk(en, es, where, parentKey, problems, rules) {
+  rules = rules || NO_RULES;
   const te = Array.isArray(en) ? 'array' : (en === null ? 'null' : typeof en);
   const ts = Array.isArray(es) ? 'array' : (es === null ? 'null' : typeof es);
   if (te !== ts) { problems.push(where + ': type ' + te + ' vs ' + ts); return; }
   if (te === 'array') {
+    if (rules.freeArrays.indexOf(parentKey) >= 0) {
+      // Translation may add or drop entries (e.g. Spanish aliases); only the item type is checked.
+      for (let i = 0; i < es.length; i++) if (typeof es[i] !== 'string' || !es[i].trim()) problems.push(where + '[' + i + ']: expected a non-empty string');
+      return;
+    }
     if (en.length !== es.length) { problems.push(where + ': length ' + en.length + ' vs ' + es.length); return; }
-    for (let i = 0; i < en.length; i++) walk(en[i], es[i], where + '[' + i + ']', parentKey, problems);
+    for (let i = 0; i < en.length; i++) walk(en[i], es[i], where + '[' + i + ']', parentKey, problems, rules);
     return;
   }
   if (te === 'object') {
@@ -65,7 +83,7 @@ function walk(en, es, where, parentKey, problems) {
       problems.push(where + ': keys [' + ke + '] vs [' + ks + ']');
       return;
     }
-    for (const k of ke) walk(en[k], es[k], where + '.' + k, k, problems);
+    for (const k of ke) walk(en[k], es[k], where + '.' + k, k, problems, rules);
     return;
   }
   if (te === 'number' || te === 'boolean' || te === 'null') {
@@ -73,11 +91,12 @@ function walk(en, es, where, parentKey, problems) {
     return;
   }
   // strings
-  if (IDENTICAL_KEYS.has(parentKey)) {
+  const translatableHere = rules.translatable.indexOf(parentKey) >= 0;
+  if (IDENTICAL_KEYS.has(parentKey) && !translatableHere) {
     if (en !== es) problems.push(where + ': must be identical: ' + JSON.stringify(en) + ' vs ' + JSON.stringify(es));
     return;
   }
-  if (!TRANSLATABLE_KEYS.has(parentKey)) {
+  if (!TRANSLATABLE_KEYS.has(parentKey) && !translatableHere) {
     // Unknown key: tolerate only if identical (safe default) — otherwise flag so the
     // key is added to one of the two sets above on purpose.
     if (en !== es) problems.push(where + ': unclassified key "' + parentKey + '" differs; add it to IDENTICAL_KEYS or TRANSLATABLE_KEYS');
@@ -120,13 +139,117 @@ for (const f of esFiles) {
   if (!en || !es) continue;
   test(f + ': identical structure, ids, types, answers and references', () => {
     const problems = [];
-    walk(en, es, f, '', problems);
+    walk(en, es, f, '', problems, FILE_RULES[f]);
     assert.strictEqual(problems.length, 0, problems.slice(0, 15).join('\n       '));
   });
   test(f + ': translated prose actually differs from English', () => {
     // Guard against a copy of the English file masquerading as a translation.
     const enText = JSON.stringify(en), esText = JSON.stringify(es);
     assert.notStrictEqual(enText, esText, 'course/es/' + f + ' is byte-identical to the English file');
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Glossary headwords: translated, and still reachable by their English name
+ * ------------------------------------------------------------------ */
+const ES_GLOSSARY = path.join(ES_DIR, 'glossary.json');
+if (fs.existsSync(ES_GLOSSARY)) {
+  const enG = JSON.parse(fs.readFileSync(path.join(EN_DIR, 'glossary.json'), 'utf8'));
+  const esG = JSON.parse(fs.readFileSync(ES_GLOSSARY, 'utf8'));
+  const esById = {}; esG.terms.forEach(t => { esById[t.id] = t; });
+
+  // Headwords that stay in English on purpose: established trader English per docs/I18N.md §9
+  // (RSI, MACD, ETF, spread, backtest, bid/ask, trailing stop, iron condor, covered call…),
+  // Greek letters and single words that are spelled the same in Spanish.
+  const ENGLISH_HEADWORD_OK = new Set([
+    'backtest', 'beta', 'covered-call', 'delta', 'doji', 'gamma', 'iron-condor', 'macd', 'momentum',
+    'rho', 'sector', 'stop-loss', 'straddle', 'strangle', 'theta', 'trailing-stop', 'vega'
+  ]);
+
+  test('glossary.json: every translatable English headword is translated (term differs from English)', () => {
+    const same = enG.terms.filter(t => !ENGLISH_HEADWORD_OK.has(t.id) && esById[t.id] && esById[t.id].term === t.term).map(t => t.id + ' "' + t.term + '"');
+    assert.deepStrictEqual(same, [], 'still English: ' + same.slice(0, 12).join(', '));
+    // and the allow-list is not hiding translatable phrases: a multi-word English headword with
+    // a lowercase second word ('Moving average', 'Trend line') is a phrase, never trader shorthand.
+    const phrases = enG.terms.filter(t => ENGLISH_HEADWORD_OK.has(t.id) && /^[A-Z][a-z]+ [a-z]+$/.test(t.term) && !/^(Covered call|Iron condor|Trailing stop)$/.test(t.term)).map(t => t.term);
+    assert.deepStrictEqual(phrases, [], 'translatable phrases on the allow-list: ' + phrases.join(', '));
+    // at least some of the reviewer's examples, spelled the Spanish way
+    assert.match(esById['moving-average'].term, /^Media móvil/);
+    assert.match(esById['stop-order'].term, /^Orden stop/);
+    assert.match(esById['head-and-shoulders'].term, /^Hombro-cabeza-hombro/);
+    assert.match(esById['leverage'].term, /^Apalancamiento/);
+    assert.match(esById['win-rate'].term, /^Tasa de acierto/);
+    assert.match(esById['trend-line'].term, /^Línea de tendencia/);
+  });
+
+  test('glossary.json: Spanish headwords are unique and start with a capital or symbol like the English ones', () => {
+    const seen = new Set();
+    for (const t of esG.terms) {
+      const n = t.term.toLowerCase();
+      assert.ok(!seen.has(n), 'duplicate Spanish headword ' + t.term); seen.add(n);
+      assert.match(t.term, /^[^a-z\s]/, t.id + ': headword should not start lowercase: ' + t.term);
+    }
+  });
+
+  // Load the real course engine so the lookup used by lesson tooltips (js/learn.js →
+  // BT.course.glossary.lookup) is what we test, not a copy of its key logic.
+  const store = {};
+  global.localStorage = {
+    getItem(k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
+    setItem(k, v) { store[k] = String(v); }, removeItem(k) { delete store[k]; }, clear() { for (const k of Object.keys(store)) delete store[k]; }
+  };
+  global.window = { localStorage: global.localStorage, addEventListener() {}, dispatchEvent() {} };
+  global.fetch = async () => ({ ok: false, status: 404, json: async () => { throw new Error('404'); } });
+  require(path.join(ROOT, 'js', 'course.js'));
+  const C = window.BT.course;
+
+  test('glossary.json: English headwords and aliases still resolve in the Spanish glossary (tooltips use English [[markers]])', () => {
+    C.glossary.set(esG, 'es');
+    const lost = [];
+    for (const t of enG.terms) {
+      const hit = C.glossary.lookup(t.term);
+      if (!hit || hit.id !== t.id) {
+        // an English collision that also happens in the English file is not a regression
+        C.glossary.set(enG, 'en'); const enHit = C.glossary.lookup(t.term); C.glossary.set(esG, 'es');
+        if (!enHit || enHit.id !== (hit && hit.id)) lost.push(t.term + ' → ' + (hit ? hit.id : 'null'));
+      }
+      for (const a of t.aliases || []) {
+        const ah = C.glossary.lookup(a);
+        if (!ah || ah.id !== t.id) lost.push('alias ' + a + ' → ' + (ah ? ah.id : 'null'));
+      }
+    }
+    assert.deepStrictEqual(lost, [], 'English names no longer reach their term: ' + lost.slice(0, 10).join('; '));
+  });
+
+  test('glossary.json: every [[term]] marker in course/es/*.json resolves to the same id in both glossaries', () => {
+    const bad = [];
+    for (const f of esFiles) {
+      const src = fs.readFileSync(path.join(ES_DIR, f), 'utf8');
+      const re = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
+      let m;
+      while ((m = re.exec(src))) {
+        C.glossary.set(enG, 'en'); const a = C.glossary.lookup(m[1]);
+        C.glossary.set(esG, 'es'); const b = C.glossary.lookup(m[1]);
+        if (!a || !b || a.id !== b.id) bad.push(f + ': [[' + m[1] + ']] → ' + (a && a.id) + ' / ' + (b && b.id));
+      }
+    }
+    assert.deepStrictEqual(bad, [], bad.slice(0, 10).join('; '));
+  });
+
+  test('glossary.json: Spanish search terms reach the right entry (bróker, racha, caída máxima, media móvil, stop)', () => {
+    C.glossary.set(esG, 'es');
+    const expect = { 'bróker': 'broker', 'corredor de bolsa': 'broker', 'racha': 'losing-streak', 'caída máxima': 'drawdown', 'media móvil': 'moving-average', 'stop': 'stop-order', 'apalancamiento': 'leverage', 'dentro del dinero': 'in-the-money' };
+    for (const k of Object.keys(expect)) {
+      const hit = C.glossary.lookup(k);
+      assert.ok(hit && hit.id === expect[k], k + ' → ' + (hit ? hit.id : 'null') + ', expected ' + expect[k]);
+    }
+  });
+
+  test('glossary.json: options vocabulary matches the m5 module (masculine Greeks, dentro/fuera del dinero)', () => {
+    const text = esG.terms.map(t => t.definition + ' ' + t.example).join('\n');
+    assert.ok(!/\b(la|una) (delta|gamma|theta|vega|rho)\b/i.test(text), 'glossary uses feminine for a Greek; m5 uses "el delta"');
+    assert.ok(/dentro del dinero/.test(text) && /fuera del dinero/.test(text), 'ITM/OTM should be taught in Spanish first');
+    assert.ok(!/ratio de pago|El pago de un call/.test(text), 'payoff is not "pago" (payment)');
   });
 }
 

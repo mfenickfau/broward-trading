@@ -98,7 +98,8 @@ test('studentId is random, persisted, never personal; join/leave/status round-tr
   assert.strictEqual(C.studentId(), id, 'stable across calls');
   assert.notStrictEqual(C.studentId(), (localStorage.clear(), C.studentId()), 'a cleared device gets a new id');
   const r = C.join('k7q 2mx', '  Ada   L. ');
-  assert.deepStrictEqual(Object.keys(r).sort(), ['code', 'displayName', 'ok', 'studentId']);
+  assert.deepStrictEqual(Object.keys(r).sort(), ['code', 'displayName', 'freshId', 'ok', 'studentId']);
+  assert.strictEqual(r.freshId, false, 'the existing id is kept on an ordinary join');
   assert.strictEqual(r.code, 'K7Q2MX');
   assert.strictEqual(r.displayName, 'Ada L.');
   const st = C.status();
@@ -265,6 +266,96 @@ test('sync() posts to /classes/:code/snapshots only when joined and configured; 
     C.join('K7Q2MX'); fetchImpl = null;              // network failure is reported, never thrown
     return C.sync({ force: true });
   }).then(r => { assert.strictEqual(r.ok, false); assert.strictEqual(r.network, true); A.config.apiBase = ''; });
+});
+
+test('sync() keeps the ownerToken the server mints and sends it with every later snapshot; leaving or changing class drops it', () => {
+  seedStudent(); C.join('K7Q2MX', 'Ada');
+  A.config.apiBase = 'https://api.example.workers.dev/';
+  const TOKEN = 'tok_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
+  let bodies = [];
+  fetchImpl = (url, opts) => { bodies.push(JSON.parse(opts.body)); return jsonRes(200, bodies.length === 1 ? { ok: true, className: 'FIN 1100', ownerToken: TOKEN } : { ok: true, className: 'FIN 1100' }); };
+  return C.sync({ reason: 'join' }).then(r => {
+    assert.strictEqual(r.sent, true); assert.strictEqual(r.ownerToken, true);
+    assert.strictEqual(bodies[0].ownerToken, undefined, 'the first snapshot has no token yet');
+    assert.strictEqual(C.status().hasOwnerToken, true);
+    assert.strictEqual(JSON.parse(localStorage.getItem('bt.classroom')).ownerToken, TOKEN, 'persisted in bt.classroom');
+    return C.sync({ reason: 'lesson' });
+  }).then(r => {
+    assert.strictEqual(r.sent, true);
+    assert.strictEqual(bodies[1].ownerToken, TOKEN, 'later snapshots carry the token');
+    // a junk token in the response is ignored
+    fetchImpl = (url, opts) => { bodies.push(JSON.parse(opts.body)); return jsonRes(200, { ok: true, ownerToken: '<script>' }); };
+    return C.sync({ reason: 'quiz' });
+  }).then(() => {
+    assert.strictEqual(JSON.parse(localStorage.getItem('bt.classroom')).ownerToken, TOKEN, 'a malformed token never replaces a good one');
+    // joining a different class forgets the token (it belongs to one class + id pair)
+    C.join('MXK7Q2');
+    assert.strictEqual(C.status().hasOwnerToken, false);
+    C.join('K7Q2MX');
+    assert.strictEqual(C.status().hasOwnerToken, false, 'coming back does not resurrect it; the server will refuse or re-bind');
+    C.leave();
+    const raw = JSON.parse(localStorage.getItem('bt.classroom'));
+    assert.strictEqual(raw.ownerToken, null); assert.strictEqual(raw.ownerTokenCode, null);
+    A.config.apiBase = ''; fetchImpl = null;
+  });
+});
+
+test('sync(): 409 {ownerMismatch} is remembered and a rejoin mints a fresh id; 409 {full} is reported; 429 backs off without clearing lastSentAt', () => {
+  seedStudent(); C.join('K7Q2MX', 'Ada');
+  A.config.apiBase = 'https://api.example.workers.dev/';
+  const oldId = C.studentId();
+  fetchImpl = () => jsonRes(200, { ok: true, ownerToken: 'tok_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345' });
+  return C.sync({ reason: 'join' }).then(() => {
+    fetchImpl = () => jsonRes(409, { error: 'This student id already belongs to another device in this class.', ownerMismatch: true });
+    return C.sync({ reason: 'lesson' });
+  }).then(r => {
+    assert.strictEqual(r.ok, false); assert.strictEqual(r.ownerMismatch, true); assert.strictEqual(r.status, 409);
+    assert.strictEqual(C.status().ownerMismatch, true); assert.strictEqual(C.status().hasOwnerToken, false, 'the refused token is dropped');
+    assert.strictEqual(C.status().joined, true, 'the student is not thrown out of the class');
+    fetchLog.length = 0;
+    return C.sync({ reason: 'quiz' });
+  }).then(r => {
+    assert.strictEqual(r.skipped, 'owner-mismatch'); assert.strictEqual(fetchLog.length, 0, 'no more requests until the student rejoins');
+    const j = C.join('K7Q2MX', 'Ada');
+    assert.strictEqual(j.ok, true); assert.strictEqual(j.freshId, true); assert.notStrictEqual(C.studentId(), oldId, 'rejoining after a mismatch mints a new id');
+    assert.strictEqual(C.status().ownerMismatch, false);
+    assert.strictEqual(C.join('K7Q2MX').freshId, false, 'a plain rejoin keeps the id');
+    assert.strictEqual(C.join('K7Q2MX', undefined, { freshId: true }).freshId, true, 'and freshId can be asked for explicitly');
+    // class full
+    fetchImpl = () => jsonRes(409, { error: 'This class is full (500 students).', full: true });
+    return C.sync({ reason: 'join' });
+  }).then(r => {
+    assert.strictEqual(r.ok, false); assert.strictEqual(r.full, true); assert.match(r.error, /full/);
+    assert.strictEqual(C.status().ownerMismatch, false, 'a full class is not an ownership problem');
+    // rate limited: back off for retryAfterSec, lastSentAt untouched, then recover
+    localStorage.setItem('bt.classroom', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('bt.classroom')), { lastSentAt: '2026-01-01T00:00:00Z', lastSentCode: 'K7Q2MX' })));
+    fetchImpl = () => jsonRes(429, { error: 'Snapshots are limited to a few per minute.', retryAfterSec: 90 });
+    return C.sync({ reason: 'lesson' });
+  }).then(r => {
+    assert.strictEqual(r.ok, false); assert.strictEqual(r.rateLimited, true); assert.strictEqual(r.retryAfterSec, 90);
+    const st = C.status();
+    assert.strictEqual(st.lastSentAt, '2026-01-01T00:00:00Z', '429 is not a successful send');
+    const until = Date.parse(st.backoffUntil); assert.ok(until > Date.now() + 80e3 && until <= Date.now() + 91e3, 'backoffUntil ≈ now + 90 s: ' + st.backoffUntil);
+    fetchLog.length = 0;
+    return C.sync({ reason: 'quiz' });
+  }).then(r => {
+    assert.strictEqual(r.skipped, 'backoff'); assert.strictEqual(r.rateLimited, true); assert.ok(r.retryAfterSec > 0); assert.strictEqual(fetchLog.length, 0, 'nothing is sent during the back-off');
+    fetchImpl = () => jsonRes(200, { ok: true });
+    return C.sync({ force: true });
+  }).then(r => {
+    assert.strictEqual(r.sent, true, 'force overrides the back-off'); assert.strictEqual(C.status().backoffUntil, null, 'a success clears it');
+    // an expired back-off is ignored on the next ordinary sync
+    localStorage.setItem('bt.classroom', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('bt.classroom')), { backoffUntil: new Date(Date.now() - 1000).toISOString() })));
+    return C.sync({ reason: 'lesson' });
+  }).then(r => {
+    assert.strictEqual(r.sent, true);
+    // 429 without a body falls back to 60 s
+    fetchImpl = () => Promise.resolve({ ok: false, status: 429, headers: { get: () => null }, text: () => Promise.resolve('') });
+    return C.sync({ reason: 'lesson' });
+  }).then(r => {
+    assert.strictEqual(r.retryAfterSec, 60);
+    A.config.apiBase = ''; fetchImpl = null; C.leave();
+  });
 });
 
 test('hookCourse wraps BT.course.markDone / recordQuiz so completions trigger a sync', () => {
@@ -452,7 +543,7 @@ test('remote: createRemote stores the instructor token; refreshRoster sends X-Cl
   fetchLog.length = 0;
   fetchImpl = (url, opts) => {
     if (url.endsWith('/classes') && opts.method === 'POST') { assert.deepStrictEqual(JSON.parse(opts.body), { name: 'Remote class', section: 'A', term: 'T' }); return jsonRes(201, { code: 'MXK7Q2', name: 'Remote class', section: 'A', term: 'T', createdAt: '2026-02-01T00:00:00Z', instructorToken: 'tok_abcdefghijklmnopqrstuvwxyz', ownerKind: 'secret' }); }
-    if (url.endsWith('/classes/MXK7Q2/roster')) { assert.strictEqual(opts.headers['X-Class-Token'], 'tok_abcdefghijklmnopqrstuvwxyz'); return jsonRes(200, { ok: true, class: { code: 'MXK7Q2', name: 'Remote class (renamed)' }, students: [snapAda, snapGrace], via: 'token' }); }
+    if (url.includes('/classes/MXK7Q2/roster?limit=100')) { assert.strictEqual(opts.headers['X-Class-Token'], 'tok_abcdefghijklmnopqrstuvwxyz'); return jsonRes(200, { ok: true, class: { code: 'MXK7Q2', name: 'Remote class (renamed)' }, students: [snapAda, snapGrace], via: 'token', cursor: null, hasMore: false }); }
     if (url.includes('/students/') && opts.method === 'DELETE') return jsonRes(200, { ok: true, removed: true });
     return jsonRes(404, { error: 'nope' });
   };
@@ -472,6 +563,197 @@ test('remote: createRemote stores the instructor token; refreshRoster sends X-Cl
   }).then(r => { assert.strictEqual(r.ok, false); assert.strictEqual(r.notConfigured, true); });
 });
 
+test('remote: refreshRoster follows the server cursor until hasMore is false and saves once; removeStudents batches ids by 50 and sweeps {all:true}', () => {
+  localStorage.clear(); I.reset(); I.createClass({ name: 'Big class', code: 'MXK7Q2', token: 'tok_abcdefghijklmnopqrstuvwxyz', remote: true });
+  A.config.apiBase = 'https://api.example.workers.dev';
+  const many = Array.from({ length: 230 }, (_, i) => Object.assign({}, snapAda, { studentId: 's-page' + String(i).padStart(6, '0'), receivedAt: '2026-02-03T10:00:00Z' }));
+  const pages = { '': many.slice(0, 100), c1: many.slice(100, 200), c2: many.slice(200) };
+  const seen = [];
+  fetchLog.length = 0;
+  fetchImpl = (url, opts) => {
+    const u = new URL(url);
+    if (u.pathname.endsWith('/roster') && opts.method === 'GET') {
+      assert.strictEqual(u.searchParams.get('limit'), '100');
+      const cur = u.searchParams.get('cursor') || ''; seen.push(cur);
+      const next = cur === '' ? 'c1' : cur === 'c1' ? 'c2' : null;
+      return jsonRes(200, { ok: true, class: { code: 'MXK7Q2', name: 'Big class' }, students: pages[cur], via: 'token', cursor: next, hasMore: !!next });
+    }
+    if (u.pathname.endsWith('/students') && opts.method === 'DELETE') {
+      const body = JSON.parse(opts.body);
+      assert.strictEqual(opts.headers['X-Class-Token'], 'tok_abcdefghijklmnopqrstuvwxyz');
+      if (body.all === true) { const n = seen.push('all'); return jsonRes(200, { ok: true, removed: 50, ids: many.slice(0, 50).map(s => s.studentId), remaining: n < 5 ? 100 : 0, hasMore: n < 5 }); }
+      assert.ok(Array.isArray(body.ids) && body.ids.length <= 50, 'at most 50 ids per call');
+      return jsonRes(200, { ok: true, removed: body.ids.length, ids: body.ids, remaining: 0, hasMore: false });
+    }
+    return jsonRes(404, { error: 'nope' });
+  };
+  let writes = 0; const realSet = localStorage.setItem;
+  localStorage.setItem = function (k, v) { if (k === I.KEY) writes++; return realSet.call(this, k, v); };
+  return I.remote.refreshRoster('MXK7Q2').then(r => {
+    localStorage.setItem = realSet;
+    assert.strictEqual(r.ok, true); assert.strictEqual(r.count, 230); assert.strictEqual(r.added, 230); assert.strictEqual(r.pages, 3);
+    assert.deepStrictEqual(seen, ['', 'c1', 'c2'], 'each cursor passed back exactly once');
+    assert.strictEqual(Object.keys(I.getClass('MXK7Q2').students).length, 230);
+    assert.ok(writes <= 3, 'one save for all pages: ' + writes);
+    // a server cursor that never advances cannot loop forever
+    fetchImpl = () => jsonRes(200, { ok: true, students: [], cursor: 'same', hasMore: true });
+    return I.remote.refreshRoster('MXK7Q2');
+  }).then(r => {
+    assert.strictEqual(r.ok, true); assert.ok(r.pages <= 20, 'bounded: ' + r.pages);
+    fetchImpl = (url, opts) => {
+      const u = new URL(url); const body = JSON.parse(opts.body);
+      assert.ok(u.pathname.endsWith('/students') && opts.method === 'DELETE');
+      assert.ok(Array.isArray(body.ids) && body.ids.length <= 50, 'at most 50 ids per call');
+      return jsonRes(200, { ok: true, removed: body.ids.length, ids: body.ids, remaining: 0, hasMore: false });
+    };
+    return I.remote.removeStudents('MXK7Q2', { ids: many.slice(0, 120).map(s => s.studentId).concat(['__proto__', 'bad id!']) });
+  }).then(r => {
+    assert.strictEqual(r.ok, true); assert.strictEqual(r.removed, 120); assert.strictEqual(r.calls, 3); assert.strictEqual(r.ids.length, 120);
+    seen.length = 0;
+    fetchImpl = (url, opts) => { const body = JSON.parse(opts.body); assert.strictEqual(body.all, true); const n = seen.push('all'); return jsonRes(200, { ok: true, removed: 50, ids: [], remaining: n < 5 ? 100 : 0, hasMore: n < 5 }); };
+    return I.remote.removeStudents('MXK7Q2', { all: true });
+  }).then(r => {
+    assert.strictEqual(r.ok, true); assert.strictEqual(r.calls, 5); assert.strictEqual(r.removed, 250); assert.strictEqual(r.remaining, 0);
+    return I.remote.removeStudents('MXK7Q2', { ids: [] });
+  }).then(r => {
+    assert.strictEqual(r.ok, false);
+    A.config.apiBase = ''; fetchImpl = null;
+  });
+});
+
+test('addSnapshot: newer-wins trusts receivedAt over a student-written updatedAt and clamps forged future dates to now', () => {
+  localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+  const future = new Date(Date.now() + 365 * DAY).toISOString();
+  // a share code claiming to be from next year
+  assert.strictEqual(I.addSnapshot('K7Q2MX', Object.assign({}, snapAda, { updatedAt: future, displayName: 'Forged' }), { source: 'share' }).status, 'added');
+  // a genuine server record received just now still replaces it
+  const now = new Date().toISOString();
+  const r = I.addSnapshot('K7Q2MX', Object.assign({}, snapAda, { updatedAt: now, receivedAt: now, displayName: 'Real' }), { source: 'server', allowMismatch: true });
+  assert.strictEqual(r.status, 'updated', 'a forged future updatedAt cannot lock the row');
+  assert.strictEqual(I.getClass('K7Q2MX').students[snapAda.studentId].displayName, 'Real');
+  // an older server record does not overwrite a newer one
+  const old = new Date(Date.now() - DAY).toISOString();
+  assert.strictEqual(I.addSnapshot('K7Q2MX', Object.assign({}, snapAda, { updatedAt: old, receivedAt: old }), { source: 'server', allowMismatch: true }).status, 'older');
+});
+
+test('offline imports are sanitised: HTML/strings in every numeric field become numbers or null (no stored XSS)', () => {
+  const XSS = '<img src=x onerror=alert(document.cookie)>';
+  const evil = {
+    v: '<b>', studentId: 's-evil000001', displayName: '  <b>Eve</b>\u0000 ', classCode: 'K7Q2MX', lessonsDone: ['m1-l1', 'm1-l1', 42, XSS, { a: 1 }],
+    quizScores: { 'm1-l1': XSS, 'm1-l2': '95', '__proto__': 100, bad: {} }, lessonsTotal: XSS, startedAt: XSS,
+    certificate: { id: XSS + 'x'.repeat(40), date: 'yesterday' },
+    drills: [{ id: 'ride-the-trend-nvda-2023', title: XSS, returnPct: XSS, buyHoldPct: [1], maxDrawdownPct: XSS, trades: 'many', passed: 'yes', completed: 0, date: XSS }, { id: '' }, 'junk', null],
+    paper: { equity: XSS, startingCash: '1e3', returnPct: XSS, trades: XSS, winRate: 'half', fills: -3, positions: XSS },
+    journalEntries: XSS, journal: { reviewed: XSS, weeklyReviews: XSS, lastDate: XSS }, streak: XSS, daily: { days: XSS, best: XSS },
+    lastActive: XSS, updatedAt: new Date().toISOString(), receivedAt: '2030-01-01T00:00:00Z', email: 'eve@example.com', extra: XSS
+  };
+  return C.encodeShare(evil).then(code => {
+    localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+    return I.importShareCodes('K7Q2MX', code);
+  }).then(r => {
+    assert.strictEqual(r.added, 1);
+    const s = I.getClass('K7Q2MX').students['s-evil000001'];
+    const numOrNull = v => assert.ok(v === null || typeof v === 'number', 'expected number|null, got ' + JSON.stringify(v));
+    const d = s.drills[0];
+    [d.returnPct, d.buyHoldPct, d.maxDrawdownPct, d.trades, s.lessonsTotal, s.paper.equity, s.paper.startingCash, s.paper.returnPct, s.paper.trades, s.paper.winRate, s.paper.fills, s.paper.positions,
+      s.journalEntries, s.journal.reviewed, s.journal.weeklyReviews, s.streak, s.daily.days, s.daily.best].forEach(numOrNull);
+    Object.values(s.quizScores).forEach(numOrNull);
+    assert.deepStrictEqual(s.quizScores, { 'm1-l2': 95 }, 'non-numeric scores and prototype keys dropped');
+    assert.strictEqual(s.drills.length, 1); assert.strictEqual(d.passed, true); assert.strictEqual(d.completed, false); assert.strictEqual(d.date, null);
+    assert.strictEqual(s.lessonsDone.length, 2, 'deduped, non-strings dropped'); assert.ok(s.lessonsDone.every(x => typeof x === 'string' && x.length <= 40));
+    assert.strictEqual(s.displayName, '<b>Eve</b>', 'names are text (escaped at render time), control chars stripped');
+    assert.strictEqual(s.v, 1); assert.strictEqual(s.startedAt, null); assert.strictEqual(s.lastActive, null);
+    assert.strictEqual(s.certificate.id.length, 24);
+    assert.ok(!('email' in s) && !('extra' in s), 'unknown fields dropped');
+    assert.strictEqual(s.receivedAt, undefined, 'a share code cannot forge a server timestamp');
+    assert.strictEqual(s.source, 'share'); assert.ok(s.importedAt);
+    const row = I.row(s, I.getClass('K7Q2MX'));
+    assert.strictEqual(row.receivedAt, null); assert.ok(row.importedAt); assert.strictEqual(row.source, 'share');
+    assert.strictEqual(row.paperReturnPct, null); assert.strictEqual(row.journalEntries, 0);
+    // the drawer's number formatter never echoes a string back
+    const fmtPct = (v, dp) => v == null || !isFinite(+v) ? '—' : (+v).toFixed(dp == null ? 0 : dp) + '%';
+    assert.strictEqual(fmtPct(d.maxDrawdownPct, 1), '—');
+    // server-sourced snapshots keep receivedAt and take the class's code
+    localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+    const srv = I.addSnapshot('K7Q2MX', Object.assign({}, snapAda, { classCode: 'OTHER9', receivedAt: '2026-02-03T10:00:00Z' }), { source: 'server', allowMismatch: true });
+    assert.strictEqual(srv.status, 'added');
+    const stored = I.getClass('K7Q2MX').students[snapAda.studentId];
+    assert.strictEqual(stored.receivedAt, '2026-02-03T10:00:00Z'); assert.strictEqual(stored.source, 'server'); assert.strictEqual(stored.classCode, 'K7Q2MX');
+    assert.strictEqual(I.row(stored).receivedAt, '2026-02-03T10:00:00Z');
+    // direct sanitizer: a non-object and junk numbers
+    assert.strictEqual(I.sanitizeSnapshot(null).studentId, null);
+    assert.strictEqual(I.sanitizeSnapshot({ studentId: 's-ok000001', paper: { returnPct: '1e99' } }).paper.returnPct, 1e6, 'clamped');
+  });
+});
+
+test('reserved ids (__proto__, constructor…) are invalid, so a student cannot hide a record by prototype assignment', () => {
+  localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+  ['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty', 'valueOf'].forEach(id => {
+    assert.strictEqual(I.validId(id), false, id);
+    assert.strictEqual(I.addSnapshot('K7Q2MX', Object.assign({}, snapAda, { studentId: id })).status, 'invalid', id);
+  });
+  assert.strictEqual(I.validId('s-abc123xyz0'), true);
+  const cls = I.getClass('K7Q2MX');
+  assert.deepStrictEqual(Object.keys(cls.students), []);
+  assert.strictEqual(Object.getPrototypeOf(cls.students), Object.prototype, 'prototype untouched');
+  assert.strictEqual(I.removeStudent('K7Q2MX', 'constructor'), false);
+  assert.strictEqual(I.renameStudent('K7Q2MX', 'toString', 'x'), null);
+  assert.strictEqual(I.setManual('K7Q2MX', 'valueOf', { capstone: 1 }), null);
+  // a backup with such ids in names/manual is ignored too
+  const r = I.importJson(JSON.stringify({ kind: 'instructor-backup', classes: [{ code: 'K7Q2MX', name: 'FIN 1100', students: { __proto__: snapAda }, names: { __proto__: 'x' }, manual: { constructor: { capstone: 5 } } }] }));
+  assert.strictEqual(r.ok, true); assert.strictEqual(r.students, 0);
+  assert.deepStrictEqual(Object.keys(cls.names), []); assert.deepStrictEqual(Object.keys(cls.manual), []);
+});
+
+test('codes made for another class are skipped unless allowMismatch; counted and listed, never merged silently', () => {
+  const other = Object.assign({}, snapGrace, { classCode: 'ZZZ999' });
+  return Promise.all([C.encodeShare(snapAda), C.encodeShare(other)]).then(([a, g]) => {
+    localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+    return I.importShareCodes('K7Q2MX', a + '\n' + g).then(r => {
+      assert.strictEqual(r.found, 2); assert.strictEqual(r.added, 1); assert.strictEqual(r.skipped, 1);
+      assert.deepStrictEqual(r.mismatched, [snapGrace.studentId]);
+      assert.deepStrictEqual(Object.keys(I.getClass('K7Q2MX').students), [snapAda.studentId]);
+      assert.strictEqual(r.saved, true);
+      return I.importShareCodes('K7Q2MX', g, { allowMismatch: true });
+    }).then(r => {
+      assert.strictEqual(r.added, 1); assert.strictEqual(r.skipped, 0); assert.deepStrictEqual(r.mismatched, [snapGrace.studentId]);
+      assert.strictEqual(I.roster('K7Q2MX').find(x => x.id === snapGrace.studentId).mismatched, true, 'the roster still flags it');
+      assert.strictEqual(I.addSnapshot('K7Q2MX', other).status, 'mismatched', 'default addSnapshot refuses too');
+    });
+  });
+});
+
+test('bulk imports persist once and report a failed save instead of swallowing the quota error', () => {
+  localStorage.clear(); I.reset(); I.createClass({ name: 'FIN 1100', code: 'K7Q2MX' });
+  const realSet = localStorage.setItem; let writes = 0;
+  localStorage.setItem = function (k, v) { if (k === I.KEY) writes++; return realSet.call(this, k, v); };
+  const many = Array.from({ length: 200 }, (_, i) => Object.assign({}, snapAda, { studentId: 's-bulk' + String(i).padStart(6, '0') }));
+  // server refresh path
+  A.config.apiBase = 'https://api.example.workers.dev';
+  fetchImpl = () => jsonRes(200, { ok: true, students: many, via: 'token' });
+  return I.remote.refreshRoster('K7Q2MX').then(r => {
+    assert.strictEqual(r.added, 200); assert.strictEqual(r.saved, true);
+    assert.ok(writes <= 3, 'one save for the snapshots (+ class meta), not one per student: ' + writes);
+    assert.strictEqual(I.saveStatus().ok, true);
+    // backup restore path
+    writes = 0;
+    const backup = I.exportJson('K7Q2MX');
+    localStorage.clear(); I.reset();
+    const b = I.importJson(backup);
+    assert.strictEqual(b.students, 200); assert.strictEqual(b.saved, true);
+    assert.ok(writes <= 3, 'backup restore saves once: ' + writes);
+    // quota exceeded: save() reports it and saveStatus() flips
+    localStorage.setItem = function () { const e = new Error('QuotaExceededError'); e.name = 'QuotaExceededError'; throw e; };
+    return I.importShareCodes('K7Q2MX', 'x').then(() => C.encodeShare(snapGrace));
+  }).then(code => I.importShareCodes('K7Q2MX', code)).then(r => {
+    assert.strictEqual(r.added, 1); assert.strictEqual(r.saved, false);
+    assert.strictEqual(I.saveStatus().ok, false); assert.ok(I.saveStatus().bytes > 1000);
+    localStorage.setItem = realSet;
+    assert.strictEqual(I.save(), true); assert.strictEqual(I.saveStatus().ok, true);
+    A.config.apiBase = ''; fetchImpl = null;
+  });
+});
+
 /* ---- server/worker.js /classes routes ---------------------------------- */
 const workerTests = (async () => {
   let W;
@@ -479,16 +761,26 @@ const workerTests = (async () => {
   catch (e) { console.log('  (skipping worker tests: ' + e.message.split('\n')[0] + ')'); return; }
   chain = chain.then(() => console.log('server/worker.js /classes tests'));
 
+  /* In-memory KV with the parts of the real API the worker relies on: per-key
+   * metadata, lexicographic key order and cursor pagination (the cursor is the
+   * number of keys already returned, opaque to the caller). */
   function fakeKv() {
-    const m = new Map();
+    const m = new Map(), meta = new Map();
     return {
-      m,
+      m, meta,
       async get(k) { return m.has(k) ? m.get(k) : null; },
-      async put(k, v) { m.set(k, v); },
-      async delete(k) { m.delete(k); },
-      async list({ prefix, limit }) { const keys = [...m.keys()].filter(k => k.startsWith(prefix || '')).slice(0, limit || 1000).map(name => ({ name })); return { keys, list_complete: true }; }
+      async put(k, v, opts) { m.set(k, v); if (opts && opts.metadata !== undefined) meta.set(k, opts.metadata); else meta.delete(k); },
+      async delete(k) { m.delete(k); meta.delete(k); },
+      async list({ prefix, limit, cursor }) {
+        const all = [...m.keys()].filter(k => k.startsWith(prefix || '')).sort();
+        const start = cursor ? parseInt(cursor, 10) || 0 : 0, n = Math.min(limit || 1000, 1000);
+        const keys = all.slice(start, start + n).map(name => ({ name, metadata: meta.has(name) ? meta.get(name) : undefined }));
+        const done = start + n >= all.length;
+        return done ? { keys, list_complete: true } : { keys, list_complete: false, cursor: String(start + n) };
+      }
     };
   }
+  const withToken = (snap, token) => Object.assign({}, snap, { ownerToken: token });
   const req = (method, pathname, body, headers = {}) => new Request('https://api.example' + pathname, { method, headers: { 'CF-Connecting-IP': '203.0.113.5', 'Content-Type': 'application/json', ...headers }, body: body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)) });
 
   test('worker: sanitizeSnapshot whitelists fields, clamps numbers and drops junk', () => {
@@ -585,15 +877,199 @@ const workerTests = (async () => {
     assert.strictEqual((await W.route(req('DELETE', '/classes/' + made.code + '/students/' + snapGrace.studentId, undefined, { Authorization: 'Bearer ' + t2 }), env)).status, 403);
   });
 
-  test('worker: CORS now allows DELETE and the classroom headers; snapshot route is rate limited per IP', async () => {
+  test('worker: CORS allows DELETE and the classroom headers; snapshot limits are per student and per class, not per IP', async () => {
     const h = W.corsHeaders({ headers: { get: k => (k === 'Origin' ? 'https://me.github.io' : null) } }, { ALLOWED_ORIGINS: 'https://me.github.io' });
     assert.ok(h['access-control-allow-methods'].includes('DELETE'));
     assert.ok(/X-Class-Token/.test(h['access-control-allow-headers']) && /X-Instructor-Secret/.test(h['access-control-allow-headers']));
-    const env = { CLASSES: fakeKv(), TOKENS: fakeKv(), INSTRUCTOR_SECRET: 's' };
+    const env = { CLASSES: fakeKv(), TOKENS: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's' };
     const made = await (await W.route(req('POST', '/classes', { name: 'Rate class' }, { 'X-Instructor-Secret': 's' }), env)).json();
+    // 60 different students behind one school NAT in one minute: every one of them gets through
     let ok = 0, limited = 0;
-    for (let i = 0; i < 40; i++) { const r = await W.route(req('POST', '/classes/' + made.code + '/snapshots', Object.assign({}, snapAda, { studentId: 's-' + String(i).padStart(10, 'x') })), env); if (r.status === 200) ok++; else if (r.status === 429) limited++; }
-    assert.strictEqual(ok, 30); assert.strictEqual(limited, 10);
+    for (let i = 0; i < 60; i++) { const r = await W.route(req('POST', '/classes/' + made.code + '/snapshots', Object.assign({}, snapAda, { studentId: 's-' + String(i).padStart(10, 'x') })), env); if (r.status === 200) ok++; else if (r.status === 429) limited++; }
+    assert.strictEqual(ok, 60); assert.strictEqual(limited, 0, 'a shared campus IP is not a reason to drop snapshots');
+    // one device hammering: per-(class, student) limit, answered with a retry hint and no 500
+    const first = await (await W.route(req('POST', '/classes/' + made.code + '/snapshots', Object.assign({}, snapAda, { studentId: 's-hammer0001' })), env)).json();
+    ok = 1; limited = 0;
+    for (let i = 0; i < 12; i++) { const r = await W.route(req('POST', '/classes/' + made.code + '/snapshots', withToken(Object.assign({}, snapAda, { studentId: 's-hammer0001' }), first.ownerToken)), env); if (r.status === 200) ok++; else if (r.status === 429) { limited++; assert.strictEqual((await r.json()).retryAfterSec, 60); } }
+    assert.strictEqual(ok, W.SNAP_PER_STUDENT_PER_MIN); assert.strictEqual(limited, 13 - W.SNAP_PER_STUDENT_PER_MIN);
+    assert.strictEqual((await W.route(req('POST', '/classes/' + made.code + '/snapshots', Object.assign({}, snapAda, { studentId: 's-other00001' })), env)).status, 200, 'another student from the same IP is unaffected');
+    // the per-IP bucket still exists as a flood ceiling
+    const envIp = { CLASSES: fakeKv(), TOKENS: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's', RL_SNAP_IP: { async limit() { return { success: false }; } } };
+    const made2 = await (await W.route(req('POST', '/classes', { name: 'Flood class' }, { 'X-Instructor-Secret': 's' }), envIp)).json();
+    assert.strictEqual((await W.route(req('POST', '/classes/' + made2.code + '/snapshots', snapAda), envIp)).status, 429);
+    assert.ok(W.SNAP_PER_IP_PER_MIN >= 500 && W.SNAP_PER_STUDENT_PER_MIN <= 10);
+  });
+
+  test('worker: a student record belongs to the device that created it (ownerToken), and the server clock wins', async () => {
+    const env = { CLASSES: fakeKv(), TOKENS: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's' };
+    const made = await (await W.route(req('POST', '/classes', { name: 'Owner class' }, { 'X-Instructor-Secret': 's' }), env)).json();
+    const path = '/classes/' + made.code + '/snapshots';
+    const auth = { 'X-Instructor-Secret': 's' };
+    // first post mints a token and returns it exactly once
+    let r = await W.route(req('POST', path, snapAda), env);
+    assert.strictEqual(r.status, 200); const first = await r.json();
+    assert.match(first.ownerToken, W.OWNER_TOKEN_RE);
+    const stored = JSON.parse(env.CLASSES.m.get(`student:${made.code}:${snapAda.studentId}`));
+    assert.ok(stored.owner && stored.owner !== first.ownerToken && !stored.owner.includes(first.ownerToken), 'only an HMAC of the token is stored');
+    assert.strictEqual(stored.owner, await W.snapshotOwner(env, made.code, snapAda.studentId, first.ownerToken));
+    // the attacker from the finding: knows the code and the id, forges a far-future updatedAt
+    const forged = { studentId: snapAda.studentId, lessonsDone: [], displayName: 'Alice is a cheater', updatedAt: '2999-01-01T00:00:00Z' };
+    r = await W.route(req('POST', path, forged), env);
+    assert.strictEqual(r.status, 409); assert.strictEqual((await r.json()).ownerMismatch, true);
+    r = await W.route(req('POST', path, withToken(forged, 'wrong-token-wrong-token-wrong-1')), env);
+    assert.strictEqual(r.status, 409, 'a wrong token is refused too');
+    let roster = await (await W.route(req('GET', '/classes/' + made.code + '/roster', undefined, auth), env)).json();
+    assert.strictEqual(roster.students.length, 1);
+    assert.strictEqual(roster.students[0].displayName, 'Ada', 'the victim record is untouched');
+    assert.strictEqual(roster.students[0].lessonsDone.length, snapAda.lessonsDone.length);
+    assert.ok(!('owner' in roster.students[0]), 'the owner value never leaves the server');
+    // the real device updates with its token; no new token is handed out
+    r = await W.route(req('POST', path, withToken(Object.assign({}, snapAda, { displayName: 'Ada L.', updatedAt: '2999-01-01T00:00:00Z' }), first.ownerToken)), env);
+    assert.strictEqual(r.status, 200); const second = await r.json();
+    assert.ok(!('ownerToken' in second), 'token returned only on the first snapshot');
+    const saved = JSON.parse(env.CLASSES.m.get(`student:${made.code}:${snapAda.studentId}`));
+    assert.strictEqual(saved.displayName, 'Ada L.');
+    assert.strictEqual(saved.updatedAt, saved.receivedAt, 'updatedAt is the server clock');
+    assert.ok(Date.parse(saved.updatedAt) < Date.now() + 5000 && Date.parse(saved.updatedAt) > Date.now() - 60000);
+    assert.strictEqual(saved.clientUpdatedAt, null, 'a future client timestamp is dropped, not stored');
+    assert.strictEqual(saved.firstSeenAt, stored.receivedAt, 'firstSeenAt survives updates');
+    const ts = new Date(Date.now() - 60000).toISOString();
+    r = await W.route(req('POST', path, withToken(Object.assign({}, snapAda, { updatedAt: ts }), first.ownerToken)), env);
+    assert.strictEqual(JSON.parse(env.CLASSES.m.get(`student:${made.code}:${snapAda.studentId}`)).clientUpdatedAt, ts, 'a sane client timestamp is kept for information');
+    assert.strictEqual(W.clampClientTime('garbage', Date.now()), null);
+    assert.strictEqual(W.clampClientTime(new Date(Date.now() + 4 * 60000).toISOString(), Date.now()) !== null, true, 'a few minutes of clock skew are fine');
+    // a record written before ownership existed (no owner) is claimed by the next snapshot and bound from then on
+    env.CLASSES.m.set(`student:${made.code}:s-legacy0001`, JSON.stringify({ v: 1, studentId: 's-legacy0001', displayName: 'Old', lessonsDone: [], quizScores: {}, drills: [], paper: {}, receivedAt: '2026-01-01T00:00:00Z' }));
+    r = await W.route(req('POST', path, Object.assign({}, snapAda, { studentId: 's-legacy0001' })), env);
+    assert.strictEqual(r.status, 200); const legacy = await r.json(); assert.match(legacy.ownerToken, W.OWNER_TOKEN_RE);
+    assert.strictEqual((await W.route(req('POST', path, Object.assign({}, snapAda, { studentId: 's-legacy0001' })), env)).status, 409);
+    assert.strictEqual((await W.route(req('POST', path, withToken(Object.assign({}, snapAda, { studentId: 's-legacy0001' }), legacy.ownerToken)), env)).status, 200);
+    // without HMAC_SECRET ownership still works (sha256 of a 24-byte random token)
+    const envNoHmac = { CLASSES: fakeKv(), TOKENS: fakeKv(), INSTRUCTOR_SECRET: 's' };
+    const made2 = await (await W.route(req('POST', '/classes', { name: 'No hmac' }, { 'X-Instructor-Secret': 's' }), envNoHmac)).json();
+    const t = (await (await W.route(req('POST', '/classes/' + made2.code + '/snapshots', snapAda), envNoHmac)).json()).ownerToken;
+    assert.strictEqual((await W.route(req('POST', '/classes/' + made2.code + '/snapshots', snapAda), envNoHmac)).status, 409);
+    assert.strictEqual((await W.route(req('POST', '/classes/' + made2.code + '/snapshots', withToken(snapAda, t)), envNoHmac)).status, 200);
+  });
+
+  test('worker: roster is capped per class, paginated, served from KV metadata in summary view; bulk delete clears a flood', async () => {
+    const env = { CLASSES: fakeKv(), TOKENS: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's' };
+    const auth = { 'X-Instructor-Secret': 's' };
+    const made = await (await W.route(req('POST', '/classes', { name: 'Big class' }, { 'X-Instructor-Secret': 's' }), env)).json();
+    const path = '/classes/' + made.code + '/snapshots';
+    // the per-class "new ids per minute" limit exists; lift it for the flood by honouring a permissive binding
+    env.RL_SNAP_NEW = { async limit() { return { success: true }; } };
+    // a prankster posts MAX_ROSTER ids that sort before every real id
+    for (let i = 0; i < W.MAX_ROSTER; i++) {
+      const r = await W.route(req('POST', path, { studentId: 's-0flood' + String(i).padStart(4, '0'), lessonsDone: [] }), env);
+      assert.strictEqual(r.status, 200, 'flood id ' + i);
+    }
+    // the class is now full: a genuine new student is told so (409 {full}), not silently shadowed
+    let r = await W.route(req('POST', path, snapGrace), env);
+    assert.strictEqual(r.status, 409); assert.strictEqual((await r.json()).full, true);
+    assert.strictEqual([...env.CLASSES.m.keys()].filter(k => k.startsWith('student:')).length, W.MAX_ROSTER);
+    // existing students keep syncing even when the class is full
+    const flood0 = env.CLASSES.m.get(`student:${made.code}:s-0flood0000`);
+    assert.ok(flood0);
+    // full roster view is paginated: 40 per page by default, max 100, cursor passed through
+    r = await W.route(req('GET', '/classes/' + made.code + '/roster', undefined, auth), env);
+    assert.strictEqual(r.status, 200); let page = await r.json();
+    assert.strictEqual(page.view, 'full'); assert.strictEqual(page.students.length, W.ROSTER_PAGE_DEFAULT); assert.strictEqual(page.hasMore, true); assert.ok(page.cursor);
+    assert.ok(Array.isArray(page.students[0].lessonsDone), 'full snapshots');
+    let seen = page.students.length, pages = 1, cursor = page.cursor;
+    while (cursor) {
+      page = await (await W.route(req('GET', '/classes/' + made.code + '/roster?limit=100&cursor=' + encodeURIComponent(cursor), undefined, auth), env)).json();
+      seen += page.students.length; pages++; cursor = page.cursor;
+      assert.ok(page.students.length <= W.ROSTER_PAGE_MAX);
+    }
+    assert.strictEqual(seen, W.MAX_ROSTER); assert.strictEqual(pages, 1 + Math.ceil((W.MAX_ROSTER - W.ROSTER_PAGE_DEFAULT) / W.ROSTER_PAGE_MAX));
+    assert.strictEqual((await W.route(req('GET', '/classes/' + made.code + '/roster?limit=1000', undefined, auth), env).then(x => x.json())).students.length, W.ROSTER_PAGE_MAX, 'limit is clamped');
+    assert.strictEqual((await W.route(req('GET', '/classes/' + made.code + '/roster?cursor=' + encodeURIComponent('<script>'), undefined, auth), env)).status, 400);
+    // summary view: the whole class in one list() call, zero gets, rows ≤ 1 KB each, no owner value
+    const gets = []; const realGet = env.CLASSES.get.bind(env.CLASSES); env.CLASSES.get = async k => { gets.push(k); return realGet(k); };
+    r = await W.route(req('GET', '/classes/' + made.code + '/roster?view=summary', undefined, auth), env);
+    page = await r.json(); env.CLASSES.get = realGet;
+    assert.strictEqual(page.view, 'summary'); assert.strictEqual(page.students.length, W.MAX_ROSTER); assert.strictEqual(page.hasMore, false);
+    assert.deepStrictEqual(gets.filter(k => k.startsWith('student:')), [], 'summary rows come from metadata, not per-student gets');
+    const row = page.students[0];
+    assert.strictEqual(row.v, 2); assert.strictEqual(row.studentId, 's-0flood0000'); assert.ok('lessonsCount' in row && 'quizAvg' in row && 'updatedAt' in row && !('owner' in row) && !('lessonsDone' in row));
+    // a summary row never exceeds KV's 1 KB metadata limit, even for a maxed-out snapshot
+    const fat = W.sanitizeSnapshot(Object.assign({}, snapGrace, { displayName: 'N'.repeat(40), lessonsDone: Array.from({ length: 400 }, (_, i) => 'lesson-' + i), certificate: { id: 'BT-2026-ABCDEF', date: '2026-01-01' } }));
+    fat.receivedAt = fat.updatedAt = new Date().toISOString();
+    assert.ok(JSON.stringify(W.rosterRow(fat)).length <= W.ROSTER_META_MAX_BYTES);
+    assert.strictEqual(W.rosterRow(fat).lessonsCount, 400); assert.strictEqual(W.rosterRow(fat).quizAvg, 90);
+    // one student's full record on demand
+    r = await W.route(req('GET', '/classes/' + made.code + '/students/s-0flood0007', undefined, auth), env);
+    assert.strictEqual(r.status, 200); const one = await r.json(); assert.strictEqual(one.student.studentId, 's-0flood0007'); assert.ok(!('owner' in one.student));
+    assert.strictEqual((await W.route(req('GET', '/classes/' + made.code + '/students/s-nobody001', undefined, auth), env)).status, 404);
+    assert.strictEqual((await W.route(req('GET', '/classes/' + made.code + '/students/s-0flood0007'), env)).status, 403, 'instructor only');
+    // bulk delete by ids, then {all:true} in pages until the class is empty
+    r = await W.route(req('DELETE', '/classes/' + made.code + '/students', { ids: ['s-0flood0000', 's-0flood0001', 'bad id!', 's-0flood0000'] }, auth), env);
+    assert.strictEqual(r.status, 200); let d = await r.json();
+    assert.strictEqual(d.removed, 2); assert.strictEqual(d.remaining, W.MAX_ROSTER - 2);
+    assert.ok(env.CLASSES.m.has(`removed:${made.code}:s-0flood0000`) && !env.CLASSES.m.has(`student:${made.code}:s-0flood0000`));
+    assert.strictEqual((await W.route(req('DELETE', '/classes/' + made.code + '/students', { ids: Array.from({ length: W.BULK_DELETE_MAX + 1 }, (_, i) => 's-x' + String(i).padStart(8, '0')) }, auth), env)).status, 400);
+    assert.strictEqual((await W.route(req('DELETE', '/classes/' + made.code + '/students', { nope: 1 }, auth), env)).status, 400);
+    assert.strictEqual((await W.route(req('DELETE', '/classes/' + made.code + '/students', { all: true }), env)).status, 403, 'instructor only');
+    let calls = 0;
+    do { d = await (await W.route(req('DELETE', '/classes/' + made.code + '/students', { all: true }, auth), env)).json(); calls++; assert.ok(d.removed <= W.BULK_DELETE_MAX); } while (d.hasMore && calls < 100);
+    assert.strictEqual(d.remaining, 0); assert.strictEqual(calls, Math.ceil((W.MAX_ROSTER - 2) / W.BULK_DELETE_MAX), 'the last page reports hasMore:false, no empty extra call');
+    assert.strictEqual([...env.CLASSES.m.keys()].filter(k => k.startsWith('student:')).length, 0);
+    // now Grace can join, and the flood ids are locked out (410) rather than re-filling the class
+    assert.strictEqual((await W.route(req('POST', path, snapGrace), env)).status, 200);
+    assert.strictEqual((await W.route(req('POST', path, { studentId: 's-0flood0003', lessonsDone: [] }), env)).status, 410);
+    // a legacy record without metadata still appears in the summary view (fetched once)
+    env.CLASSES.m.set(`student:${made.code}:s-legacy0002`, JSON.stringify({ v: 1, studentId: 's-legacy0002', displayName: 'Old', lessonsDone: ['m1-l1'], quizScores: { 'm1-l1': 80 }, drills: [], paper: {}, receivedAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }));
+    page = await (await W.route(req('GET', '/classes/' + made.code + '/roster?view=summary', undefined, auth), env)).json();
+    assert.deepStrictEqual(page.students.map(s => s.studentId).sort(), ['s-legacy0002', snapGrace.studentId].sort());
+    assert.strictEqual(page.students.find(s => s.studentId === 's-legacy0002').quizAvg, 80);
+  });
+
+  test('worker: malformed percent-encoding in a student id is a 400, never a thrown URIError', async () => {
+    const env = { CLASSES: fakeKv(), TOKENS: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's' };
+    const auth = { 'X-Instructor-Secret': 's' };
+    const made = await (await W.route(req('POST', '/classes', { name: 'Decode class' }, { 'X-Instructor-Secret': 's' }), env)).json();
+    for (const bad of ['%E0%A4%A', '%', '%ZZ', 'a%2Fb', 'bad%20id']) {
+      const r = await W.route(req('DELETE', '/classes/' + made.code + '/students/' + bad, undefined, auth), env);
+      assert.strictEqual(r.status, 400, bad); assert.strictEqual((await r.json()).error, 'Invalid student id.');
+      assert.strictEqual((await W.route(req('GET', '/classes/' + made.code + '/students/' + bad, undefined, auth), env)).status, 400, 'GET ' + bad);
+    }
+    assert.strictEqual(W.studentIdFromPath('%E0%A4%A'), null); assert.strictEqual(W.studentIdFromPath('s-abc123xyz0'), 's-abc123xyz0');
+    assert.strictEqual(W.studentIdFromPath('s%2Dabc123xyz0'), 's-abc123xyz0', 'a harmlessly encoded valid id still works');
+    // the fetch handler path: no 500 either, with DEBUG on
+    const mod = await import(path.join(__dirname, '..', 'server', 'worker.js'));
+    const res = await mod.default.fetch(req('DELETE', '/classes/' + made.code + '/students/%E0%A4%A', undefined, auth), Object.assign({ DEBUG: 'true' }, env));
+    assert.strictEqual(res.status, 400);
+  });
+
+  test('worker: a classroom-only deployment (CLASSES, no TOKENS) works, and no counter store at all is a clear 503', async () => {
+    // CLASSES alone: counters live in CLASSES under rl:, every classroom route works
+    const env = { CLASSES: fakeKv(), HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's' };
+    assert.strictEqual(W.rateLimitStore(env).name, 'CLASSES');
+    let r = await W.route(req('POST', '/classes', { name: 'School class' }, { 'X-Instructor-Secret': 's' }), env);
+    assert.strictEqual(r.status, 201, 'class creation is not a bogus 429'); const made = await r.json();
+    r = await W.route(req('POST', '/classes/' + made.code + '/snapshots', snapAda), env);
+    assert.strictEqual(r.status, 200);
+    assert.ok([...env.CLASSES.m.keys()].some(k => k.startsWith('rl:snap')), 'counters in CLASSES');
+    assert.ok(![...env.CLASSES.m.keys()].some(k => k.startsWith('rl:') && /:(class|student|removed):/.test(k)));
+    r = await W.route(req('GET', '/classes/' + made.code + '/roster?view=summary', undefined, { 'X-Instructor-Secret': 's' }), env);
+    assert.strictEqual(r.status, 200); assert.strictEqual((await r.json()).count, 1);
+    const health = await (await W.route(req('GET', '/health'), env)).json();
+    assert.strictEqual(health.classroom, true); assert.strictEqual(health.rateLimitStore, 'CLASSES');
+    // neither TOKENS nor CLASSES: write routes say what is missing instead of 429
+    const bare = { HMAC_SECRET: 'hs', INSTRUCTOR_SECRET: 's', MEMBERS: fakeKv(), LEADERBOARD: fakeKv() };
+    assert.strictEqual(W.rateLimitStore(bare), null);
+    r = await W.route(req('POST', '/leaderboard', { classCode: 'ABC', nickname: 'Ada', stats: {} }), bare);
+    assert.strictEqual(r.status, 503); const body = await r.json();
+    assert.strictEqual(body.notConfigured, true); assert.match(body.error, /TOKENS/);
+    assert.strictEqual((await (await W.route(req('GET', '/health'), bare)).json()).rateLimitStore, null);
+    assert.strictEqual((await W.route(req('GET', '/leaderboard?code=ABC'), bare)).status, 200, 'read routes still fail open');
+    // a CLASSES namespace that cannot list is not "ready" either
+    assert.strictEqual(W.classesReady({ CLASSES: { async get() { return null; } } }), false);
+    assert.strictEqual(W.classesReady({ CLASSES: fakeKv() }), true);
+    // rateLimit itself throws a tagged error (route() converts it); failOpen buckets still pass
+    await assert.rejects(() => W.rateLimit(bare, req('GET', '/x'), 'snap', 5), e => e.notConfigured === true && e instanceof W.NotConfiguredError);
+    assert.strictEqual(await W.rateLimit(bare, req('GET', '/x'), 'verify', 5, { failOpen: true }), true);
   });
 })();
 

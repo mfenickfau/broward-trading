@@ -42,8 +42,10 @@
   "terms": [
     {
       "id": "plus-di-minus-di",
-      "term": "+DI and -DI",
-      "aliases": [],
+      "term": "+DI y -DI",
+      "aliases": [
+        "+DI and -DI"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Las líneas de indicador direccional que alimentan el ADX. +DI mide el movimiento al alza y -DI el movimiento a la baja; +DI por encima de -DI es alcista y los cruces entre ambas son señales de tendencia, que conviene tomar solo cuando el ADX está por encima de 20-25.",
@@ -55,8 +57,12 @@
     },
     {
       "id": "after-hours",
-      "term": "After-hours session",
-      "aliases": [],
+      "term": "Sesión after-hours (post-mercado)",
+      "aliases": [
+        "After-hours session",
+        "after hours",
+        "post-mercado"
+      ],
       "category": "markets",
       "lesson": "m1-l2",
       "definition": "La negociación después del cierre de las 4:00 p.m., normalmente hasta las 8:00 p.m., hora de Nueva York. Muchas empresas publican sus resultados en esta ventana, y la poca liquidez hace que los movimientos se exageren.",
@@ -69,8 +75,12 @@
     },
     {
       "id": "american-style",
-      "term": "American vs European style",
-      "aliases": [],
+      "term": "Estilo americano vs europeo",
+      "aliases": [
+        "American vs European style",
+        "estilo americano",
+        "estilo europeo"
+      ],
       "category": "options",
       "lesson": "m5-l5",
       "definition": "Las opciones de estilo americano pueden ejercerse en cualquier momento antes del vencimiento; las de estilo europeo solo al vencimiento. Las opciones sobre acciones de EE. UU. son americanas; la mayoría de las opciones sobre índices (como el SPX) son europeas.",
@@ -83,9 +93,13 @@
     },
     {
       "id": "ask",
-      "term": "Ask (offer)",
+      "term": "Ask (precio de venta, offer)",
       "aliases": [
-        "offer"
+        "offer",
+        "Ask (offer)",
+        "Ask",
+        "precio de venta",
+        "oferta de venta"
       ],
       "category": "markets",
       "lesson": "m1-l3",
@@ -99,8 +113,10 @@
     },
     {
       "id": "assignment",
-      "term": "Assignment",
-      "aliases": [],
+      "term": "Asignación (assignment)",
+      "aliases": [
+        "Assignment"
+      ],
       "category": "options",
       "lesson": "m5-l5",
       "definition": "Lo que le ocurre al vendedor de una opción cuando el comprador la ejerce: el vendedor debe entregar las acciones (call vendido) o comprarlas (put vendido) al precio de ejercicio. El riesgo de asignación (assignment) aumenta a medida que se acerca el vencimiento y en las opciones ITM.",
@@ -114,12 +130,16 @@
     },
     {
       "id": "at-the-money",
-      "term": "At the money (ATM)",
-      "aliases": [],
+      "term": "En el dinero (at the money, ATM)",
+      "aliases": [
+        "At the money (ATM)",
+        "At the money",
+        "ATM"
+      ],
       "category": "options",
       "lesson": "m5-l2",
-      "definition": "Una opción cuyo precio de ejercicio está en el precio actual de la acción o muy cerca de él. Las opciones ATM tienen el mayor valor extrínseco, una delta cercana a 0.50 y la pérdida de valor temporal más rápida.",
-      "example": "Con la acción en $100.40, el strike de $100 está at the money.",
+      "definition": "Una opción cuyo precio de ejercicio está en el precio actual de la acción o muy cerca de él. Las opciones ATM tienen el mayor valor extrínseco, un delta cercano a 0.50 y la pérdida de valor temporal más rápida.",
+      "example": "Con la acción en $100.40, el strike de $100 está en el dinero (at the money).",
       "related": [
         "moneyness",
         "theta",
@@ -129,8 +149,11 @@
     },
     {
       "id": "adx",
-      "term": "Average Directional Index (ADX)",
-      "aliases": [],
+      "term": "ADX (índice direccional promedio)",
+      "aliases": [
+        "Average Directional Index (ADX)",
+        "Average Directional Index"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Una lectura de 0 a 100 de la fuerza de la tendencia, sin importar su dirección. Por debajo de 20 no hay tendencia (rangos, señales falsas); por encima de 25 hay una tendencia que vale la pena seguir. Las líneas complementarias +DI y -DI muestran la dirección.",
@@ -144,8 +167,11 @@
     },
     {
       "id": "atr",
-      "term": "Average True Range (ATR)",
-      "aliases": [],
+      "term": "Rango verdadero promedio (ATR)",
+      "aliases": [
+        "Average True Range (ATR)",
+        "Average True Range"
+      ],
       "category": "indicators",
       "lesson": "m3-l3",
       "definition": "El promedio, sobre N barras (normalmente 14), del rango verdadero: el mayor entre máximo menos mínimo, máximo menos cierre anterior y cierre anterior menos mínimo. Mide la volatilidad en unidades de precio y es la forma estándar de dimensionar los stops.",
@@ -158,14 +184,18 @@
     },
     {
       "id": "average-win-loss",
-      "term": "Average win / average loss",
+      "term": "Ganancia media / pérdida media",
       "aliases": [
-        "payoff ratio"
+        "payoff ratio",
+        "Average win / average loss",
+        "ratio ganancia/pérdida",
+        "ganancia media",
+        "pérdida media"
       ],
       "category": "risk",
       "lesson": "m4-l2",
-      "definition": "La ganancia media de las operaciones ganadoras y la pérdida media de las perdedoras. Junto con la tasa de acierto determinan la expectativa; la relación entre ambas es el ratio de pago (payoff ratio).",
-      "example": "Ganadoras con un promedio de $300 y perdedoras con un promedio de $100 dan un ratio de pago de 3.0.",
+      "definition": "La ganancia media de las operaciones ganadoras y la pérdida media de las perdedoras. Junto con la tasa de acierto determinan la expectativa; la relación entre ambas es el ratio ganancia/pérdida (payoff ratio).",
+      "example": "Ganadoras con un promedio de $300 y perdedoras con un promedio de $100 dan un ratio ganancia/pérdida de 3.0.",
       "related": [
         "expectancy",
         "win-rate",
@@ -175,7 +205,9 @@
     {
       "id": "backtest",
       "term": "Backtest",
-      "aliases": [],
+      "aliases": [
+        "prueba histórica"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "Ejecutar las reglas de una estrategia sobre barras históricas para ver cómo habría funcionado. Te dice si la idea funcionó alguna vez y cómo se sintieron sus drawdowns; no promete nada sobre el futuro.",
@@ -189,8 +221,10 @@
     },
     {
       "id": "bear-put-spread",
-      "term": "Bear put spread",
-      "aliases": [],
+      "term": "Bear put spread (spread bajista de puts)",
+      "aliases": [
+        "Bear put spread"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Comprar un put de strike más alto y vender un put de strike más bajo, con el mismo vencimiento. Una apuesta de riesgo definido a una caída moderada: la pérdida máxima es el débito y la ganancia máxima es la diferencia entre strikes menos el débito.",
@@ -203,8 +237,10 @@
     },
     {
       "id": "bearish-engulfing",
-      "term": "Bearish engulfing",
-      "aliases": [],
+      "term": "Envolvente bajista (bearish engulfing)",
+      "aliases": [
+        "Bearish engulfing"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Un patrón de reversión de dos velas después de una subida: una vela verde pequeña seguida de una vela roja grande cuyo cuerpo cubre por completo el cuerpo anterior.",
@@ -217,8 +253,11 @@
     },
     {
       "id": "benchmark",
-      "term": "Benchmark",
-      "aliases": [],
+      "term": "Benchmark (referencia)",
+      "aliases": [
+        "Benchmark",
+        "índice de referencia"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "La alternativa pasiva contra la que comparas una estrategia, normalmente comprar y mantener el mismo símbolo o un ETF de índice como SPY. Superar el cero es fácil; superar el benchmark es la verdadera prueba.",
@@ -245,8 +284,12 @@
     },
     {
       "id": "bid",
-      "term": "Bid",
-      "aliases": [],
+      "term": "Bid (precio de compra)",
+      "aliases": [
+        "Bid",
+        "precio de compra",
+        "oferta de compra"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "El precio más alto que un comprador está dispuesto a pagar en este momento por un valor. Cuando vendes con una orden de mercado recibes (aproximadamente) el bid.",
@@ -259,8 +302,12 @@
     },
     {
       "id": "spread",
-      "term": "Bid-ask spread",
-      "aliases": [],
+      "term": "Spread bid-ask (horquilla)",
+      "aliases": [
+        "Bid-ask spread",
+        "spread",
+        "horquilla"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "La diferencia entre el mejor ask y el mejor bid. Es un costo inmediato de operar: comprar al ask y vender al bid pierde el spread. Las acciones líquidas tienen spreads de uno o dos centavos; las poco negociadas pueden tener spreads del 1% o más.",
@@ -274,8 +321,11 @@
     },
     {
       "id": "black-scholes",
-      "term": "Black-Scholes model",
-      "aliases": [],
+      "term": "Modelo Black-Scholes",
+      "aliases": [
+        "Black-Scholes model",
+        "Black-Scholes"
+      ],
       "category": "options",
       "lesson": "m5-l3",
       "definition": "La fórmula estándar para valorar opciones europeas a partir del precio de la acción, el strike, el tiempo hasta el vencimiento, la tasa de interés y la volatilidad. El laboratorio de opciones la usa para generar precios sintéticos y las griegas.",
@@ -288,8 +338,10 @@
     },
     {
       "id": "bollinger-bands",
-      "term": "Bollinger Bands",
-      "aliases": [],
+      "term": "Bandas de Bollinger",
+      "aliases": [
+        "Bollinger Bands"
+      ],
       "category": "indicators",
       "lesson": "m3-l3",
       "definition": "Una SMA de 20 periodos con bandas a dos desviaciones estándar por encima y por debajo. Las bandas se ensanchan cuando la volatilidad sube y se contraen cuando baja; alrededor del 90-95% de los cierres quedan dentro de ellas.",
@@ -303,8 +355,11 @@
     },
     {
       "id": "bollinger-bounce",
-      "term": "Bollinger bounce strategy",
-      "aliases": [],
+      "term": "Estrategia de rebote en Bollinger",
+      "aliases": [
+        "Bollinger bounce strategy",
+        "rebote en Bollinger"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Comprar cuando el precio toca o cierra por debajo de la banda inferior de Bollinger y vender cuando vuelve a la banda media o toca la superior. Una regla de reversión a la media que asume que el rango se mantiene.",
@@ -317,8 +372,14 @@
     },
     {
       "id": "bollinger-squeeze",
-      "term": "Bollinger squeeze (bandwidth)",
-      "aliases": [],
+      "term": "Compresión de Bollinger (Bollinger squeeze)",
+      "aliases": [
+        "Bollinger squeeze (bandwidth)",
+        "Bollinger squeeze",
+        "squeeze",
+        "ancho de banda",
+        "bandwidth"
+      ],
       "category": "indicators",
       "lesson": "m3-l3",
       "definition": "Cuando las bandas de Bollinger se estrechan hasta un ancho de banda inusualmente pequeño, lo que significa que la volatilidad se ha secado. Los squeezes suelen preceder movimientos bruscos, aunque no dicen en qué dirección.",
@@ -332,8 +393,11 @@
     },
     {
       "id": "borrow-fee",
-      "term": "Borrow fee",
-      "aliases": [],
+      "term": "Costo de préstamo de acciones (borrow fee)",
+      "aliases": [
+        "Borrow fee",
+        "costo de préstamo"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "El interés que pagan los vendedores en corto por tomar prestadas las acciones, cotizado como tasa anual. Para empresas grandes y líquidas es casi cero; para nombres difíciles de prestar puede superar el 50% anual y devorar cualquier ganancia.",
@@ -345,8 +409,10 @@
     },
     {
       "id": "breakdown",
-      "term": "Breakdown",
-      "aliases": [],
+      "term": "Ruptura a la baja (breakdown)",
+      "aliases": [
+        "Breakdown"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "El reflejo bajista de una ruptura: un movimiento por debajo del soporte que señala que los vendedores han tomado el control. Quienes están comprados suelen colocar sus stops justo debajo del soporte para salir en una ruptura bajista (breakdown).",
@@ -359,8 +425,12 @@
     },
     {
       "id": "breakeven",
-      "term": "Breakeven (options)",
-      "aliases": [],
+      "term": "Punto de equilibrio (breakeven, opciones)",
+      "aliases": [
+        "Breakeven (options)",
+        "Breakeven",
+        "punto de equilibrio"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "El precio de la acción al vencimiento en el que una posición de opciones ni gana ni pierde dinero. Para un call comprado es el strike más la prima; para un put comprado, el strike menos la prima.",
@@ -373,8 +443,11 @@
     },
     {
       "id": "breakout",
-      "term": "Breakout",
-      "aliases": [],
+      "term": "Ruptura (breakout)",
+      "aliases": [
+        "Breakout",
+        "ruptura alcista"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Un movimiento a través de la resistencia (o fuera de un rango) que señala que los compradores han superado a los vendedores que venían limitando el precio. La confirmación por volumen separa las rupturas (breakouts) reales de las falsas.",
@@ -388,8 +461,11 @@
     },
     {
       "id": "breakout-strategy",
-      "term": "Breakout strategy",
-      "aliases": [],
+      "term": "Estrategia de ruptura (breakout)",
+      "aliases": [
+        "Breakout strategy",
+        "estrategia de breakout"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Comprar cuando el precio cierra por encima del máximo más alto de las últimas N barras (y vender en un cierre por debajo del mínimo más bajo). Captura las nuevas tendencias temprano y sufre muchas rupturas falsas.",
@@ -403,8 +479,13 @@
     },
     {
       "id": "broker",
-      "term": "Broker",
-      "aliases": [],
+      "term": "Bróker (corredor de bolsa)",
+      "aliases": [
+        "Broker",
+        "corredor",
+        "corredor de bolsa",
+        "casa de bolsa"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "La firma autorizada que custodia tu cuenta y envía tus órdenes a las bolsas o a los creadores de mercado. El paper trading simula un bróker para que puedas practicar sin arriesgar dinero.",
@@ -417,8 +498,10 @@
     },
     {
       "id": "bull-call-spread",
-      "term": "Bull call spread",
-      "aliases": [],
+      "term": "Bull call spread (spread alcista de calls)",
+      "aliases": [
+        "Bull call spread"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Comprar un call de strike más bajo y vender un call de strike más alto, con el mismo vencimiento. Una forma más barata y con tope de apostar a una subida moderada: la pérdida máxima es el débito neto y la ganancia máxima es la diferencia entre strikes menos el débito.",
@@ -432,8 +515,10 @@
     },
     {
       "id": "bullish-engulfing",
-      "term": "Bullish engulfing",
-      "aliases": [],
+      "term": "Envolvente alcista (bullish engulfing)",
+      "aliases": [
+        "Bullish engulfing"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Un patrón de reversión de dos velas después de una caída: una vela roja pequeña seguida de una vela verde grande cuyo cuerpo cubre por completo el cuerpo anterior. Muestra a los compradores superando a los vendedores.",
@@ -446,8 +531,11 @@
     },
     {
       "id": "buy-and-hold",
-      "term": "Buy and hold",
-      "aliases": [],
+      "term": "Comprar y mantener (buy and hold)",
+      "aliases": [
+        "Buy and hold",
+        "buy-and-hold"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "Comprar al inicio del periodo y no vender nunca. Es el benchmark que toda estrategia activa debe superar después de costos; muchos backtests se ven bien hasta que se comparan con él.",
@@ -460,8 +548,10 @@
     },
     {
       "id": "cagr",
-      "term": "CAGR",
-      "aliases": [],
+      "term": "CAGR (tasa de crecimiento anual compuesta)",
+      "aliases": [
+        "CAGR"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "Tasa de crecimiento anual compuesto: el retorno anual constante que convertiría el capital inicial en el capital final a lo largo del periodo. Permite comparar backtests de distinta duración.",
@@ -474,8 +564,11 @@
     },
     {
       "id": "call",
-      "term": "Call option",
-      "aliases": [],
+      "term": "Opción call",
+      "aliases": [
+        "Call option",
+        "call"
+      ],
       "category": "options",
       "lesson": "m5-l1",
       "definition": "El derecho a comprar 100 acciones al precio de ejercicio antes del vencimiento. Los calls ganan valor cuando la acción sube; la pérdida del comprador se limita a la prima pagada.",
@@ -490,8 +583,11 @@
     },
     {
       "id": "candle-body",
-      "term": "Candle body",
-      "aliases": [],
+      "term": "Cuerpo de la vela",
+      "aliases": [
+        "Candle body",
+        "cuerpo"
+      ],
       "category": "charts",
       "lesson": "m2-l1",
       "definition": "La parte gruesa de una vela, entre la apertura y el cierre. Un cuerpo largo muestra una convicción fuerte en una dirección; un cuerpo diminuto significa que compradores y vendedores terminaron más o menos donde empezaron.",
@@ -504,9 +600,12 @@
     },
     {
       "id": "candlestick",
-      "term": "Candlestick",
+      "term": "Vela japonesa (candlestick)",
       "aliases": [
-        "candle"
+        "candle",
+        "Candlestick",
+        "vela",
+        "velas"
       ],
       "category": "charts",
       "lesson": "m2-l1",
@@ -521,8 +620,11 @@
     },
     {
       "id": "candle-patterns",
-      "term": "Candlestick patterns",
-      "aliases": [],
+      "term": "Patrones de velas",
+      "aliases": [
+        "Candlestick patterns",
+        "patrón de velas"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Formas reconocibles de una a tres velas que describen la batalla entre compradores y vendedores. Funcionan mejor en soportes o resistencias y cuando la vela siguiente las confirma; por sí solas son señales débiles.",
@@ -536,8 +638,10 @@
     },
     {
       "id": "catalyst",
-      "term": "Catalyst",
-      "aliases": [],
+      "term": "Catalizador",
+      "aliases": [
+        "Catalyst"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "Un evento programado o sorpresivo que le da al mercado una razón para revalorar una acción: resultados, una decisión de la FDA, un anuncio de tasas, el lanzamiento de un producto, una demanda.",
@@ -550,8 +654,10 @@
     },
     {
       "id": "channel",
-      "term": "Channel",
-      "aliases": [],
+      "term": "Canal",
+      "aliases": [
+        "Channel"
+      ],
       "category": "charts",
       "lesson": "m2-l3",
       "definition": "Dos líneas de tendencia paralelas que contienen la acción del precio. Los traders compran cerca de la línea inferior y venden cerca de la superior en un canal alcista o lateral.",
@@ -564,8 +670,11 @@
     },
     {
       "id": "chart-patterns",
-      "term": "Chart patterns",
-      "aliases": [],
+      "term": "Patrones gráficos (chart patterns)",
+      "aliases": [
+        "Chart patterns",
+        "figuras chartistas"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Formas de varias semanas creadas por los giros del precio, como hombro-cabeza-hombro, dobles techos, banderas y triángulos. Se clasifican en patrones de reversión (cambio de tendencia) y de continuación (pausa de la tendencia).",
@@ -579,8 +688,10 @@
     },
     {
       "id": "commission",
-      "term": "Commission",
-      "aliases": [],
+      "term": "Comisión",
+      "aliases": [
+        "Commission"
+      ],
       "category": "orders",
       "lesson": "m1-l5",
       "definition": "Una tarifa que el bróker cobra por operación. Muchos brókers de EE. UU. ya no cobran comisión en acciones, pero los spreads, el deslizamiento (slippage) y las tarifas por contrato de opciones siguen siendo costos reales.",
@@ -593,8 +704,10 @@
     },
     {
       "id": "composite-signal",
-      "term": "Composite signal",
-      "aliases": [],
+      "term": "Señal compuesta",
+      "aliases": [
+        "Composite signal"
+      ],
       "category": "indicators",
       "lesson": "m3-l5",
       "definition": "La insignia BUY / SELL / HOLD del panel, construida al puntuar varios indicadores (tendencia, momentum, volatilidad, volumen, patrones) y sumar puntos a favor y en contra. Cada razón se lista para que veas el por qué, no solo el qué.",
@@ -608,8 +721,10 @@
     },
     {
       "id": "confirmation-bias",
-      "term": "Confirmation bias",
-      "aliases": [],
+      "term": "Sesgo de confirmación",
+      "aliases": [
+        "Confirmation bias"
+      ],
       "category": "psychology",
       "lesson": "m4-l3",
       "definition": "Buscar y sobrevalorar la información que coincide con una posición que ya tienes, ignorando lo que la contradice. Las reglas de salida escritas existen para protegerte de él.",
@@ -622,8 +737,10 @@
     },
     {
       "id": "confluence",
-      "term": "Confluence",
-      "aliases": [],
+      "term": "Confluencia",
+      "aliases": [
+        "Confluence"
+      ],
       "category": "indicators",
       "lesson": "m3-l5",
       "definition": "Cuando varias señales independientes coinciden en el mismo lugar y momento, como un retroceso al soporte que coincide con la SMA de 50 días, un retroceso del 61.8% y un RSI en sobreventa. La confluencia mejora las probabilidades; no garantiza nada.",
@@ -636,8 +753,10 @@
     },
     {
       "id": "contract-multiplier",
-      "term": "Contract multiplier",
-      "aliases": [],
+      "term": "Multiplicador del contrato",
+      "aliases": [
+        "Contract multiplier"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "El número de acciones que controla un contrato de opciones: 100 para las opciones estándar sobre acciones de EE. UU. Las primas cotizadas son por acción, así que multiplica por 100 para obtener el costo en dólares.",
@@ -650,8 +769,10 @@
     },
     {
       "id": "correlation",
-      "term": "Correlation",
-      "aliases": [],
+      "term": "Correlación",
+      "aliases": [
+        "Correlation"
+      ],
       "category": "risk",
       "lesson": "m4-l1",
       "definition": "Un número de -1 a +1 que mide qué tan juntos se mueven dos activos. +1 significa en perfecta sincronía, 0 significa sin relación, -1 significa en direcciones opuestas. La página Comparar muestra una matriz de correlación de tus símbolos.",
@@ -665,7 +786,9 @@
     {
       "id": "covered-call",
       "term": "Covered call",
-      "aliases": [],
+      "aliases": [
+        "call cubierto"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Tener 100 acciones y vender un call contra ellas. Cobras la prima como ingreso y conservas las acciones a menos que la acción suba por encima del strike, en cuyo caso te las retiran (son \"llamadas\") con una ganancia limitada.",
@@ -679,8 +802,11 @@
     },
     {
       "id": "crossover",
-      "term": "Crossover",
-      "aliases": [],
+      "term": "Cruce (crossover)",
+      "aliases": [
+        "Crossover",
+        "cruce de medias"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Cuando una línea cruza otra: el precio a través de una media móvil, una media rápida a través de una lenta, o el MACD a través de su línea de señal. Los cruces son señales simples y objetivas, pero llegan con retraso y dan señales falsas en los rangos.",
@@ -694,8 +820,10 @@
     },
     {
       "id": "cup-and-handle",
-      "term": "Cup and handle",
-      "aliases": [],
+      "term": "Taza con asa (cup and handle)",
+      "aliases": [
+        "Cup and handle"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Un patrón de continuación alcista: una caída y recuperación redondeada en forma de U (la taza) seguida de un pequeño retroceso (el asa), y luego una ruptura por encima del borde de la taza.",
@@ -708,8 +836,10 @@
     },
     {
       "id": "data-snooping",
-      "term": "Data snooping",
-      "aliases": [],
+      "term": "Data snooping (sesgo de búsqueda en los datos)",
+      "aliases": [
+        "Data snooping"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Probar muchas ideas sobre los mismos datos hasta que una se ve bien por casualidad. Con suficientes intentos, algo mostrará un backtest espectacular; la solución es hacer menos pruebas, verificar fuera de muestra y tener una razón por la que la regla debería funcionar.",
@@ -722,8 +852,10 @@
     },
     {
       "id": "death-cross",
-      "term": "Death cross",
-      "aliases": [],
+      "term": "Cruce de la muerte (death cross)",
+      "aliases": [
+        "Death cross"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Cuando la SMA de 50 días cruza por debajo de la SMA de 200 días, una señal muy seguida de tendencia bajista de largo plazo. Igual que el cruce dorado, confirma en lugar de predecir.",
@@ -736,8 +868,10 @@
     },
     {
       "id": "defined-risk",
-      "term": "Defined risk",
-      "aliases": [],
+      "term": "Riesgo definido",
+      "aliases": [
+        "Defined risk"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Una posición cuya peor pérdida posible se conoce y está limitada desde que la abres, como una opción comprada o un spread vertical. Las opciones vendidas sin cobertura (naked) y las acciones en corto son de riesgo indefinido.",
@@ -754,8 +888,8 @@
       "aliases": [],
       "category": "options",
       "lesson": "m5-l3",
-      "definition": "Cuánto cambia el precio de una opción por cada $1 de movimiento en la acción, de 0 a 1 para los calls y de 0 a -1 para los puts. También es una probabilidad aproximada de terminar in the money y el equivalente en acciones de la posición.",
-      "example": "Un call con delta 0.40 sube unos $0.40 cuando la acción sube $1 y tiene aproximadamente un 40% de probabilidad de vencer in the money.",
+      "definition": "Cuánto cambia el precio de una opción por cada $1 de movimiento en la acción, de 0 a 1 para los calls y de 0 a -1 para los puts. También es una probabilidad aproximada de terminar dentro del dinero (in the money) y el equivalente en acciones de la posición.",
+      "example": "Un call con delta 0.40 sube unos $0.40 cuando la acción sube $1 y tiene aproximadamente un 40% de probabilidad de vencer dentro del dinero.",
       "related": [
         "greeks",
         "gamma",
@@ -764,8 +898,10 @@
     },
     {
       "id": "demo-mode",
-      "term": "Demo mode",
-      "aliases": [],
+      "term": "Modo demo",
+      "aliases": [
+        "Demo mode"
+      ],
       "category": "portfolio",
       "lesson": "m1-l5",
       "definition": "La fuente de datos sin conexión de Broward Trading: un paseo aleatorio determinista con semilla fija por símbolo, de modo que todos los estudiantes ven las mismas barras y nada depende de una clave de API. Los precios en modo demo son simulados y no son datos reales de mercado.",
@@ -777,8 +913,10 @@
     },
     {
       "id": "discipline",
-      "term": "Discipline",
-      "aliases": [],
+      "term": "Disciplina",
+      "aliases": [
+        "Discipline"
+      ],
       "category": "psychology",
       "lesson": "m4-l5",
       "definition": "Seguir tu plan de trading cuando las emociones te piden lo contrario. La disciplina es una habilidad que se construye en el paper trading, tratando las reglas simuladas con la misma seriedad que las reales.",
@@ -791,8 +929,10 @@
     },
     {
       "id": "divergence",
-      "term": "Divergence",
-      "aliases": [],
+      "term": "Divergencia",
+      "aliases": [
+        "Divergence"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "Cuando el precio marca un nuevo máximo (o mínimo) pero un oscilador como el RSI o el MACD no lo hace. La divergencia bajista (máximo del precio más alto, máximo del RSI más bajo) advierte que el momentum se está agotando; la divergencia alcista es el reflejo opuesto.",
@@ -805,8 +945,10 @@
     },
     {
       "id": "diversification",
-      "term": "Diversification",
-      "aliases": [],
+      "term": "Diversificación",
+      "aliases": [
+        "Diversification"
+      ],
       "category": "risk",
       "lesson": "m4-l1",
       "definition": "Repartir el riesgo entre posiciones que no se mueven juntas, para que un solo mal resultado no pueda hundir la cuenta. Cinco acciones tecnológicas no están diversificadas; cinco posiciones en distintos sectores y clases de activos se acercan más.",
@@ -819,8 +961,10 @@
     },
     {
       "id": "dividend",
-      "term": "Dividend",
-      "aliases": [],
+      "term": "Dividendo",
+      "aliases": [
+        "Dividend"
+      ],
       "category": "markets",
       "lesson": "m1-l1",
       "definition": "Un pago en efectivo que una empresa hace a sus accionistas con cargo a sus ganancias, normalmente cada trimestre en EE. UU. En la fecha ex-dividendo el precio de la acción suele bajar aproximadamente el monto del dividendo.",
@@ -833,8 +977,10 @@
     },
     {
       "id": "dividend-yield",
-      "term": "Dividend yield",
-      "aliases": [],
+      "term": "Rendimiento por dividendo (dividend yield)",
+      "aliases": [
+        "Dividend yield"
+      ],
       "category": "markets",
       "lesson": "m1-l1",
       "definition": "Los dividendos anuales por acción divididos por el precio de la acción, expresados como porcentaje. Te dice el retorno en efectivo que obtienes por mantener la acción, antes de cualquier cambio de precio.",
@@ -861,8 +1007,15 @@
     },
     {
       "id": "double-top",
-      "term": "Double top / double bottom",
-      "aliases": [],
+      "term": "Doble techo / doble suelo",
+      "aliases": [
+        "Double top / double bottom",
+        "double top",
+        "double bottom",
+        "doble techo",
+        "doble suelo",
+        "doble piso"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Un patrón de reversión en el que el precio prueba el mismo nivel dos veces y falla. Un doble techo (una \"M\") se vuelve bajista al romper el valle entre los dos picos; un doble suelo (una \"W\") se vuelve alcista al romper el pico entre los dos mínimos.",
@@ -876,9 +1029,11 @@
     },
     {
       "id": "downtrend",
-      "term": "Downtrend",
+      "term": "Tendencia bajista (downtrend)",
       "aliases": [
-        "bear trend"
+        "bear trend",
+        "Downtrend",
+        "tendencia a la baja"
       ],
       "category": "charts",
       "lesson": "m2-l2",
@@ -892,8 +1047,12 @@
     },
     {
       "id": "drawdown",
-      "term": "Drawdown",
-      "aliases": [],
+      "term": "Caída desde máximos (drawdown)",
+      "aliases": [
+        "Drawdown",
+        "caída máxima",
+        "caída"
+      ],
       "category": "risk",
       "lesson": "m4-l3",
       "definition": "La caída desde un máximo del capital hasta el mínimo siguiente, normalmente en porcentaje. El drawdown máximo es la peor de esas caídas en el registro; es el número que te dice si podrías sobrevivir emocionalmente a la estrategia.",
@@ -907,8 +1066,13 @@
     },
     {
       "id": "eps",
-      "term": "Earnings per share (EPS)",
-      "aliases": [],
+      "term": "Ganancias por acción (EPS)",
+      "aliases": [
+        "Earnings per share (EPS)",
+        "Earnings per share",
+        "beneficio por acción",
+        "utilidad por acción"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "La ganancia neta de una empresa dividida por sus acciones en circulación. Es la cifra por acción que la mayoría de los titulares de resultados comparan con las estimaciones de los analistas.",
@@ -921,9 +1085,12 @@
     },
     {
       "id": "earnings-report",
-      "term": "Earnings report",
+      "term": "Informe de resultados (earnings)",
       "aliases": [
-        "earnings"
+        "earnings",
+        "Earnings report",
+        "resultados trimestrales",
+        "reporte de ganancias"
       ],
       "category": "markets",
       "lesson": "m1-l5",
@@ -938,8 +1105,10 @@
     },
     {
       "id": "entry-rule",
-      "term": "Entry rule",
-      "aliases": [],
+      "term": "Regla de entrada",
+      "aliases": [
+        "Entry rule"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "La condición objetiva que debe cumplirse para abrir una posición, normalmente una combinación de una configuración (contexto) y un disparador (la barra exacta). Objetiva significa que una computadora podría verificarla.",
@@ -952,8 +1121,11 @@
     },
     {
       "id": "equity-curve",
-      "term": "Equity curve",
-      "aliases": [],
+      "term": "Curva de capital (equity curve)",
+      "aliases": [
+        "Equity curve",
+        "curva de patrimonio"
+      ],
       "category": "risk",
       "lesson": "m4-l3",
       "definition": "Un gráfico del valor de la cuenta a lo largo del tiempo. Una curva suave y ascendente significa retornos consistentes; una dentada significa grandes oscilaciones. La página de cartera dibuja la tuya a partir del historial de capital.",
@@ -966,8 +1138,10 @@
     },
     {
       "id": "evening-star",
-      "term": "Evening star",
-      "aliases": [],
+      "term": "Estrella de la tarde (evening star)",
+      "aliases": [
+        "Evening star"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Una reversión bajista de tres velas al final de una subida: una vela verde larga, una vela de cuerpo pequeño y luego una vela roja larga que cierra bien adentro del cuerpo de la primera.",
@@ -980,9 +1154,11 @@
     },
     {
       "id": "exchange",
-      "term": "Exchange",
+      "term": "Bolsa de valores (exchange)",
       "aliases": [
-        "stock exchange"
+        "stock exchange",
+        "Exchange",
+        "bolsa"
       ],
       "category": "markets",
       "lesson": "m1-l2",
@@ -996,8 +1172,12 @@
     },
     {
       "id": "etf",
-      "term": "Exchange-traded fund (ETF)",
-      "aliases": [],
+      "term": "Fondo cotizado (ETF)",
+      "aliases": [
+        "Exchange-traded fund (ETF)",
+        "Exchange-traded fund",
+        "fondo cotizado en bolsa"
+      ],
       "category": "markets",
       "lesson": "m1-l2",
       "definition": "Un fondo que se negocia como una sola acción pero contiene toda una canasta, a menudo replicando un índice. Los ETF ofrecen diversificación instantánea y son el benchmark habitual de una estrategia de selección de acciones.",
@@ -1010,8 +1190,11 @@
     },
     {
       "id": "exercise",
-      "term": "Exercise",
-      "aliases": [],
+      "term": "Ejercicio (exercise)",
+      "aliases": [
+        "Exercise",
+        "ejercer"
+      ],
       "category": "options",
       "lesson": "m5-l5",
       "definition": "Usar el derecho que te da una opción: comprar las acciones al strike (call) o venderlas al strike (put). La mayoría de los traders venden la opción en lugar de ejercerla, porque ejercer renuncia al valor extrínseco restante.",
@@ -1024,8 +1207,10 @@
     },
     {
       "id": "exit-rule",
-      "term": "Exit rule",
-      "aliases": [],
+      "term": "Regla de salida",
+      "aliases": [
+        "Exit rule"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Las condiciones objetivas que cierran una posición: un stop-loss (la idea falló), un objetivo de ganancia o un stop dinámico (trailing stop) (la idea funcionó) y, a menudo, un stop de tiempo. Para la mayoría de las estrategias las salidas importan más que las entradas.",
@@ -1039,9 +1224,12 @@
     },
     {
       "id": "expectancy",
-      "term": "Expectancy",
+      "term": "Expectativa (expectancy)",
       "aliases": [
-        "edge"
+        "edge",
+        "Expectancy",
+        "esperanza matemática",
+        "ventaja"
       ],
       "category": "risk",
       "lesson": "m4-l2",
@@ -1056,14 +1244,16 @@
     },
     {
       "id": "expiration",
-      "term": "Expiration",
+      "term": "Vencimiento (expiration)",
       "aliases": [
-        "expiry"
+        "expiry",
+        "Expiration",
+        "fecha de vencimiento"
       ],
       "category": "options",
       "lesson": "m5-l1",
-      "definition": "La fecha después de la cual una opción deja de existir. Las opciones que están in the money al vencimiento se ejercen (o se ejercen automáticamente); las que están out of the money vencen sin valor.",
-      "example": "Una opción mensual que vence el 17 de enero de 2026 no vale nada al cierre de ese viernes si está out of the money.",
+      "definition": "La fecha después de la cual una opción deja de existir. Las opciones que están dentro del dinero (in the money) al vencimiento se ejercen (o se ejercen automáticamente); las que están fuera del dinero (out of the money) vencen sin valor.",
+      "example": "Una opción mensual que vence el 17 de enero de 2026 no vale nada al cierre de ese viernes si está fuera del dinero.",
       "related": [
         "time-decay",
         "theta",
@@ -1073,8 +1263,11 @@
     },
     {
       "id": "ema",
-      "term": "Exponential moving average (EMA)",
-      "aliases": [],
+      "term": "Media móvil exponencial (EMA)",
+      "aliases": [
+        "Exponential moving average (EMA)",
+        "Exponential moving average"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Una media móvil que da más peso a los cierres recientes, por lo que reacciona a los cambios de precio más rápido que una SMA de la misma longitud, pero también sufre más señales falsas. El MACD se construye con EMA.",
@@ -1087,8 +1280,10 @@
     },
     {
       "id": "exposure",
-      "term": "Exposure",
-      "aliases": [],
+      "term": "Exposición",
+      "aliases": [
+        "Exposure"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "El porcentaje del tiempo que una estrategia está en el mercado. Una estrategia con 40% de exposición que iguala a comprar y mantener ha hecho más con menos riesgo; una con 100% de exposición es simplemente comprar y mantener con costos adicionales.",
@@ -1100,13 +1295,16 @@
     },
     {
       "id": "extrinsic-value",
-      "term": "Extrinsic (time) value",
+      "term": "Valor extrínseco (valor temporal)",
       "aliases": [
-        "time value"
+        "time value",
+        "Extrinsic (time) value",
+        "Extrinsic value",
+        "valor tiempo"
       ],
       "category": "options",
       "lesson": "m5-l1",
-      "definition": "La parte del precio de una opción por encima de su valor intrínseco, pagada por la posibilidad de que termine más in the money. Depende del tiempo hasta el vencimiento y de la volatilidad implícita, y decae hasta cero al vencimiento.",
+      "definition": "La parte del precio de una opción por encima de su valor intrínseco, pagada por la posibilidad de que termine más dentro del dinero (in the money). Depende del tiempo hasta el vencimiento y de la volatilidad implícita, y decae hasta cero al vencimiento.",
       "example": "Un call de $50 cotizado a $3.20 con la acción en $52 tiene $1.20 de valor extrínseco.",
       "related": [
         "intrinsic-value",
@@ -1117,11 +1315,15 @@
     },
     {
       "id": "false-breakout",
-      "term": "False breakout",
+      "term": "Ruptura falsa (false breakout)",
       "aliases": [
         "fakeout",
         "bull trap",
-        "bear trap"
+        "bear trap",
+        "False breakout",
+        "falsa ruptura",
+        "trampa alcista",
+        "trampa bajista"
       ],
       "category": "charts",
       "lesson": "m2-l5",
@@ -1135,8 +1337,11 @@
     },
     {
       "id": "fibonacci",
-      "term": "Fibonacci retracement",
-      "aliases": [],
+      "term": "Retroceso de Fibonacci",
+      "aliases": [
+        "Fibonacci retracement",
+        "Fibonacci"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Niveles horizontales en el 23.6%, 38.2%, 50%, 61.8% y 78.6% de un movimiento previo, usados para anticipar dónde podría detenerse un retroceso. Se autocumplen en la medida en que muchos traders los observan.",
@@ -1149,9 +1354,11 @@
     },
     {
       "id": "fill",
-      "term": "Fill (execution)",
+      "term": "Ejecución (fill)",
       "aliases": [
-        "execution"
+        "execution",
+        "Fill (execution)",
+        "Fill"
       ],
       "category": "orders",
       "lesson": "m1-l4",
@@ -1165,8 +1372,14 @@
     },
     {
       "id": "flag",
-      "term": "Flag / pennant",
-      "aliases": [],
+      "term": "Bandera / banderín (flag, pennant)",
+      "aliases": [
+        "Flag / pennant",
+        "flag",
+        "pennant",
+        "bandera",
+        "banderín"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Un patrón de continuación corto: un movimiento brusco (el mástil) seguido de una consolidación estrecha y a la deriva (la bandera) que rompe en la dirección del mástil.",
@@ -1179,8 +1392,11 @@
     },
     {
       "id": "float",
-      "term": "Float",
-      "aliases": [],
+      "term": "Float (acciones en circulación libre)",
+      "aliases": [
+        "Float",
+        "flotante"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "La porción de las acciones en circulación que realmente está disponible para negociarse, excluyendo las bloqueadas por directivos y grandes accionistas estratégicos. Un float pequeño puede hacer que una acción se mueva con violencia con un volumen modesto.",
@@ -1193,8 +1409,11 @@
     },
     {
       "id": "fomo",
-      "term": "FOMO (fear of missing out)",
-      "aliases": [],
+      "term": "FOMO (miedo a quedarse fuera)",
+      "aliases": [
+        "FOMO (fear of missing out)",
+        "FOMO"
+      ],
       "category": "psychology",
       "lesson": "m4-l3",
       "definition": "Comprar porque una acción ya ha subido mucho y no soportas verla seguir subiendo sin ti. Las entradas por FOMO tienen una mala relación riesgo/beneficio porque el stop razonable queda muy lejos.",
@@ -1207,8 +1426,12 @@
     },
     {
       "id": "forward-testing",
-      "term": "Forward testing (paper trading a strategy)",
-      "aliases": [],
+      "term": "Forward testing (probar una estrategia con dinero simulado)",
+      "aliases": [
+        "Forward testing (paper trading a strategy)",
+        "Forward testing",
+        "prueba hacia adelante"
+      ],
       "category": "strategy",
       "lesson": "m6-l4",
       "definition": "Ejecutar una estrategia terminada en tiempo real con dinero simulado antes de arriesgar capital. Detecta los problemas que los backtests ocultan: deslizamiento, ejecuciones perdidas, disciplina y la brecha entre las reglas y el comportamiento.",
@@ -1225,8 +1448,8 @@
       "aliases": [],
       "category": "options",
       "lesson": "m5-l3",
-      "definition": "Cuánto cambia la delta por cada $1 de movimiento en la acción. La gamma es máxima en las opciones at the money cercanas al vencimiento, y por eso esas opciones se mueven con tanta violencia.",
-      "example": "Un call con delta 0.50 y gamma 0.08 tendrá una delta de unos 0.58 después de que la acción suba $1.",
+      "definition": "Cuánto cambia el delta por cada $1 de movimiento en la acción. El gamma es máximo en las opciones en el dinero (at the money) cercanas al vencimiento, y por eso esas opciones se mueven con tanta violencia.",
+      "example": "Un call con delta 0.50 y gamma 0.08 tendrá un delta de unos 0.58 después de que la acción suba $1.",
       "related": [
         "delta",
         "greeks",
@@ -1235,8 +1458,12 @@
     },
     {
       "id": "gap",
-      "term": "Gap",
-      "aliases": [],
+      "term": "Gap (hueco)",
+      "aliases": [
+        "Gap",
+        "hueco",
+        "brecha"
+      ],
       "category": "charts",
       "lesson": "m1-l5",
       "definition": "Un salto de precio entre el cierre de una barra y la apertura de la siguiente sin negociación entre medio, normalmente causado por noticias nocturnas. Los gaps hacen que las órdenes stop se ejecuten lejos del precio del stop.",
@@ -1250,8 +1477,10 @@
     },
     {
       "id": "golden-cross",
-      "term": "Golden cross",
-      "aliases": [],
+      "term": "Cruce dorado (golden cross)",
+      "aliases": [
+        "Golden cross"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Cuando la SMA de 50 días cruza por encima de la SMA de 200 días, una señal muy seguida de que ha comenzado una tendencia alcista de largo plazo. Llega con mucho retraso, así que la señal aparece bastante después del mínimo.",
@@ -1265,8 +1494,10 @@
     },
     {
       "id": "hammer",
-      "term": "Hammer",
-      "aliases": [],
+      "term": "Martillo (hammer)",
+      "aliases": [
+        "Hammer"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Un patrón de reversión alcista de una sola vela después de una caída: un cuerpo pequeño cerca de la parte superior con una mecha inferior larga, de al menos el doble de la altura del cuerpo. Los vendedores empujaron el precio hacia abajo y los compradores lo recuperaron todo.",
@@ -1280,8 +1511,11 @@
     },
     {
       "id": "head-and-shoulders",
-      "term": "Head and shoulders",
-      "aliases": [],
+      "term": "Hombro-cabeza-hombro (head and shoulders)",
+      "aliases": [
+        "Head and shoulders",
+        "HCH"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Un patrón de reversión formado por tres picos: un pico central más alto (la cabeza) entre dos más bajos (los hombros), con una línea de cuello bajo los valles. Un cierre por debajo de la línea de cuello completa el patrón; la versión invertida es alcista.",
@@ -1294,8 +1528,12 @@
     },
     {
       "id": "hedge",
-      "term": "Hedge",
-      "aliases": [],
+      "term": "Cobertura (hedge)",
+      "aliases": [
+        "Hedge",
+        "cubrir",
+        "cubrirse"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "Una posición tomada para reducir el riesgo de otra, como comprar un put contra acciones que tienes o vender en corto un ETF de índice contra una cartera de acciones compradas. Las coberturas (hedges) cuestan dinero y limitan las ganancias a cambio de protección.",
@@ -1308,8 +1546,14 @@
     },
     {
       "id": "higher-high",
-      "term": "Higher high / higher low",
-      "aliases": [],
+      "term": "Máximo más alto / mínimo más alto",
+      "aliases": [
+        "Higher high / higher low",
+        "higher high",
+        "higher low",
+        "máximos crecientes",
+        "mínimos crecientes"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Los puntos de giro que definen una tendencia alcista: cada pico por encima del pico anterior y cada valle por encima del valle anterior. El primer mínimo más bajo después de una serie de mínimos más altos es una alerta temprana de que la tendencia puede estar cambiando.",
@@ -1322,8 +1566,13 @@
     },
     {
       "id": "historical-volatility",
-      "term": "Historical (realized) volatility",
-      "aliases": [],
+      "term": "Volatilidad histórica (realizada)",
+      "aliases": [
+        "Historical (realized) volatility",
+        "Historical volatility",
+        "realized volatility",
+        "volatilidad realizada"
+      ],
       "category": "options",
       "lesson": "m5-l3",
       "definition": "La volatilidad que una acción realmente ha mostrado, medida como la desviación estándar anualizada de sus retornos pasados. Compararla con la volatilidad implícita te dice si las opciones parecen baratas o caras.",
@@ -1336,8 +1585,11 @@
     },
     {
       "id": "ichimoku",
-      "term": "Ichimoku Cloud",
-      "aliases": [],
+      "term": "Nube de Ichimoku (Ichimoku Cloud)",
+      "aliases": [
+        "Ichimoku Cloud",
+        "Ichimoku"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Un sistema de cinco líneas: Tenkan (punto medio de 9 periodos), Kijun (punto medio de 26 periodos), Senkou A y B (proyectadas hacia adelante para formar la \"nube\") y Chikou (el cierre dibujado 26 barras atrás). El precio por encima de una nube verde es un panorama alcista de un vistazo.",
@@ -1350,10 +1602,12 @@
     },
     {
       "id": "implied-volatility",
-      "term": "Implied volatility (IV)",
+      "term": "Volatilidad implícita (IV)",
       "aliases": [
         "IV",
-        "IV crush"
+        "IV crush",
+        "Implied volatility (IV)",
+        "Implied volatility"
       ],
       "category": "options",
       "lesson": "m5-l3",
@@ -1368,12 +1622,16 @@
     },
     {
       "id": "in-the-money",
-      "term": "In the money (ITM)",
-      "aliases": [],
+      "term": "Dentro del dinero (in the money, ITM)",
+      "aliases": [
+        "In the money (ITM)",
+        "In the money",
+        "ITM"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "Una opción con valor intrínseco: un call cuyo strike está por debajo del precio de la acción o un put cuyo strike está por encima. Las opciones ITM cuestan más y se comportan más como la acción (delta más alta).",
-      "example": "Con la acción en $105, un call de $100 está $5 in the money.",
+      "example": "Con la acción en $105, un call de $100 está $5 dentro del dinero (in the money).",
       "related": [
         "moneyness",
         "out-of-the-money",
@@ -1383,8 +1641,12 @@
     },
     {
       "id": "in-sample",
-      "term": "In-sample data",
-      "aliases": [],
+      "term": "Datos in-sample (dentro de la muestra)",
+      "aliases": [
+        "In-sample data",
+        "in-sample",
+        "dentro de la muestra"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "La porción del historial usada para diseñar y ajustar una estrategia. Los resultados sobre datos dentro de la muestra siempre son halagadores, porque las reglas se eligieron para encajar en ellos.",
@@ -1397,9 +1659,12 @@
     },
     {
       "id": "ipo",
-      "term": "Initial public offering (IPO)",
+      "term": "Oferta pública inicial (IPO)",
       "aliases": [
-        "going public"
+        "going public",
+        "Initial public offering (IPO)",
+        "Initial public offering",
+        "salir a bolsa"
       ],
       "category": "markets",
       "lesson": "m1-l1",
@@ -1413,9 +1678,11 @@
     },
     {
       "id": "intraday",
-      "term": "Intraday",
+      "term": "Intradía (intraday)",
       "aliases": [
-        "day trading"
+        "day trading",
+        "Intraday",
+        "intradiario"
       ],
       "category": "charts",
       "lesson": "m2-l1",
@@ -1429,8 +1696,10 @@
     },
     {
       "id": "intrinsic-value",
-      "term": "Intrinsic value",
-      "aliases": [],
+      "term": "Valor intrínseco",
+      "aliases": [
+        "Intrinsic value"
+      ],
       "category": "options",
       "lesson": "m5-l1",
       "definition": "La parte del precio de una opción que podrías capturar ejerciéndola ahora mismo: precio de la acción menos strike para un call, strike menos precio de la acción para un put, nunca menos de cero.",
@@ -1458,8 +1727,11 @@
     },
     {
       "id": "lagging-indicator",
-      "term": "Lagging indicator",
-      "aliases": [],
+      "term": "Indicador rezagado (lagging)",
+      "aliases": [
+        "Lagging indicator",
+        "indicador retrasado"
+      ],
       "category": "indicators",
       "lesson": "m3-l5",
       "definition": "Un indicador construido a partir de precios pasados que confirma un movimiento después de que ha comenzado, como las medias móviles y el MACD. El retraso es el precio de la suavidad: menos señales falsas, entradas más tardías.",
@@ -1472,8 +1744,12 @@
     },
     {
       "id": "last-price",
-      "term": "Last price",
-      "aliases": [],
+      "term": "Último precio (last)",
+      "aliases": [
+        "Last price",
+        "last",
+        "último"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "El precio de la operación más reciente. Los gráficos se dibujan con los últimos precios; el bid y el ask pueden haberse movido ya.",
@@ -1486,8 +1762,10 @@
     },
     {
       "id": "leading-indicator",
-      "term": "Leading indicator",
-      "aliases": [],
+      "term": "Indicador adelantado (leading)",
+      "aliases": [
+        "Leading indicator"
+      ],
       "category": "indicators",
       "lesson": "m3-l5",
       "definition": "Un indicador pensado para dar señal antes de un movimiento del precio, normalmente un oscilador como el RSI o el estocástico, o una divergencia. Se activa antes, pero también da más falsas alarmas.",
@@ -1500,8 +1778,10 @@
     },
     {
       "id": "leverage",
-      "term": "Leverage",
-      "aliases": [],
+      "term": "Apalancamiento (leverage)",
+      "aliases": [
+        "Leverage"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "Controlar una posición mayor que tu capital, mediante margen, opciones o ETF apalancados. Multiplica por igual las ganancias y las pérdidas, y acorta el tiempo que puedes estar equivocado.",
@@ -1514,8 +1794,12 @@
     },
     {
       "id": "limit-order",
-      "term": "Limit order",
-      "aliases": [],
+      "term": "Orden límite (limit order)",
+      "aliases": [
+        "Limit order",
+        "orden limitada",
+        "límite"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "Una instrucción para comprar a un precio igual o inferior, o vender a un precio igual o superior, al que tú especificas. Garantiza el precio pero no la ejecución: si el mercado nunca llega a tu límite, la orden queda abierta.",
@@ -1529,8 +1813,10 @@
     },
     {
       "id": "liquidity",
-      "term": "Liquidity",
-      "aliases": [],
+      "term": "Liquidez",
+      "aliases": [
+        "Liquidity"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "Qué tan fácil es comprar o vender un valor en cantidad sin mover su precio. Alta liquidez significa spreads ajustados, libros de órdenes profundos y poco deslizamiento.",
@@ -1544,8 +1830,10 @@
     },
     {
       "id": "look-ahead-bias",
-      "term": "Look-ahead bias",
-      "aliases": [],
+      "term": "Sesgo de anticipación (look-ahead bias)",
+      "aliases": [
+        "Look-ahead bias"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Usar en un backtest información que no habría estado disponible en ese momento, como actuar sobre el cierre de una barra durante esa misma barra o usar un dato revisado. Infla los resultados en silencio.",
@@ -1558,10 +1846,13 @@
     },
     {
       "id": "lookback-period",
-      "term": "Lookback period",
+      "term": "Periodo de cálculo (lookback)",
       "aliases": [
         "period",
-        "window"
+        "window",
+        "Lookback period",
+        "periodo",
+        "ventana"
       ],
       "category": "indicators",
       "lesson": "m3-l1",
@@ -1575,8 +1866,12 @@
     },
     {
       "id": "losing-streak",
-      "term": "Losing streak",
-      "aliases": [],
+      "term": "Racha de pérdidas",
+      "aliases": [
+        "Losing streak",
+        "racha perdedora",
+        "racha"
+      ],
       "category": "risk",
       "lesson": "m4-l3",
       "definition": "Una serie de pérdidas consecutivas. Incluso una estrategia con 50% de acierto tendrá rachas de siete o más pérdidas a lo largo de unos cientos de operaciones, así que el tamaño de las posiciones debe asumir que las rachas ocurrirán.",
@@ -1589,8 +1884,10 @@
     },
     {
       "id": "loss-aversion",
-      "term": "Loss aversion",
-      "aliases": [],
+      "term": "Aversión a las pérdidas",
+      "aliases": [
+        "Loss aversion"
+      ],
       "category": "psychology",
       "lesson": "m4-l3",
       "definition": "La tendencia a sentir una pérdida aproximadamente con el doble de intensidad que una ganancia igual. Hace que los traders mantengan las perdedoras esperando recuperar y vendan las ganadoras demasiado pronto, que es lo contrario de lo que pide la expectativa.",
@@ -1619,8 +1916,10 @@
     },
     {
       "id": "macd-histogram",
-      "term": "MACD histogram",
-      "aliases": [],
+      "term": "Histograma del MACD",
+      "aliases": [
+        "MACD histogram"
+      ],
       "category": "indicators",
       "lesson": "m3-l3",
       "definition": "Barras que muestran el MACD menos la línea de señal. Barras que crecen significan que el momentum se acelera; barras que se encogen advierten que se desvanece antes de que ocurra cualquier cruce.",
@@ -1633,8 +1932,10 @@
     },
     {
       "id": "margin",
-      "term": "Margin",
-      "aliases": [],
+      "term": "Margen (margin)",
+      "aliases": [
+        "Margin"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "Dinero prestado por tu bróker para comprar valores, usando la cuenta como garantía. Las reglas de EE. UU. permiten tomar prestado hasta el 50% de una compra; los intereses se acumulan a diario y las pérdidas se amplifican.",
@@ -1647,8 +1948,10 @@
     },
     {
       "id": "margin-call",
-      "term": "Margin call",
-      "aliases": [],
+      "term": "Llamada de margen (margin call)",
+      "aliases": [
+        "Margin call"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "La exigencia del bróker de depositar efectivo o vender posiciones porque el capital de la cuenta ha caído por debajo del nivel de mantenimiento requerido. Si no actúas, el bróker liquida por ti, normalmente en el peor momento.",
@@ -1661,8 +1964,10 @@
     },
     {
       "id": "mark-to-market",
-      "term": "Mark to market",
-      "aliases": [],
+      "term": "Valoración a mercado (mark to market)",
+      "aliases": [
+        "Mark to market"
+      ],
       "category": "portfolio",
       "lesson": "m4-l5",
       "definition": "Revalorar cada posición al precio actual para que la cuenta muestre lo que vale ahora, no lo que pagaste. La cuenta de paper trading valora a mercado en cada tick para actualizar el capital y el P&L no realizado.",
@@ -1675,9 +1980,11 @@
     },
     {
       "id": "market-cap",
-      "term": "Market capitalization",
+      "term": "Capitalización de mercado",
       "aliases": [
-        "market cap"
+        "market cap",
+        "Market capitalization",
+        "capitalización bursátil"
       ],
       "category": "markets",
       "lesson": "m1-l1",
@@ -1691,8 +1998,12 @@
     },
     {
       "id": "index",
-      "term": "Market index",
-      "aliases": [],
+      "term": "Índice de mercado",
+      "aliases": [
+        "Market index",
+        "índice",
+        "índice bursátil"
+      ],
       "category": "markets",
       "lesson": "m1-l2",
       "definition": "Un número que sigue una canasta de acciones para resumir cómo va un mercado o sector. El S&P 500 (500 grandes empresas de EE. UU.), el Dow Jones Industrial Average (30 acciones) y el Nasdaq-100 son los más conocidos.",
@@ -1705,8 +2016,10 @@
     },
     {
       "id": "market-maker",
-      "term": "Market maker",
-      "aliases": [],
+      "term": "Creador de mercado (market maker)",
+      "aliases": [
+        "Market maker"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "Una firma que cotiza continuamente tanto un bid como un ask, ganando el spread mientras aporta liquidez. Los creadores de mercado (market makers) son la razón por la que casi siempre puedes operar una acción líquida al instante.",
@@ -1719,8 +2032,11 @@
     },
     {
       "id": "market-order",
-      "term": "Market order",
-      "aliases": [],
+      "term": "Orden de mercado (market order)",
+      "aliases": [
+        "Market order",
+        "a mercado"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "Una instrucción para comprar o vender de inmediato al mejor precio disponible. Garantiza la ejecución pero no el precio: en un mercado rápido o poco líquido puedes pagar más que la cotización que viste.",
@@ -1734,8 +2050,11 @@
     },
     {
       "id": "market-replay",
-      "term": "Market replay",
-      "aliases": [],
+      "term": "Replay de mercado (market replay)",
+      "aliases": [
+        "Market replay",
+        "replay"
+      ],
       "category": "strategy",
       "lesson": "m7-l1",
       "definition": "Avanzar por barras históricas una a una, con el futuro oculto, operando sobre la marcha. Comprime meses de práctica en una hora y muestra cómo se siente una regla en tiempo real, señales falsas incluidas.",
@@ -1749,8 +2068,11 @@
     },
     {
       "id": "max-drawdown",
-      "term": "Maximum drawdown",
-      "aliases": [],
+      "term": "Drawdown máximo (maximum drawdown)",
+      "aliases": [
+        "Maximum drawdown",
+        "max drawdown"
+      ],
       "category": "risk",
       "lesson": "m4-l3",
       "definition": "La mayor caída de máximo a mínimo en una curva de capital durante todo el periodo. Tanto los backtests como la cuenta de paper trading lo reportan; espera que el trading real produzca un drawdown peor que el que mostró el backtest.",
@@ -1764,8 +2086,12 @@
     },
     {
       "id": "max-profit-loss",
-      "term": "Maximum profit and loss",
-      "aliases": [],
+      "term": "Ganancia y pérdida máximas",
+      "aliases": [
+        "Maximum profit and loss",
+        "ganancia máxima",
+        "pérdida máxima"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "El mejor y el peor resultado de una posición de opciones al vencimiento. Opciones compradas: pérdida limitada a la prima, ganancia ilimitada (call) o hasta cero (put). Los spreads limitan ambos lados.",
@@ -1778,8 +2104,10 @@
     },
     {
       "id": "mean-reversion",
-      "term": "Mean reversion",
-      "aliases": [],
+      "term": "Reversión a la media (mean reversion)",
+      "aliases": [
+        "Mean reversion"
+      ],
       "category": "strategy",
       "lesson": "m3-l2",
       "definition": "La idea de que los precios muy alejados de su promedio tienden a regresar hacia él. Las estrategias de reversión a la media compran caídas en sobreventa y venden picos en sobrecompra, y funcionan mejor en rangos.",
@@ -1794,7 +2122,9 @@
     {
       "id": "momentum",
       "term": "Momentum",
-      "aliases": [],
+      "aliases": [
+        "impulso"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "La velocidad del cambio del precio. Los indicadores de momentum (RSI, estocástico, MACD) miden si los movimientos se aceleran o se desvanecen, lo que a menudo cambia antes que la dirección del precio.",
@@ -1808,11 +2138,13 @@
     },
     {
       "id": "moneyness",
-      "term": "Moneyness",
-      "aliases": [],
+      "term": "Moneyness (posición respecto al strike)",
+      "aliases": [
+        "Moneyness"
+      ],
       "category": "options",
       "lesson": "m5-l2",
-      "definition": "Dónde se ubica el strike respecto al precio de la acción: in the money (tiene valor intrínseco), at the money (strike aproximadamente igual al precio de la acción) u out of the money (sin valor intrínseco).",
+      "definition": "Dónde se ubica el strike respecto al precio de la acción: dentro del dinero (in the money: tiene valor intrínseco), en el dinero (at the money: strike aproximadamente igual al precio de la acción) o fuera del dinero (out of the money: sin valor intrínseco).",
       "example": "Acción en $100: un call de $90 está ITM, un call de $100 ATM y un call de $110 OTM; para los puts el orden se invierte.",
       "related": [
         "in-the-money",
@@ -1823,8 +2155,10 @@
     },
     {
       "id": "morning-star",
-      "term": "Morning star",
-      "aliases": [],
+      "term": "Estrella de la mañana (morning star)",
+      "aliases": [
+        "Morning star"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Una reversión alcista de tres velas al final de una caída: una vela roja larga, una vela de cuerpo pequeño (a menudo un doji) que muestra indecisión, y luego una vela verde larga que cierra bien adentro del cuerpo de la primera.",
@@ -1837,9 +2171,12 @@
     },
     {
       "id": "moving-average",
-      "term": "Moving average",
+      "term": "Media móvil (moving average)",
       "aliases": [
-        "MA"
+        "MA",
+        "Moving average",
+        "MM",
+        "promedio móvil"
       ],
       "category": "indicators",
       "lesson": "m3-l1",
@@ -1854,8 +2191,11 @@
     },
     {
       "id": "occ-symbol",
-      "term": "OCC option symbol",
-      "aliases": [],
+      "term": "Símbolo de opción OCC",
+      "aliases": [
+        "OCC option symbol",
+        "OCC"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "El identificador estándar de 21 caracteres de una opción: ticker (con relleno), vencimiento como AAMMDD, C o P, y el strike multiplicado por 1000 en ocho dígitos. La cuenta de paper trading identifica las posiciones de opciones por él.",
@@ -1868,8 +2208,11 @@
     },
     {
       "id": "ohlc",
-      "term": "OHLC (open, high, low, close)",
-      "aliases": [],
+      "term": "OHLC (apertura, máximo, mínimo, cierre)",
+      "aliases": [
+        "OHLC (open, high, low, close)",
+        "OHLC"
+      ],
       "category": "charts",
       "lesson": "m2-l1",
       "definition": "Los cuatro precios que definen cualquier barra: la primera operación del periodo, la operación más alta, la más baja y la última. Todos los indicadores se calculan a partir de uno o más de estos.",
@@ -1882,8 +2225,11 @@
     },
     {
       "id": "obv",
-      "term": "On-balance volume (OBV)",
-      "aliases": [],
+      "term": "Volumen en balance (OBV)",
+      "aliases": [
+        "On-balance volume (OBV)",
+        "On-balance volume"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Un total acumulado que suma el volumen del día en los cierres al alza y lo resta en los cierres a la baja. Un OBV que sube con el precio confirma el movimiento; un OBV que cae mientras el precio sube advierte que el volumen no lo respalda.",
@@ -1896,8 +2242,10 @@
     },
     {
       "id": "open-interest",
-      "term": "Open interest",
-      "aliases": [],
+      "term": "Interés abierto (open interest)",
+      "aliases": [
+        "Open interest"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "El número de contratos de opciones actualmente abiertos para un strike y un vencimiento. Un interés abierto alto significa un contrato líquido con spreads más ajustados; uno bajo significa que puede costarte salir a un precio justo.",
@@ -1910,8 +2258,12 @@
     },
     {
       "id": "options",
-      "term": "Option",
-      "aliases": [],
+      "term": "Opción (option)",
+      "aliases": [
+        "Option",
+        "opciones",
+        "options"
+      ],
       "category": "options",
       "lesson": "m5-l1",
       "definition": "Un contrato que da al comprador el derecho, no la obligación, de comprar (call) o vender (put) 100 acciones a un precio de ejercicio (strike) fijo hasta una fecha de vencimiento. El comprador paga una prima; el vendedor se la queda y asume la obligación.",
@@ -1926,8 +2278,10 @@
     },
     {
       "id": "option-chain",
-      "term": "Option chain",
-      "aliases": [],
+      "term": "Cadena de opciones (option chain)",
+      "aliases": [
+        "Option chain"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "La tabla de todos los strikes y vencimientos de una acción, con bid, ask, volumen, interés abierto, volatilidad implícita y las griegas de cada call y put. La página de cartera muestra una cadena sintética para practicar.",
@@ -1941,10 +2295,13 @@
     },
     {
       "id": "order-book",
-      "term": "Order book",
+      "term": "Libro de órdenes (order book)",
       "aliases": [
         "depth of market",
-        "level 2"
+        "level 2",
+        "Order book",
+        "profundidad de mercado",
+        "nivel 2"
       ],
       "category": "markets",
       "lesson": "m1-l3",
@@ -1959,12 +2316,16 @@
     },
     {
       "id": "out-of-the-money",
-      "term": "Out of the money (OTM)",
-      "aliases": [],
+      "term": "Fuera del dinero (out of the money, OTM)",
+      "aliases": [
+        "Out of the money (OTM)",
+        "Out of the money",
+        "OTM"
+      ],
       "category": "options",
       "lesson": "m5-l2",
       "definition": "Una opción sin valor intrínseco: un call cuyo strike está por encima del precio de la acción o un put cuyo strike está por debajo. Las opciones OTM son baratas y tienen baja probabilidad de dar ganancia.",
-      "example": "Con la acción en $100, un call de $110 está out of the money; vence sin valor a menos que la acción suba por encima de $110.",
+      "example": "Con la acción en $100, un call de $110 está fuera del dinero (out of the money); vence sin valor a menos que la acción suba por encima de $110.",
       "related": [
         "moneyness",
         "in-the-money",
@@ -1974,8 +2335,12 @@
     },
     {
       "id": "out-of-sample",
-      "term": "Out-of-sample data",
-      "aliases": [],
+      "term": "Datos out-of-sample (fuera de la muestra)",
+      "aliases": [
+        "Out-of-sample data",
+        "out-of-sample",
+        "fuera de la muestra"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Historial que la estrategia nunca vio durante el diseño, reservado para probarla con honestidad. Una estrategia que se derrumba fuera de muestra estaba ajustada al ruido.",
@@ -1989,8 +2354,11 @@
     },
     {
       "id": "overbought",
-      "term": "Overbought",
-      "aliases": [],
+      "term": "Sobrecompra (overbought)",
+      "aliases": [
+        "Overbought",
+        "sobrecomprado"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "Una lectura de un oscilador que sugiere que el precio ha subido demasiado y demasiado rápido (por ejemplo, RSI por encima de 70). No significa \"vende ahora\": las tendencias alcistas fuertes se mantienen en sobrecompra mientras suben. Significa que la recompensa por perseguir el precio se está reduciendo.",
@@ -2004,9 +2372,11 @@
     },
     {
       "id": "overfitting",
-      "term": "Overfitting (curve fitting)",
+      "term": "Sobreajuste (overfitting, curve fitting)",
       "aliases": [
-        "curve fitting"
+        "curve fitting",
+        "Overfitting (curve fitting)",
+        "Overfitting"
       ],
       "category": "strategy",
       "lesson": "m6-l3",
@@ -2021,8 +2391,11 @@
     },
     {
       "id": "oversold",
-      "term": "Oversold",
-      "aliases": [],
+      "term": "Sobreventa (oversold)",
+      "aliases": [
+        "Oversold",
+        "sobrevendido"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "Una lectura de un oscilador que sugiere que el precio ha caído demasiado y demasiado rápido (por ejemplo, RSI por debajo de 30). En una tendencia bajista una acción puede permanecer en sobreventa mucho tiempo, así que busca un giro, no solo la lectura.",
@@ -2035,8 +2408,11 @@
     },
     {
       "id": "overtrading",
-      "term": "Overtrading",
-      "aliases": [],
+      "term": "Sobreoperar (overtrading)",
+      "aliases": [
+        "Overtrading",
+        "operar en exceso"
+      ],
       "category": "psychology",
       "lesson": "m4-l3",
       "definition": "Operar con demasiada frecuencia o con demasiado tamaño respecto a tu plan, normalmente por aburrimiento, emoción o el impulso de recuperar pérdidas. Cada operación extra paga el spread y el deslizamiento y añade una oportunidad de romper una regla.",
@@ -2050,9 +2426,12 @@
     },
     {
       "id": "paper-trading",
-      "term": "Paper trading",
+      "term": "Paper trading (operar con dinero simulado)",
       "aliases": [
-        "simulated trading"
+        "simulated trading",
+        "Paper trading",
+        "trading simulado",
+        "operar en papel"
       ],
       "category": "markets",
       "lesson": "m1-l5",
@@ -2066,8 +2445,10 @@
     },
     {
       "id": "parameter-optimization",
-      "term": "Parameter optimization",
-      "aliases": [],
+      "term": "Optimización de parámetros",
+      "aliases": [
+        "Parameter optimization"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Buscar entre combinaciones de los ajustes de una estrategia (periodos, umbrales) el mejor resultado histórico. Útil para entender la sensibilidad; peligroso cuando simplemente eliges al ganador.",
@@ -2081,8 +2462,10 @@
     },
     {
       "id": "partial-fill",
-      "term": "Partial fill",
-      "aliases": [],
+      "term": "Ejecución parcial (partial fill)",
+      "aliases": [
+        "Partial fill"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "Cuando solo se ejecuta una parte de las acciones de una orden porque no había suficiente volumen a tu precio. El resto queda abierto.",
@@ -2095,12 +2478,17 @@
     },
     {
       "id": "payoff-diagram",
-      "term": "Payoff diagram",
-      "aliases": [],
+      "term": "Diagrama de ganancia/pérdida (payoff diagram)",
+      "aliases": [
+        "Payoff diagram",
+        "payoff",
+        "diagrama de pago",
+        "perfil de ganancia/pérdida"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Un gráfico de la ganancia o pérdida al vencimiento a lo largo de un rango de precios de la acción. El laboratorio de opciones dibuja uno para cada estrategia para que veas de un vistazo los puntos de equilibrio, la ganancia máxima y la pérdida máxima.",
-      "example": "El pago de un call comprado es plano en menos la prima por debajo del strike y sube uno a uno por encima de él.",
+      "example": "El perfil de ganancia/pérdida (payoff) de un call comprado es plano en menos la prima por debajo del strike y sube uno a uno por encima de él.",
       "related": [
         "breakeven",
         "max-profit-loss",
@@ -2109,8 +2497,13 @@
     },
     {
       "id": "pivot-points",
-      "term": "Pivot points (swing highs and lows)",
-      "aliases": [],
+      "term": "Puntos pivote (máximos y mínimos de swing)",
+      "aliases": [
+        "Pivot points (swing highs and lows)",
+        "Pivot points",
+        "swing high",
+        "swing low"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Puntos de giro locales: una barra cuyo máximo es más alto que el de las N barras a cada lado es un pivote alto; el reflejo es un pivote bajo. Marcan la estructura de los giros y alimentan los niveles de soporte y resistencia.",
@@ -2123,8 +2516,10 @@
     },
     {
       "id": "position-sizing",
-      "term": "Position sizing",
-      "aliases": [],
+      "term": "Tamaño de la posición (position sizing)",
+      "aliases": [
+        "Position sizing"
+      ],
       "category": "risk",
       "lesson": "m4-l1",
       "definition": "Decidir cuántas acciones operar de modo que, si se toca el stop-loss, la pérdida sea una fracción fija y pequeña de tu cuenta. El tamaño sigue al riesgo, no a la convicción: acciones = dólares arriesgados / (entrada - stop).",
@@ -2138,8 +2533,12 @@
     },
     {
       "id": "pre-market",
-      "term": "Pre-market session",
-      "aliases": [],
+      "term": "Sesión pre-market (pre-apertura)",
+      "aliases": [
+        "Pre-market session",
+        "premarket",
+        "pre-apertura"
+      ],
       "category": "markets",
       "lesson": "m1-l2",
       "definition": "La negociación antes de la apertura de las 9:30 a.m., normalmente desde las 4:00 a.m., hora de Nueva York. El volumen es escaso, los spreads son amplios y los precios pueden saltar con las noticias, así que la mayoría de los principiantes deberían observarla en lugar de operarla.",
@@ -2152,11 +2551,13 @@
     },
     {
       "id": "premium",
-      "term": "Premium",
-      "aliases": [],
+      "term": "Prima (premium)",
+      "aliases": [
+        "Premium"
+      ],
       "category": "options",
       "lesson": "m5-l1",
-      "definition": "El precio de una opción, cotizado por acción y pagado por contrato (x100). Se compone de valor intrínseco (qué tan in the money está) más valor extrínseco (tiempo y volatilidad).",
+      "definition": "El precio de una opción, cotizado por acción y pagado por contrato (x100). Se compone de valor intrínseco (qué tan dentro del dinero está) más valor extrínseco (tiempo y volatilidad).",
       "example": "Un call de $50 cotizado a $3.20 cuesta $320 por contrato; con la acción en $52 eso es $2 de intrínseco más $1.20 de extrínseco.",
       "related": [
         "intrinsic-value",
@@ -2166,8 +2567,14 @@
     },
     {
       "id": "pe-ratio",
-      "term": "Price-to-earnings (P/E) ratio",
-      "aliases": [],
+      "term": "Ratio precio/beneficio (P/E)",
+      "aliases": [
+        "Price-to-earnings (P/E) ratio",
+        "Price-to-earnings ratio",
+        "PER",
+        "price-to-earnings",
+        "P/E ratio"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "El precio de la acción dividido por las ganancias anuales por acción. Te dice cuántos años de la ganancia actual estás pagando; un P/E alto significa que los inversionistas esperan un crecimiento fuerte.",
@@ -2180,8 +2587,10 @@
     },
     {
       "id": "primary-market",
-      "term": "Primary market",
-      "aliases": [],
+      "term": "Mercado primario",
+      "aliases": [
+        "Primary market"
+      ],
       "category": "markets",
       "lesson": "m1-l1",
       "definition": "Donde los valores recién creados se venden por primera vez y la empresa emisora recibe el dinero, por ejemplo en una IPO o en una oferta posterior.",
@@ -2193,8 +2602,10 @@
     },
     {
       "id": "profit-factor",
-      "term": "Profit factor",
-      "aliases": [],
+      "term": "Factor de beneficio (profit factor)",
+      "aliases": [
+        "Profit factor"
+      ],
       "category": "risk",
       "lesson": "m4-l2",
       "definition": "Las ganancias brutas divididas por las pérdidas brutas en un conjunto de operaciones. Por encima de 1.0 la estrategia ganó dinero; por encima de 1.5 es respetable; muy por encima de 3 en un backtest es una señal de alerta de sobreajuste.",
@@ -2208,8 +2619,10 @@
     },
     {
       "id": "protective-put",
-      "term": "Protective put",
-      "aliases": [],
+      "term": "Put protector (protective put)",
+      "aliases": [
+        "Protective put"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Tener acciones y comprar un put como seguro. Las pérdidas por debajo del strike quedan cubiertas durante la vida de la opción; el costo es la prima, que reduce los retornos si la acción no cae.",
@@ -2222,8 +2635,11 @@
     },
     {
       "id": "pullback",
-      "term": "Pullback",
-      "aliases": [],
+      "term": "Pullback (retroceso corto)",
+      "aliases": [
+        "Pullback",
+        "retroceso corto"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Un movimiento corto contra la tendencia dentro de una tendencia mayor: una caída en una tendencia alcista o un rebote en una bajista. Los traders de tendencia prefieren entrar en los retrocesos (pullbacks) en lugar de perseguir movimientos extendidos.",
@@ -2237,8 +2653,11 @@
     },
     {
       "id": "put",
-      "term": "Put option",
-      "aliases": [],
+      "term": "Opción put",
+      "aliases": [
+        "Put option",
+        "put"
+      ],
       "category": "options",
       "lesson": "m5-l1",
       "definition": "El derecho a vender 100 acciones al precio de ejercicio antes del vencimiento. Los puts ganan valor cuando la acción cae, lo que los convierte en un seguro para los accionistas y en una forma de riesgo definido de apostar a las caídas.",
@@ -2252,8 +2671,10 @@
     },
     {
       "id": "quote",
-      "term": "Quote",
-      "aliases": [],
+      "term": "Cotización (quote)",
+      "aliases": [
+        "Quote"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "Los precios actuales de un valor: el bid más alto, el ask más bajo, el último precio negociado y, normalmente, el volumen y la variación del día. El panel muestra una cotización del símbolo seleccionado.",
@@ -2267,10 +2688,15 @@
     },
     {
       "id": "range",
-      "term": "Range (consolidation)",
+      "term": "Rango (consolidación)",
       "aliases": [
         "consolidation",
-        "sideways market"
+        "sideways market",
+        "Range (consolidation)",
+        "Range",
+        "consolidación",
+        "mercado lateral",
+        "lateral"
       ],
       "category": "charts",
       "lesson": "m2-l5",
@@ -2286,8 +2712,12 @@
     },
     {
       "id": "realized-pnl",
-      "term": "Realized P&L",
-      "aliases": [],
+      "term": "P&L realizado (realized P&L)",
+      "aliases": [
+        "Realized P&L",
+        "ganancia realizada",
+        "G/P realizada"
+      ],
       "category": "portfolio",
       "lesson": "m4-l5",
       "definition": "La ganancia o pérdida asegurada al cerrar una posición, después de comisiones. El P&L realizado es con lo que se calculan tus estadísticas (tasa de acierto, expectativa, factor de beneficio).",
@@ -2300,9 +2730,13 @@
     },
     {
       "id": "market-hours",
-      "term": "Regular market hours",
+      "term": "Horario regular de mercado",
       "aliases": [
-        "trading session"
+        "trading session",
+        "Regular market hours",
+        "sesión regular",
+        "sesión de trading",
+        "horario de mercado"
       ],
       "category": "markets",
       "lesson": "m1-l2",
@@ -2317,8 +2751,10 @@
     },
     {
       "id": "relative-strength",
-      "term": "Relative strength",
-      "aliases": [],
+      "term": "Fuerza relativa",
+      "aliases": [
+        "Relative strength"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "Cómo se comporta una acción en comparación con un benchmark como SPY durante el mismo periodo (no es el oscilador RSI). Las acciones con fuerza relativa alta lideran el mercado; la página Comparar la grafica.",
@@ -2331,8 +2767,11 @@
     },
     {
       "id": "rsi",
-      "term": "Relative Strength Index (RSI)",
-      "aliases": [],
+      "term": "RSI (índice de fuerza relativa)",
+      "aliases": [
+        "Relative Strength Index (RSI)",
+        "Relative Strength Index"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "Un oscilador de momentum de 0 a 100 que compara el tamaño de las ganancias recientes con el de las pérdidas recientes, normalmente sobre 14 barras. Por encima de 70 se llama sobrecompra, por debajo de 30 sobreventa; en tendencias fuertes puede mantenerse en extremos durante semanas.",
@@ -2347,8 +2786,10 @@
     },
     {
       "id": "resistance",
-      "term": "Resistance",
-      "aliases": [],
+      "term": "Resistencia",
+      "aliases": [
+        "Resistance"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Una zona de precio donde las subidas se han detenido repetidamente porque aparecen vendedores. Una vez rota, la resistencia suele convertirse en soporte.",
@@ -2361,8 +2802,12 @@
     },
     {
       "id": "retest",
-      "term": "Retest",
-      "aliases": [],
+      "term": "Retest (nueva prueba del nivel)",
+      "aliases": [
+        "Retest",
+        "reprueba",
+        "nueva prueba"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Cuando el precio regresa a un nivel que acaba de romper y lo respeta, confirmando la ruptura. Un reteste exitoso de la antigua resistencia como nuevo soporte es una entrada clásica de menor riesgo.",
@@ -2375,8 +2820,10 @@
     },
     {
       "id": "retracement",
-      "term": "Retracement",
-      "aliases": [],
+      "term": "Retroceso (retracement)",
+      "aliases": [
+        "Retracement"
+      ],
       "category": "charts",
       "lesson": "m3-l4",
       "definition": "Una reversión parcial de un movimiento previo, medida como porcentaje de ese movimiento. Los retrocesos poco profundos (menos del 38%) muestran una tendencia fuerte; los profundos (más del 62%) ponen en duda que continúe.",
@@ -2389,8 +2836,11 @@
     },
     {
       "id": "revenge-trading",
-      "term": "Revenge trading",
-      "aliases": [],
+      "term": "Trading de venganza (revenge trading)",
+      "aliases": [
+        "Revenge trading",
+        "operar por venganza"
+      ],
       "category": "psychology",
       "lesson": "m4-l3",
       "definition": "Tomar una operación impulsiva y demasiado grande justo después de una pérdida para \"recuperarla\". Es la forma más rápida de convertir una pérdida normal en una cuenta destruida, y la razón principal para fijar un límite de pérdida diaria.",
@@ -2417,8 +2867,10 @@
     },
     {
       "id": "risk-per-trade",
-      "term": "Risk per trade",
-      "aliases": [],
+      "term": "Riesgo por operación",
+      "aliases": [
+        "Risk per trade"
+      ],
       "category": "risk",
       "lesson": "m4-l1",
       "definition": "La cantidad en dólares que pierdes si se toca tu stop: (entrada - stop) x acciones, más costos. Es el número que el dimensionamiento de posiciones está diseñado para controlar, y no es lo mismo que el valor total de la posición.",
@@ -2432,10 +2884,15 @@
     },
     {
       "id": "risk-reward",
-      "term": "Risk/reward ratio",
+      "term": "Ratio riesgo/beneficio",
       "aliases": [
         "R multiple",
-        "reward-to-risk"
+        "reward-to-risk",
+        "Risk/reward ratio",
+        "risk/reward",
+        "múltiplo R",
+        "riesgo/recompensa",
+        "riesgo/beneficio"
       ],
       "category": "risk",
       "lesson": "m4-l2",
@@ -2450,8 +2907,10 @@
     },
     {
       "id": "robustness",
-      "term": "Robustness",
-      "aliases": [],
+      "term": "Robustez",
+      "aliases": [
+        "Robustness"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "La capacidad de una estrategia para seguir funcionando cuando las condiciones cambian un poco: otros parámetros, otros símbolos, otros años, costos realistas. Las estrategias robustas tienen resultados modestos que se sostienen; las frágiles tienen resultados espectaculares que se esfuman.",
@@ -2464,8 +2923,11 @@
     },
     {
       "id": "round-trip",
-      "term": "Round trip",
-      "aliases": [],
+      "term": "Operación de ida y vuelta (round trip)",
+      "aliases": [
+        "Round trip",
+        "ida y vuelta"
+      ],
       "category": "strategy",
       "lesson": "m6-l2",
       "definition": "Una operación completa: la entrada y su salida correspondiente. Las estadísticas de un backtest cuentan operaciones completas (round trips), y cada una paga costos dos veces.",
@@ -2478,8 +2940,10 @@
     },
     {
       "id": "rsi-reversion",
-      "term": "RSI mean-reversion strategy",
-      "aliases": [],
+      "term": "Estrategia de reversión a la media con RSI",
+      "aliases": [
+        "RSI mean-reversion strategy"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Comprar cuando el RSI cae por debajo de un nivel de sobreventa (como 30) y vender cuando sube por encima de un nivel superior (como 70 o 50). Una regla de reversión a la media que funciona en rangos y es arrollada en tendencias bajistas fuertes.",
@@ -2493,8 +2957,10 @@
     },
     {
       "id": "secondary-market",
-      "term": "Secondary market",
-      "aliases": [],
+      "term": "Mercado secundario",
+      "aliases": [
+        "Secondary market"
+      ],
       "category": "markets",
       "lesson": "m1-l1",
       "definition": "Donde las acciones existentes cambian de manos entre inversionistas a través de una bolsa. La empresa no recibe nada de estas operaciones. Prácticamente todo tu trading ocurre aquí.",
@@ -2521,8 +2987,10 @@
     },
     {
       "id": "shares-outstanding",
-      "term": "Shares outstanding",
-      "aliases": [],
+      "term": "Acciones en circulación (shares outstanding)",
+      "aliases": [
+        "Shares outstanding"
+      ],
       "category": "markets",
       "lesson": "m1-l1",
       "definition": "El número total de acciones que una empresa ha emitido y que están en manos de todos los inversionistas, incluidos los directivos. Es la cantidad de acciones que se usa en los cálculos de capitalización de mercado y de ganancias por acción.",
@@ -2535,8 +3003,11 @@
     },
     {
       "id": "sharpe-ratio",
-      "term": "Sharpe ratio",
-      "aliases": [],
+      "term": "Ratio de Sharpe",
+      "aliases": [
+        "Sharpe ratio",
+        "Sharpe"
+      ],
       "category": "risk",
       "lesson": "m4-l3",
       "definition": "El retorno obtenido por encima de la tasa libre de riesgo por unidad de volatilidad, anualizado. Premia los retornos estables y castiga las oscilaciones bruscas; por encima de 1 es bueno para una estrategia de acciones, por encima de 2 es excelente y debería hacerte sospechar en un backtest.",
@@ -2550,8 +3021,10 @@
     },
     {
       "id": "shooting-star",
-      "term": "Shooting star",
-      "aliases": [],
+      "term": "Estrella fugaz (shooting star)",
+      "aliases": [
+        "Shooting star"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Un patrón de reversión bajista de una sola vela después de una subida: un cuerpo pequeño cerca del mínimo con una mecha superior larga. Los compradores empujaron el precio hacia arriba y los vendedores lo rechazaron.",
@@ -2565,10 +3038,14 @@
     },
     {
       "id": "short-selling",
-      "term": "Short selling",
+      "term": "Venta en corto (short selling)",
       "aliases": [
         "shorting",
-        "going short"
+        "going short",
+        "Short selling",
+        "vender en corto",
+        "ponerse corto",
+        "corto"
       ],
       "category": "risk",
       "lesson": "m4-l4",
@@ -2583,8 +3060,10 @@
     },
     {
       "id": "short-squeeze",
-      "term": "Short squeeze",
-      "aliases": [],
+      "term": "Short squeeze (estrangulamiento de cortos)",
+      "aliases": [
+        "Short squeeze"
+      ],
       "category": "risk",
       "lesson": "m4-l4",
       "definition": "Una subida brusca impulsada por vendedores en corto obligados a recomprar acciones para limitar pérdidas, lo que empuja el precio más arriba y obliga a más cortos a cubrirse. Las acciones muy vendidas en corto y de float bajo son las víctimas habituales.",
@@ -2597,8 +3076,10 @@
     },
     {
       "id": "signal-line",
-      "term": "Signal line",
-      "aliases": [],
+      "term": "Línea de señal",
+      "aliases": [
+        "Signal line"
+      ],
       "category": "indicators",
       "lesson": "m3-l3",
       "definition": "La EMA de 9 periodos de la línea MACD. Los cruces de la línea MACD a través de la línea de señal son los disparadores estándar de compra y venta del MACD.",
@@ -2611,8 +3092,11 @@
     },
     {
       "id": "sma",
-      "term": "Simple moving average (SMA)",
-      "aliases": [],
+      "term": "Media móvil simple (SMA)",
+      "aliases": [
+        "Simple moving average (SMA)",
+        "Simple moving average"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "La media aritmética simple de los últimos N cierres, todos con el mismo peso. Es suave y lenta: las SMA de 50 y 200 días son las líneas de tendencia más vigiladas del mercado.",
@@ -2626,8 +3110,10 @@
     },
     {
       "id": "slippage",
-      "term": "Slippage",
-      "aliases": [],
+      "term": "Deslizamiento (slippage)",
+      "aliases": [
+        "Slippage"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "La diferencia entre el precio que esperabas y el precio que realmente obtuviste. Proviene del spread, de libros de órdenes poco profundos y de movimientos rápidos entre ver una cotización y ser ejecutado.",
@@ -2641,8 +3127,12 @@
     },
     {
       "id": "sma-crossover",
-      "term": "SMA crossover strategy",
-      "aliases": [],
+      "term": "Estrategia de cruce de SMA",
+      "aliases": [
+        "SMA crossover strategy",
+        "SMA crossover",
+        "cruce de SMA"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Comprar cuando una SMA rápida cruza por encima de una SMA lenta; vender (o ponerse en corto) cuando vuelve a cruzar por debajo. El sistema de seguimiento de tendencia más antiguo; se gana su lugar en tendencias largas y se desangra en rangos.",
@@ -2656,8 +3146,11 @@
     },
     {
       "id": "stochastic",
-      "term": "Stochastic oscillator",
-      "aliases": [],
+      "term": "Oscilador estocástico",
+      "aliases": [
+        "Stochastic oscillator",
+        "estocástico"
+      ],
       "category": "indicators",
       "lesson": "m3-l2",
       "definition": "Un oscilador de momentum (0-100) que muestra dónde se ubica el cierre dentro del rango máximo-mínimo reciente. %K es el valor bruto, %D es su media de 3 periodos; lecturas por encima de 80 son sobrecompra y por debajo de 20 sobreventa.",
@@ -2671,10 +3164,14 @@
     },
     {
       "id": "stock",
-      "term": "Stock (share)",
+      "term": "Acción (stock, share)",
       "aliases": [
         "share",
-        "equity"
+        "equity",
+        "Stock (share)",
+        "Stock",
+        "acciones",
+        "título"
       ],
       "category": "markets",
       "lesson": "m1-l1",
@@ -2689,10 +3186,13 @@
     },
     {
       "id": "stop-order",
-      "term": "Stop order (stop-loss)",
+      "term": "Orden stop (stop-loss)",
       "aliases": [
         "stop",
-        "stop-loss order"
+        "stop-loss order",
+        "Stop order (stop-loss)",
+        "Stop order",
+        "orden de stop"
       ],
       "category": "orders",
       "lesson": "m1-l4",
@@ -2707,8 +3207,12 @@
     },
     {
       "id": "stop-limit-order",
-      "term": "Stop-limit order",
-      "aliases": [],
+      "term": "Orden stop-límite (stop-limit)",
+      "aliases": [
+        "Stop-limit order",
+        "stop limit",
+        "orden stop-limitada"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "Una orden stop que se convierte en orden limitada (no de mercado) al activarse. Evita una mala ejecución en un gap, pero puede dejarte sin ejecución alguna si el precio atraviesa el límite a toda velocidad.",
@@ -2722,7 +3226,9 @@
     {
       "id": "stop-loss",
       "term": "Stop-loss",
-      "aliases": [],
+      "aliases": [
+        "stop de pérdida"
+      ],
       "category": "risk",
       "lesson": "m4-l2",
       "definition": "Un precio de salida predefinido que limita la pérdida de una operación, colocado donde la idea de la operación queda invalidada (debajo del soporte, debajo de un mínimo de giro o a un múltiplo del ATR), no en una cantidad redonda de dólares que puedas permitirte.",
@@ -2737,10 +3243,12 @@
     {
       "id": "straddle",
       "term": "Straddle",
-      "aliases": [],
+      "aliases": [
+        "cono"
+      ],
       "category": "options",
       "lesson": "m5-l5",
-      "definition": "Comprar un call y un put con el mismo strike y vencimiento, normalmente at the money. Gana con un movimiento grande en cualquier dirección y pierde por el paso del tiempo si la acción no se mueve. Es caro antes de los resultados porque la IV es alta.",
+      "definition": "Comprar un call y un put con el mismo strike y vencimiento, normalmente en el dinero (at the money). Gana con un movimiento grande en cualquier dirección y pierde por el paso del tiempo si la acción no se mueve. Es caro antes de los resultados porque la IV es alta.",
       "example": "Con la acción en $100, comprar el call de $100 por $4 y el put de $100 por $4 cuesta $8; los puntos de equilibrio son $92 y $108.",
       "related": [
         "strangle",
@@ -2752,10 +3260,12 @@
     {
       "id": "strangle",
       "term": "Strangle",
-      "aliases": [],
+      "aliases": [
+        "cuna"
+      ],
       "category": "options",
       "lesson": "m5-l5",
-      "definition": "Comprar un call out of the money y un put out of the money con el mismo vencimiento. Más barato que un straddle, pero necesita un movimiento mayor para dar ganancia.",
+      "definition": "Comprar un call fuera del dinero (out of the money) y un put fuera del dinero con el mismo vencimiento. Más barato que un straddle, pero necesita un movimiento mayor para dar ganancia.",
       "example": "Acción en $100: compra el call de $105 por $2 y el put de $95 por $2; costo $4, puntos de equilibrio $91 y $109.",
       "related": [
         "straddle",
@@ -2765,12 +3275,14 @@
     },
     {
       "id": "strike",
-      "term": "Strike price",
-      "aliases": [],
+      "term": "Precio de ejercicio (strike)",
+      "aliases": [
+        "Strike price"
+      ],
       "category": "options",
       "lesson": "m5-l1",
       "definition": "El precio fijo al que una opción te permite comprar (call) o vender (put) las acciones. Los strikes se listan en incrementos fijos alrededor del precio actual; la elección del strike define el equilibrio entre costo y probabilidad.",
-      "example": "Con la acción en $100, el call de $95 está in the money, el call de $100 at the money y el call de $110 out of the money.",
+      "example": "Con la acción en $100, el call de $95 está dentro del dinero (in the money), el call de $100 en el dinero (at the money) y el call de $110 fuera del dinero (out of the money).",
       "related": [
         "moneyness",
         "in-the-money",
@@ -2780,8 +3292,10 @@
     },
     {
       "id": "support",
-      "term": "Support",
-      "aliases": [],
+      "term": "Soporte",
+      "aliases": [
+        "Support"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "Una zona de precio donde las caídas se han detenido y rebotado repetidamente porque entran compradores. El soporte es una zona, no una línea, y una vez roto suele convertirse en resistencia.",
@@ -2795,8 +3309,10 @@
     },
     {
       "id": "survivorship-bias",
-      "term": "Survivorship bias",
-      "aliases": [],
+      "term": "Sesgo de supervivencia",
+      "aliases": [
+        "Survivorship bias"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Probar solo con acciones que todavía existen hoy, lo que excluye las que quebraron o fueron retiradas de la bolsa. El conjunto de sobrevivientes se ve más sano que el universo real que enfrentó un trader.",
@@ -2809,8 +3325,12 @@
     },
     {
       "id": "tenkan-kijun",
-      "term": "Tenkan-sen and Kijun-sen",
-      "aliases": [],
+      "term": "Tenkan-sen y Kijun-sen",
+      "aliases": [
+        "Tenkan-sen and Kijun-sen",
+        "Tenkan-sen",
+        "Kijun-sen"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "Las dos líneas más rápidas del Ichimoku: la Tenkan es el punto medio del máximo y el mínimo de las últimas 9 barras; la Kijun es el punto medio de las últimas 26. Su cruce funciona como un cruce de medias móviles rápida/lenta.",
@@ -2822,8 +3342,12 @@
     },
     {
       "id": "one-percent-rule",
-      "term": "The 1% rule",
-      "aliases": [],
+      "term": "La regla del 1%",
+      "aliases": [
+        "The 1% rule",
+        "regla del 1%",
+        "1% rule"
+      ],
       "category": "risk",
       "lesson": "m4-l1",
       "definition": "Nunca arriesgues más de aproximadamente el 1% de tu cuenta en una sola operación (2% como máximo en cuentas pequeñas). Hace que una serie de pérdidas sea sobrevivible: diez pérdidas seguidas cuestan alrededor del 10%, no la cuenta.",
@@ -2836,11 +3360,15 @@
     },
     {
       "id": "greeks",
-      "term": "The Greeks",
-      "aliases": [],
+      "term": "Las griegas (the Greeks)",
+      "aliases": [
+        "The Greeks",
+        "griegas",
+        "Greeks"
+      ],
       "category": "options",
       "lesson": "m5-l3",
-      "definition": "Sensibilidades que describen cómo cambia el precio de una opción: delta (ante el precio de la acción), gamma (ante la delta), theta (ante el tiempo), vega (ante la volatilidad implícita) y rho (ante las tasas de interés).",
+      "definition": "Sensibilidades que describen cómo cambia el precio de una opción: delta (ante el precio de la acción), gamma (ante el delta), theta (ante el tiempo), vega (ante la volatilidad implícita) y rho (ante las tasas de interés).",
       "example": "Un call con delta 0.45, theta -0.04 y vega 0.12 gana unos $0.45 por cada $1 que sube la acción, pierde $0.04 al día y gana $0.12 por cada punto que sube la IV.",
       "related": [
         "delta",
@@ -2866,8 +3394,10 @@
     },
     {
       "id": "three-black-crows",
-      "term": "Three black crows",
-      "aliases": [],
+      "term": "Tres cuervos negros (three black crows)",
+      "aliases": [
+        "Three black crows"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Tres velas rojas largas consecutivas, cada una abriendo dentro del cuerpo anterior y cerrando cerca de su mínimo. El reflejo bajista de los tres soldados blancos.",
@@ -2880,8 +3410,10 @@
     },
     {
       "id": "three-white-soldiers",
-      "term": "Three white soldiers",
-      "aliases": [],
+      "term": "Tres soldados blancos (three white soldiers)",
+      "aliases": [
+        "Three white soldiers"
+      ],
       "category": "charts",
       "lesson": "m2-l4",
       "definition": "Tres velas verdes largas consecutivas, cada una abriendo dentro del cuerpo anterior y cerrando cerca de su máximo. Señala un giro fuerte y constante hacia la compra después de una caída.",
@@ -2894,9 +3426,11 @@
     },
     {
       "id": "ticker",
-      "term": "Ticker symbol",
+      "term": "Símbolo (ticker)",
       "aliases": [
-        "symbol"
+        "symbol",
+        "Ticker symbol",
+        "símbolo bursátil"
       ],
       "category": "markets",
       "lesson": "m1-l2",
@@ -2910,12 +3444,16 @@
     },
     {
       "id": "time-decay",
-      "term": "Time decay",
-      "aliases": [],
+      "term": "Decaimiento temporal (time decay)",
+      "aliases": [
+        "Time decay",
+        "theta decay",
+        "pérdida de valor temporal"
+      ],
       "category": "options",
       "lesson": "m5-l3",
-      "definition": "La pérdida constante del valor extrínseco de una opción a medida que se acerca el vencimiento, medida por la theta. Es el ingreso del vendedor de opciones y el viento en contra del comprador; una acción que no va a ninguna parte igual le cuesta dinero al comprador.",
-      "example": "Una opción at the money con 30 días restantes puede perder un tercio de su valor en los últimos 10 días si la acción no se mueve.",
+      "definition": "La pérdida constante del valor extrínseco de una opción a medida que se acerca el vencimiento, medida por el theta. Es el ingreso del vendedor de opciones y el viento en contra del comprador; una acción que no va a ninguna parte igual le cuesta dinero al comprador.",
+      "example": "Una opción en el dinero (at the money) con 30 días restantes puede perder un tercio de su valor en los últimos 10 días si la acción no se mueve.",
       "related": [
         "theta",
         "extrinsic-value",
@@ -2924,8 +3462,14 @@
     },
     {
       "id": "time-in-force",
-      "term": "Time in force (Day / GTC)",
-      "aliases": [],
+      "term": "Vigencia de la orden (time in force: Day / GTC)",
+      "aliases": [
+        "Time in force (Day / GTC)",
+        "Time in force",
+        "Day",
+        "GTC",
+        "duración de la orden"
+      ],
       "category": "orders",
       "lesson": "m1-l4",
       "definition": "Cuánto tiempo permanece viva una orden abierta. Las órdenes Day se cancelan al cierre si no se ejecutan; las órdenes válidas hasta cancelar (GTC) persisten hasta ejecutarse o cancelarse (los brókers suelen limitarlas a 60-90 días).",
@@ -2937,9 +3481,12 @@
     },
     {
       "id": "timeframe",
-      "term": "Timeframe",
+      "term": "Marco temporal (timeframe)",
       "aliases": [
-        "interval"
+        "interval",
+        "Timeframe",
+        "intervalo",
+        "temporalidad"
       ],
       "category": "charts",
       "lesson": "m2-l1",
@@ -2954,8 +3501,11 @@
     },
     {
       "id": "trading-journal",
-      "term": "Trading journal",
-      "aliases": [],
+      "term": "Diario de trading",
+      "aliases": [
+        "Trading journal",
+        "diario"
+      ],
       "category": "risk",
       "lesson": "m4-l5",
       "definition": "Un registro de cada operación con la configuración, el razonamiento, la emoción, el resultado y la lección. Revisarlo es como los traders descubren que, por ejemplo, sus operaciones por venganza pierden y sus rupturas de los martes ganan.",
@@ -2969,8 +3519,10 @@
     },
     {
       "id": "trading-plan",
-      "term": "Trading plan",
-      "aliases": [],
+      "term": "Plan de trading",
+      "aliases": [
+        "Trading plan"
+      ],
       "category": "risk",
       "lesson": "m4-l5",
       "definition": "Un documento escrito que indica qué operas, las reglas exactas de entrada y salida, cómo dimensionas las posiciones, el riesgo máximo por operación y por día, y cuándo revisas. Su trabajo es tomar las decisiones antes de que lo hagan las emociones.",
@@ -2984,8 +3536,11 @@
     },
     {
       "id": "strategy",
-      "term": "Trading strategy",
-      "aliases": [],
+      "term": "Estrategia de trading",
+      "aliases": [
+        "Trading strategy",
+        "estrategia"
+      ],
       "category": "strategy",
       "lesson": "m6-l1",
       "definition": "Un conjunto completo y escrito de reglas que dice qué operar, exactamente cuándo entrar, exactamente cuándo salir (tanto con ganancia como con pérdida) y cuánto arriesgar. Si dos personas que lo leen tomarían operaciones distintas, todavía no es una estrategia.",
@@ -3000,7 +3555,10 @@
     {
       "id": "trailing-stop",
       "term": "Trailing stop",
-      "aliases": [],
+      "aliases": [
+        "stop dinámico",
+        "stop móvil"
+      ],
       "category": "risk",
       "lesson": "m4-l2",
       "definition": "Un stop-loss que sube a medida que el precio sube (en una posición comprada) pero nunca baja, asegurando ganancias mientras deja correr la tendencia. Puede seguir al precio por una cantidad en dólares, un porcentaje, un múltiplo del ATR o una media móvil.",
@@ -3013,8 +3571,10 @@
     },
     {
       "id": "transaction-costs",
-      "term": "Transaction costs",
-      "aliases": [],
+      "term": "Costos de transacción",
+      "aliases": [
+        "Transaction costs"
+      ],
       "category": "strategy",
       "lesson": "m6-l4",
       "definition": "Todo lo que se escapa de una operación: comisiones, el spread entre bid y ask, deslizamiento, tarifas de préstamo e impuestos. Las estrategias de alta frecuencia que se ven geniales antes de costos a menudo pierden después de ellos.",
@@ -3028,8 +3588,10 @@
     },
     {
       "id": "trend",
-      "term": "Trend",
-      "aliases": [],
+      "term": "Tendencia",
+      "aliases": [
+        "Trend"
+      ],
       "category": "charts",
       "lesson": "m2-l2",
       "definition": "La dirección general de los precios en una temporalidad elegida. Una tendencia alcista hace máximos y mínimos más altos; una bajista hace máximos y mínimos más bajos; un rango no hace ninguna de las dos cosas.",
@@ -3044,8 +3606,10 @@
     },
     {
       "id": "trend-following",
-      "term": "Trend following",
-      "aliases": [],
+      "term": "Seguimiento de tendencia (trend following)",
+      "aliases": [
+        "Trend following"
+      ],
       "category": "strategy",
       "lesson": "m3-l1",
       "definition": "Estrategias que compran fortaleza y venden debilidad, buscando capturar unos pocos movimientos grandes mientras aceptan muchas pérdidas pequeñas. Pierden en rangos y ganan en tendencias sostenidas.",
@@ -3059,8 +3623,10 @@
     },
     {
       "id": "trend-line",
-      "term": "Trend line",
-      "aliases": [],
+      "term": "Línea de tendencia",
+      "aliases": [
+        "Trend line"
+      ],
       "category": "charts",
       "lesson": "m2-l3",
       "definition": "Una línea recta trazada bajo los mínimos de giro de una tendencia alcista o sobre los máximos de giro de una bajista. Cuantas más veces el precio la toca y la respeta, más traders la observan; una ruptura de la línea es una advertencia temprana de cambio de tendencia.",
@@ -3073,8 +3639,10 @@
     },
     {
       "id": "triangle",
-      "term": "Triangle",
-      "aliases": [],
+      "term": "Triángulo",
+      "aliases": [
+        "Triangle"
+      ],
       "category": "charts",
       "lesson": "m2-l5",
       "definition": "Una consolidación en la que los giros se hacen cada vez más pequeños, formando líneas de tendencia convergentes. Los triángulos ascendentes y descendentes suelen romper en la dirección del lado plano; los simétricos continúan la tendencia previa la mayoría de las veces.",
@@ -3088,10 +3656,14 @@
     },
     {
       "id": "unrealized-pnl",
-      "term": "Unrealized P&L",
+      "term": "P&L no realizado (unrealized P&L)",
       "aliases": [
         "open P&L",
-        "paper gain"
+        "paper gain",
+        "Unrealized P&L",
+        "P&L abierto",
+        "ganancia flotante",
+        "G/P no realizada"
       ],
       "category": "portfolio",
       "lesson": "m4-l5",
@@ -3105,9 +3677,11 @@
     },
     {
       "id": "uptrend",
-      "term": "Uptrend",
+      "term": "Tendencia alcista (uptrend)",
       "aliases": [
-        "bull trend"
+        "bull trend",
+        "Uptrend",
+        "tendencia al alza"
       ],
       "category": "charts",
       "lesson": "m2-l2",
@@ -3136,8 +3710,10 @@
     },
     {
       "id": "vertical-spread",
-      "term": "Vertical spread",
-      "aliases": [],
+      "term": "Spread vertical",
+      "aliases": [
+        "Vertical spread"
+      ],
       "category": "options",
       "lesson": "m5-l4",
       "definition": "Comprar una opción y vender otra del mismo tipo y vencimiento con un strike distinto. La opción vendida reduce el costo y limita la ganancia; tanto el riesgo como la recompensa se conocen de antemano.",
@@ -3150,8 +3726,10 @@
     },
     {
       "id": "volatility",
-      "term": "Volatility",
-      "aliases": [],
+      "term": "Volatilidad",
+      "aliases": [
+        "Volatility"
+      ],
       "category": "markets",
       "lesson": "m1-l5",
       "definition": "Cuánto y qué tan rápido se mueve un precio, normalmente medido como la desviación estándar de los retornos. Alta volatilidad significa oscilaciones mayores en ambas direcciones, mayores ganancias potenciales y mayores pérdidas potenciales.",
@@ -3165,8 +3743,10 @@
     },
     {
       "id": "volume",
-      "term": "Volume",
-      "aliases": [],
+      "term": "Volumen",
+      "aliases": [
+        "Volume"
+      ],
       "category": "markets",
       "lesson": "m1-l3",
       "definition": "El número de acciones negociadas en un periodo, mostrado como barras debajo del gráfico de precios. Un volumen alto significa que muchos participantes coinciden en que un movimiento importa; los movimientos con poco volumen son más fáciles de revertir.",
@@ -3179,8 +3759,10 @@
     },
     {
       "id": "volume-confirmation",
-      "term": "Volume confirmation",
-      "aliases": [],
+      "term": "Confirmación por volumen",
+      "aliases": [
+        "Volume confirmation"
+      ],
       "category": "charts",
       "lesson": "m2-l3",
       "definition": "El principio de que un movimiento de precio acompañado de un volumen superior al promedio es más significativo que el mismo movimiento con poco volumen. Las rupturas y las reversiones son más confiables cuando el volumen acompaña.",
@@ -3194,8 +3776,11 @@
     },
     {
       "id": "vwap",
-      "term": "Volume-weighted average price (VWAP)",
-      "aliases": [],
+      "term": "Precio promedio ponderado por volumen (VWAP)",
+      "aliases": [
+        "Volume-weighted average price (VWAP)",
+        "Volume-weighted average price"
+      ],
       "category": "indicators",
       "lesson": "m3-l4",
       "definition": "El precio promedio del día hasta el momento, ponderado por el volumen negociado a cada precio. Las instituciones comparan sus ejecuciones contra él; los traders intradía consideran alcista el precio por encima del VWAP y bajista por debajo. Se reinicia en cada sesión.",
@@ -3208,8 +3793,11 @@
     },
     {
       "id": "walk-forward",
-      "term": "Walk-forward testing",
-      "aliases": [],
+      "term": "Prueba walk-forward",
+      "aliases": [
+        "Walk-forward testing",
+        "walk-forward"
+      ],
       "category": "strategy",
       "lesson": "m6-l3",
       "definition": "Optimizar repetidamente sobre una ventana de datos y probar en la siguiente, avanzando a lo largo del historial. Simula cómo habrías reajustado realmente con el tiempo y expone los parámetros frágiles.",
@@ -3222,8 +3810,10 @@
     },
     {
       "id": "weekly-review",
-      "term": "Weekly review",
-      "aliases": [],
+      "term": "Revisión semanal",
+      "aliases": [
+        "Weekly review"
+      ],
       "category": "risk",
       "lesson": "m4-l5",
       "definition": "Una cita fija para repasar el diario: qué configuraciones ganaron dinero, qué reglas se rompieron, qué hizo la curva de capital y qué única cosa cambiar la próxima semana. La constancia importa más que la profundidad.",
@@ -3235,8 +3825,11 @@
     },
     {
       "id": "wma",
-      "term": "Weighted moving average (WMA)",
-      "aliases": [],
+      "term": "Media móvil ponderada (WMA)",
+      "aliases": [
+        "Weighted moving average (WMA)",
+        "Weighted moving average"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Una media móvil que da al cierre más reciente un peso de N, al anterior N-1, y así sucesivamente hasta 1. Se ubica entre la SMA y la EMA en capacidad de respuesta.",
@@ -3249,8 +3842,12 @@
     },
     {
       "id": "whipsaw",
-      "term": "Whipsaw",
-      "aliases": [],
+      "term": "Whipsaw (latigazo)",
+      "aliases": [
+        "Whipsaw",
+        "latigazo",
+        "señal falsa"
+      ],
       "category": "indicators",
       "lesson": "m3-l1",
       "definition": "Una señal que se revierte casi de inmediato, de modo que compras, te sacan por el stop y el precio vuelve a donde estaba. Las reglas de seguimiento de tendencia sufren estas señales falsas (whipsaws) en mercados laterales; las únicas curas son los filtros (como el ADX) o aceptar las pérdidas como el costo de capturar tendencias.",
@@ -3264,10 +3861,14 @@
     },
     {
       "id": "wick",
-      "term": "Wick (shadow)",
+      "term": "Mecha (sombra)",
       "aliases": [
         "shadow",
-        "tail"
+        "tail",
+        "Wick (shadow)",
+        "Wick",
+        "sombra",
+        "cola"
       ],
       "category": "charts",
       "lesson": "m2-l1",
@@ -3282,8 +3883,11 @@
     },
     {
       "id": "win-rate",
-      "term": "Win rate",
-      "aliases": [],
+      "term": "Tasa de acierto (win rate)",
+      "aliases": [
+        "Win rate",
+        "porcentaje de aciertos"
+      ],
       "category": "risk",
       "lesson": "m4-l2",
       "definition": "El porcentaje de operaciones que cierran con ganancia. Por sí solo dice poco: una tasa de acierto del 90% con pérdidas enormes ocasionales puede perder dinero, y una del 35% con ganadoras grandes puede ser muy rentable.",

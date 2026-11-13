@@ -53,8 +53,9 @@
   /* educational tooltip: works on hover and on keyboard / tap focus */
   /* the button is a 24x24 hit area (WCAG 2.5.8); the visible 16px circle is drawn by ::before and negative
      vertical margins keep the surrounding line box at its original height */
-  button.tip,.card > h2 button.tip,.stat .label button.tip{padding:4px;width:24px;height:24px;min-width:0;min-height:0;line-height:1;margin:-4px 0;border:0;background:transparent;box-shadow:none}
-  .tip{--tip-size:16px;position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:4px;border-radius:50%;
+  button.tip,.card > h2 button.tip,.stat .label button.tip{padding:5px;width:26px;height:26px;min-width:0;min-height:0;line-height:1;margin:0;border:0;background:transparent;box-shadow:none;vertical-align:middle}
+  .statgrid .k,.stat .label,.card > h2{min-height:26px}
+  .tip{--tip-size:16px;position:relative;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:5px;border-radius:50%;
     color:var(--muted);font-family:var(--mono);font-size:10px;line-height:1;cursor:help;flex:none;vertical-align:middle}
   .tip::before{content:"?";display:inline-flex;align-items:center;justify-content:center;width:var(--tip-size);height:var(--tip-size);border-radius:50%;
     border:1px solid var(--line2);background:var(--panel2);color:inherit;font:inherit}
@@ -101,7 +102,7 @@
   table.chain td.act{padding:2px 4px}
   table.chain td.act button{padding:1px 6px;font-size:10px;font-family:var(--mono);line-height:1.4;min-width:22px}
   table.chain td.act button.b{color:var(--up);border-color:var(--up)} table.chain td.act button.s{color:var(--down);border-color:var(--down)}
-  table.chain td.act button.b:hover{background:var(--up);color:#fff} table.chain td.act button.s:hover{background:var(--down);color:#fff}
+  table.chain td.act button.b:hover{background:var(--up-btn);color:#fff} table.chain td.act button.s:hover{background:var(--down-btn);color:#fff}
   table.chain tbody tr:hover td:not(.strike){background:var(--panel2)}
   .legs table td,.legs table th{padding:4px 4px;white-space:nowrap}
   .legs input[type="number"]{width:72px;padding:2px 6px;font-size:var(--fs-sm)}
@@ -235,7 +236,7 @@
                 <th class="right">Mark <button class="tip" type="button" aria-label="About marks" data-tip="The mark is the latest price used to value the position. Stocks use the last quote; options use a Black-Scholes value from the underlying's quote, since the simulator has no live options feed."></button></th>
                 <th class="right">Market value</th>
                 <th class="right">Unrealized P&amp;L <button class="tip" type="button" aria-label="About unrealized P&L" data-tip="(Mark − average cost) × quantity × multiplier. It is on paper until you close: a gain can disappear and a loss can recover."></button></th>
-                <th></th>
+                <th><span class="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody id="positions"></tbody>
@@ -254,7 +255,7 @@
                 <th>Type <button class="tip" type="button" aria-label="About order types" data-tip="Limit: fill at your price or better. Stop: becomes a market order once the stop price trades. Stop-limit: triggers like a stop, then works as a limit. Open orders here are checked against each new quote."></button></th>
                 <th class="right">Limit</th><th class="right">Stop</th>
                 <th>TIF <button class="tip" type="button" aria-label="About time in force" data-tip="Time in force. DAY orders expire unfilled at the end of the trading day they were placed. GTC (good-till-cancelled) orders stay working until filled or you cancel them."></button></th>
-                <th>Placed</th><th></th>
+                <th>Placed</th><th><span class="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody id="orders"></tbody>
@@ -361,7 +362,7 @@
             </h2>
             <div class="table-wrap">
               <table class="dense">
-                <thead><tr><th>Leg</th><th class="right">Qty <button class="tip" type="button" aria-label="About quantity" data-tip="Positive quantity = long (you bought). Negative = short (you sold / wrote). For a stock leg the quantity is shares; for options it is contracts of 100 shares."></button></th><th class="right">Premium <button class="tip" type="button" aria-label="About premium" data-tip="Price per share of the option. Multiply by 100 for the dollars per contract. For a stock leg this column holds the entry price."></button></th><th class="right">Cost</th><th></th></tr></thead>
+                <thead><tr><th>Leg</th><th class="right">Qty <button class="tip" type="button" aria-label="About quantity" data-tip="Positive quantity = long (you bought). Negative = short (you sold / wrote). For a stock leg the quantity is shares; for options it is contracts of 100 shares."></button></th><th class="right">Premium <button class="tip" type="button" aria-label="About premium" data-tip="Price per share of the option. Multiply by 100 for the dollars per contract. For a stock leg this column holds the entry price."></button></th><th class="right">Cost</th><th><span class="sr-only">Actions</span></th></tr></thead>
                 <tbody id="legs"></tbody>
               </table>
             </div>

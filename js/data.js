@@ -83,17 +83,35 @@
   };
 
   /**
+   * Coins whose bare exchange spelling ('BTCUSD', 'ETHUSD') is folded into BASE-USD by normSymbol(). The list is
+   * deliberately short — the three universe pairs plus the most-traded large caps — so that a stock ticker which
+   * merely ends in "USD" is never mistaken for a crypto pair. A bare spelling quoted in a stablecoin
+   * ('ETHUSDT', 'SOLUSDC') is always crypto, since no listed stock ends in USDT/USDC.
+   */
+  const KNOWN_COINS = new Set([
+    'BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'ADA', 'AVAX', 'LINK', 'LTC', 'BCH', 'DOT', 'MATIC', 'POL',
+    'SHIB', 'UNI', 'BNB', 'TRX', 'XLM', 'ATOM', 'NEAR', 'APT', 'ARB', 'OP', 'SUI', 'PEPE', 'AAVE',
+    'FIL', 'ETC', 'HBAR', 'TON', 'WBTC', 'ALGO', 'ICP', 'VET', 'XMR', 'XTZ', 'EOS', 'MKR', 'CRV', 'INJ'
+  ]);
+
+  /**
    * Canonical symbol. Stocks/ETFs are plain upper-case tickers (BRK.B keeps its dot). Crypto is spelled
    * BASE-QUOTE (BTC-USD, the Yahoo/Coinbase style); provider spellings such as 'BTC/USD' (Twelve Data),
-   * 'BINANCE:BTCUSDT' (Finnhub) or 'BTCUSD' are folded into that form so every cache key and portfolio
-   * position refers to the same thing.
+   * 'BINANCE:BTCUSDT' (Finnhub), 'ETHUSDT' or 'BTCUSD' are folded into that form so every cache key and
+   * portfolio position refers to the same thing. The bare, unprefixed 'XXXUSD' form is only folded when XXX
+   * is a well-known coin (KNOWN_COINS) — anything else stays a plain ticker.
    */
   function normSymbol(s) {
     let sym = String(s || '').trim().toUpperCase();
     if (!sym) return '';
     let m;
-    if ((m = /^(?:[A-Z]+:)?([A-Z0-9]{2,10})[\/-](USD|USDT|USDC|EUR|GBP)$/.exec(sym))) sym = m[1] + '-' + (m[2] === 'USDT' || m[2] === 'USDC' ? 'USD' : m[2]);
-    else if ((m = /^[A-Z]+:([A-Z0-9]{2,10}?)(USDT|USDC|USD)$/.exec(sym))) sym = m[1] + '-USD';
+    if ((m = /^(?:[A-Z]+:)?([A-Z0-9]{2,10})[\/-](USD|USDT|USDC|EUR|GBP)$/.exec(sym))) {
+      sym = m[1] + '-' + (m[2] === 'USDT' || m[2] === 'USDC' ? 'USD' : m[2]);
+    } else if ((m = /^([A-Z]+:)?([A-Z0-9]{2,10}?)(USDT|USDC|USD)$/.exec(sym))) {
+      // Exchange-prefixed ('BINANCE:BTCUSDT') or stablecoin-quoted spellings are unambiguous; a bare
+      // 'XXXUSD' is folded only for known coins so tickers that happen to end in USD are left alone.
+      if (m[1] || m[3] !== 'USD' || KNOWN_COINS.has(m[2])) sym = m[2] + '-USD';
+    }
     return sym;
   }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -353,19 +371,27 @@
     return st;
   }
 
-  /** Crypto spot markets trade every minute of every day; the "session" is the UTC calendar day. */
+  /**
+   * Crypto spot markets trade every minute of every day; the "session" is the UTC calendar day.
+   * `utcDate` / `weekday` / `utcWeekday` describe that session day (e.g. Saturday 03:07 UTC → 'Sat' even
+   * though it is still Friday evening in New York). `nyTime` / `nyDate` / `nyWeekday` are the New York
+   * wall-clock values, kept for UIs that show the student their local-ish time next to the NYSE one.
+   */
   function cryptoStatus(nowMs) {
     const ms = nowMs == null ? Date.now() : nowMs;
     const p = nyParts(ms);
     const d = new Date(ms);
+    const utcWeekday = WEEKDAYS[d.getUTCDay()];
     return {
       open: true,
       phase: 'open',
       nyTime: pad2(p.h) + ':' + pad2(p.mi) + ' ET',
       nyDate: p.date,
+      nyWeekday: WEEKDAYS[p.wd],
       utcDate: d.toISOString().slice(0, 10),
       utcTime: pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ' UTC',
-      weekday: WEEKDAYS[p.wd],
+      utcWeekday,
+      weekday: utcWeekday,
       isTradingDay: true,
       holiday: null,
       earlyClose: false,

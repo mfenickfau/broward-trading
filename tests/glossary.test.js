@@ -359,6 +359,185 @@ test('date helpers: dateKey is local, shiftKey crosses month ends, dayDiff count
   const x = r(); assert.ok(x >= 0 && x < 1); assert.notStrictEqual(x, r());
 });
 
+console.log('BT.glossary — language (course/<lang>/ with English fallback)');
+
+const esGlossary = JSON.parse(fs.readFileSync(path.join(ROOT, 'course', 'es', 'glossary.json'), 'utf8'));
+const esBank = JSON.parse(fs.readFileSync(path.join(ROOT, 'course', 'es', 'questionbank.json'), 'utf8'));
+
+/** Load js/glossary.js into a fresh `window` that records event listeners and serves fetches from `files`. */
+function freshGlossary(langCode, files, opts) {
+  opts = opts || {};
+  const listeners = {};
+  const requests = [];
+  const w = {
+    localStorage: global.localStorage,
+    addEventListener(name, fn) { (listeners[name] = listeners[name] || []).push(fn); },
+    dispatchEvent(ev) {
+      let prevented = false;
+      ev.preventDefault = () => { prevented = true; };
+      (listeners[ev.type] || []).forEach(fn => fn(ev));
+      return !prevented;
+    },
+    location: { reload() { requests.push('RELOAD'); } },
+    fetch(url) {
+      requests.push(url);
+      const body = files[url];
+      return Promise.resolve(body === undefined
+        ? { ok: false, status: 404, json: () => Promise.reject(new Error('404')) }
+        : { ok: true, status: 200, json: () => Promise.resolve(JSON.parse(JSON.stringify(body))) });
+    },
+    BT: { i18n: { lang: () => langCode, locale: () => (langCode === 'es' ? 'es-419' : 'en-US') } }
+  };
+  if (opts.course) w.BT.course = { lang: () => langCode };
+  const saved = global.window; global.window = w;
+  delete require.cache[require.resolve(path.join(ROOT, 'js', 'glossary.js'))];
+  require(path.join(ROOT, 'js', 'glossary.js'));
+  global.window = saved;
+  return { G: w.BT.glossary, w, requests, listeners, setLang(code) { langCode = code; } };
+}
+if (typeof global.CustomEvent !== 'function') {
+  global.CustomEvent = class CustomEvent { constructor(type, init) { this.type = type; this.detail = init && init.detail; this.cancelable = !!(init && init.cancelable); } };
+}
+const FILES = {
+  'course/glossary.json': glossary, 'course/questionbank.json': bank,
+  'course/es/glossary.json': esGlossary, 'course/es/questionbank.json': esBank
+};
+const tick = () => new Promise(r => setTimeout(r, 0));
+const asyncTests = [];
+function atest(name, fn) { asyncTests.push({ name, fn }); }
+
+test('urlFor()/lang(): Spanish resolves to course/es/…, English and junk codes keep the plain path', () => {
+  const es = freshGlossary('es', FILES);
+  assert.strictEqual(es.G.lang(), 'es');
+  assert.strictEqual(es.G.urlFor('course/glossary.json'), 'course/es/glossary.json');
+  assert.strictEqual(es.G.urlFor('course/questionbank.json', 'en'), 'course/questionbank.json');
+  assert.strictEqual(es.G.urlFor('course/glossary.json', '../x'), 'course/glossary.json');
+  assert.strictEqual(es.G.locale(), 'es-419');
+  const en = freshGlossary('en', FILES);
+  assert.strictEqual(en.G.urlFor('course/glossary.json'), 'course/glossary.json');
+  // BT.course.lang() wins when the course engine is loaded
+  const viaCourse = freshGlossary('es', FILES, { course: true });
+  assert.strictEqual(viaCourse.G.lang(), 'es');
+});
+
+atest('load() with lang es requests course/es/glossary.json first and tags data.lang', async () => {
+  const { G, requests } = freshGlossary('es', FILES);
+  const d = await G.load();
+  assert.strictEqual(requests[0], 'course/es/glossary.json');
+  assert.strictEqual(requests.length, 1, 'no English fetch when the translation exists');
+  assert.strictEqual(d.lang, 'es'); assert.strictEqual(d.englishOnly, false);
+  assert.strictEqual(G.dataLang(), 'es'); assert.strictEqual(G.englishOnly(), false);
+  assert.strictEqual(G.terms().length, esGlossary.terms.length);
+  assert.strictEqual(G.categoryLabel('markets'), 'Mercados y cotizaciones');
+  assert.ok(G.get('ask'), 'ids are shared across languages');
+  // accent-insensitive lookup and search ('órdenes' ⇄ 'ordenes')
+  assert.strictEqual(G.util.fold('Órdenes límite'), 'Ordenes limite');
+  G.setData({ terms: [
+    { id: 'orden-limite', term: 'Orden límite', aliases: ['Órdenes limitadas'], category: 'orders', lesson: 'm1-l1', definition: 'Una orden con precio máximo.', example: 'Ej.', related: [] },
+    { id: 'indice', term: 'Índice', aliases: [], category: 'markets', lesson: 'm1-l1', definition: 'Una cesta de acciones.', example: 'Ej.', related: [] }
+  ] }, { lang: 'es' });
+  assert.strictEqual(G.get('orden limite').id, 'orden-limite');
+  assert.strictEqual(G.get('ordenes limitadas').id, 'orden-limite');
+  assert.strictEqual(G.get('indice').id, 'indice');
+  assert.strictEqual(G.search('índice')[0].id, 'indice');
+  assert.strictEqual(G.search('maximo')[0].id, 'orden-limite');
+  assert.strictEqual(G.util.slug('Índice'), 'indice');
+});
+
+atest('load() with lang en requests only course/glossary.json', async () => {
+  const { G, requests } = freshGlossary('en', FILES);
+  const d = await G.load();
+  assert.deepStrictEqual(requests, ['course/glossary.json']);
+  assert.strictEqual(d.lang, 'en'); assert.strictEqual(d.englishOnly, false);
+});
+
+atest('missing translation falls back to the English file with englishOnly:true; English errors propagate', async () => {
+  const { G, requests } = freshGlossary('fr', FILES);
+  const d = await G.load();
+  assert.deepStrictEqual(requests, ['course/fr/glossary.json', 'course/glossary.json']);
+  assert.strictEqual(d.lang, 'en'); assert.strictEqual(d.englishOnly, true); assert.strictEqual(G.englishOnly(), true);
+  const broken = freshGlossary('es', {});
+  await assert.rejects(broken.G.load(), /glossary: HTTP 404/);
+});
+
+atest('daily.loadBank() is language-aware too (course/es/questionbank.json first, English fallback)', async () => {
+  const es = freshGlossary('es', FILES);
+  const b = await es.G.daily.loadBank();
+  assert.strictEqual(es.requests[0], 'course/es/questionbank.json');
+  assert.strictEqual(b.lang, 'es'); assert.strictEqual(es.G.daily.bankLang(), 'es');
+  assert.strictEqual(es.G.daily.questions().length, esBank.questions.length);
+  const fb = freshGlossary('es', { 'course/questionbank.json': bank });
+  const b2 = await fb.G.daily.loadBank();
+  assert.deepStrictEqual(fb.requests, ['course/es/questionbank.json', 'course/questionbank.json']);
+  assert.strictEqual(b2.englishOnly, true);
+});
+
+test('Spanish headwords sort and group with the Spanish locale; letters() stays # first', () => {
+  const { G } = freshGlossary('es', FILES);
+  G.setData(esGlossary, { lang: 'es' });
+  const names = G.terms().map(t => t.term);
+  const sorted = names.slice().sort((a, b) => a.localeCompare(b, 'es-419', { sensitivity: 'base' }));
+  assert.deepStrictEqual(names, sorted);
+  assert.strictEqual(G.letterOf({ term: 'Órdenes' }), 'O');
+  assert.strictEqual(G.letterOf({ term: 'Índice' }), 'I');
+  assert.strictEqual(G.letterOf({ term: 'Ñandú' }), 'Ñ');
+  assert.strictEqual(G.letterOf({ term: '+DI' }), '#');
+  const letters = G.letters();
+  assert.strictEqual(letters[0], '#');
+  for (const L of letters.slice(1)) assert.ok(/^[A-ZÑ]$/.test(L), 'odd letter ' + L);
+  for (const L of letters) for (const t of G.byLetter()[L]) assert.strictEqual(G.letterOf(t), L);
+});
+
+atest("'bt:lang' re-fetches loaded data in the new language and announces 'bt:glossary'", async () => {
+  const ctx = freshGlossary('en', FILES);
+  const { G, w, requests, listeners } = ctx;
+  assert.ok(listeners['bt:lang'] && listeners['bt:lang'].length === 1, 'listens for bt:lang');
+  await G.load(); await G.daily.loadBank();
+  assert.strictEqual(G.dataLang(), 'en');
+  const announced = [];
+  w.addEventListener('bt:glossary', ev => { announced.push(ev.detail); ev.preventDefault(); });
+  // the same language again → no refetch, no announcement
+  ctx.setLang('en'); w.dispatchEvent(new CustomEvent('bt:lang', { detail: { lang: 'en' } }));
+  await tick(); await tick();
+  assert.strictEqual(requests.length, 2); assert.strictEqual(announced.length, 0);
+  // → Spanish
+  ctx.setLang('es'); w.dispatchEvent(new CustomEvent('bt:lang', { detail: { lang: 'es' } }));
+  await tick(); await tick(); await tick();
+  assert.deepStrictEqual(requests.slice(2), ['course/es/glossary.json', 'course/es/questionbank.json']);
+  assert.strictEqual(G.dataLang(), 'es'); assert.strictEqual(G.daily.bankLang(), 'es');
+  assert.strictEqual(G.categoryLabel('orders'), 'Órdenes y ejecución');
+  assert.strictEqual(announced.length, 1); assert.strictEqual(announced[0].lang, 'es');
+  assert.strictEqual(announced[0].data.terms.length, esGlossary.terms.length);
+  assert.ok(!requests.includes('RELOAD'), 'a page that handled bt:glossary is not reloaded');
+  // → back to English: the English data is fetched again (only glossary was loaded, so only glossary refetches)
+  ctx.setLang('en'); w.dispatchEvent(new CustomEvent('bt:lang', { detail: { lang: 'en' } }));
+  await tick(); await tick(); await tick();
+  assert.deepStrictEqual(requests.slice(4), ['course/glossary.json', 'course/questionbank.json']);
+  assert.strictEqual(G.dataLang(), 'en');
+});
+
+atest("'bt:lang' before anything is loaded does nothing; glossary.html without a listener is reloaded once", async () => {
+  const idle = freshGlossary('en', FILES);
+  idle.setLang('es'); idle.w.dispatchEvent(new CustomEvent('bt:lang', { detail: { lang: 'es' } }));
+  await tick(); await tick();
+  assert.deepStrictEqual(idle.requests, []);
+  const page = freshGlossary('en', FILES);
+  await page.G.load();
+  page.w.BT.glossaryPage = { state: {} };            // what glossary.html exposes
+  page.setLang('es'); page.w.dispatchEvent(new CustomEvent('bt:lang', { detail: { lang: 'es' } }));
+  await tick(); await tick(); await tick();
+  assert.deepStrictEqual(page.requests, ['course/glossary.json', 'course/es/glossary.json', 'RELOAD']);
+});
+
+(async () => {
+  for (const t of asyncTests) {
+    try { await t.fn(); passed++; console.log('  ok   ' + t.name); }
+    catch (e) { failed++; console.log('  FAIL ' + t.name + '\n       ' + (e && e.message ? e.message.split('\n')[0] : e)); }
+  }
+  syncTail();
+})();
+
+function syncTail() {
 console.log('glossary.html (phone Browse layout)');
 
 const html = fs.readFileSync(path.join(ROOT, 'glossary.html'), 'utf8');
@@ -395,3 +574,4 @@ test('Browse renders one letter section at a time on phones (letterMode) with pr
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);
+}

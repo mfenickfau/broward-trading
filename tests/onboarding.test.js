@@ -70,6 +70,26 @@ test('plan has 7 days x 3 tasks, outcomes and a completion card', () => {
   assert.ok(PLAN.completion.next.some(n => /certificate/.test(n.href)), 'completion links to the certificate');
   assert.ok(PLAN.honesty && /not make you a profitable trader/i.test(PLAN.honesty), 'honest copy about outcomes');
 });
+test('plan copy matches the UI: no "Mark lesson done" button, tour has seven steps', () => {
+  const text = JSON.stringify(PLAN);
+  assert.ok(!/Mark lesson done/.test(text), 'learn.js renders "Mark complete" / "Mark lesson complete"');
+  assert.ok(!/Eight short steps/.test(text), 'app.js TOUR has 7 entries');
+  const tour = PLAN.days[0].tasks.find(t => t.id === 'd1-tour');
+  assert.ok(tour && /Seven short steps/.test(tour.why));
+  const lesson = PLAN.days[0].tasks.find(t => t.id === 'd1-lesson');
+  assert.ok(lesson && lesson.steps.some(s => /'Mark complete'/.test(s) && /'Mark lesson complete'/.test(s)));
+});
+test('d3-trade only counts a stock fill, not an options contract buy', () => {
+  fresh();
+  const d3 = PLAN.days[2].tasks.find(t => t.id === 'd3-trade');
+  assert.strictEqual(d3.check.kind, 'stock');
+  set('bt.portfolio', { version: 2, trades: [{ id: 1, side: 'buy', qty: 1, kind: 'option', symbol: 'AAPL' }] });
+  assert.strictEqual(O.evaluate(d3.check).done, false, 'an option buy does not tick the task');
+  set('bt.portfolio', { version: 2, trades: [{ id: 2, side: 'buy', qty: 10, kind: 'stock', symbol: 'AAPL' }] });
+  assert.strictEqual(O.evaluate(d3.check).done, true, 'a stock buy fill does');
+  set('bt.portfolio', { version: 2, trades: [{ id: 3, side: 'buy', qty: 10, symbol: 'AAPL' }] });
+  assert.strictEqual(O.evaluate(d3.check).done, true, 'legacy fills without kind default to stock');
+});
 test('every task has an id, title, why, steps, a known check type and a link to an existing page', () => {
   const ids = new Set();
   for (const d of PLAN.days) for (const t of d.tasks) {
@@ -200,6 +220,14 @@ test('trade: fills in bt.portfolio.trades filtered by side/kind/closed; orders b
   assert.strictEqual(O.evaluate({ type: 'trade', orderType: 'stop_limit' }).done, false, 'rejected orders do not count');
   assert.strictEqual(O.evaluate({ type: 'trade', orderType: 'limit' }).done, false);
   assert.strictEqual(O.evaluate({ type: 'trade', account: 'replay' }).done, false, 'other account key is separate');
+  // Placing the order is the task; a day-TIF stop that expired on the next session, or one the
+  // student cancelled, was still placed. Only rejected orders and status-less junk do not count.
+  for (const status of ['expired', 'cancelled', 'canceled', 'filled']) {
+    set('bt.portfolio', { orders: [{ type: 'stop', side: 'sell', qty: 10, stopPrice: 190, tif: 'day', status }], trades: [] });
+    assert.strictEqual(O.evaluate({ type: 'trade', orderType: ['stop', 'stop_limit'] }).done, true, status + ' stop still counts as placed');
+  }
+  set('bt.portfolio', { orders: [{ type: 'stop', side: 'sell' }, { type: 'stop', side: 'sell', status: 'rejected' }], trades: [] });
+  assert.strictEqual(O.evaluate({ type: 'trade', orderType: 'stop' }).done, false, 'no status / rejected do not count');
   set('bt.portfolio.replay', { trades: [{ side: 'buy', qty: 1 }] });
   assert.strictEqual(O.evaluate({ type: 'trade', account: 'replay' }).done, true);
   set('bt.portfolio', { trades: 'nope', orders: 5 });
@@ -241,6 +269,21 @@ test('journal: entries by field / reviewed / source, and weekly reviews', () => 
   assert.strictEqual(O.evaluate({ type: 'journal' }).done, false);
   assert.strictEqual(O.evaluate({ type: 'journal', review: true }).done, false);
 });
+test('journal: the bare array replay.js saveToJournal() writes before the journal page is ever opened', () => {
+  fresh();
+  set('bt.journal', [{ id: 'jr-1', source: 'replay', lessons: 'x', setup: 'Replay drill' }]);
+  let r = O.evaluate({ type: 'journal', field: 'lessons' });
+  assert.strictEqual(r.done, true, 'd6-journal ticks from the Replay scorecard'); assert.ok(/lesson written/.test(r.detail));
+  assert.strictEqual(O.evaluate({ type: 'journal', source: 'replay' }).done, true);
+  assert.strictEqual(O.evaluate({ type: 'journal', reviewed: true }).done, false, 'no emotion → not a reviewed entry');
+  r = O.evaluate({ type: 'journal', review: true });
+  assert.strictEqual(r.done, false, 'an array has no weekly reviews'); assert.ok(/No weekly review/.test(r.detail));
+  assert.strictEqual(taskById(O.status(), 'd6-journal').done, true);
+  set('bt.journal', ['junk', null, 7]);
+  assert.strictEqual(O.evaluate({ type: 'journal' }).done, false);
+  set('bt.journal', []);
+  assert.strictEqual(O.evaluate({ type: 'journal' }).detail, 'None yet');
+});
 test('alert: bt.alerts array of {symbol, kind, value}', () => {
   fresh();
   set('bt.alerts', [{ id: 1, symbol: 'AAPL', kind: 'price_above', value: 210, enabled: true }, { id: 2 }]);
@@ -249,23 +292,50 @@ test('alert: bt.alerts array of {symbol, kind, value}', () => {
   assert.strictEqual(O.evaluate({ type: 'alert', kind: 'rsi_below' }).done, false);
   assert.strictEqual(O.evaluate({ type: 'alert', symbol: 'aapl' }).done, true);
 });
-test('glossary: flashcards (cards with reps or the reviews counter) and daily5 history', () => {
+test('glossary: flashcards count distinct graded cards (never the reviews counter) and daily5 history', () => {
   fresh();
   set('bt.flashcards', { version: 1, cards: { rsi: { interval: 1, ease: 2.5, due: 1, reps: 1, lapses: 0, last: 1 }, sma: { reps: 0 }, bad: 'x' }, reviews: 0, log: [] });
   let r = O.evaluate({ type: 'glossary', mode: 'flashcards', min: 5 });
   assert.strictEqual(r.done, false); assert.strictEqual(r.n, 1);
   set('bt.flashcards', { cards: {}, reviews: 7 });
-  assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'flashcards', min: 5 }).done, true, 'the reviews counter also counts');
+  assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'flashcards', min: 5 }).done, false, 'the global reviews counter alone is not cards reviewed');
+  // Pressing 'Again' five times on one card: rate() resets reps to 0 and bumps lapses, reviews=5.
+  set('bt.flashcards', { cards: { rsi: { reps: 0, lapses: 5, last: 5 } }, reviews: 5 });
+  r = O.evaluate({ type: 'glossary', mode: 'flashcards', min: 5 });
+  assert.strictEqual(r.done, false, 'one card graded five times is one card'); assert.strictEqual(r.n, 1);
+  // Five distinct cards, however they were graded (an 'again'-only card has reps 0 but lapses/last set).
+  set('bt.flashcards', { cards: {
+    rsi: { reps: 0, lapses: 1, last: 5 }, sma: { reps: 1, lapses: 0, last: 6 }, ema: { reps: 2, lapses: 0, last: 7 },
+    macd: { reps: 0, lapses: 0, last: 8 }, atr: { reps: 1, lapses: 1, last: 9 }, adx: { reps: 0, lapses: 0, last: 0 }
+  }, reviews: 1 });
+  r = O.evaluate({ type: 'glossary', mode: 'flashcards', min: 5 });
+  assert.strictEqual(r.done, true, 'five distinct cards graded'); assert.strictEqual(r.n, 5);
+  assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'flashcards', min: 6 }).done, false, 'an untouched card (last 0) is not reviewed');
   assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'daily5' }).done, false);
   set('bt.daily5', { version: 1, history: { '2026-11-12': { score: 4, total: 5, pct: 80, answers: [], at: 1 } }, best: 1 });
   assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'daily5' }).done, true);
   assert.strictEqual(O.evaluate({ type: 'glossary', mode: 'daily5', min: 2 }).done, false);
 });
-test('tour: bt.tour.done written by the dashboard', () => {
+test('tour: only bt.tour.finished (last step reached) counts; Skip/Escape only set bt.tour.done', () => {
   fresh();
   assert.strictEqual(O.evaluate({ type: 'tour' }).done, false);
   set('bt.tour.done', true);
-  assert.strictEqual(O.evaluate({ type: 'tour' }).done, true);
+  let r = O.evaluate({ type: 'tour' });
+  assert.strictEqual(r.done, false, 'dismissing the tour is not taking it'); assert.ok(/closed early/i.test(r.detail));
+  assert.strictEqual(O.evaluate({ type: 'tour', any: true }).done, true, 'a plan may opt into the legacy flag');
+  set('bt.tour.finished', true);
+  r = O.evaluate({ type: 'tour' });
+  assert.strictEqual(r.done, true); assert.strictEqual(r.detail, 'Tour finished');
+  localStorage.removeItem('bt.tour.done');
+  assert.strictEqual(O.evaluate({ type: 'tour' }).done, true, 'finished flag stands on its own');
+  set('bt.tour.finished', '"yes"');
+  assert.strictEqual(O.evaluate({ type: 'tour' }).done, false, 'malformed flag is not finished');
+  localStorage.removeItem('bt.tour.finished');
+  set('bt.tour.done', { done: true, finished: true });
+  assert.strictEqual(O.evaluate({ type: 'tour' }).done, true, 'object shape {done, finished} also accepted');
+  set('bt.tour.done', { done: true });
+  assert.strictEqual(O.evaluate({ type: 'tour' }).done, false);
+  assert.strictEqual(taskById(O.status(), 'd1-tour').done, false);
 });
 test('manual: ticked via setManual, stored in bt.onboarding.manual', () => {
   fresh();
@@ -281,7 +351,7 @@ test('manual: ticked via setManual, stored in bt.onboarding.manual', () => {
 
 /* ---------------- whole-week flow ---------------- */
 function doDay1() {
-  set('bt.tour.done', true);
+  set('bt.tour.done', true); set('bt.tour.finished', true);
   set('bt.course', { lessonsDone: { 'm1-l1': true }, quizScores: {} });
   set('bt.watchlist', ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY', 'AMZN', 'DIS', 'NKE', 'KO']);
 }
@@ -301,6 +371,50 @@ test('un-doing a task (e.g. clearing the watchlist) re-locks day progress honest
   const st = O.status();
   assert.ok(!st.days[0].complete); assert.strictEqual(st.days[0].completedAt, null);
   assert.strictEqual(st.currentDay, 1);
+  assert.ok(st.days[1].unlocked, 'but day 2, once earned, stays unlocked');
+  assert.ok(!st.days[2].unlocked, 'day 3 was never earned');
+});
+function doAllAutoTasks() {
+  doDay1();
+  set('bt.course', { lessonsDone: { 'm1-l1': true, 'm1-l3': true, 'm2-l1': true, 'm1-l4': true, 'm4-l1': true, 'm3-l1': true, 'm7-l1': true, 'm4-l5': true }, quizScores: { 'm1-l4': 80 } });
+  set('bt.portfolio', { orders: [{ type: 'stop', side: 'sell', status: 'open' }], trades: [{ side: 'buy', qty: 10 }] });
+  set('bt.alerts', [{ symbol: 'DIS', kind: 'price_below', value: 90 }]);
+  set('bt.flashcards', { cards: { a: { reps: 1, last: 1 }, b: { reps: 1, last: 1 }, c: { reps: 1, last: 1 }, d: { reps: 0, lapses: 1, last: 1 }, e: { reps: 1, last: 1 } }, reviews: 6 });
+  set('bt.replay.sessions', [{ id: 'r1', completed: true, drill: { id: 'ride-the-trend-nvda-2023', passed: true } }]);
+  set('bt.journal', { entries: [{ id: 'j', lessons: 'Trends last longer than I expect.' }], reviews: { '2026-W46': { checks: {}, answers: { went_well: 'x' } } } });
+  set('bt.daily5', { history: { '2026-11-12': { score: 5, total: 5 } } });
+}
+test('finished days stay unlocked when an earlier day regresses (paper Reset, expired stop, cleared replay)', () => {
+  fresh(); doAllAutoTasks();
+  O.setManual('d2-timeframes', true); O.setManual('d5-signal', true);
+  let st = O.status();
+  assert.ok(st.complete && st.done === 21);
+  const saved = JSON.parse(localStorage.getItem('bt.onboarding'));
+  for (let d = 2; d <= 7; d++) assert.strictEqual(saved.unlocked[d], true, 'day ' + d + ' unlock persisted');
+  // Dashboard 'Reset' wipes trades and orders (days 3 and 4 depend on them).
+  set('bt.portfolio', { version: 2, cash: 100000, startingCash: 100000, positions: {}, orders: [], trades: [] });
+  st = O.status();
+  assert.strictEqual(st.complete, false); assert.strictEqual(st.completedAt, null, 'completion is honest');
+  assert.ok(!st.days[2].complete && !st.days[3].complete);
+  assert.strictEqual(st.currentDay, 3, 'the first unfinished day is current again');
+  for (let i = 0; i < 7; i++) assert.ok(st.days[i].unlocked, 'day ' + (i + 1) + ' still reachable');
+  assert.ok(st.days[4].complete && st.days[5].complete && st.days[6].complete, 'later days keep their ticks');
+  assert.ok(st.days[4].completedAt, 'later day completion time kept');
+  // An expired day-TIF stop (paper.js marks it 'expired' on the next session) still counts as placed.
+  set('bt.portfolio', { orders: [{ type: 'market', side: 'buy', status: 'filled' }, { type: 'stop', side: 'sell', tif: 'day', status: 'expired' }], trades: [{ side: 'buy', qty: 10 }] });
+  st = O.status();
+  assert.ok(taskById(st, 'd4-stop').done, 'd4-stop keeps its tick after the stop expires');
+  assert.ok(st.complete, 'week complete again');
+  // Clearing replay history: day 6 regresses but day 7 stays open.
+  localStorage.removeItem('bt.replay.sessions');
+  st = O.status();
+  assert.ok(!st.days[5].complete && st.days[6].unlocked && st.days[6].complete);
+  // A day that was never earned or skipped to stays locked.
+  fresh(); doDay1(); O.status();
+  set('bt.watchlist', ['AAPL']);
+  st = O.status();
+  assert.ok(st.days[1].unlocked && !st.days[2].unlocked);
+  assert.ok(!st.days[1].current, 'day 1 is current again, not day 2');
 });
 test('unlock(day) skips ahead; the skipped day is flagged', () => {
   fresh();
@@ -322,15 +436,7 @@ test('setOverride marks an auto task done and can be undone', () => {
   assert.strictEqual(taskById(O.status(), 'd2-timeframes').done, false, 'overrides do not apply to manual tasks');
 });
 test('a complete week: 21/21, complete flag, completedAt; reset clears only bt.onboarding', () => {
-  fresh();
-  doDay1();
-  set('bt.course', { lessonsDone: { 'm1-l1': true, 'm1-l3': true, 'm2-l1': true, 'm1-l4': true, 'm4-l1': true, 'm3-l1': true, 'm7-l1': true, 'm4-l5': true }, quizScores: { 'm1-l4': 80 } });
-  set('bt.portfolio', { orders: [{ type: 'stop', side: 'sell', status: 'open' }], trades: [{ side: 'buy', qty: 10 }] });
-  set('bt.alerts', [{ symbol: 'DIS', kind: 'price_below', value: 90 }]);
-  set('bt.flashcards', { cards: {}, reviews: 5 });
-  set('bt.replay.sessions', [{ id: 'r1', completed: true, drill: { id: 'ride-the-trend-nvda-2023', passed: true } }]);
-  set('bt.journal', { entries: [{ id: 'j', lessons: 'Trends last longer than I expect.' }], reviews: { '2026-W46': { checks: {}, answers: { went_well: 'x' } } } });
-  set('bt.daily5', { history: { '2026-11-12': { score: 5, total: 5 } } });
+  fresh(); doAllAutoTasks();
   O.setManual('d2-timeframes', true); O.setManual('d5-signal', true);
   const st = O.status();
   const notDone = st.days.flatMap(d => d.tasks).filter(t => !t.done).map(t => t.id);

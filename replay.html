@@ -153,7 +153,7 @@
   .jform textarea{resize:vertical;min-height:72px;font:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;color:inherit}
   .stars{display:flex;gap:4px}
   .stars button{flex:1;padding:6px 0;font-family:var(--mono);font-weight:500}
-  .stars button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .stars button.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
   .score .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--sp-3)}
   .score .actions button{flex:1 1 140px}
 
@@ -433,6 +433,8 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 (function () {
   'use strict';
   var BT = window.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (nav.js loads it first); plain {var} interpolation otherwise. */
+  function T(s, v) { if (BT.t) return BT.t(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
   var LW = window.LightweightCharts;
   var ind = BT.ind, data = BT.data, paper = BT.paper, replay = BT.replay;
 
@@ -685,6 +687,16 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     if (range) chart.timeScale().setVisibleLogicalRange(range);
     else { var n = bars.length; chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 70), to: n + 5 }); }
     updateTag(bars);
+    describeCharts(bars, I);
+  }
+  /** Text alternative for the replay chart panes (role="img" via BT.a11y). */
+  function describeCharts(bars, I) {
+    if (!BT.a11y || !bars.length) return;
+    var b = bars[bars.length - 1], p = bars.length > 1 ? bars[bars.length - 2] : null;
+    var chg = p && p.close ? (b.close - p.close) / p.close * 100 : null;
+    BT.a11y.describeChart($('chart'), T('{symbol} replay chart: {n} bars revealed, last close {close}', { symbol: S.symbol, n: bars.length, close: fmt(b.close) }) +
+      (chg == null ? '' : ', ' + (chg >= 0 ? T('up {pct} on the bar', { pct: Math.abs(chg).toFixed(2) + '%' }) : T('down {pct} on the bar', { pct: Math.abs(chg).toFixed(2) + '%' }))) + (b.partial ? ' (' + T('bar still forming') + ')' : '') + '.');
+    if (ov.rsi && I && I.rsi) { var r = I.rsi[bars.length - 1]; BT.a11y.describeChart($('rsiChart'), T('RSI 14 pane: {value}', { value: r == null ? '—' : r.toFixed(1) })); }
   }
   /** Incremental update after one step: only the newest bar/points change. */
   function updateChart(payload) {
@@ -698,6 +710,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     ['sma20', 'sma50', 'ema9', 'vwap'].forEach(function (k) { if (ov[k]) { var p = lastPoint(bars, I[k]); if (p) overlaySeries(k).update(p); } });
     if (ov.bb) { var s = overlaySeries('bb'); var pu = lastPoint(bars, I.bb.upper), pl = lastPoint(bars, I.bb.lower), pm = lastPoint(bars, I.bb.middle); if (pu) s[0].update(pu); if (pl) s[1].update(pl); if (pm) s[2].update(pm); }
     if (ov.rsi) { var pr = lastPoint(bars, I.rsi); if (pr) rsiLine.update(pr); $('rsiVal').textContent = pr ? pr.value.toFixed(1) : '—'; }
+    describeCharts(bars, I);
     if (payload && payload.fills && payload.fills.length) { payload.fills.forEach(addMarker); candles.setMarkers(markers); }
     if (wasAtEnd) chart.timeScale().scrollToRealTime();
     updateTag(bars);
@@ -806,7 +819,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     if (!S) return;
     var p = S.progress();
     $('sBar').style.setProperty('--pct', p.pct.toFixed(1)); $('sBar').setAttribute('aria-valuenow', String(Math.round(p.pct)));
-    $('sPct').textContent = Math.floor(p.revealed) + ' / ' + p.total + ' bars';
+    $('sPct').textContent = T('{revealed} / {total} bars', { revealed: Math.floor(p.revealed), total: p.total });
     $('sWhen').textContent = replay.fmtTime(S.currentTime());
     $('phaseLbl').textContent = S.phaseLabel();
     $('futureHint').hidden = S.done;
@@ -837,7 +850,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     $('aMargin').hidden = !mc;
     var first = S.visible()[S.startIndex].close;
     var bh = first ? (s.price / first - 1) * 100 : 0;
-    $('bhNote').innerHTML = 'Buy-and-hold since the start: <b class="num ' + cls(bh) + '">' + pct(bh) + '</b> · you: <b class="num ' + cls(s.pnlPct) + '">' + pct(s.pnlPct) + '</b>';
+    $('bhNote').innerHTML = esc(T('Buy-and-hold since the start:')) + ' <b class="num ' + cls(bh) + '">' + pct(bh) + '</b> ' + esc(T('· you:')) + ' <b class="num ' + cls(s.pnlPct) + '">' + pct(s.pnlPct) + '</b>';
     // ticket buttons by context
     var q = s.position ? s.position.qty : 0;
     $('sellBtn').disabled = !(q > 0); $('coverBtn').disabled = !(q < 0); $('shortBtn').disabled = q > 0; $('buyBtn').disabled = q < 0;

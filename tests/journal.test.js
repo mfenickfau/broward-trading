@@ -589,5 +589,30 @@ test('works without localStorage (private mode): in-memory only, no throw', () =
   } finally { window.localStorage = saved; fresh(); }
 });
 
+/* ---------------- journal.html: user-authored text is never machine-translated --------- */
+test('journal.html renders user-typed text (setup/notes/lessons/tags/account) inside no-i18n guards', () => {
+  const fs = require('fs');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'journal.html'), 'utf8');
+  // Re-create entryCard() from the page with stubbed helpers and check every user value is guarded.
+  const src = html.match(/var UT = [\s\S]*?\n  function renderEntries/);
+  assert.ok(src, 'entryCard block found');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const emotionOf = () => null, stars = () => '', fillText = () => 'Bought 1 @ $1', niceDate = d => d, isNum = () => false, cls = () => '', signed = x => x;
+  void esc; void emotionOf; void stars; void fillText; void niceDate; void isNum; void cls; void signed;
+  // eslint-disable-next-line no-eval
+  const entryCard = eval('(function () {' + src[0].replace(/\n  function renderEntries$/, '') + '; return entryCard; })()');
+  const out = entryCard({ id: '1', symbol: 'Dashboard', account: 'Portfolio', setup: 'Buy', notes: 'Sell', lessons: 'Close', tags: ['Dashboard', 'Portfolio'], emotion: 'Hold', confidence: 3, rating: 3, date: '2026-11-13' });
+  ['Buy', 'Sell', 'Close', 'Hold', 'Dashboard', 'Portfolio'].forEach(w => {
+    const hits = [...out.matchAll(new RegExp('<(span|div)([^>]*)>' + w + '</', 'g'))];
+    assert.ok(hits.length, w + ' rendered');
+    hits.forEach(h => assert.ok(/no-i18n/.test(h[2]) && /translate="no"/.test(h[2]), w + ' is guarded: ' + h[0]));
+  });
+  // Filter <option>s built from raw values, breakdown row labels and tag chips carry the guard too.
+  assert.ok(/var guard = labelFn \? '' : ' class="no-i18n" translate="no"'/.test(html), 'fillSelect guards raw values');
+  assert.ok(/<td class="no-i18n" translate="no" title="' \+ esc\(r\.label\)/.test(html), 'breakdown label cell guarded');
+  assert.ok(/b\.className = 'chip on no-i18n'; b\.setAttribute\('translate', 'no'\)/.test(html), 'editor tag chip guarded');
+  assert.ok(/class="chip sug sm no-i18n" translate="no"/.test(html), 'suggested tag chip guarded');
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

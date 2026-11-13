@@ -371,6 +371,12 @@
     P.chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     P.chart.priceScale('right').applyOptions({ scaleMargins: { top: 0.08, bottom: 0.2 } });
     P.series.candles = candles; P.series.vol = vol;
+    if (BT.a11y) {
+      var lastB = bars[bars.length - 1], st0 = result.stats || {};
+      BT.a11y.describeChart(P.el, T('{symbol} {interval} candlestick chart with {strategy} trade markers: {n} bars, last close {close}, strategy return {ret}, {trades} trades', {
+        symbol: state.symbol, interval: state.interval, strategy: result.strategy.name, n: bars.length, close: money(lastB.close), ret: pct(st0.totalReturnPct), trades: st0.trades == null ? '—' : st0.trades
+      }));
+    }
 
     var ind = engine.buildInd(bars);
     var strat = currentStrategy(result.strategy.params);

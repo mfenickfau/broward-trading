@@ -16,8 +16,10 @@
  * Public surface
  *   classes(), getClass(code), active(), setActive(code), createClass({name, section, term, code?, token?, remote?}),
  *   updateClass(code, patch), deleteClass(code)
- *   addSnapshot(code, snapshot) → {status:'added'|'updated'|'older'|'invalid', studentId}
- *   importShareCodes(code, text) → Promise<{found, added, updated, older, failed:[{code, error}], mismatched:[ids]}>
+ *   validId(id), sanitizeSnapshot(obj, source) — every stored snapshot passes the same whitelist the Worker uses
+ *   addSnapshot(code, snapshot, {source, allowMismatch, save}) → {status:'added'|'updated'|'older'|'mismatched'|'invalid', studentId}
+ *   importShareCodes(code, text, {allowMismatch}) → Promise<{found, added, updated, older, skipped, failed:[{code, error}], mismatched:[ids], saved}>
+ *   saveStatus() → {ok, bytes}   false when localStorage refused the last save (quota)
  *   removeStudent(code, id), renameStudent(code, id, name), setManual(code, id, patch)
  *   setCourseIndex(index) / lessonsTotal() / moduleOf(lessonId)
  *   row(snapshot, cls?) → roster row; roster(code, {sort, dir, q}) → rows
@@ -25,7 +27,8 @@
  *   DEFAULT_WEIGHTS, weights(), setWeights(w), requiredDrills(), setRequiredDrills(ids, count)
  *   grade(snapshot, cls) → {components:{…}, total, max, pct, letter}
  *   letter(pct), csvRoster(code), csvGradebook(code), exportJson(code), importJson(text)
- *   remote: configured(), createRemote({name, section, term}), refreshRoster(code), removeRemote(code, id)
+ *   remote: configured(), createRemote({name, section, term}), refreshRoster(code) (follows the server's cursor pages),
+ *           removeRemote(code, id), removeStudents(code, {ids:[…]} | {all:true}) (bulk DELETE, batches of 50)
  *
  * Plain ES2020, no imports.
  */
@@ -91,7 +94,17 @@
     return out;
   }
   var state = sanitizeState(lsGet(KEY, null));
-  function save() { state.updatedAt = new Date(clock()).toISOString(); return lsSet(KEY, state); }
+  // save() is called once per user action (imports and refreshes batch their snapshots), and it REPORTS failure:
+  // a full localStorage (quota ~5 MB) used to be swallowed, so a roster could show students that vanished on reload.
+  var saveOk = true, saveBytes = 0;
+  function save() {
+    state.updatedAt = new Date(clock()).toISOString();
+    try { saveBytes = JSON.stringify(state).length; } catch (e) { saveBytes = 0; }
+    saveOk = lsSet(KEY, state);
+    return saveOk;
+  }
+  /** saveStatus() → {ok, bytes}: false when the last save hit the storage quota (the header shows a warning). */
+  function saveStatus() { return { ok: saveOk, bytes: saveBytes }; }
   function load() { state = sanitizeState(lsGet(KEY, null)); return state; }
   function reset() { state = blank(); lsDel(KEY); return state; }
   function getState() { return state; }
@@ -141,47 +154,127 @@
   /* ------------------------------------------------------------------ *
    * students
    * ------------------------------------------------------------------ */
-  function validId(id) { return typeof id === 'string' && /^[A-Za-z0-9_-]{4,40}$/.test(id); }
-  /** Newer snapshot wins; equal or older is kept out so a stale paste never overwrites a fresh sync. */
-  function addSnapshot(code, snap) {
+  var has = function (o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); };
+  /** Student ids are used as keys of plain objects, so names that live on Object.prototype ('__proto__', 'constructor', …) are refused. */
+  function validId(id) { return typeof id === 'string' && /^[A-Za-z0-9_-]{4,40}$/.test(id) && !/^(__proto__|constructor|prototype)$/.test(id) && !(id in Object.prototype); }
+  function clampNum(v, lo, hi, dp) {
+    if (v === null || v === undefined || v === '') return null;
+    var n = +v; if (typeof v === 'object' || !isFinite(n)) return null;
+    return +Math.max(lo, Math.min(hi, n)).toFixed(dp == null ? 2 : dp);
+  }
+  function count(v, hi) { return Math.round(clampNum(v, 0, hi == null ? 1e6 : hi, 0) || 0); }
+  function isoDay(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : null; }
+  function isoTime(v) { var s = cleanText(v, 40); return s && isFinite(Date.parse(s)) ? s : null; }
+  /**
+   * sanitizeSnapshot(obj, source) → whitelisted snapshot (mirror of server/worker.js sanitizeSnapshot).
+   * A pasted share code is plain base64url JSON anybody can write, so NOTHING from it is stored raw: ids and titles are
+   * cleaned text, every number is clamped, booleans coerced, dates validated, unknown fields dropped.
+   * source 'server' (refreshRoster) is the only one allowed to carry `receivedAt`; 'share' and 'backup' imports get
+   * `importedAt` instead, so the page never labels student-supplied data as verified by the server.
+   */
+  function sanitizeSnapshot(obj, source, cls) {
+    var b = obj && typeof obj === 'object' ? obj : {};
+    source = source === 'server' || source === 'backup' ? source : 'share';
+    var seen = {}, lessonsDone = [];
+    (Array.isArray(b.lessonsDone) ? b.lessonsDone : []).forEach(function (x) { if (typeof x !== 'string' || lessonsDone.length >= 400) return; var k = cleanText(x, 40); if (k && !seen[k]) { seen[k] = 1; lessonsDone.push(k); } });
+    var quizScores = {};
+    if (b.quizScores && typeof b.quizScores === 'object') {
+      Object.keys(b.quizScores).slice(0, 400).forEach(function (k) { var key = cleanText(k, 40), v = clampNum(b.quizScores[k], 0, 100, 0); if (key && v !== null && !(key in Object.prototype)) quizScores[key] = v; });
+    }
+    var drills = (Array.isArray(b.drills) ? b.drills : []).slice(0, 40).map(function (d) {
+      if (!d || typeof d !== 'object') return null;
+      return { id: cleanText(d.id, 60), title: cleanText(d.title, 120), returnPct: clampNum(d.returnPct, -100, 100000), buyHoldPct: clampNum(d.buyHoldPct, -100, 100000), maxDrawdownPct: clampNum(d.maxDrawdownPct, 0, 100), trades: count(d.trades, 100000), passed: !!d.passed, completed: !!d.completed, date: isoDay(d.date) };
+    }).filter(function (d) { return d && d.id; });
+    var p = b.paper && typeof b.paper === 'object' ? b.paper : {};
+    var paper = { equity: clampNum(p.equity, 0, 1e12), startingCash: clampNum(p.startingCash, 0, 1e12), returnPct: clampNum(p.returnPct, -100, 1e6), trades: count(p.trades), winRate: clampNum(p.winRate, 0, 100, 1), fills: count(p.fills), positions: count(p.positions, 1e4) };
+    var j = b.journal && typeof b.journal === 'object' ? b.journal : {};
+    var journalEntries = count(b.journalEntries != null ? b.journalEntries : j.entries);
+    var journal = { entries: journalEntries, reviewed: count(j.reviewed), withLessons: count(j.withLessons), weeklyReviews: count(j.weeklyReviews, 1e4), lastDate: isoDay(j.lastDate) };
+    var d5 = b.daily && typeof b.daily === 'object' ? b.daily : {};
+    var streak = count(b.streak, 10000);
+    var cert = b.certificate && typeof b.certificate === 'object' && b.certificate.id ? { id: cleanText(b.certificate.id, 24), date: cleanText(b.certificate.date, 40) || null } : null;
+    var out = {
+      v: 1, source: source,
+      studentId: validId(b.studentId) ? b.studentId : null,
+      displayName: cleanText(b.displayName, 40),
+      classCode: source === 'server' && cls ? cls.code : (normCode(b.classCode) || null),
+      lessonsDone: lessonsDone, quizScores: quizScores, lessonsTotal: clampNum(b.lessonsTotal, 1, 10000, 0), startedAt: isoTime(b.startedAt), certificate: cert,
+      drills: drills, paper: paper, journalEntries: journalEntries, journal: journal, streak: streak,
+      daily: { streak: streak, days: count(d5.days, 10000), best: count(d5.best, 10000) },
+      lastActive: isoDay(b.lastActive), updatedAt: isoTime(b.updatedAt)
+    };
+    if (source === 'server') out.receivedAt = isoTime(b.receivedAt);
+    else if (source === 'backup') { out.source = b.source === 'server' ? 'server' : 'share'; if (out.source === 'server') out.receivedAt = isoTime(b.receivedAt); out.importedAt = isoTime(b.importedAt); }
+    if (out.source !== 'server' && !out.importedAt) out.importedAt = new Date(clock()).toISOString();
+    return out;
+  }
+  /** Comparison stamp (ms) of a stored snapshot: receivedAt when the server supplied it, else updatedAt, never later than now. */
+  function snapStamp(s) {
+    var t = Date.parse((s && (s.receivedAt || s.updatedAt)) || '');
+    if (!isFinite(t)) return 0;
+    return Math.min(t, clock());
+  }
+  /**
+   * addSnapshot(code, snapshot, opts?) → {status:'added'|'updated'|'older'|'mismatched'|'invalid'|'no-class', studentId, mismatched}
+   * Newer snapshot wins; equal or older is kept out so a stale paste never overwrites a fresh sync.
+   * opts.source 'share' (default) | 'server' | 'backup' — see sanitizeSnapshot. opts.allowMismatch: import a snapshot made
+   * for a different class code anyway (default false: status 'mismatched', nothing stored). opts.save:false defers save()
+   * to the caller, so a 500-student refresh writes localStorage once instead of 500 times.
+   */
+  function addSnapshot(code, snap, opts) {
+    opts = opts || {};
     var cls = getClass(code);
     if (!cls) return { status: 'no-class' };
     if (!snap || typeof snap !== 'object' || !validId(snap.studentId)) return { status: 'invalid' };
-    var id = snap.studentId, prev = cls.students[id];
-    var newT = Date.parse(snap.updatedAt || '') || 0, oldT = prev ? (Date.parse(prev.updatedAt || '') || 0) : -1;
-    if (prev && newT < oldT) return { status: 'older', studentId: id };
+    snap = sanitizeSnapshot(snap, opts.source, cls);
+    var id = snap.studentId;
+    var mismatched = !!(snap.classCode && snap.classCode !== cls.code);
+    if (mismatched && !opts.allowMismatch) return { status: 'mismatched', studentId: id, mismatched: true, classCode: snap.classCode };
+    var prev = has(cls.students, id) ? cls.students[id] : null;
+    // Newer wins. Server records carry receivedAt (server clock; updatedAt === receivedAt since v0.4.1), so that is
+    // the trusted stamp; a share code's updatedAt is student-written, so a forged future date is clamped to "now" and
+    // cannot lock a row against later genuine snapshots.
+    var newT = snapStamp(snap), oldT = prev ? snapStamp(prev) : -1;
+    if (prev && newT < oldT) return { status: 'older', studentId: id, mismatched: mismatched };
     cls.students[id] = snap;
-    if (!cls.names[id] && snap.displayName) cls.names[id] = cleanText(snap.displayName, 40);
-    save();
-    return { status: prev ? 'updated' : 'added', studentId: id, mismatched: !!(snap.classCode && snap.classCode !== cls.code) };
+    if (!has(cls.names, id) && snap.displayName) cls.names[id] = snap.displayName;
+    if (opts.save !== false) save();
+    return { status: prev ? 'updated' : 'added', studentId: id, mismatched: mismatched };
   }
-  function importShareCodes(code, text) {
+  /**
+   * importShareCodes(code, text, opts?) → Promise<{found, added, updated, older, failed:[{code, error}], mismatched:[ids], skipped, students:[ids], saved}>
+   * opts.allowMismatch (default false): codes made for another class are skipped and listed in `mismatched` unless set.
+   */
+  function importShareCodes(code, text, opts) {
+    opts = opts || {};
     var cls = getClass(code);
-    var out = { found: 0, added: 0, updated: 0, older: 0, failed: [], mismatched: [], students: [] };
+    var out = { found: 0, added: 0, updated: 0, older: 0, skipped: 0, failed: [], mismatched: [], students: [], saved: true };
     if (!cls) { out.error = 'Create or select a class first.'; return Promise.resolve(out); }
     if (!BT.classroom || !BT.classroom.parseShareCodes) { out.error = 'js/classroom.js is not loaded.'; return Promise.resolve(out); }
     var codes = BT.classroom.parseShareCodes(text);
     out.found = codes.length;
     if (!codes.length) { out.error = 'No share code found. A share code starts with "BT1." — paste the whole thing.'; return Promise.resolve(out); }
-    var chain = Promise.resolve();
+    var chain = Promise.resolve(), touched = false;
     codes.forEach(function (c) {
       chain = chain.then(function () {
         return BT.classroom.decodeShare(c).then(function (r) {
           if (!r.ok) { out.failed.push({ code: c.slice(0, 16) + '…', error: r.error }); return; }
-          var res = addSnapshot(cls.code, r.snapshot);
+          var res = addSnapshot(cls.code, r.snapshot, { source: 'share', allowMismatch: !!opts.allowMismatch, save: false });
           if (res.status === 'invalid') { out.failed.push({ code: c.slice(0, 16) + '…', error: 'Not a progress snapshot.' }); return; }
+          if (res.status === 'mismatched') { out.skipped++; if (out.mismatched.indexOf(res.studentId) < 0) out.mismatched.push(res.studentId); return; }
           out[res.status] = (out[res.status] || 0) + 1;
           out.students.push(res.studentId);
-          if (res.mismatched) out.mismatched.push(res.studentId);
+          if (res.status !== 'older') touched = true;
+          if (res.mismatched && out.mismatched.indexOf(res.studentId) < 0) out.mismatched.push(res.studentId);
         });
       });
     });
-    return chain.then(function () { return out; });
+    return chain.then(function () { if (touched) out.saved = save(); return out; });
   }
-  function removeStudent(code, id) { var cls = getClass(code); if (!cls || !cls.students[id]) return false; delete cls.students[id]; delete cls.names[id]; delete cls.manual[id]; save(); return true; }
-  function renameStudent(code, id, name) { var cls = getClass(code); if (!cls || !cls.students[id]) return null; var n = cleanText(name, 40); if (n) cls.names[id] = n; else delete cls.names[id]; save(); return n; }
+  function removeStudent(code, id) { var cls = getClass(code); if (!cls || !has(cls.students, id)) return false; delete cls.students[id]; delete cls.names[id]; delete cls.manual[id]; save(); return true; }
+  function renameStudent(code, id, name) { var cls = getClass(code); if (!cls || !has(cls.students, id)) return null; var n = cleanText(name, 40); if (n) cls.names[id] = n; else delete cls.names[id]; save(); return n; }
   function setManual(code, id, patch) {
-    var cls = getClass(code); if (!cls || !cls.students[id]) return null;
+    var cls = getClass(code); if (!cls || !has(cls.students, id)) return null;
     var m = cls.manual[id] = cls.manual[id] || {};
     Object.keys(patch || {}).forEach(function (k) {
       if (k === 'note') { m.note = cleanText(patch.note, 500); return; }
@@ -264,7 +357,8 @@
       journalEntries: +(snap.journalEntries != null ? snap.journalEntries : journal.entries) || 0, journalReviewed: +journal.reviewed || 0, weeklyReviews: +journal.weeklyReviews || 0,
       streak: +snap.streak || 0, dailyDays: snap.daily ? +snap.daily.days || 0 : 0,
       certificate: snap.certificate && snap.certificate.id ? snap.certificate.id : null,
-      lastActive: last, daysSinceActive: age, stale: age != null && age > STALE_DAYS, updatedAt: snap.updatedAt || null, receivedAt: snap.receivedAt || null,
+      lastActive: last, daysSinceActive: age, stale: age != null && age > STALE_DAYS, updatedAt: snap.updatedAt || null,
+      source: snap.source === 'server' ? 'server' : 'share', receivedAt: snap.source === 'server' && snap.receivedAt ? snap.receivedAt : null, importedAt: snap.source !== 'server' && snap.importedAt ? snap.importedAt : null,
       mismatched: !!(cls && snap.classCode && snap.classCode !== cls.code)
     };
   }
@@ -378,15 +472,15 @@
       if (!c || !validCode(c.code)) return;
       var code = normCode(c.code), cls = state.classes[code];
       if (!cls) { cls = state.classes[code] = { code: code, name: cleanText(c.name, 80), section: cleanText(c.section, 40), term: cleanText(c.term, 40), createdAt: c.createdAt || new Date(clock()).toISOString(), remote: !!c.remote, token: typeof c.token === 'string' ? c.token : null, syncedAt: null, students: {}, names: {}, manual: {} }; added++; } else merged++;
-      Object.keys(c.students || {}).forEach(function (id) { var r = addSnapshot(code, c.students[id]); if (r.status === 'added' || r.status === 'updated') students++; });
-      Object.keys(c.names || {}).forEach(function (id) { if (!cls.names[id]) cls.names[id] = cleanText(c.names[id], 40); });
-      Object.keys(c.manual || {}).forEach(function (id) { cls.manual[id] = Object.assign({}, cls.manual[id] || {}, c.manual[id]); });
+      Object.keys(c.students || {}).forEach(function (id) { var r = addSnapshot(code, c.students[id], { source: 'backup', allowMismatch: true, save: false }); if (r.status === 'added' || r.status === 'updated') students++; });
+      Object.keys(c.names || {}).forEach(function (id) { if (validId(id) && !has(cls.names, id)) cls.names[id] = cleanText(c.names[id], 40); });
+      Object.keys(c.manual || {}).forEach(function (id) { if (validId(id) && c.manual[id] && typeof c.manual[id] === 'object') cls.manual[id] = Object.assign({}, cls.manual[id] || {}, c.manual[id]); });
       if (!cls.token && typeof c.token === 'string') cls.token = c.token;
     });
     if (parsed.weights) setWeights(parsed.weights);
     if (!state.active) state.active = Object.keys(state.classes)[0] || null;
-    save();
-    return { ok: true, added: added, merged: merged, students: students };
+    var saved = save();
+    return { ok: true, added: added, merged: merged, students: students, saved: saved };
   }
 
   /* ------------------------------------------------------------------ *
@@ -417,16 +511,38 @@
       return made.ok ? { ok: true, cls: made.cls, code: made.code, via: d.ownerKind } : made;
     });
   }
+  var ROSTER_PAGE = 100;      // server/worker.js ROSTER_PAGE_MAX for ?view=full
+  var ROSTER_MAX_PAGES = 20;  // 2,000 rows: far above MAX_ROSTER (500), so a misbehaving cursor cannot loop forever
+  /**
+   * refreshRoster(code) → Promise<{ok, added, updated, count, pages, via, saved}>
+   * GET /classes/:code/roster is paginated (server/worker.js v0.4.1: `limit`, `cursor`, `hasMore`); every page is
+   * fetched and merged, then localStorage is written once.
+   */
   function refreshRoster(code) {
     var cls = getClass(code);
     if (!cls) return Promise.resolve({ ok: false, error: 'No such class.' });
-    return api('GET', '/classes/' + encodeURIComponent(cls.code) + '/roster', undefined, cls).then(function (r) {
+    var added = 0, updated = 0, count = 0, pages = 0, via = null, meta = null;
+    var page = function (cursor) {
+      var q = '?limit=' + ROSTER_PAGE + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
+      return api('GET', '/classes/' + encodeURIComponent(cls.code) + '/roster' + q, undefined, cls).then(function (r) {
+        if (!r.ok) return r;
+        pages++;
+        var students = Array.isArray(r.data.students) ? r.data.students : [];
+        count += students.length;
+        if (r.data.via) via = r.data.via;
+        if (r.data['class']) meta = r.data['class'];
+        // The server already whitelisted these, but they are sanitised again (defence in depth) and stored in one save().
+        students.forEach(function (s) { var x = addSnapshot(cls.code, s, { source: 'server', allowMismatch: true, save: false }); if (x.status === 'added') added++; else if (x.status === 'updated') updated++; });
+        var next = r.data.hasMore === true && typeof r.data.cursor === 'string' && r.data.cursor && r.data.cursor !== cursor ? r.data.cursor : null;
+        if (next && pages < ROSTER_MAX_PAGES) return page(next);
+        return { ok: true };
+      });
+    };
+    return page(null).then(function (r) {
       if (!r.ok) return r;
-      var added = 0, updated = 0;
-      (r.data.students || []).forEach(function (s) { var x = addSnapshot(cls.code, s); if (x.status === 'added') added++; else if (x.status === 'updated') updated++; });
-      if (r.data['class']) updateClass(cls.code, { name: r.data['class'].name, section: r.data['class'].section, term: r.data['class'].term, remote: true, syncedAt: new Date(clock()).toISOString() });
+      if (meta) updateClass(cls.code, { name: meta.name, section: meta.section, term: meta.term, remote: true, syncedAt: new Date(clock()).toISOString() });
       else updateClass(cls.code, { remote: true, syncedAt: new Date(clock()).toISOString() });
-      return { ok: true, added: added, updated: updated, count: (r.data.students || []).length, via: r.data.via };
+      return { ok: true, added: added, updated: updated, count: count, pages: pages, via: via, saved: saveOk };
     });
   }
   function removeRemote(code, id) {
@@ -434,17 +550,58 @@
     if (!cls) return Promise.resolve({ ok: false, error: 'No such class.' });
     return api('DELETE', '/classes/' + encodeURIComponent(cls.code) + '/students/' + encodeURIComponent(id), undefined, cls);
   }
+  var REMOVE_BATCH = 50;   // server/worker.js caps {ids} at 50 per call and {all:true} at 50 records per call
+  /**
+   * removeStudents(code, {ids:[…]} | {all:true}) → Promise<{ok, removed, ids:[…], remaining, calls}>
+   * Bulk DELETE /classes/:code/students: ids in batches of 50, or every record (looping while the server says hasMore).
+   * Removed ids are locked out server-side (their next snapshot gets 410), so the caller confirms first.
+   */
+  function removeStudents(code, opts) {
+    opts = opts || {};
+    var cls = getClass(code);
+    if (!cls) return Promise.resolve({ ok: false, error: 'No such class.' });
+    var path = '/classes/' + encodeURIComponent(cls.code) + '/students';
+    var out = { ok: true, removed: 0, ids: [], remaining: null, calls: 0 };
+    if (opts.all === true) {
+      var sweep = function () {
+        return api('DELETE', path, { all: true }, cls).then(function (r) {
+          if (!r.ok) return r;
+          out.calls++; out.removed += +r.data.removed || 0; out.remaining = r.data.remaining == null ? null : +r.data.remaining;
+          (Array.isArray(r.data.ids) ? r.data.ids : []).forEach(function (id) { if (validId(id)) out.ids.push(id); });
+          return r.data.hasMore === true && out.calls < ROSTER_MAX_PAGES ? sweep() : out;
+        });
+      };
+      return sweep();
+    }
+    var ids = (Array.isArray(opts.ids) ? opts.ids : []).filter(validId);
+    if (!ids.length) return Promise.resolve({ ok: false, error: 'No student ids to remove.' });
+    var batches = [];
+    for (var i = 0; i < ids.length; i += REMOVE_BATCH) batches.push(ids.slice(i, i + REMOVE_BATCH));
+    var chain = Promise.resolve({ ok: true });
+    batches.forEach(function (b) {
+      chain = chain.then(function (r) {
+        if (!r.ok) return r;
+        return api('DELETE', path, { ids: b }, cls).then(function (x) {
+          if (!x.ok) return x;
+          out.calls++; out.removed += +x.data.removed || 0; out.remaining = x.data.remaining == null ? null : +x.data.remaining;
+          (Array.isArray(x.data.ids) ? x.data.ids : b).forEach(function (id) { if (validId(id)) out.ids.push(id); });
+          return { ok: true };
+        });
+      });
+    });
+    return chain.then(function (r) { return r.ok ? out : r; });
+  }
 
   BT.instructor = {
     KEY: KEY, DEFAULT_WEIGHTS: DEFAULT_WEIGHTS, COMPONENTS: COMPONENTS, DEFAULT_REQUIRED: DEFAULT_REQUIRED, STALE_DAYS: STALE_DAYS,
-    load: load, save: save, reset: reset, getState: getState, setClock: function (fn) { clock = typeof fn === 'function' ? fn : function () { return Date.now(); }; },
+    load: load, save: save, saveStatus: saveStatus, reset: reset, getState: getState, setClock: function (fn) { clock = typeof fn === 'function' ? fn : function () { return Date.now(); }; },
     classes: classes, getClass: getClass, active: active, setActive: setActive, createClass: createClass, updateClass: updateClass, deleteClass: deleteClass,
-    addSnapshot: addSnapshot, importShareCodes: importShareCodes, removeStudent: removeStudent, renameStudent: renameStudent, setManual: setManual, nameOf: nameOf,
+    validId: validId, sanitizeSnapshot: sanitizeSnapshot, addSnapshot: addSnapshot, importShareCodes: importShareCodes, removeStudent: removeStudent, renameStudent: renameStudent, setManual: setManual, nameOf: nameOf,
     setCourseIndex: setCourseIndex, lessonsTotal: lessonsTotal, moduleOf: moduleOf, moduleBreakdown: moduleBreakdown,
     row: row, roster: roster, summary: summary, SORT_KEYS: SORT_KEYS,
     weights: weights, setWeights: setWeights, weightsTotal: weightsTotal, requiredDrills: requiredDrills, setRequiredDrills: setRequiredDrills, autoScores: autoScores, grade: grade, letter: letter,
     csvRoster: csvRoster, csvGradebook: csvGradebook, exportJson: exportJson, importJson: importJson, csvCell: csvCell,
-    remote: { configured: configured, createRemote: createRemote, refreshRoster: refreshRoster, removeRemote: removeRemote, setSecret: setSecret, api: api }
+    remote: { configured: configured, createRemote: createRemote, refreshRoster: refreshRoster, removeRemote: removeRemote, removeStudents: removeStudents, setSecret: setSecret, api: api }
   };
 
   /* ================================================================== *
@@ -458,7 +615,10 @@
   var fmtPct = function (v, dp) { return v == null || !isFinite(+v) ? '—' : (+v).toFixed(dp == null ? 0 : dp) + '%'; };
   var fmtSigned = function (v) { return v == null || !isFinite(+v) ? '—' : (v > 0 ? '+' : '') + (+v).toFixed(1) + '%'; };
   var cls = function (v) { return v > 0 ? 'gain' : v < 0 ? 'loss' : ''; };
-  var niceDay = function (s) { if (!s) return 'never'; var d = new Date(String(s).length === 10 ? s + 'T12:00:00' : s); return isNaN(d) ? String(s) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+  var loc = function () { try { return BT.i18n && typeof BT.i18n.locale === 'function' ? BT.i18n.locale() : undefined; } catch (e) { return undefined; } };
+  var niceDay = function (s) { if (!s) return 'never'; var d = new Date(String(s).length === 10 ? s + 'T12:00:00' : s); return isNaN(d) ? String(s) : d.toLocaleDateString(loc(), { month: 'short', day: 'numeric' }); };
+  /* Student-written text (names, ids) is wrapped so js/i18n.js never machine-translates it (a student called "Dashboard" stays "Dashboard"). */
+  var userSpan = function (s, tag) { tag = tag || 'span'; return '<' + tag + ' class="no-i18n" translate="no">' + esc(s) + '</' + tag + '>'; };
   var ui = { sort: 'name', dir: 'asc', q: '', drawer: null };
   try { Object.assign(ui, JSON.parse(localStorage.getItem('bt.instructor.ui') || '{}')); } catch (e) { /* ignore */ }
   ui.drawer = null;
@@ -492,6 +652,7 @@
       $('codeBig').textContent = a.code;
       $('classMeta').textContent = [a.name, a.section, a.term].filter(Boolean).join(' · ') + (a.remote ? ' · synced with the server' : ' · offline class') + (a.syncedAt ? ' · last refresh ' + niceDay(a.syncedAt) : '');
       $('refreshBtn').hidden = !(a.remote && I.remote.configured());
+      if ($('clearRemote')) $('clearRemote').hidden = !(a.remote && I.remote.configured());
       $('tokenNote').hidden = !a.remote;
       if (a.remote) $('tokenNote').textContent = a.token ? 'This browser holds the instructor key for this class. Export a JSON backup before clearing site data, or you will lose roster access.' : 'No instructor key stored here: roster refresh needs your sign-in session or the school\'s instructor secret.';
     }
@@ -499,7 +660,21 @@
     $('newClassBtn').hidden = !a || ui.showCreate;
     $('secretRow').hidden = !I.remote.configured();
     $('secretDetails').hidden = !I.remote.configured();
+    renderSaveWarning();
   }
+  // localStorage refused the last save (quota): say so instead of showing students that vanish on reload.
+  var saveWarn = null;
+  function renderSaveWarning() {
+    var st = I.saveStatus();
+    if (st.ok) { if (saveWarn) saveWarn.hidden = true; return; }
+    if (!saveWarn) {
+      saveWarn = document.createElement('p'); saveWarn.id = 'saveWarn'; saveWarn.className = 'note warn-text'; saveWarn.setAttribute('role', 'alert');
+      var card = $('classCard'); card.insertBefore(saveWarn, card.firstElementChild ? card.firstElementChild.nextSibling : null);
+    }
+    saveWarn.hidden = false;
+    saveWarn.textContent = 'Could not save to this device: the roster (' + Math.round(st.bytes / 1024) + ' KB) is more than the browser allows this site to store. What you see is not kept after a reload. Export a JSON backup now, then delete old classes or remove students who left.';
+  }
+  function warnIfUnsaved(saved) { if (saved === false || !I.saveStatus().ok) toast('Roster too large to keep on this device; export a backup or remove old students.', 'err', 'Not saved'); }
   $('classSelect').addEventListener('change', function () { I.setActive(this.value); ui.showCreate = false; renderAll(); });
   $('newClassBtn').addEventListener('click', function () { ui.showCreate = true; renderHeader(); $('cName').focus(); });
   $('cancelCreate').addEventListener('click', function () { ui.showCreate = false; renderHeader(); });
@@ -539,6 +714,7 @@
       $('refreshBtn').disabled = false;
       if (!r.ok) { toast(r.error || 'Refresh failed.', 'err', 'Roster'); return; }
       toast(r.count + ' snapshot' + (r.count === 1 ? '' : 's') + ' on the server; ' + r.added + ' new, ' + r.updated + ' updated.', 'ok', 'Roster refreshed');
+      warnIfUnsaved(r.saved);
       renderAll();
     });
   });
@@ -547,22 +723,45 @@
     if (!confirm('Delete class ' + a.code + ' (' + a.name + ') from this device? Students and grades stored here are removed. Export a backup first if you need them.')) return;
     I.deleteClass(a.code); renderAll();
   });
+  // Bulk server clean-up (flooded codes, end of term). Removed ids are locked out: their next snapshot gets 410.
+  var clearRemoteBtn = $('clearRemote');
+  if (clearRemoteBtn) clearRemoteBtn.addEventListener('click', function () {
+    var a = I.active(); if (!a) return;
+    if (!confirm('Remove every student of ' + a.code + ' from the classroom server? Their ids are locked out, so each device must rejoin with a fresh id to appear again. Rows stored on this device are removed too; export a backup first if you need them.')) return;
+    clearRemoteBtn.disabled = true;
+    I.remote.removeStudents(a.code, { all: true }).then(function (r) {
+      clearRemoteBtn.disabled = false;
+      if (!r.ok) { toast(r.error || 'Could not remove the students.', 'err', 'Roster'); return; }
+      Object.keys(a.students || {}).forEach(function (id) { I.removeStudent(a.code, id); });
+      toast(r.removed + ' student' + (r.removed === 1 ? '' : 's') + ' removed from the server' + (r.remaining ? '; ' + r.remaining + ' left, run it again' : '') + '.', 'ok', 'Roster cleared');
+      renderAll();
+    });
+  });
 
   /* ---- import ---- */
+  // Codes made for another class are skipped unless the instructor opts in (a wrong paste must not populate this roster).
+  var anyClassBox = document.createElement('label');
+  anyClassBox.className = 'inline-check';
+  anyClassBox.innerHTML = '<input type="checkbox" id="importAnyClass"> Also import codes made for another class (they are skipped otherwise)';
+  $('importIn').closest('.field').insertAdjacentElement('afterend', anyClassBox);
   $('importBtn').addEventListener('click', function () {
     var a = I.active(); var msg = $('importMsg');
     if (!a) { flash(msg, 'Create a class first.', false); return; }
     $('importBtn').disabled = true;
-    I.importShareCodes(a.code, $('importIn').value).then(function (r) {
+    I.importShareCodes(a.code, $('importIn').value, { allowMismatch: $('importAnyClass').checked }).then(function (r) {
       $('importBtn').disabled = false;
       if (r.error && !r.found) { flash(msg, r.error, false); return; }
       var parts = [];
       if (r.added) parts.push(r.added + ' new'); if (r.updated) parts.push(r.updated + ' updated'); if (r.older) parts.push(r.older + ' older than what you have (kept yours)');
+      if (r.skipped) parts.push(r.skipped + ' for another class (skipped)');
       if (r.failed.length) parts.push(r.failed.length + ' unreadable');
-      flash(msg, 'Found ' + r.found + ' code' + (r.found === 1 ? '' : 's') + ': ' + (parts.join(', ') || 'nothing to do') + '.', !r.failed.length);
-      if (r.failed.length) $('importErrors').innerHTML = '<ul>' + r.failed.map(function (f) { return '<li><code>' + esc(f.code) + '</code> ' + esc(f.error) + '</li>'; }).join('') + '</ul>'; else $('importErrors').innerHTML = '';
-      if (r.mismatched.length) toast(r.mismatched.length + ' snapshot' + (r.mismatched.length === 1 ? ' was' : 's were') + ' made for a different class code and imported anyway. Check the roster.', 'warn', 'Class code mismatch');
+      flash(msg, 'Found ' + r.found + ' code' + (r.found === 1 ? '' : 's') + ': ' + (parts.join(', ') || 'nothing to do') + '.', !r.failed.length && !r.skipped);
+      var errs = r.failed.map(function (f) { return '<li><code>' + esc(f.code) + '</code> ' + esc(f.error) + '</li>'; });
+      if (r.skipped) errs.push('<li>Skipped, made for another class code: ' + r.mismatched.map(function (id) { return '<code>' + esc(id) + '</code>'; }).join(', ') + '. Tick "Also import codes made for another class" if that is what you want.</li>');
+      $('importErrors').innerHTML = errs.length ? '<ul>' + errs.join('') + '</ul>' : '';
+      if (!r.skipped && r.mismatched.length) toast(r.mismatched.length + ' snapshot' + (r.mismatched.length === 1 ? ' was' : 's were') + ' made for a different class code and imported because you asked. The roster marks them.', 'warn', 'Class code mismatch');
       if (r.added || r.updated) $('importIn').value = '';
+      warnIfUnsaved(r.saved);
       renderAll();
     });
   });
@@ -589,7 +788,7 @@
     }
     host.innerHTML = rows.map(function (r) {
       return '<tr class="r' + (r.stale ? ' stale' : '') + '" data-id="' + esc(r.id) + '" tabindex="0" role="button" aria-label="Open ' + esc(r.name) + '">' +
-        '<td><b>' + esc(r.name) + '</b><small class="id">' + esc(r.id) + (r.mismatched ? ' · other class code' : '') + (r.certificate ? ' · 🎓' : '') + '</small></td>' +
+        '<td>' + userSpan(r.name, 'b') + '<small class="id">' + userSpan(r.id) + (r.mismatched ? ' · other class code' : '') + (r.certificate ? ' · 🎓' : '') + '</small></td>' +
         '<td class="right num"><span class="mini" aria-hidden="true"><i style="width:' + r.progressPct + '%"></i></span>' + r.progressPct + '%<small>' + r.lessonsDone + '/' + r.lessonsTotal + '</small></td>' +
         '<td class="right num">' + fmtPct(r.quizAvg) + '<small>' + r.quizzes + ' quiz' + (r.quizzes === 1 ? '' : 'zes') + '</small></td>' +
         '<td class="right num">' + r.drillsPassed + '<small>' + r.drillsRequiredPassed + '/' + I.requiredDrills().count + ' required</small></td>' +
@@ -625,7 +824,7 @@
     $('gradeHead').innerHTML = '<tr><th>Student</th>' + I.COMPONENTS.map(function (c) { return '<th class="right">' + esc(c.label) + '<small>/' + esc(w[c.id]) + '</small></th>'; }).join('') + '<th class="right">Total</th><th class="right">Letter</th></tr>';
     body.innerHTML = I.roster(a.code, ui).map(function (r) {
       var g = I.grade(a.students[r.id], a);
-      return '<tr data-id="' + esc(r.id) + '" tabindex="0" role="button" aria-label="Grade ' + esc(r.name) + '"><td><b>' + esc(r.name) + '</b></td>' +
+      return '<tr data-id="' + esc(r.id) + '" tabindex="0" role="button" aria-label="Grade ' + esc(r.name) + '"><td>' + userSpan(r.name, 'b') + '</td>' +
         I.COMPONENTS.map(function (c) { var k = g.components[c.id]; return '<td class="right num ' + (k.source === 'missing' ? 'missing' : k.source === 'manual' ? 'manual' : '') + '" title="' + k.source + '">' + (k.points == null ? '—' : k.points) + '</td>'; }).join('') +
         '<td class="right num"><b>' + g.total + '</b><small>' + g.pct + '%</small></td><td class="right"><span class="pill ' + (g.complete ? 'accent' : 'demo') + '">' + g.letter + (g.complete ? '' : '*') + '</span></td></tr>';
     }).join('');
@@ -653,7 +852,7 @@
   $('impBackupBtn').addEventListener('click', function () {
     var r = I.importJson($('impBackup').value);
     flash($('impBackupMsg'), r.ok ? 'Restored ' + r.added + ' new class' + (r.added === 1 ? '' : 'es') + ', merged ' + r.merged + ', ' + r.students + ' student snapshot' + (r.students === 1 ? '' : 's') + '.' : r.error, r.ok);
-    if (r.ok) { $('impBackup').value = ''; renderAll(); }
+    if (r.ok) { $('impBackup').value = ''; warnIfUnsaved(r.saved); renderAll(); }
   });
 
   /* ---- student drawer ---- */
@@ -662,11 +861,13 @@
     var a = I.active(); if (!a || !a.students[id]) return;
     var snap = a.students[id], r = I.row(snap, a), g = I.grade(snap, a), w = I.weights();
     ui.drawer = id; lastFocus = document.activeElement;
-    $('dTitle').textContent = r.name;
+    $('dTitle').textContent = r.name; $('dTitle').classList.add('no-i18n'); $('dTitle').setAttribute('translate', 'no');
     $('dName').value = a.names[id] || '';
-    $('dNameHelp').textContent = snap.displayName ? 'The student typed "' + snap.displayName + '". Your label is only stored on this device.' : 'The student gave no name. Add one here (only stored on this device) so you can tell rows apart.';
-    $('dId').textContent = id;
-    $('dMeta').textContent = 'Snapshot ' + (snap.updatedAt ? new Date(snap.updatedAt).toLocaleString() : '—') + (snap.receivedAt ? ' · received by server ' + new Date(snap.receivedAt).toLocaleString() : '') + (snap.startedAt ? ' · started course ' + niceDay(snap.startedAt) : '') + (r.certificate ? ' · certificate ' + r.certificate : '');
+    $('dNameHelp').innerHTML = snap.displayName ? 'The student typed "' + userSpan(snap.displayName) + '". Your label is only stored on this device.' : 'The student gave no name. Add one here (only stored on this device) so you can tell rows apart.';
+    $('dId').textContent = id; $('dId').classList.add('no-i18n'); $('dId').setAttribute('translate', 'no');
+    // Only a snapshot that came from refreshRoster() may say "received by server"; a pasted code is student-written text.
+    var via = r.receivedAt ? ' · received by server ' + new Date(r.receivedAt).toLocaleString(loc()) : r.importedAt ? ' · pasted here ' + new Date(r.importedAt).toLocaleString(loc()) + ' (share code, not verified)' : '';
+    $('dMeta').textContent = 'Snapshot ' + (snap.updatedAt ? new Date(snap.updatedAt).toLocaleString(loc()) : '—') + via + (snap.startedAt ? ' · started course ' + niceDay(snap.startedAt) : '') + (r.certificate ? ' · certificate id ' + r.certificate + (r.source === 'server' ? '' : ' (as reported)') : '');
     $('dTiles').innerHTML = [
       ['Progress', r.progressPct + '%', r.lessonsDone + ' of ' + r.lessonsTotal + ' lessons'],
       ['Quiz average', fmtPct(r.quizAvg), r.quizzes + ' taken'],
@@ -681,7 +882,8 @@
     var req = {}; I.requiredDrills().ids.forEach(function (x) { req[x] = 1; });
     var drills = (snap.drills || []).slice().sort(function (x, y) { return (req[y.id] ? 1 : 0) - (req[x.id] ? 1 : 0) || String(x.id).localeCompare(String(y.id)); });
     $('dDrills').innerHTML = drills.length ? drills.map(function (d) {
-      return '<li><span class="pill ' + (d.passed ? 'up' : d.completed ? 'demo' : '') + '">' + (d.passed ? 'passed' : d.completed ? 'finished' : 'started') + '</span> <b>' + esc(d.title || d.id) + '</b>' + (req[d.id] ? ' <small class="muted">required</small>' : '') + '<small class="muted"> · return ' + fmtSigned(d.returnPct) + (d.maxDrawdownPct != null ? ' · max DD ' + d.maxDrawdownPct + '%' : '') + (d.date ? ' · ' + niceDay(d.date) : '') + '</small></li>';
+      // Every snapshot field is student-supplied: strings go through esc(), numbers through the formatters (which print '—' for non-numbers).
+      return '<li><span class="pill ' + (d.passed ? 'up' : d.completed ? 'demo' : '') + '">' + (d.passed ? 'passed' : d.completed ? 'finished' : 'started') + '</span> <b>' + esc(d.title || d.id) + '</b>' + (req[d.id] ? ' <small class="muted">required</small>' : '') + '<small class="muted"> · return ' + esc(fmtSigned(d.returnPct)) + (d.maxDrawdownPct != null ? ' · max DD ' + esc(fmtPct(d.maxDrawdownPct, 1)) : '') + (d.date ? ' · ' + esc(niceDay(d.date)) : '') + '</small></li>';
     }).join('') : '<li class="muted">No replay drills yet.</li>';
     $('dGrade').innerHTML = I.COMPONENTS.map(function (c) {
       var k = g.components[c.id];

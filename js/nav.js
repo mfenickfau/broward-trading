@@ -7,6 +7,7 @@
  * #themeToggle button synchronously).
  *
  * What mount() injects
+ *   - <a class="skip-link">     "Skip to content", the first focusable element on every page
  *   - <nav class="topnav">      sticky top bar: brand, one link per page, theme toggle
  *   - <nav class="tabbar">      fixed bottom tab bar on phones (≤ 760px): Dashboard,
  *                               Learn, Replay, Portfolio, More
@@ -306,7 +307,7 @@
       return '<a class="tab' + (on ? ' on' : '') + '" href="' + p.file + '"' + (on ? ' aria-current="page"' : '') + '>' + svg(p.icon) + '<span>' + esc(p.short) + '</span></a>';
     }).join('');
     tabs += '<button class="tab' + (moreOn ? ' on' : '') + '" id="btMore" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="btSheet">' + svg('more') + '<span>More</span></button>';
-    return '<nav class="tabbar" aria-label="Primary">' + tabs + '</nav>';
+    return '<nav class="tabbar" aria-label="Pages">' + tabs + '</nav>';
   }
   function sheetHtml(active) {
     var items = morePages().map(function (p) {
@@ -457,6 +458,138 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Accessibility helpers → BT.a11y (v0.4)
+   *   skip link        "Skip to content" as the first focusable element; it targets
+   *                    the page's <main> (or the first .page block) and gives it an id.
+   *   describeChart    canvases are opaque to assistive tech, so every chart pane gets a
+   *                    hidden role="img" summary node pages refresh on each render, e.g.
+   *                    'AAPL daily chart, last close $251.61, up 1.2% today'.
+   *   announce         one shared polite live region (#btLive) for JS-built messages.
+   *   dialogs          Tab stays inside any visible [role=dialog][aria-modal=true] and
+   *                    Escape presses its .close / [data-close] button (the More sheet
+   *                    has its own handler and is skipped).
+   *   scroll regions   .table-wrap / .log / .heat-wrap that overflow get tabindex="0"
+   *                    so keyboard users can scroll them (WCAG 2.1.1).
+   * ------------------------------------------------------------------ */
+  var SCROLL_SEL = '.table-wrap,.log,.heat-wrap,[data-scroll-region]';
+  function mainTarget() {
+    var m = document.querySelector('main') || document.querySelector('.page') || null;
+    if (m && !m.id) m.id = 'main';
+    return m;
+  }
+  function ensureSkipTarget() {
+    var m = mainTarget();
+    var link = document.querySelector('.skip-link');
+    if (link && m) link.setAttribute('href', '#' + m.id);
+    if (m && !m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1');
+    return m;
+  }
+  function skipLinkHtml() { return '<a class="skip-link" href="#main">Skip to content</a>'; }
+  function onSkipClick(e) {
+    var m = ensureSkipTarget();
+    if (!m) return;
+    e.preventDefault();
+    try { m.focus({ preventScroll: false }); } catch (err) { m.focus(); }
+    try { m.scrollIntoView({ block: 'start' }); } catch (err) { /* ignore */ }
+    if (history.replaceState) { try { history.replaceState(null, '', '#' + m.id); } catch (err) { /* ignore */ } }
+  }
+  function describeChart(el, summary) {
+    if (!el || !hasDOM) return;
+    // The canvases are opaque to assistive tech and the library's own attribution link lives
+    // inside them, so the pane itself cannot be role="img" (no focusable descendants allowed).
+    // A visually hidden, labelled image node as the pane's first child carries the summary.
+    var text = String(summary == null ? '' : summary).replace(/\s+/g, ' ').trim();
+    if (el.getAttribute('role') === 'img') { el.removeAttribute('role'); el.removeAttribute('aria-label'); }
+    var node = el.querySelector(':scope > .chart-summary');
+    if (!text) { if (node) node.remove(); return; }
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'chart-summary sr-only';
+      node.setAttribute('role', 'img');
+      el.insertBefore(node, el.firstChild);
+    }
+    node.setAttribute('aria-label', text);
+  }
+  var liveTimer = null;
+  function liveRegion() {
+    var el = document.getElementById('btLive');
+    if (!el && document.body) {
+      el = document.createElement('div'); el.id = 'btLive'; el.className = 'sr-live';
+      el.setAttribute('aria-live', 'polite'); el.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function announce(msg, assertive) {
+    var el = liveRegion(); if (!el) return;
+    el.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
+    el.textContent = '';
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () { el.textContent = String(msg == null ? '' : msg); }, 40);
+  }
+  function isVisible(el) {
+    if (!el || el.hidden) return false;
+    var cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+  function activeDialog() {
+    var list = document.querySelectorAll('[role="dialog"][aria-modal="true"],[role="alertdialog"][aria-modal="true"]');
+    for (var i = list.length - 1; i >= 0; i--) {
+      var d = list[i];
+      if (d.closest('#btSheet')) continue;             // the More sheet traps focus itself
+      var wrap = d.closest('.modal-backdrop') || d.parentElement;
+      if ((wrap && wrap.hidden) || !isVisible(d)) continue;
+      return d;
+    }
+    return null;
+  }
+  var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
+  function focusables(root) {
+    return Array.prototype.filter.call(root.querySelectorAll(FOCUSABLE), function (el) { return !el.hidden && !el.closest('[hidden]') && isVisible(el); });
+  }
+  function onDialogKey(e) {
+    if (e.key !== 'Tab' && e.key !== 'Escape') return;
+    var dlg = activeDialog(); if (!dlg) return;
+    if (e.key === 'Escape') {
+      if (e.defaultPrevented) return;
+      var btn = dlg.querySelector('[data-close],.close');
+      if (btn) { e.preventDefault(); btn.click(); }
+      return;
+    }
+    var f = focusables(dlg); if (!f.length) return;
+    var first = f[0], last = f[f.length - 1], cur = document.activeElement;
+    if (!dlg.contains(cur)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+    if (e.shiftKey && cur === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+  }
+  function markScrollables(scope) {
+    Array.prototype.forEach.call((scope || document).querySelectorAll(SCROLL_SEL), function (el) {
+      var overflows = el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+      if (overflows) {
+        if (!el.hasAttribute('tabindex')) { el.setAttribute('tabindex', '0'); el.setAttribute('data-a11y-scroll', '1'); }
+      } else if (el.getAttribute('data-a11y-scroll') === '1') {
+        el.removeAttribute('tabindex'); el.removeAttribute('data-a11y-scroll');
+      }
+    });
+  }
+  var scrollTimer = null;
+  function scheduleScrollables() { clearTimeout(scrollTimer); scrollTimer = setTimeout(function () { try { markScrollables(); } catch (e) { /* ignore */ } }, 150); }
+  function installA11y() {
+    document.addEventListener('keydown', onDialogKey);
+    var ready = function () {
+      ensureSkipTarget(); liveRegion(); markScrollables();
+      try {
+        new MutationObserver(scheduleScrollables).observe(document.body, { childList: true, subtree: true });
+      } catch (e) { /* no observer: resize + load still cover the static tables */ }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
+    root.addEventListener('load', scheduleScrollables);
+    root.addEventListener('resize', scheduleScrollables);
+  }
+
+  /* ------------------------------------------------------------------ *
    * Mount
    * ------------------------------------------------------------------ */
   var mounted = false;
@@ -479,8 +612,10 @@
     ensureHead();
 
     // 2. Top nav + phone tab bar + More sheet.
-    navHost.innerHTML = topnavHtml(active) + tabbarHtml(active) + sheetHtml(active);
+    navHost.innerHTML = skipLinkHtml() + topnavHtml(active) + tabbarHtml(active) + sheetHtml(active);
     navHost.classList.add('bt-nav');
+    var skip = navHost.querySelector('.skip-link');
+    if (skip) skip.addEventListener('click', onSkipClick);
 
     // 3. Footer (its mount may come later in the document; wait for the parser if needed).
     function mountFooter() {
@@ -599,6 +734,9 @@
 
     // 10. Offline cache.
     registerServiceWorker();
+
+    // 11. Accessibility: skip-link target, live region, dialog focus trap, scrollable tables.
+    installA11y();
     return true;
   }
 
@@ -615,8 +753,16 @@
     lang: { get: currentLang, stored: readStoredLang, next: langAfter, list: langs, button: langButton, sync: hasDOM ? syncLangUi : null },
     toast: hasDOM ? toast : null,
     isPhone: function () { return !!(root.matchMedia && root.matchMedia(PHONE_QUERY).matches); },
-    html: { topnav: topnavHtml, tabbar: tabbarHtml, sheet: sheetHtml, footer: footerHtml },
+    html: { topnav: topnavHtml, tabbar: tabbarHtml, sheet: sheetHtml, footer: footerHtml, skipLink: skipLinkHtml },
     swRegistration: null
+  };
+  BT.a11y = {
+    describeChart: describeChart,
+    announce: hasDOM ? announce : function () {},
+    markScrollables: hasDOM ? markScrollables : function () { return 0; },
+    activeDialog: hasDOM ? activeDialog : function () { return null; },
+    focusables: hasDOM ? focusables : function () { return []; },
+    mainTarget: hasDOM ? mainTarget : function () { return null; }
   };
 
   // Mount as soon as the #nav mount exists (this file is loaded right after it),

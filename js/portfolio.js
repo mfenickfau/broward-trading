@@ -34,6 +34,15 @@
    * ------------------------------------------------------------------ */
   function $(id) { return document.getElementById(id); }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  /* Active site locale (en-US / es-419) when js/i18n.js is loaded; undefined = browser default. Keeps dates and
+   * clocks inside translated sentences consistent with the chosen language rather than the browser's region. */
+  function loc() { var i = window.BT && window.BT.i18n; return (i && typeof i.locale === 'function') ? i.locale() : undefined; }
+  function fmtDate(t, opts) {
+    var i = window.BT && window.BT.i18n;
+    if (i && typeof i.fmtDate === 'function') return i.fmtDate(t, opts);
+    var d = t instanceof Date ? t : new Date(t);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString(undefined, opts);
+  }
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -45,7 +54,7 @@
     if (v === Infinity) return 'Unlimited';
     if (v === -Infinity) return 'Unlimited';
     dp = dp == null ? 2 : dp;
-    var s = Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    var s = Math.abs(v).toLocaleString(loc(), { minimumFractionDigits: dp, maximumFractionDigits: dp });
     return (v < 0 ? '−$' : '$') + s;
   }
   function signed(v, dp) {
@@ -53,7 +62,7 @@
     if (v === Infinity) return 'Unlimited';
     if (v === -Infinity) return 'Unlimited';
     dp = dp == null ? 2 : dp;
-    var s = Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    var s = Math.abs(v).toLocaleString(loc(), { minimumFractionDigits: dp, maximumFractionDigits: dp });
     return (v > 0 ? '+$' : v < 0 ? '−$' : '$') + s;
   }
   function pct(v, dp) {
@@ -61,7 +70,7 @@
     dp = dp == null ? 2 : dp;
     return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(dp) + '%';
   }
-  function plain(v, dp) { return isNum(v) ? v.toLocaleString(undefined, { minimumFractionDigits: dp == null ? 2 : dp, maximumFractionDigits: dp == null ? 2 : dp }) : '—'; }
+  function plain(v, dp) { return isNum(v) ? v.toLocaleString(loc(), { minimumFractionDigits: dp == null ? 2 : dp, maximumFractionDigits: dp == null ? 2 : dp }) : '—'; }
   function pnlClass(v) { return v > 0 ? 'up' : v < 0 ? 'down' : ''; }
   function fmtTime(t) {
     if (!isNum(t)) return '—';
@@ -69,8 +78,8 @@
     var d = new Date(ms), now = new Date();
     var sameDay = d.toDateString() === now.toDateString();
     return sameDay
-      ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-      : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      ? d.toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleString(loc(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
   function isoDate(t) {
     var ms = t < 1e11 ? t * 1000 : t;
@@ -321,7 +330,9 @@
     var rp = $('refreshpill');
     if (rp) {
       rp.textContent = lastMarkAt ? T('marks {t}', { t: fmtTime(lastMarkAt) }) : T('marks —');
-      rp.title = lastMarkAt ? 'Positions last marked at ' + new Date(lastMarkAt).toLocaleTimeString() + '. Auto-refresh every ' + Math.round(refreshIntervalMs() / 1000) + ' s while this tab is visible.' : 'Not yet marked';
+      rp.title = lastMarkAt
+        ? T('Positions last marked at {time}. Auto-refresh every {s} s while this tab is visible.', { time: new Date(lastMarkAt).toLocaleTimeString(loc()), s: Math.round(refreshIntervalMs() / 1000) })
+        : T('Not yet marked');
     }
   }
 
@@ -330,7 +341,7 @@
     var v = mtm || Object.assign({ equity: st.cash + paper.valuation({}).marketValue, cash: st.cash, realized: st.realized, unrealized: paper.valuation({}).unrealized, dayPnL: 0 }, {});
     var equity = v.equity, total = equity - st.startingCash, totalPct = st.startingCash ? total / st.startingCash * 100 : 0;
     $('t-equity').textContent = money(equity);
-    $('t-equity-sub').textContent = st.createdAt ? T('Started with {cash} on {date}', { cash: money(st.startingCash, 0), date: new Date(st.createdAt).toLocaleDateString() }) : T('Started with {cash}', { cash: money(st.startingCash, 0) });
+    $('t-equity-sub').textContent = st.createdAt ? T('Started with {cash} on {date}', { cash: money(st.startingCash, 0), date: fmtDate(st.createdAt) }) : T('Started with {cash}', { cash: money(st.startingCash, 0) });
     $('t-cash').textContent = money(v.cash);
     $('t-cash-sub').textContent = T('Buying power {bp}', { bp: money(isNum(v.buyingPower) ? v.buyingPower : Math.max(0, v.cash)) }) + (v.marginUsed ? ' · ' + T('margin held {amount}', { amount: money(v.marginUsed) }) : '');
     var day = $('t-day'); day.textContent = signed(v.dayPnL); day.className = 'value num ' + pnlClass(v.dayPnL);
@@ -368,7 +379,7 @@
     eqSeries = eqChart.addAreaSeries({
       lineColor: css('--accent'), topColor: hexAlpha(css('--accent'), 0.35), bottomColor: hexAlpha(css('--accent'), 0.02),
       lineWidth: 2, priceLineVisible: false, lastValueVisible: true,
-      priceFormat: { type: 'custom', minMove: 1, formatter: function (p) { return '$' + Math.round(p).toLocaleString(); } }
+      priceFormat: { type: 'custom', minMove: 1, formatter: function (p) { return '$' + Math.round(p).toLocaleString(loc()); } }
     });
     eqChart.subscribeCrosshairMove(function (p) {
       var d = p.seriesData && p.seriesData.get(eqSeries);
@@ -407,6 +418,12 @@
     renderEquityTag();
     if (!eqSeries) return;
     eqSeries.setData(pts);
+    if (BT.a11y) {
+      var eqEl = $('equity');
+      var lastEq = pts.length ? pts[pts.length - 1].value : st.cash;
+      var ret = st.startingCash ? (lastEq - st.startingCash) / st.startingCash * 100 : 0;
+      BT.a11y.describeChart(eqEl, T('Equity curve: {n} points, started at {start}, now {now} ({ret})', { n: pts.length, start: money(st.startingCash), now: money(lastEq), ret: pct(ret) }));
+    }
     if (eqBaseLine) { try { eqSeries.removePriceLine(eqBaseLine); } catch (e) { /* ignore */ } eqBaseLine = null; }
     if (pts.length) {
       eqBaseLine = eqSeries.createPriceLine({ price: st.startingCash, color: css('--muted'), lineStyle: 2, lineWidth: 1, axisLabelVisible: true, title: 'start' });
@@ -446,7 +463,7 @@
       tr.innerHTML =
         '<td class="sym">' + esc(r.symbol) + '<span class="desc">' + esc(describePosition(r.symbol, r)) + '</span></td>' +
         '<td class="side-' + r.side + '">' + (r.side === 'long' ? 'Long' : 'Short') + (r.kind === 'option' ? (r.side === 'long' ? ' (bought)' : ' (written)') : '') + '</td>' +
-        '<td class="num right">' + Math.abs(r.qty).toLocaleString() + (r.kind === 'option' ? ' ct' : '') + '</td>' +
+        '<td class="num right">' + Math.abs(r.qty).toLocaleString(loc()) + (r.kind === 'option' ? ' ct' : '') + '</td>' +
         '<td class="num right">' + money(r.avg) + '</td>' +
         '<td class="num right" title="' + esc(markTitle(r.symbol, r)) + '">' + money(r.price) + srcPill + '</td>' +
         '<td class="num right">' + money(r.marketValue) + '</td>' +
@@ -1007,7 +1024,7 @@
     var ystep = niceStep(ymax - ymin, 5);
     for (var v = Math.ceil(ymin / ystep) * ystep; v <= ymax; v += ystep) {
       var yy = Y(v); ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(W - R, yy); ctx.stroke();
-      ctx.fillText((v < 0 ? '−' : '') + '$' + Math.abs(Math.round(v)).toLocaleString(), L - 6, yy);
+      ctx.fillText((v < 0 ? '−' : '') + '$' + Math.abs(Math.round(v)).toLocaleString(loc()), L - 6, yy);
     }
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     var xstep = niceStep(xmax - xmin, Math.max(3, Math.floor(pw / 80)));

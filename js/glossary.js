@@ -6,8 +6,17 @@
  *
  *   Terms (course/glossary.json → {version, categories:[{id,label}], terms:[...]})
  *     term: {id, term, aliases[], category, lesson, definition, example, related[]}
- *     load(force)            → Promise<data>   fetch + in-memory cache
- *     setData(data)          → data            inject data (tests, inline fallback)
+ *     load(force)            → Promise<data>   fetch + in-memory cache; like BT.course it
+ *                              tries course/<lang>/glossary.json first (lang from BT.course /
+ *                              BT.i18n / localStorage 'bt.lang') and falls back to the English
+ *                              file, tagging data.lang / data.englishOnly. Same for the Daily 5
+ *                              bank (course/<lang>/questionbank.json).
+ *     setData(data, loc?)    → data            inject data (tests, inline fallback)
+ *     dataLang() / englishOnly() / lang() / locale() / urlFor(base, code)
+ *     On window 'bt:lang' (fired by js/i18n.js) loaded data is re-fetched in the new
+ *     language and 'bt:glossary' {detail:{lang, data, bank, englishOnly}} is dispatched;
+ *     a page listener calls preventDefault() once it has re-rendered (else glossary.html reloads).
+ *     Sorting / letter grouping use the active locale; accents are folded for search.
  *     terms() / categories() / get(idOrName) / search(q, {category, limit})
  *     letters() / byLetter() / related(id) / lessonUrl(term) / linkify(text) helpers
  *
@@ -31,6 +40,8 @@
 
   var TERMS_URL = 'course/glossary.json';
   var BANK_URL = 'course/questionbank.json';
+  var DEFAULT_LANG = 'en';
+  var LANG_RE = /^[a-z]{2}(-[a-z]{2,4})?$/;
   var FC_KEY = 'bt.flashcards';
   var DAILY_KEY = 'bt.daily5';
   var DAY_MS = 86400000;
@@ -52,14 +63,70 @@
   /* ------------------------------------------------------------------ *
    * Small helpers
    * ------------------------------------------------------------------ */
+  /** Strip accents so 'Órdenes' and 'ordenes' compare equal (NFD + drop combining marks). */
+  function fold(s) {
+    s = String(s == null ? '' : s);
+    try { s = s.normalize('NFD'); } catch (e) { /* no normalize */ }
+    return s.replace(/[̀-ͯ]/g, '');
+  }
   function norm(s) {
-    return String(s == null ? '' : s).toLowerCase()
+    return fold(s).toLowerCase()
       .replace(/[‘’“”]/g, "'")
       .replace(/[^a-z0-9+&/%.\-' ]+/g, ' ')
       .replace(/\s+/g, ' ').trim();
   }
   function slug(s) {
     return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Language (course/<lang>/… like BT.course; English is the fallback)
+   * ------------------------------------------------------------------ */
+  function cleanLang(code) {
+    code = String(code == null ? '' : code).toLowerCase().trim();
+    return LANG_RE.test(code) ? code : DEFAULT_LANG;
+  }
+  /** Active language: BT.course.lang() when the course engine is present, else BT.i18n.lang(), else localStorage 'bt.lang', else 'en'. */
+  function lang() {
+    var code = '';
+    try { if (BT.course && typeof BT.course.lang === 'function') code = BT.course.lang(); } catch (e) { code = ''; }
+    try { if (!code && BT.i18n && typeof BT.i18n.lang === 'function') code = BT.i18n.lang(); } catch (e2) { code = ''; }
+    if (!code) { var stored = lsGet('bt.lang', ''); if (typeof stored === 'string') code = stored; }
+    return cleanLang(code);
+  }
+  /** BCP-47 locale for sorting / letter grouping ('es-419' for Spanish, 'en-US' for English). */
+  function locale() {
+    try { if (BT.i18n && typeof BT.i18n.locale === 'function') { var l = BT.i18n.locale(); if (l) return l; } } catch (e) { /* fall through */ }
+    var code = lang();
+    return code === DEFAULT_LANG ? 'en-US' : code;
+  }
+  function compareNames(a, b) {
+    var loc = locale();
+    try { return String(a).localeCompare(String(b), loc, { sensitivity: 'base' }); }
+    catch (e) { return String(a).localeCompare(String(b), 'en', { sensitivity: 'base' }); }
+  }
+  /** urlFor('course/glossary.json', 'es') → 'course/es/glossary.json'; English keeps the plain path. */
+  function urlFor(base, code) {
+    code = cleanLang(code || lang());
+    return code === DEFAULT_LANG ? base : base.replace(/^course\//, 'course/' + code + '/');
+  }
+  function fetchJSON(url) {
+    return root.fetch(url, { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error(url.replace(/^.*\//, '').replace(/\.json$/, '') + ': HTTP ' + r.status);
+      return r.json();
+    });
+  }
+  /**
+   * fetchLocalised(base) → Promise<{json, lang, englishOnly}>: course/<lang>/x.json when
+   * the active language is not English and the file exists, else course/x.json
+   * (englishOnly:true marks the fallback). Errors from the ENGLISH file propagate.
+   */
+  function fetchLocalised(base) {
+    if (typeof root.fetch !== 'function') return Promise.reject(new Error('fetch unavailable'));
+    var code = lang();
+    if (code === DEFAULT_LANG) return fetchJSON(base).then(function (json) { return { json: json, lang: DEFAULT_LANG, englishOnly: false }; });
+    return fetchJSON(urlFor(base, code)).then(function (json) { return { json: json, lang: code, englishOnly: false }; },
+      function () { return fetchJSON(base).then(function (json) { return { json: json, lang: DEFAULT_LANG, englishOnly: true }; }); });
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -130,23 +197,29 @@
   /** 'Bid-ask spread' stays; 'Stock (share)' → 'Stock'; 'RSI (Relative…)' → 'RSI'. */
   function baseName(name) { return String(name).replace(/\s*\(.*?\)\s*/g, ' ').trim(); }
 
-  function setData(d) {
+  /**
+   * setData(d, loc?) → data. `loc` = {lang, englishOnly} from fetchLocalised; without it
+   * the data is tagged with the active language (inline fallbacks, tests).
+   */
+  function setData(d, loc) {
     if (!d || !Array.isArray(d.terms)) throw new Error('glossary: setData needs {terms:[]}');
-    data = { version: d.version || '', categories: Array.isArray(d.categories) ? d.categories : [], terms: d.terms.slice() };
-    data.terms.sort(function (a, b) { return String(a.term).localeCompare(String(b.term), 'en', { sensitivity: 'base' }); });
+    loc = loc || {};
+    data = { version: d.version || '', categories: Array.isArray(d.categories) ? d.categories : [], terms: d.terms.slice(),
+      lang: cleanLang(loc.lang || (d.lang && typeof d.lang === 'string' ? d.lang : lang())), englishOnly: !!loc.englishOnly };
+    data.terms.sort(function (a, b) { return compareNames(a.term, b.term); });
     index(data);
     return data;
   }
   function load(force) {
     if (data && !force) return Promise.resolve(data);
     if (loading && !force) return loading;
-    if (typeof root.fetch !== 'function') return Promise.reject(new Error('fetch unavailable'));
-    loading = root.fetch(TERMS_URL, { cache: 'no-cache' }).then(function (r) {
-      if (!r.ok) throw new Error('glossary: HTTP ' + r.status);
-      return r.json();
-    }).then(function (d) { loading = null; return setData(d); }, function (e) { loading = null; throw e; });
+    loading = fetchLocalised(TERMS_URL).then(function (r) { loading = null; return setData(r.json, r); }, function (e) { loading = null; throw e; });
     return loading;
   }
+  /** The language the loaded terms are in ('en' | 'es' | …), null before load(). */
+  function dataLang() { return data ? data.lang : null; }
+  /** true when a translation was requested but only the English file was available. */
+  function englishOnly() { return !!(data && data.englishOnly); }
   function terms() { return data ? data.terms : []; }
   function categories() { return data ? data.categories : []; }
   function categoryLabel(id) {
@@ -202,18 +275,21 @@
       }
       if (s > 0) scored.push({ t: t, s: s });
     }
-    scored.sort(function (a, b) { return b.s - a.s || a.t.term.localeCompare(b.t.term, 'en', { sensitivity: 'base' }); });
+    scored.sort(function (a, b) { return b.s - a.s || compareNames(a.t.term, b.t.term); });
     var out = scored.map(function (x) { return x.t; });
     return opts.limit ? out.slice(0, opts.limit) : out;
   }
+  /** Index letter, accents folded so 'Índice' files under I and 'Órdenes' under O (Ñ keeps its own group). */
   function letterOf(t) {
-    var c = String(t.term).charAt(0).toUpperCase();
+    var first = String(t.term).charAt(0).toUpperCase();
+    if (first === 'Ñ' || first === 'ñ') return 'Ñ';
+    var c = fold(first);
     return /[A-Z]/.test(c) ? c : '#';
   }
   /** Letters that have at least one term, '#' first then A–Z. */
   function letters(list) {
     var seen = {}; (list || terms()).forEach(function (t) { seen[letterOf(t)] = true; });
-    var out = Object.keys(seen).sort(function (a, b) { return a === '#' ? -1 : b === '#' ? 1 : a < b ? -1 : 1; });
+    var out = Object.keys(seen).sort(function (a, b) { return a === '#' ? -1 : b === '#' ? 1 : compareNames(a, b); });
     return out;
   }
   function byLetter(list) {
@@ -407,21 +483,61 @@
    * ------------------------------------------------------------------ */
   var bank = null, bankLoading = null, daily = null;
 
-  function setBank(b) {
+  function setBank(b, loc) {
     if (!b || !Array.isArray(b.questions)) throw new Error('glossary: setBank needs {questions:[]}');
+    loc = loc || {};
     bank = b;
+    bank.lang = cleanLang(loc.lang || (typeof b.lang === 'string' ? b.lang : lang()));
+    bank.englishOnly = !!loc.englishOnly;
     return bank;
   }
   function loadBank(force) {
     if (bank && !force) return Promise.resolve(bank);
     if (bankLoading && !force) return bankLoading;
-    if (typeof root.fetch !== 'function') return Promise.reject(new Error('fetch unavailable'));
-    bankLoading = root.fetch(BANK_URL, { cache: 'no-cache' }).then(function (r) {
-      if (!r.ok) throw new Error('questionbank: HTTP ' + r.status);
-      return r.json();
-    }).then(function (b) { bankLoading = null; return setBank(b); }, function (e) { bankLoading = null; throw e; });
+    bankLoading = fetchLocalised(BANK_URL).then(function (r) { bankLoading = null; return setBank(r.json, r); }, function (e) { bankLoading = null; throw e; });
     return bankLoading;
   }
+  function bankLang() { return bank ? bank.lang : null; }
+
+  /* ------------------------------------------------------------------ *
+   * Language switching: js/i18n.js fires 'bt:lang' on window (the contract also
+   * names 'bt:langchange'). Drop the caches and re-fetch what was loaded, then
+   * announce 'bt:glossary' {detail:{lang, data, bank, englishOnly}} so the page can
+   * re-render. glossary.html may call event.preventDefault() in its listener to
+   * say it re-rendered itself; otherwise, when the page is glossary.html
+   * (BT.glossaryPage exists), the data on screen is stale and we reload once.
+   * ------------------------------------------------------------------ */
+  function invalidate() {
+    data = null; byId = {}; byName = {}; loading = null;
+    bank = null; bankLoading = null;
+  }
+  function onLangEvent(e) {
+    var code = (e && e.detail && e.detail.lang) || '';
+    code = code ? cleanLang(code) : lang();
+    var hadTerms = !!data, hadBank = !!bank;
+    if (!hadTerms && !hadBank) return;             // nothing loaded yet: the first load() picks the language
+    // data already in the requested language is fine; an English fallback counts only when English is requested
+    var termsOk = !hadTerms || (data.lang === code && (!data.englishOnly || code === DEFAULT_LANG));
+    var bankOk = !hadBank || (bank.lang === code && (!bank.englishOnly || code === DEFAULT_LANG));
+    if (termsOk && bankOk) return;
+    invalidate();
+    var jobs = [];
+    if (hadTerms) jobs.push(load().catch(function () { return null; }));
+    if (hadBank) jobs.push(loadBank().catch(function () { return null; }));
+    Promise.all(jobs).then(function () {
+      var handled = false;
+      try {
+        var ev = new CustomEvent('bt:glossary', { cancelable: true, detail: { lang: code, data: data, bank: bank, englishOnly: englishOnly() } });
+        handled = !root.dispatchEvent(ev);
+      } catch (err) { /* no CustomEvent */ }
+      if (!handled && hadTerms && root.BT && root.BT.glossaryPage && root.location && typeof root.location.reload === 'function') {
+        try { root.location.reload(); } catch (err2) { /* ignore */ }
+      }
+    });
+  }
+  try {
+    if (typeof root.addEventListener === 'function') { root.addEventListener('bt:lang', onLangEvent); root.addEventListener('bt:langchange', onLangEvent); }
+  } catch (e) { /* no window events (tests) */ }
   function questions() { return bank ? bank.questions : []; }
   /**
    * pick(dateKey, n=5, list) → the same n questions for everyone on that calendar
@@ -508,11 +624,13 @@
    * Export
    * ------------------------------------------------------------------ */
   BT.glossary = {
-    TERMS_URL: TERMS_URL, BANK_URL: BANK_URL,
+    TERMS_URL: TERMS_URL, BANK_URL: BANK_URL, DEFAULT_LANG: DEFAULT_LANG,
+    lang: lang, locale: locale, urlFor: urlFor, fetchLocalised: fetchLocalised, invalidate: invalidate,
+    dataLang: dataLang, englishOnly: englishOnly,
     load: load, setData: setData, terms: terms, categories: categories, categoryLabel: categoryLabel,
     get: get, search: search, letters: letters, byLetter: byLetter, letterOf: letterOf,
     related: related, backlinks: backlinks, lessonUrl: lessonUrl, termUrl: termUrl, summary: summary, linkify: linkify,
-    util: { norm: norm, slug: slug, esc: esc, dateKey: dateKey, dayDiff: dayDiff, shiftKey: shiftKey, rng: rng, seedFrom: seedFrom },
+    util: { norm: norm, slug: slug, fold: fold, esc: esc, dateKey: dateKey, dayDiff: dayDiff, shiftKey: shiftKey, rng: rng, seedFrom: seedFrom },
     flashcards: {
       KEY: FC_KEY,
       load: fcLoad, save: fcSave, reset: fcReset, card: card,
@@ -521,7 +639,7 @@
     },
     daily: {
       KEY: DAILY_KEY, N: DAILY_N,
-      loadBank: loadBank, setBank: setBank, questions: questions, pick: pick,
+      loadBank: loadBank, setBank: setBank, questions: questions, pick: pick, bankLang: bankLang,
       load: dailyLoad, save: dailySave, reset: dailyReset,
       status: status, record: record, streak: streak, history: history, stats: dailyStats
     }

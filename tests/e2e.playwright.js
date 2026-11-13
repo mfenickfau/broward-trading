@@ -10,7 +10,8 @@
 //   - screenshots to docs/screenshots/<page>-<desktop|phone>.png (deviceScaleFactor 1)
 // then exercises the main flows: language toggle to Spanish and back (>= 90 % of visible text
 // nodes change on index/learn/portfolio/pricing, English restored), Spanish lesson m3-l2 with a
-// working quiz, m9 in both languages, lesson print button, First Week (7 days, Day 1 auto-ticks),
+// working quiz, m9 in both languages, lesson print button, First Week (7 days, Day 1 auto-ticks after the
+// dashboard tour is walked to 'Start trading', lesson m1-l1 and three watchlist symbols),
 // instructor class + share-code import, certificate from query params, dashboard buy, alerts,
 // replay drill + scorecard, journal, glossary (search, flashcards, Daily 5), compare, pricing,
 // verify, learn (m7 drill, m8 exam, quiz), portfolio position and a backtest run.
@@ -242,9 +243,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   if (dayN !== 7) note('start.html shows ' + dayN + ' days, expected 7'); else ok('start.html shows 7 days');
   const doneBefore = await page.locator('#days .task.done').count();
   console.log('  tasks done before:', doneBefore);
-  // Day 1: finish the tour (skipped = done), read lesson m1-l1, add 3 symbols of your own to the watchlist.
+  // Day 1: finish the tour, read lesson m1-l1, add 3 symbols of your own to the watchlist.
+  // Skipping the tour only writes bt.tour.done; the First Week task needs bt.tour.finished, which js/app.js
+  // writes when the student reaches the last step and taps 'Start trading' (CONTRACTS.md, Onboarding).
   await goto('index.html', 3000);
   if (await page.locator('#tour:not([hidden])').count()) { await page.click('#tourSkip'); await sleep(300); }
+  if (await page.locator('#tourBtn').count()) {
+    await page.click('#tourBtn'); await sleep(400);
+    for (let i = 0; i < 12 && await page.locator('#tour:not([hidden])').count(); i++) { await page.click('#tourNext'); await sleep(250); }
+    const tourFinished = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('bt.tour.finished')); } catch (e) { return localStorage.getItem('bt.tour.finished'); } });
+    if (await page.locator('#tour:not([hidden])').count()) note('tour did not close after walking through every step');
+    else if (tourFinished !== true && tourFinished !== 'true') note('bt.tour.finished not written after "Start trading" (' + JSON.stringify(tourFinished) + ')');
+    else ok('tour walked to "Start trading", bt.tour.finished set');
+  } else note('dashboard: #tourBtn missing');
   const wlBefore = await page.locator('#wlList li').count();
   await page.evaluate(() => { ['GOOGL', 'META', 'JPM'].forEach(s => BT.app.addToWatchlist(s)); });
   await sleep(600);

@@ -49,7 +49,15 @@
   .page, .learn-wrap, main { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
   .learn-layout { display: block !important; }
   .reader { max-width: 65ch; margin: 0 auto; }
-  .card, .callout, .exercise, .quiz, .drill, .chartblock { box-shadow: none !important; break-inside: avoid; border-color: var(--line) !important; background: #fff !important; }
+  .card, .callout, .exercise, .quiz, .drill, .chartblock { box-shadow: none !important; border-color: var(--line) !important; background: #fff !important; }
+  /* Small boxes stay whole. Quizzes, drills and exercises can run longer than a page, so a
+   * block-level `break-inside: avoid` would push the whole box to a fresh page (leaving the
+   * previous one half blank) and Chrome would then split it anyway. Those break freely between
+   * their parts instead (.drill also carries .card, hence the explicit `auto`), while each
+   * heading is glued to what follows it so a "Quiz · N questions" label never ends a page alone. */
+  .card, .callout, .chartblock { break-inside: avoid; }
+  .quiz, .drill.card, .drill, .exercise { break-inside: auto; }
+  .quiz .qtitle, .drill .dtitle, .exercise .etitle { break-after: avoid; break-inside: avoid; }
   .crumbs { font-size: 9pt; color: var(--muted); }
   .crumbs a { color: var(--muted); }
 

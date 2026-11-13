@@ -89,13 +89,13 @@
   .heatbar .btn-group button{min-width:52px;font-family:var(--mono)}
   .tiles{display:flex;flex-wrap:wrap;gap:6px}
   .tile{flex:var(--w,1) 1 calc(33.333% - 6px);min-width:104px;min-height:76px;border-radius:var(--r-md);border:1px solid var(--line);padding:10px 10px 8px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:4px;cursor:pointer;color:var(--fg);transition:transform var(--dur) var(--ease),border-color var(--dur) var(--ease);
-    background:color-mix(in srgb,var(--tc,var(--panel2)) calc(var(--i,0) * 1%),var(--panel2))}
+    background:color-mix(in srgb,var(--tc,var(--panel2)) calc(min(var(--i,0),45) * 1%),var(--panel2))}  /* capped so --fg stays >= 4.5:1 on the strongest tile */
   .tile.up{--tc:var(--up)} .tile.down{--tc:var(--down)}
   .tile:hover,.tile:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
   .tile .s{font-family:var(--mono);font-weight:600;font-size:var(--fs-md);display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-  .tile .s small{font-family:var(--font);font-weight:400;color:var(--muted);font-size:var(--fs-xs);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .tile .s small{font-family:var(--font);font-weight:400;color:inherit;opacity:.9;font-size:var(--fs-xs);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .tile .p{font-family:var(--mono);font-size:var(--fs-lg);font-weight:500;font-variant-numeric:tabular-nums}
-  .tile .px{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
+  .tile .px{font-family:var(--mono);font-size:var(--fs-xs);color:inherit;opacity:.9}
   .tile.in{outline:2px solid var(--accent);outline-offset:-2px}
   @supports not (background:color-mix(in srgb,red 50%,blue)){ .tile.up{background:var(--up-soft)} .tile.down{background:var(--down-soft)} }
   @media (max-width:420px){.tile{flex-basis:calc(50% - 6px);min-width:0}}
@@ -432,6 +432,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
       });
       try { perfSeries[shown[0]].createPriceLine({ price: 100, color: css('--line2'), lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: '' }); } catch (e) { /* ignore */ }
       perfChart.timeScale().fitContent();
+      if (BT.a11y) {
+        var perfTxt = order.map(function (s) { var r = C.rebase(view.closes[s]); var last = r[r.length - 1]; return s + ' ' + (isNum(last) ? pct(last - 100) : '—'); }).join(', ');
+        BT.a11y.describeChart($('perfChart'), 'Normalized performance over ' + view.times.length + ' trading days, rebased to 100: ' + perfTxt + '.');
+      }
 
       // Relative strength
       var rsSyms = shown.filter(function (s) { return s !== BENCH; });
@@ -446,6 +450,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
         });
         try { rsSeries[rsSyms[0]].createPriceLine({ price: 100, color: css('--line2'), lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: '' }); } catch (e) { /* ignore */ }
         rsChart.timeScale().fitContent();
+        if (BT.a11y) {
+          var rsTxt = rsSyms.map(function (s) { var r = C.relativeStrength(view.closes[s], view.closes[BENCH]); var last = r[r.length - 1]; return s + ' ' + (isNum(last) ? pct(last - 100) : '—') + ' vs SPY'; }).join(', ');
+          BT.a11y.describeChart($('rsChart'), 'Relative strength versus SPY, rebased to 100: ' + rsTxt + '.');
+        }
       }
     }
     renderLegend('perf', null); renderLegend('rs', null);

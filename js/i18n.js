@@ -18,7 +18,7 @@
  *                                  original is remembered on the node so English can be restored
  *   BT.t(str, vars)                programmatic helper for JS-built strings, {name} interpolation
  *   BT.i18n.fmtNumber/fmtMoney/fmtPercent/fmtDate   Intl formatters for the active locale
- *   pure helpers (testable without a DOM): norm, interpolate, lookup, register, hasDict
+ *   pure helpers (testable without a DOM): norm, interpolate, lookup, register, hasDict, hashDict
  *
  * Mechanics
  *   - A MutationObserver (debounced ~40 ms) translates content inserted later (toasts,
@@ -152,8 +152,9 @@
   }
   function fmtMoney(n, opts) {
     if (n == null || isNaN(n)) return '—';
-    var o = Object.assign({ style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }, opts || {});
-    return numberFormat(o).format(+n);
+    // narrowSymbol: es-419 would otherwise print 'USD 100,000.00'; the site's own money() helpers print '$', so match them.
+    var o = Object.assign({ style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', minimumFractionDigits: 2, maximumFractionDigits: 2 }, opts || {});
+    try { return numberFormat(o).format(+n); } catch (e) { delete o.currencyDisplay; return numberFormat(o).format(+n); }   // very old engines reject narrowSymbol
   }
   function fmtPercent(n, opts) {
     if (n == null || isNaN(n)) return '—';
@@ -197,7 +198,9 @@
    * that on the next page load it is registered synchronously, before the page's own
    * scripts run: BT.t() then translates JS-built strings from the very first render
    * instead of only after the fetch. The file is still re-fetched in the background
-   * (HTTP cache / service worker make that cheap) and the copy refreshed when it changed. */
+   * (HTTP cache / service worker make that cheap) and the copy replaced whenever its
+   * content hash differs — so a fixed translation value reaches returning users even
+   * when _meta.version and the number of keys did not change. */
   var CACHE_KEY = 'bt.i18n.';
   function readCache(code) {
     try {
@@ -207,12 +210,49 @@
       return obj && obj.dict && obj.dict.ui ? obj : null;
     } catch (e) { return null; }
   }
-  function writeCache(code, json) {
-    try { root.localStorage.setItem(CACHE_KEY + code, JSON.stringify({ at: Date.now(), dict: { ui: json.ui || {}, attrs: json.attrs || {}, _meta: json._meta || null } })); }
-    catch (e) { /* quota or private mode: translations still work for this view */ }
+  /**
+   * Content fingerprint of a dictionary: FNV-1a (32-bit) over the canonicalised ui and
+   * attrs tables (keys sorted, so key order in the file does not matter). _meta is
+   * deliberately left out: a corrected translation must reach returning users even when
+   * nobody remembered to bump the hand-maintained _meta.version. ~1 ms for 3,000 entries.
+   */
+  function hashDict(json) {
+    var h = 0x811c9dc5;
+    function mix(s) {
+      for (var i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+    }
+    function table(name) {
+      var obj = json && json[name];
+      mix('\u0001' + name + '\u0002');
+      if (!obj || typeof obj !== 'object') return;
+      var keys = Object.keys(obj).sort();
+      for (var i = 0; i < keys.length; i++) {
+        var v = obj[keys[i]];
+        if (typeof v !== 'string') continue;
+        mix(keys[i]); mix('\u0003'); mix(v); mix('\u0004');
+      }
+    }
+    table('ui'); table('attrs');
+    return ('0000000' + h.toString(16)).slice(-8);
   }
-  function sameMeta(a, b) {
-    try { return JSON.stringify(a && a._meta) === JSON.stringify(b && b._meta) && Object.keys(a.ui || {}).length === Object.keys(b.ui || {}).length; } catch (e) { return false; }
+  function writeCache(code, json) {
+    try {
+      root.localStorage.setItem(CACHE_KEY + code, JSON.stringify({
+        at: Date.now(),
+        hash: hashDict(json),
+        dict: { ui: json.ui || {}, attrs: json.attrs || {}, _meta: json._meta || null }
+      }));
+    } catch (e) { /* quota or private mode: translations still work for this view */ }
+  }
+  /** True when the fetched dictionary has exactly the content already cached (values included). */
+  function sameContent(json, cached) {
+    try {
+      // Records written before the hash existed always refresh (and gain a hash).
+      return !!cached && typeof cached.hash === 'string' && cached.hash === hashDict(json);
+    } catch (e) { return false; }
   }
   function fetchDict(code) {
     if (typeof fetch !== 'function') return Promise.resolve(null);
@@ -230,9 +270,10 @@
     var cached = readCache(code);
     if (cached) {
       register(code, cached.dict);
-      // Stale-while-revalidate: refresh the copy when the published file changed.
+      // Stale-while-revalidate: refresh the copy when the published file's content changed
+      // (compared by hash of the actual translations, not by _meta.version or key count).
       fetchDict(code).then(function (json) {
-        if (!json || sameMeta(json, cached.dict)) return;
+        if (!json || sameContent(json, cached)) return;
         dicts[code] = null; register(code, json); writeCache(code, json);
         if (current === code && hasDOM) { try { translatePage(); } catch (e) { /* ignore */ } }
       });
@@ -259,6 +300,9 @@
     var cl = el.classList;
     if (cl && cl.contains('no-i18n')) return true;
     if (el.getAttribute && el.getAttribute('translate') === 'no') return true;
+    // User-authored text (journal notes, student names, account labels) is never machine-translated:
+    // pages mark it with data-user-text, and anything being edited in place is left alone too.
+    if (el.hasAttribute && (el.hasAttribute('data-user-text') || (el.hasAttribute('contenteditable') && el.getAttribute('contenteditable') !== 'false'))) return true;
     return false;
   }
   function insideSkipped(node) {
@@ -482,6 +526,7 @@
     norm: norm,
     interpolate: interpolate,
     lookup: lookup,
+    hashDict: hashDict,
     t: t,
     translatePage: translatePage,
     translate: function (node) { return translateTree(node, current); },

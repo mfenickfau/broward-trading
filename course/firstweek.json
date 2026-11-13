@@ -26,7 +26,7 @@
           "id": "d1-tour",
           "title": "Take the dashboard tour",
           "minutes": 5,
-          "why": "The dashboard is where almost everything happens: the chart, the indicators, the watchlist and the paper trade ticket. Eight short steps now save you from hunting for buttons all week.",
+          "why": "The dashboard is where almost everything happens: the chart, the indicators, the watchlist and the paper trade ticket. Seven short steps now save you from hunting for buttons all week.",
           "steps": [
             "Open the Dashboard. On a first visit the tour starts by itself after a second.",
             "Already closed it? Tap the Tour button in the header (on a keyboard, press ?).",
@@ -43,7 +43,7 @@
           "steps": [
             "Open the lesson and read it at your own pace.",
             "Scroll to the quiz at the end and answer it. A low score is fine today; you can retake it any time.",
-            "Tap 'Mark lesson done' at the bottom of the lesson."
+            "Tap 'Mark complete' at the bottom of the lesson (after the quiz it reads 'Mark lesson complete')."
           ],
           "link": { "href": "learn.html#/lesson/m1-l1", "label": "Open lesson 1.1" },
           "check": { "type": "lesson", "lessonId": "m1-l1" }
@@ -152,7 +152,7 @@
             "Look at the Paper account panel: your cash went down and a position appeared. That is the whole loop."
           ],
           "link": { "href": "index.html", "label": "Open the dashboard" },
-          "check": { "type": "trade", "account": "main", "side": "buy", "min": 1 }
+          "check": { "type": "trade", "account": "main", "side": "buy", "kind": "stock", "min": 1 }
         }
       ]
     },

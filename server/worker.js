@@ -18,10 +18,14 @@
  *   POST /leaderboard            {classCode, nickname, stats, ownerToken?} → {entries, ownerToken?}
  *   POST /classes                instructor (Bearer session, or INSTRUCTOR_SECRET) {name, section, term} → {code, instructorToken, ...}
  *   GET  /classes/:code          → {code, name, section, term}   lets a student confirm a code before joining
- *   POST /classes/:code/snapshots  student snapshot from js/classroom.js → {ok, className}; 410 {removed:true} after a DELETE
- *   GET  /classes/:code/roster   instructor (creator's session, X-Class-Token, or INSTRUCTOR_SECRET) → {class, students:[snapshots]}
+ *   POST /classes/:code/snapshots  student snapshot from js/classroom.js (+ ownerToken after the first) → {ok, className, ownerToken?};
+ *                                409 {ownerMismatch} wrong token, 409 {full} class at MAX_ROSTER, 410 {removed:true} after a DELETE
+ *   GET  /classes/:code/roster?view=full|summary&limit=&cursor=   instructor (creator's session, X-Class-Token, or
+ *                                INSTRUCTOR_SECRET) → {class, students, cursor, hasMore}; 'summary' rows come from KV metadata
+ *   GET  /classes/:code/students/:id    instructor → {student} (one full snapshot)
  *   DELETE /classes/:code/students/:id  instructor → {ok}; the student's device stops re-adding itself
- *   GET  /health                 → {ok:true}
+ *   DELETE /classes/:code/students      instructor, {ids:[≤50]} | {all:true} → {removed, remaining, hasMore} (flood cleanup)
+ *   GET  /health                 → {ok:true, classroom, rateLimitStore}
  *
  * Bindings (server/wrangler.toml)
  *   KV: MEMBERS (email → member), CERTS (id → certificate), TOKENS (magic + session tokens, TTL),
@@ -60,6 +64,19 @@
  *     instructor's session, the per-class instructorToken (only its SHA-256 is
  *     stored) or the INSTRUCTOR_SECRET. A removed student is remembered so their
  *     device stops re-posting (410 {removed:true} makes js/classroom.js leave).
+ *   - A student record belongs to the device that first posted it: the first
+ *     snapshot for (code, studentId) mints a random ownerToken, returned once and
+ *     stored only as HMAC(HMAC_SECRET,'cls|code|id|token'). Later snapshots must
+ *     carry it (409 {ownerMismatch} otherwise), so knowing the class code and a
+ *     classmate's id (both shared freely) is not enough to overwrite their work.
+ *     `updatedAt` is the server's receive time; the client's clock is kept only
+ *     as `clientUpdatedAt` and clamped, so a forged future date cannot make
+ *     genuine later snapshots look stale to js/instructor.js.
+ *   - Snapshot limits are per (class, student) and per class (new ids), with a
+ *     very loose per-IP flood ceiling, because a whole class behind one school
+ *     NAT shares an IP. Each class holds at most MAX_ROSTER students (409 {full}).
+ *   - Without a TOKENS binding the KV rate-limit counters live in CLASSES; with
+ *     neither, write routes answer 503 {notConfigured} instead of a bogus 429.
  */
 
 const MAGIC_TTL_SEC = 15 * 60;
@@ -162,28 +179,48 @@ function withCors(res, cors) {
  *    the exact one.
  * ------------------------------------------------------------------ */
 function rlBindingName(bucket) { return 'RL_' + String(bucket).toUpperCase().replace(/[^A-Z0-9]/g, '_'); }
+/* Where the KV fallback keeps its counters: TOKENS when it is bound, otherwise
+ * CLASSES (a classroom-only deployment binds nothing else; `rl:` keys never
+ * collide with its class:/student:/removed: prefixes). null → no store at all. */
+function rateLimitStore(env) {
+  if (env.TOKENS && typeof env.TOKENS.get === 'function') return { name: 'TOKENS', kv: env.TOKENS };
+  if (env.CLASSES && typeof env.CLASSES.get === 'function') return { name: 'CLASSES', kv: env.CLASSES };
+  return null;
+}
+/* Thrown (not returned) when a write-side bucket has neither a Rate Limiting
+ * binding nor a KV store to count in: the old code answered 429 forever, which
+ * looked like abuse instead of a missing binding. route() turns it into a 503. */
+class NotConfiguredError extends Error {
+  constructor(message) { super(message); this.name = 'NotConfiguredError'; this.notConfigured = true; }
+}
 async function rateLimit(env, request, bucket, max, opts = {}) {
   const failOpen = !!opts.failOpen;
   const subject = opts.key != null ? String(opts.key) : (request.headers.get('CF-Connecting-IP') || 'unknown');
   const windowSec = opts.windowSec || 60;
+  let store = null;
   try {
     const binding = env[rlBindingName(bucket)];
     if (binding && typeof binding.limit === 'function') {
       const r = await binding.limit({ key: `${bucket}:${subject}` });
       return !!(r && r.success);
     }
-    if (!env.TOKENS) return failOpen;
+    store = rateLimitStore(env);
+    if (!store) {
+      if (failOpen) return true;
+      throw new NotConfiguredError(`Rate limiting needs the TOKENS KV binding (or CLASSES, or an ${rlBindingName(bucket)} Rate Limiting binding).`);
+    }
     const id = await sha256(`${bucket}|${subject}`);
     const win = Math.floor(Date.now() / (windowSec * 1000));
     const base = `rl:${bucket}:${id}:${win}:`;
-    const counts = await Promise.all(Array.from({ length: RL_SHARDS }, (_, i) => env.TOKENS.get(base + i)));
+    const counts = await Promise.all(Array.from({ length: RL_SHARDS }, (_, i) => store.kv.get(base + i)));
     const total = counts.reduce((s, v) => s + (parseInt(v || '0', 10) || 0), 0) + 1;
     if (total > max) return false;                       // over: no write needed
     const shard = Math.floor(Math.random() * RL_SHARDS);
     const mine = (parseInt(counts[shard] || '0', 10) || 0) + 1;
-    await env.TOKENS.put(base + shard, String(mine), { expirationTtl: Math.max(60, windowSec * 2) });
+    await store.kv.put(base + shard, String(mine), { expirationTtl: Math.max(60, windowSec * 2) });
     return true;
   } catch (e) {
+    if (e && e.notConfigured) throw e;
     return failOpen;
   }
 }
@@ -744,8 +781,11 @@ async function postLeaderboard(request, env) {
  *
  * KV CLASSES
  *   class:<CODE>            {code, name, section, term, createdAt, ownerKind, owner, tokenHash}
- *   student:<CODE>:<id>     sanitized snapshot + receivedAt + ipless (400-day TTL)
+ *   student:<CODE>:<id>     sanitized snapshot + receivedAt/updatedAt (server clock), clientUpdatedAt,
+ *                           firstSeenAt, owner (HMAC, never returned); KV metadata = rosterRow() (≤ 1 KB)
+ *                           (400-day TTL)
  *   removed:<CODE>:<id>     '1' for 400 days after an instructor DELETE
+ *   rl:<bucket>:...         rate-limit counter shards, only when TOKENS is not bound
  *
  * Who may act as the instructor of a class (classAuth):
  *   1. the Bearer session of the member who created it (owner = HMAC of email);
@@ -758,8 +798,18 @@ async function postLeaderboard(request, env) {
 const CLASS_CODE_RE = /^[23456789A-HJ-NP-Z]{6}$/;          // CERT_ALPHABET: no 0/1/O/I
 const STUDENT_ID_RE = /^[A-Za-z0-9_-]{4,40}$/;
 const CLASS_TTL_SEC = 400 * 86400;
-const MAX_ROSTER = 500;
+const MAX_ROSTER = 500;                    // distinct students per class; the 501st new id gets 409 {full:true}
 const SNAPSHOT_MAX_BYTES = 64 * 1024;
+const SNAP_PER_STUDENT_PER_MIN = 6;        // one device: page load + lesson + quiz bursts fit comfortably
+const SNAP_NEW_PER_CLASS_PER_MIN = 120;    // brand-new ids per class per minute (a whole lecture hall joining at once)
+const SNAP_PER_IP_PER_MIN = 600;           // flood ceiling only; a school NAT shares one IP across hundreds of students
+const CLIENT_CLOCK_SLACK_MS = 5 * 60 * 1000;
+const ROSTER_PAGE_DEFAULT = 40;            // full snapshots per page: 1 list + N gets stays under the free plan's 50 subrequests
+const ROSTER_PAGE_MAX = 100;
+const ROSTER_SUMMARY_PAGE_MAX = MAX_ROSTER; // summary rows come from list() metadata alone, no per-student gets
+const ROSTER_META_MAX_BYTES = 1024;        // KV metadata limit per key
+const BULK_DELETE_MAX = 50;                // ids per DELETE /students call (2 KV writes each)
+const KV_CURSOR_RE = /^[A-Za-z0-9_=+/.:-]{1,4096}$/;
 
 function normClassCode(s) { return String(s || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function newClassCode() {
@@ -807,6 +857,51 @@ function sanitizeSnapshot(body) {
     updatedAt: cleanText(b.updatedAt, 40) || null
   };
 }
+/* The client's clock is advisory only. A parseable timestamp that is not in the
+ * future (5 min slack) is kept as `clientUpdatedAt`; anything else becomes null.
+ * `updatedAt` itself is always the server's receive time, so a forged
+ * '2999-01-01' can never make later genuine snapshots look "older". */
+function clampClientTime(value, nowMs) {
+  const t = Date.parse(String(value || ''));
+  if (!isFinite(t)) return null;
+  if (t > nowMs + CLIENT_CLOCK_SLACK_MS) return null;
+  return new Date(t).toISOString();
+}
+/* Ownership of a student record. The first snapshot for (code, studentId) mints
+ * a random ownerToken, returns it once, and stores only
+ * HMAC(HMAC_SECRET, 'cls|code|id|token') as `owner`. Every later snapshot for
+ * that id must carry the same token (409 otherwise), so a classmate who knows
+ * the class code and a student id — both are shared freely — cannot overwrite
+ * someone else's record. Without HMAC_SECRET a plain SHA-256 is used; the token
+ * is 24 random bytes, so the stored value still cannot be reversed. */
+async function snapshotOwner(env, code, id, token) {
+  const msg = `cls|${code}|${id}|${token}`;
+  return env.HMAC_SECRET ? hex(await hmac(env.HMAC_SECRET, msg)) : await sha256(msg);
+}
+/* The owner value never leaves the server. */
+function publicSnapshot(s) { if (!s || typeof s !== 'object') return s; const { owner: _o, ...rest } = s; return rest; }
+function quizAverage(quizScores) {
+  const vals = Object.values(quizScores || {}).filter(v => typeof v === 'number');
+  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+}
+/* Compact roster row stored as the KV key's metadata (≤ 1 KB), so GET /roster
+ * ?view=summary is served from a single list() call with no per-student gets. */
+function rosterRow(snap) {
+  const drills = Array.isArray(snap.drills) ? snap.drills : [];
+  const paper = snap.paper || {};
+  const row = {
+    v: 2, studentId: snap.studentId, displayName: String(snap.displayName || ''),
+    lessonsCount: Array.isArray(snap.lessonsDone) ? snap.lessonsDone.length : 0, lessonsTotal: snap.lessonsTotal == null ? null : snap.lessonsTotal,
+    quizAvg: quizAverage(snap.quizScores), quizCount: Object.keys(snap.quizScores || {}).length,
+    drillsPassed: drills.filter(d => d && d.passed).length, drillsAttempted: drills.length,
+    paperReturnPct: paper.returnPct == null ? null : paper.returnPct, paperTrades: paper.trades || 0, paperWinRate: paper.winRate == null ? null : paper.winRate,
+    journalEntries: snap.journalEntries || 0, streak: snap.streak || 0,
+    certificateId: snap.certificate && snap.certificate.id ? snap.certificate.id : null,
+    lastActive: snap.lastActive || null, updatedAt: snap.updatedAt || null, receivedAt: snap.receivedAt || null
+  };
+  while (JSON.stringify(row).length > ROSTER_META_MAX_BYTES && row.displayName.length) row.displayName = row.displayName.slice(0, -1);
+  return row;
+}
 function publicClass(c) { return { code: c.code, name: c.name, section: c.section, term: c.term, createdAt: c.createdAt }; }
 async function getClassRecord(env, code) {
   const raw = await env.CLASSES.get(`class:${code}`);
@@ -829,7 +924,9 @@ async function classAuth(request, env, cls, body) {
   }
   return null;
 }
-function classesReady(env) { return !!(env.CLASSES && typeof env.CLASSES.get === 'function'); }
+/* The classroom needs the CLASSES namespace and somewhere to count rate limits
+ * (TOKENS, or CLASSES itself — see rateLimitStore). */
+function classesReady(env) { return !!(env.CLASSES && typeof env.CLASSES.get === 'function' && typeof env.CLASSES.list === 'function' && rateLimitStore(env)); }
 
 async function postClasses(request, env) {
   if (!classesReady(env)) return error('Classroom is not configured on this server (CLASSES KV binding missing).', 503, { notConfigured: true });
@@ -865,11 +962,20 @@ async function getClass(request, env, rawCode) {
   if (!cls) return json({ found: false, code, error: 'No class has that code. Check it with your instructor.' }, 404);
   return json({ found: true, ...publicClass(cls) });
 }
+/* Count the students of a class with one list() call, stopping at MAX_ROSTER + 1. */
+async function rosterSize(env, code) {
+  const page = await env.CLASSES.list({ prefix: `student:${code}:`, limit: MAX_ROSTER + 1 });
+  const n = (page.keys || []).length;
+  return page.list_complete === false && n <= MAX_ROSTER ? MAX_ROSTER + 1 : n;
+}
 async function postSnapshot(request, env, rawCode) {
   if (!classesReady(env)) return error('Classroom is not configured on this server.', 503, { notConfigured: true });
   const code = normClassCode(rawCode);
   if (!CLASS_CODE_RE.test(code)) return error('A class code is 6 letters or digits.', 400);
-  if (!(await rateLimit(env, request, 'snap', 30))) return error('Too many snapshots. Try again in a minute.', 429);
+  // Limits are per student (a device re-sending too often) and per class, never
+  // per person-behind-a-NAT: a whole class on campus Wi-Fi shares one IP, so the
+  // per-IP bucket is only a very loose flood ceiling.
+  if (!(await rateLimit(env, request, 'snap-ip', SNAP_PER_IP_PER_MIN))) return error('Too many snapshots from this network. Try again in a minute.', 429, { retryAfterSec: 60 });
   const len = +request.headers.get('content-length') || 0;
   if (len > SNAPSHOT_MAX_BYTES) return error('Snapshot too large.', 413);
   const raw = await request.text();
@@ -877,63 +983,167 @@ async function postSnapshot(request, env, rawCode) {
   let body; try { body = JSON.parse(raw); } catch (e) { return error('Bad JSON.'); }
   const snap = sanitizeSnapshot(body);
   if (!snap.studentId) return error('Snapshot is missing a valid studentId.', 400);
+  const id = snap.studentId;
+  if (!(await rateLimit(env, request, 'snap', SNAP_PER_STUDENT_PER_MIN, { key: await sha256(`${code}|${id}`) }))) {
+    return error('Snapshots are limited to a few per minute. Your progress is saved on this device and will sync shortly.', 429, { retryAfterSec: 60 });
+  }
   const cls = await getClassRecord(env, code);
   if (!cls) return error('No class has that code. Check it with your instructor.', 404);
-  if (await env.CLASSES.get(`removed:${code}:${snap.studentId}`)) return json({ error: 'Your instructor removed you from this class. Nothing more is sent.', removed: true }, 410);
-  // No IP, no user agent, no email: exactly the whitelisted snapshot plus a server timestamp.
-  snap.receivedAt = new Date().toISOString();
-  await env.CLASSES.put(`student:${code}:${snap.studentId}`, JSON.stringify(snap), { expirationTtl: CLASS_TTL_SEC });
-  return json({ ok: true, code, className: cls.name, receivedAt: snap.receivedAt });
+  if (await env.CLASSES.get(`removed:${code}:${id}`)) return json({ error: 'Your instructor removed you from this class. Nothing more is sent.', removed: true }, 410);
+
+  const key = `student:${code}:${id}`;
+  let existing = null;
+  try { const prev = await env.CLASSES.get(key); existing = prev ? JSON.parse(prev) : null; } catch (e) { existing = null; }
+  const sentToken = typeof body.ownerToken === 'string' && OWNER_TOKEN_RE.test(body.ownerToken) ? body.ownerToken : null;
+  let ownerToken = null, owner;
+  if (existing && existing.owner) {
+    // Bound record: only the device holding the token may update it.
+    if (!sentToken || !timingSafeEqual(await snapshotOwner(env, code, id, sentToken), existing.owner)) {
+      return error('This student id already belongs to another device in this class. Rejoin to get a fresh id, or sync from the device that joined first.', 409, { ownerMismatch: true });
+    }
+    owner = existing.owner;
+  } else {
+    // New id (or a record from before ownership existed): bind it now and hand the token back once.
+    if (!existing) {
+      if (!(await rateLimit(env, request, 'snap-new', SNAP_NEW_PER_CLASS_PER_MIN, { key: await sha256(`new|${code}`) }))) {
+        return error('Too many students joined this class in the last minute. Try again shortly.', 429, { retryAfterSec: 60 });
+      }
+      if ((await rosterSize(env, code)) >= MAX_ROSTER) return error(`This class is full (${MAX_ROSTER} students). Ask your instructor to remove unused ids.`, 409, { full: true });
+    }
+    ownerToken = sentToken || randomId(24);
+    owner = await snapshotOwner(env, code, id, ownerToken);
+  }
+  // No IP, no user agent, no email: exactly the whitelisted snapshot plus server timestamps.
+  const now = new Date();
+  snap.receivedAt = now.toISOString();
+  snap.clientUpdatedAt = clampClientTime(snap.updatedAt, now.getTime());
+  snap.updatedAt = snap.receivedAt;
+  snap.firstSeenAt = (existing && existing.firstSeenAt) || snap.receivedAt;
+  snap.owner = owner;
+  await env.CLASSES.put(key, JSON.stringify(snap), { expirationTtl: CLASS_TTL_SEC, metadata: rosterRow(snap) });
+  const out = { ok: true, code, className: cls.name, receivedAt: snap.receivedAt, updatedAt: snap.updatedAt };
+  if (ownerToken) out.ownerToken = ownerToken; // first time only: js/classroom.js keeps it and sends it with every later snapshot
+  return json(out);
 }
-async function listRoster(env, code) {
+function parseSnapshot(raw) { try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+/* One page of the roster.
+ *   view 'full'    → full public snapshots: 1 list + ≤limit gets (default 40, max 100)
+ *   view 'summary' → compact rows from list() metadata only (max 500 per page);
+ *                    records written before metadata existed are fetched once.
+ * Returns {students, cursor, hasMore}. The KV cursor is passed through opaquely. */
+async function listRosterPage(env, code, { view = 'full', limit, cursor } = {}) {
   const prefix = `student:${code}:`;
-  const keys = [];
-  let cursor;
-  do {
-    const page = await env.CLASSES.list({ prefix, cursor, limit: 1000 });
-    (page.keys || []).forEach(k => keys.push(k.name));
-    cursor = page.list_complete ? null : page.cursor;
-  } while (cursor && keys.length < MAX_ROSTER);
-  const rows = await Promise.all(keys.slice(0, MAX_ROSTER).map(k => env.CLASSES.get(k)));
-  return rows.map(r => { try { return r ? JSON.parse(r) : null; } catch (e) { return null; } }).filter(Boolean);
+  const max = view === 'summary' ? ROSTER_SUMMARY_PAGE_MAX : ROSTER_PAGE_MAX;
+  const n = Math.max(1, Math.min(max, Math.round(+limit) || (view === 'summary' ? ROSTER_SUMMARY_PAGE_MAX : ROSTER_PAGE_DEFAULT)));
+  const page = await env.CLASSES.list({ prefix, limit: n, cursor: cursor || undefined });
+  const keys = page.keys || [];
+  let students;
+  if (view === 'summary') {
+    students = await Promise.all(keys.map(async k => {
+      if (k.metadata && k.metadata.v === 2) return k.metadata;
+      const s = parseSnapshot(await env.CLASSES.get(k.name));     // legacy record without metadata
+      return s ? rosterRow(s) : null;
+    }));
+  } else {
+    students = (await Promise.all(keys.map(k => env.CLASSES.get(k.name)))).map(r => publicSnapshot(parseSnapshot(r)));
+  }
+  const hasMore = page.list_complete === false && !!page.cursor;
+  return { students: students.filter(Boolean), cursor: hasMore ? page.cursor : null, hasMore };
+}
+/* Shared preamble of the instructor routes: code check, rate limit, class lookup, auth.
+ * Returns {code, cls, via} or a Response to send as-is. */
+async function instructorContext(request, env, rawCode, what) {
+  if (!classesReady(env)) return error('Classroom is not configured on this server.', 503, { notConfigured: true });
+  const code = normClassCode(rawCode);
+  if (!CLASS_CODE_RE.test(code)) return error('A class code is 6 letters or digits.', 400);
+  if (!(await rateLimit(env, request, 'roster', 60))) return error('Too many requests. Try again in a minute.', 429);
+  const cls = await getClassRecord(env, code);
+  if (!cls) return error('No class has that code.', 404);
+  const via = await classAuth(request, env, cls);
+  if (!via) return error(`Only the instructor who created this class can ${what}.`, 403);
+  return { code, cls, via };
 }
 async function getRoster(request, env, rawCode) {
-  if (!classesReady(env)) return error('Classroom is not configured on this server.', 503, { notConfigured: true });
-  const code = normClassCode(rawCode);
-  if (!CLASS_CODE_RE.test(code)) return error('A class code is 6 letters or digits.', 400);
-  if (!(await rateLimit(env, request, 'roster', 60))) return error('Too many requests. Try again in a minute.', 429);
-  const cls = await getClassRecord(env, code);
-  if (!cls) return error('No class has that code.', 404);
-  const via = await classAuth(request, env, cls);
-  if (!via) return error('Only the instructor who created this class can read its roster.', 403);
-  const students = await listRoster(env, code);
-  return json({ ok: true, class: publicClass(cls), students, count: students.length, via });
+  const ctx = await instructorContext(request, env, rawCode, 'read its roster');
+  if (ctx instanceof Response) return ctx;
+  const q = new URL(request.url).searchParams;
+  const view = q.get('view') === 'summary' ? 'summary' : 'full';
+  const cursor = q.get('cursor') || '';
+  if (cursor && !KV_CURSOR_RE.test(cursor)) return error('Invalid cursor.', 400);
+  const page = await listRosterPage(env, ctx.code, { view, limit: q.get('limit'), cursor });
+  return json({ ok: true, class: publicClass(ctx.cls), view, students: page.students, count: page.students.length, cursor: page.cursor, hasMore: page.hasMore, pageMax: view === 'summary' ? ROSTER_SUMMARY_PAGE_MAX : ROSTER_PAGE_MAX, via: ctx.via });
 }
-async function deleteStudent(request, env, rawCode, rawId) {
-  if (!classesReady(env)) return error('Classroom is not configured on this server.', 503, { notConfigured: true });
-  const code = normClassCode(rawCode);
-  const id = decodeURIComponent(String(rawId || ''));
-  if (!CLASS_CODE_RE.test(code)) return error('A class code is 6 letters or digits.', 400);
-  if (!STUDENT_ID_RE.test(id)) return error('Invalid student id.', 400);
-  if (!(await rateLimit(env, request, 'roster', 60))) return error('Too many requests. Try again in a minute.', 429);
-  const cls = await getClassRecord(env, code);
-  if (!cls) return error('No class has that code.', 404);
-  const via = await classAuth(request, env, cls);
-  if (!via) return error('Only the instructor who created this class can remove students.', 403);
+/* Student ids only ever contain [A-Za-z0-9_-], so a path segment never needs
+ * decoding; a malformed %-sequence is simply an invalid id, not a URIError. */
+function studentIdFromPath(rawId) {
+  let id = String(rawId || '');
+  try { id = decodeURIComponent(id); } catch (e) { return null; }
+  return STUDENT_ID_RE.test(id) ? id : null;
+}
+async function getStudent(request, env, rawCode, rawId) {
+  const id = studentIdFromPath(rawId);
+  if (!id) return error('Invalid student id.', 400);
+  const ctx = await instructorContext(request, env, rawCode, 'read student records');
+  if (ctx instanceof Response) return ctx;
+  const snap = parseSnapshot(await env.CLASSES.get(`student:${ctx.code}:${id}`));
+  if (!snap) return error('No student with that id in this class.', 404);
+  return json({ ok: true, code: ctx.code, student: publicSnapshot(snap), via: ctx.via });
+}
+async function removeStudentRecord(env, code, id) {
   await env.CLASSES.delete(`student:${code}:${id}`);
   await env.CLASSES.put(`removed:${code}:${id}`, '1', { expirationTtl: CLASS_TTL_SEC });
-  return json({ ok: true, code, studentId: id, removed: true });
+}
+async function deleteStudent(request, env, rawCode, rawId) {
+  const id = studentIdFromPath(rawId);
+  if (!id) return error('Invalid student id.', 400);
+  const ctx = await instructorContext(request, env, rawCode, 'remove students');
+  if (ctx instanceof Response) return ctx;
+  await removeStudentRecord(env, ctx.code, id);
+  return json({ ok: true, code: ctx.code, studentId: id, removed: true });
+}
+/* DELETE /classes/:code/students  body {ids:[...]} (≤ 50) or {all:true} (the first
+ * 50 records in key order; call again while hasMore). Every removed id is
+ * remembered so the device gets 410 and leaves the class — this is how an
+ * instructor clears a flood of fake ids or resets a class between terms. */
+async function deleteStudents(request, env, rawCode) {
+  const ctx = await instructorContext(request, env, rawCode, 'remove students');
+  if (ctx instanceof Response) return ctx;
+  const body = await readJson(request) || {};
+  let ids = [];
+  if (body.all === true) {
+    const page = await env.CLASSES.list({ prefix: `student:${ctx.code}:`, limit: BULK_DELETE_MAX });
+    ids = (page.keys || []).map(k => k.name.slice(`student:${ctx.code}:`.length)).filter(x => STUDENT_ID_RE.test(x));
+  } else if (Array.isArray(body.ids)) {
+    ids = [...new Set(body.ids.filter(x => typeof x === 'string' && STUDENT_ID_RE.test(x)))];
+    if (ids.length > BULK_DELETE_MAX) return error(`Remove at most ${BULK_DELETE_MAX} students per call.`, 400, { max: BULK_DELETE_MAX });
+  } else {
+    return error('Send {ids:[...]} or {all:true}.', 400);
+  }
+  for (const id of ids) await removeStudentRecord(env, ctx.code, id);
+  const remaining = ids.length ? await rosterSize(env, ctx.code) : 0;
+  return json({ ok: true, code: ctx.code, removed: ids.length, ids, remaining, hasMore: remaining > 0 && body.all === true });
 }
 
 /* ------------------------------------------------------------------ *
  * router
  * ------------------------------------------------------------------ */
 async function route(request, env) {
+  try { return await routeInner(request, env); }
+  catch (e) {
+    // A write route whose rate limiter has nowhere to count: say which binding is missing instead of a misleading 429.
+    if (e && e.notConfigured) return error(e.message, 503, { notConfigured: true });
+    throw e;
+  }
+}
+async function routeInner(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
   const m = request.method;
 
-  if (m === 'GET' && (path === '/' || path === '/health')) return json({ ok: true, service: 'broward-trading-api', version: '0.4.0', classroom: classesReady(env) });
+  if (m === 'GET' && (path === '/' || path === '/health')) {
+    const store = rateLimitStore(env);
+    return json({ ok: true, service: 'broward-trading-api', version: '0.4.1', classroom: classesReady(env), rateLimitStore: store ? store.name : null });
+  }
   if (m === 'POST' && path === '/auth/magic-link') return postMagicLink(request, env);
   if (m === 'GET' && path === '/auth/callback') return getCallback(request, env);
   if (m === 'POST' && path === '/auth/exchange') return postExchange(request, env);
@@ -946,12 +1156,14 @@ async function route(request, env) {
   if (m === 'GET' && path === '/leaderboard') return getLeaderboard(request, env);
   if (m === 'POST' && path === '/leaderboard') return postLeaderboard(request, env);
   if (m === 'POST' && path === '/classes') return postClasses(request, env);
-  const cls = /^\/classes\/([^/]+)(?:\/(snapshots|roster|students\/([^/]+)))?$/.exec(path);
+  const cls = /^\/classes\/([^/]+)(?:\/(snapshots|roster|students(?:\/([^/]+))?))?$/.exec(path);
   if (cls) {
     const [, code, sub, studentId] = cls;
     if (m === 'GET' && !sub) return getClass(request, env, code);
     if (m === 'POST' && sub === 'snapshots') return postSnapshot(request, env, code);
     if (m === 'GET' && sub === 'roster') return getRoster(request, env, code);
+    if (m === 'DELETE' && sub === 'students') return deleteStudents(request, env, code);
+    if (m === 'GET' && sub && sub.startsWith('students/')) return getStudent(request, env, code, studentId);
     if (m === 'DELETE' && sub && sub.startsWith('students/')) return deleteStudent(request, env, code, studentId);
   }
   return error('Not found.', 404);
@@ -977,10 +1189,12 @@ export default {
 export const _internal = {
   b64url, b64urlDecode, timingSafeEqual, signToken, verifyToken, certificateId, idFromBytes, CERT_RE, CERT_ALPHABET,
   normalizeCertId, parseStripeSignature, verifyStripeSignature, isEmail, isProNow, rankEntries, publicEntries, corsHeaders, hex, sha256,
-  rateLimit, rlBindingName, claimMagicToken, MagicLock, ownerFor, OWNER_TOKEN_RE,
+  rateLimit, rlBindingName, rateLimitStore, NotConfiguredError, claimMagicToken, MagicLock, ownerFor, OWNER_TOKEN_RE,
   mintLoginCode, postExchange, LOGIN_CODE_RE, LOGIN_CODE_TTL_SEC,
   MAGIC_TTL_SEC, SESSION_TTL_SEC, MAGIC_EMAIL_WINDOW_SEC, MAGIC_EMAIL_MAX, RL_SHARDS,
   // classroom (v0.4)
-  CLASS_CODE_RE, STUDENT_ID_RE, CLASS_TTL_SEC, SNAPSHOT_MAX_BYTES, newClassCode, normClassCode, sanitizeSnapshot, classAuth,
-  postClasses, getClass, postSnapshot, getRoster, deleteStudent, route
+  CLASS_CODE_RE, STUDENT_ID_RE, CLASS_TTL_SEC, SNAPSHOT_MAX_BYTES, MAX_ROSTER, SNAP_PER_STUDENT_PER_MIN, SNAP_NEW_PER_CLASS_PER_MIN, SNAP_PER_IP_PER_MIN,
+  ROSTER_PAGE_DEFAULT, ROSTER_PAGE_MAX, ROSTER_META_MAX_BYTES, BULK_DELETE_MAX, CLIENT_CLOCK_SLACK_MS,
+  newClassCode, normClassCode, sanitizeSnapshot, clampClientTime, snapshotOwner, publicSnapshot, rosterRow, classAuth, classesReady, studentIdFromPath,
+  postClasses, getClass, postSnapshot, getRoster, getStudent, deleteStudent, deleteStudents, route
 };

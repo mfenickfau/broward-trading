@@ -222,7 +222,7 @@
       var done = kind === 'done';
       return '<a class="card continue' + (done ? ' done' : '') + '" href="#/certificate" id="upNextCard">' +
         '<div class="cbody"><div class="ctag">' + esc(T(REC_TAG[kind])) + '</div>' +
-        '<h3>' + esc(T(rec.title || 'Certificate')) + '</h3><p>' + esc(T(rec.reason || '')) + '</p>' +
+        '<h2>' + esc(T(rec.title || 'Certificate')) + '</h2><p>' + esc(T(rec.reason || '')) + '</p>' +
         '<div class="cmeta"><span>' + esc(leftText) + '</span></div>' +
         '<span class="go primary">' + esc(T(REC_LABEL[kind])) + ' →</span></div>' +
         ring(cp.pct, 'big') + '</a>';
@@ -236,7 +236,7 @@
       : T(rec.reason || '');
     return '<a class="card continue' + (kind === 'retake' ? ' retake' : '') + '" href="#/lesson/' + encodeURIComponent(rec.lessonId) + '" id="upNextCard">' +
       '<div class="cbody"><div class="ctag">' + esc(T(REC_TAG[kind])) + '</div>' +
-      '<h3>' + esc(rec.title) + (locked ? ' ' + proPill() : '') + (m && m.englishOnly && curLang() !== 'en' ? ' ' + enOnlyPill() : '') + '</h3>' +
+      '<h2>' + esc(rec.title) + (locked ? ' ' + proPill() : '') + (m && m.englishOnly && curLang() !== 'en' ? ' ' + enOnlyPill() : '') + '</h2>' +
       '<p>' + esc(where) + '</p>' +
       (reason ? '<p class="why">' + esc(reason) + '</p>' : '') +
       '<div class="cmeta"><span>' + (mp ? '<b class="num">' + esc(dur(mp.minutesLeft)) + '</b> ' + esc(T('left in this module')) : '') + '</span>' +
@@ -301,14 +301,21 @@
         '<a class="go ghost" href="instructor.html">' + esc(T('Are you an instructor?')) + ' →</a></section>';
     }
     var sent = st.lastSentAt ? T('Last shared {when}', { when: fmtDateTime(st.lastSentAt) }) : (st.backend ? T('Not shared yet') : '');
-    return h + '<p class="class-status"><span>' + esc(T('Class')) + ' <b class="num">' + esc(st.code) + '</b>' + (st.className ? ' · ' + esc(st.className) : '') + '</span>' +
-      (st.displayName ? '<span>' + esc(T('as')) + ' <b>' + esc(st.displayName) + '</b></span>' : '<span class="muted">' + esc(T('no display name')) + '</span>') +
+    if (st.backend && st.backoffUntil) sent = T('Not synced yet · retrying after {when}', { when: fmtDateTime(st.backoffUntil) });
+    var notice = '';
+    if (st.backend && st.ownerMismatch) {
+      notice = '<p class="msg err" role="alert">' + esc(T('Your student id is already in use on another device in this class, so nothing is being sent from here. Rejoin to get a fresh id (your progress on this device stays), or keep syncing from the device that joined first.')) + '</p>';
+    }
+    return h + '<p class="class-status"><span>' + esc(T('Class')) + ' <b class="num">' + esc(st.code) + '</b>' + (st.className ? ' · <span class="no-i18n" translate="no">' + esc(st.className) + '</span>' : '') + '</span>' +
+      (st.displayName ? '<span>' + esc(T('as')) + ' <b class="no-i18n" translate="no">' + esc(st.displayName) + '</b></span>' : '<span class="muted">' + esc(T('no display name')) + '</span>') +
       (sent ? '<span class="muted">' + esc(sent) + '</span>' : '') + '</p>' +
       '<p class="lede">' + esc(st.backend
         ? T('Your progress is sent to the classroom server automatically after each finished lesson or quiz (and at most every five minutes otherwise).')
         : T('This site has no classroom server, so you hand your progress to the instructor yourself: copy a share code and paste it to them (chat, email, LMS — anything).')) + '</p>' +
+      notice +
       '<div class="cactions">' +
-      (st.backend ? '<button type="button" class="primary" data-role="sync">' + esc(T('Send progress now')) + '</button>' : '') +
+      (st.backend && st.ownerMismatch ? '<button type="button" class="primary" data-role="rejoin">' + esc(T('Rejoin with a fresh id')) + '</button>' : '') +
+      (st.backend && !st.ownerMismatch ? '<button type="button" class="primary" data-role="sync">' + esc(T('Send progress now')) + '</button>' : '') +
       '<button type="button" class="' + (st.backend ? '' : 'primary') + '" data-role="share">' + esc(T('Copy share code')) + '</button>' +
       '<button type="button" class="ghost" data-role="rename">' + esc(st.displayName ? T('Change name') : T('Add a display name')) + '</button>' +
       '<button type="button" class="ghost" data-role="leave">' + esc(T('Leave class')) + '</button></div>' +
@@ -365,7 +372,22 @@
       K.sync({ reason: 'manual' }).then(function (s) {
         sync.disabled = false;
         if (s && s.removed) { say(T(s.error || 'You were removed from this class.'), true); setTimeout(rerender, 1200); return; }
+        if (s && s.ownerMismatch) { rerender(); return; }   // the card now shows the explanation and a 'Rejoin with a fresh id' button
+        if (s && s.rateLimited) { say(T(s.error || 'The classroom server asked this device to wait a moment. Your progress is saved here and will be sent shortly.'), true); setTimeout(rerender, 1200); return; }
         say(s && s.sent ? T('Progress sent.') : T(s && s.error ? s.error : 'Nothing was sent.'), !(s && s.sent));
+      });
+    };
+    var rejoin = card.querySelector('[data-role=rejoin]');
+    if (rejoin) rejoin.onclick = function () {
+      var st = K.status();
+      var r = K.join(st.code, st.displayName, { freshId: true });
+      if (!r.ok) { say(T(r.error || 'That code is not valid.'), true); return; }
+      rerender();
+      var c2 = document.getElementById('classCard'), m2 = c2 && c2.querySelector('[data-role=msg]');
+      K.sync({ reason: 'join' }).then(function (s) {
+        if (!m2) return;
+        m2.textContent = s && s.sent ? T('New id {id} is now on the roster. Tell your instructor which row is yours.', { id: r.studentId }) : T((s && s.error) || 'Progress will be sent when the server is reachable.');
+        m2.className = 'msg ' + (s && s.sent ? 'ok' : 'err');
       });
     };
     var rename = card.querySelector('[data-role=rename]');
@@ -488,7 +510,7 @@
             (C.isDone(l.id) ? '✓ ' : '') + (j + 1) + '. ' + esc(l.title) + (lessonLocked(l) ? ' (Pro)' : '') + '</option>';
         }).join('') + '</optgroup>';
       }).join('') + '</select>' +
-      (curMod ? '<div class="pickmeta"><span>Module ' + curNo + ' · lesson ' + lessonNo + ' of ' + curMod.lessons.length + '</span><span class="num">' + (curMp && curMp.minutesLeft ? '~' + dur(curMp.minutesLeft) + ' left in module' : 'module complete') + '</span></div>' : '') +
+      (curMod ? '<div class="pickmeta"><span>' + esc(T('Module {n} · lesson {i} of {total}', { n: curNo, i: lessonNo, total: curMod.lessons.length })) + '</span><span class="num">' + esc(curMp && curMp.minutesLeft ? '~' + dur(curMp.minutesLeft) + ' ' + T('left in module') : T('module complete')) + '</span></div>' : '') +
       '</div>';
 
     var list = '<div class="sblist"><a class="back" href="#/">← Course home</a>' + idx.modules.map(function (m, i) {
@@ -580,7 +602,7 @@
   function printBlockHtml(b, i) {
     switch (b.type) {
       case 'text': return '<div class="block-text">' + C.renderMd(b.md) + '</div>';
-      case 'callout': { var tone = TONE[b.tone] ? b.tone : 'key'; return '<aside class="callout ' + tone + '"><div class="ctitle">' + esc(b.title || T(TONE[tone])) + '</div>' + C.renderMd(b.md) + '</aside>'; }
+      case 'callout': { var tone = TONE[b.tone] ? b.tone : 'key'; return '<div class="callout ' + tone + '" role="note"><div class="ctitle">' + esc(b.title || T(TONE[tone])) + '</div>' + C.renderMd(b.md) + '</div>'; }
       case 'chart': return '<figure class="chartblock card"><div class="chead"><b>' + esc(String(b.symbol || 'AAPL').toUpperCase()) + '</b><span>' + esc(String(b.interval || '1day')) + '</span>' + (Array.isArray(b.overlays) && b.overlays.length ? '<span>· ' + esc(b.overlays.map(String).join(', ')) + '</span>' : '') + '</div>' + (b.caption ? '<figcaption class="caption">' + C.renderMd(b.caption) + '</figcaption>' : '') + '</figure>';
       case 'exercise': { var href = actionHref(b.action); return '<section class="exercise"' + (href ? ' data-print-href="' + esc(absoluteUrl(href)) + '"' : '') + '><div class="etitle">' + esc(T('Hands-on exercise')) + '</div>' + C.renderMd(b.md) + '</section>'; }
       case 'drill': return '<section class="drill card"><div class="dtitle">' + esc(T('Practice drill')) + '</div>' + (b.md ? C.renderMd(b.md) : '') + '<p class="dnote">' + esc(T('Drill id: {id}. Open Market Replay on the site to run it.', { id: String(b.drillId || b.id || '') })) + '</p></section>';
@@ -639,7 +661,7 @@
   function renderLesson(mod, lesson) {
     var nb = C.neighbours(lesson.id), hasQuiz = C.lessonHasQuiz(lesson);
     var reader = app.querySelector('.reader');
-    reader.innerHTML = lessonHeader(mod, lesson) + '<div class="blocks" id="blocks"></div>' + lessonNavHtml(nb);
+    reader.innerHTML = lessonHeader(mod, lesson) + '<h2 class="sr-only">' + esc(T('Lesson content')) + '</h2><div class="blocks" id="blocks"></div>' + lessonNavHtml(nb);
 
     var blocks = document.getElementById('blocks');
     if (!lesson.blocks.length) blocks.innerHTML = '<div class="empty">This lesson has no content yet.</div>';
@@ -668,7 +690,8 @@
     var signedIn = !!authSession();
     reader.innerHTML = lessonHeader(mod, lesson) +
       '<div class="blocks">' +
-      (previewMd ? '<div class="block-text locked-preview" aria-label="Lesson preview">' + C.renderMd(previewMd) + '</div>' : '') +
+      '<h2 class="sr-only">' + esc(T('Lesson content')) + '</h2>' +
+      (previewMd ? '<div class="block-text locked-preview" aria-label="Lesson preview">' + proseHtml(previewMd) + '</div>' : '') +
       '<section class="card locked" aria-label="Pro lesson">' + LOCK_SVG.replace('width="14" height="14"', 'width="28" height="28"') +
       '<h2>This lesson is part of Pro</h2>' +
       '<p>' + (lesson.summary ? esc(lesson.summary) + ' ' : '') + 'The rest of <b>' + esc(lesson.title) + '</b>' + (inside.length ? ' (' + inside.join(', ') + ')' : '') + ' opens with a Pro membership. The core course stays free, and your progress is kept either way.</p>' +
@@ -765,10 +788,18 @@
   /* Block renderers                                                      */
   /* ------------------------------------------------------------------ */
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  /**
+   * Lesson prose for the on-screen reader. BT.course.renderMd emits <h3>/<h4> (fine for print
+   * and tests); under the lesson's <h1> the outline must not skip a level (WCAG 1.3.1), so
+   * headings move up one step: #/## → h2, ### → h3. learn.html styles both sets alike.
+   */
+  function proseHtml(md) {
+    return C.renderMd(md).replace(/<(\/?)h3>/g, '<$1h2>').replace(/<(\/?)h4>/g, '<$1h3>');
+  }
 
   function renderBlock(b, lesson, i) {
     switch (b.type) {
-      case 'text': return el('div', 'block-text', C.renderMd(b.md));
+      case 'text': return el('div', 'block-text', proseHtml(b.md));
       case 'callout': return renderCallout(b);
       case 'chart': return renderChartBlock(b);
       case 'exercise': return renderExercise(b);
@@ -782,7 +813,9 @@
   var TONE = { tip: 'Tip', warn: 'Watch out', key: 'Key idea' };
   function renderCallout(b) {
     var tone = TONE[b.tone] ? b.tone : 'key';
-    return el('aside', 'callout ' + tone, '<div class="ctitle">' + esc(b.title || TONE[tone]) + '</div>' + C.renderMd(b.md));
+    var note = el('div', 'callout ' + tone, '<div class="ctitle">' + esc(b.title || TONE[tone]) + '</div>' + proseHtml(b.md));
+    note.setAttribute('role', 'note');
+    return note;
   }
 
   function actionHref(a) {
@@ -902,6 +935,7 @@
       (wantMacd ? '<div class="cpane sub" data-role="macd"></div>' : '') +
       (b.caption ? '<figcaption class="caption">' + C.renderMd(b.caption) + '</figcaption>' : ''));
     wrap.style.margin = '0';
+    wrap.setAttribute('data-symbol', symbol);
 
     var pricePane = wrap.querySelector('[data-role=price]'), status = pricePane.querySelector('.cstatus');
     var srcPill = wrap.querySelector('[data-role=src]'), legend = wrap.querySelector('[data-role=legend]');
@@ -951,6 +985,12 @@
     var charts = [chart];
     var candles = chart.addCandlestickSeries({ upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false });
     candles.setData(bars);
+    if (BT.a11y && bars.length) {
+      var lastBar = bars[bars.length - 1], prevBar = bars.length > 1 ? bars[bars.length - 2] : null;
+      var chgPct = prevBar && prevBar.close ? (lastBar.close - prevBar.close) / prevBar.close * 100 : null;
+      BT.a11y.describeChart(pricePane, T('{symbol} {interval} candlestick chart, {n} bars, last close {close}', { symbol: String(wrap.getAttribute('data-symbol') || '').toUpperCase() || T('Price'), interval: interval, n: bars.length, close: '$' + lastBar.close.toFixed(2) }) +
+        (chgPct == null ? '' : ', ' + (chgPct >= 0 ? '+' : '−') + Math.abs(chgPct).toFixed(2) + '%') + (overlays && overlays.length ? '. ' + T('Overlays: {list}', { list: overlays.join(', ') }) : '') + '.');
+    }
     var legendItems = [];
     var closes = bars.map(function (b) { return b.close; });
     var line = function (color, style) { return chart.addLineSeries({ color: color, lineWidth: 1, lineStyle: style || 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }); };
@@ -1051,7 +1091,8 @@
 
     function build() {
       answers = new Array(questions.length).fill(null);
-      box.innerHTML = '<div class="qtitle"><span>Quiz · ' + questions.length + ' question' + (questions.length === 1 ? '' : 's') + '</span><span class="num" data-role="best">' + best() + '</span></div>' +
+      var quizTitle = questions.length === 1 ? T('Quiz · 1 question') : T('Quiz · {n} questions', { n: questions.length });
+      box.innerHTML = '<div class="qtitle"><span>' + esc(quizTitle) + '</span><span class="num" data-role="best">' + best() + '</span></div>' +
         '<p style="margin:0 0 4px;color:var(--muted);font-size:13px">Pick an answer to see immediately whether it is right, and why. Your best score is saved; retakes never lower it.</p>' +
         questions.map(function (q, qi) {
           return '<div class="q" data-q="' + qi + '"><p class="stem">' + (qi + 1) + '. ' + esc(q.q) + '</p><div class="choices" role="group" aria-label="Question ' + (qi + 1) + '">' +
@@ -1075,7 +1116,7 @@
             });
             var ex = qEl.querySelector('.explain'); ex.hidden = false;
             ex.className = 'explain ' + (ok ? 'ok' : 'bad');
-            ex.innerHTML = '<b>' + (ok ? 'Correct.' : 'Not quite — the answer is ' + String.fromCharCode(65 + (+q.answer)) + '.') + '</b> ' + C.renderMd(q.explain || '').replace(/^<p>|<\/p>$/g, '');
+            ex.innerHTML = '<b>' + esc(ok ? T('Correct.') : T('Not quite — the answer is {letter}.', { letter: String.fromCharCode(65 + (+q.answer)) })) + '</b> ' + C.renderMd(q.explain || '').replace(/^<p>|<\/p>$/g, '');
             enhanceTerms(ex, lesson.id);
             if (answers.every(function (a) { return a != null; })) finish();
           });
