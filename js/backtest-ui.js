@@ -152,8 +152,11 @@
    * ------------------------------------------------------------------ */
   var state = Object.assign({
     symbol: 'AAPL', interval: '1day', lookback: 750, strategy: 'smaCross', params: {},
-    cash: 100000, sizePct: 100, commission: 0, slippageBps: 5, allowShort: false
+    cash: 100000, sizePct: 100, commission: 0, slippageBps: 5, allowShort: false,
+    source: 'market', csvId: null, csvAdj: true
   }, store.get(SETTINGS_KEY, {}));
+  if (state.source !== 'csv' || !BT.csv) state.source = 'market';
+  if (state.source === 'csv' && !(BT.csv.meta(state.csvId) && BT.csv.get(state.csvId))) { state.source = 'market'; state.csvId = null; }
   if (!LOOKBACKS[state.interval]) state.interval = '1day';
 
   var bars = null, barsInfo = null;    // bars of the last data load, and {source, fallback, reason, live}
@@ -161,6 +164,22 @@
   var lastOpt = null, lastCmp = null;
 
   function saveSettings() { store.set(SETTINGS_KEY, state); }
+
+  /* Uploaded-CSV helpers: what to call the data, and whether bars are intraday */
+  function usingCsv() { return state.source === 'csv' && !!state.csvId && !!BT.csv; }
+  function csvMeta() { return usingCsv() ? BT.csv.meta(state.csvId) || (csvSession[state.csvId] || null) : null; }
+  function dispSym() { if (!usingCsv()) return state.symbol; var m = csvMeta(); return (m && (m.name || m.symbol)) || T('My CSV'); }
+  function dispInterval() {
+    if (!usingCsv()) return state.interval;
+    var m = csvMeta(); var iv = m && m.interval;
+    return (BT.csv.INTERVAL_LABEL && BT.csv.INTERVAL_LABEL[iv]) || iv || '';
+  }
+  function isIntraday() {
+    if (usingCsv()) return !!(bars && bars.length && typeof bars[0].time === 'number');
+    return state.interval !== '1day';
+  }
+  function dataKey() { return usingCsv() ? 'csv|' + state.csvId : state.symbol + '|' + state.interval + '|' + state.lookback; }
+  var csvSession = {};   // metadata for datasets that could not be stored (full or blocked storage)
 
   function registryEntry(id) {
     var list = engine.builtins || [];
@@ -277,8 +296,8 @@
     };
   }
   function mkChart(name, el, extra) {
-    if (charts[name]) { charts[name].chart.applyOptions(chartTheme(state.interval !== '1day')); return charts[name]; }   // bar size may have changed
-    var chart = LW.createChart(el, Object.assign({ autoSize: true, handleScale: { axisPressedMouseMove: true } }, chartTheme(state.interval !== '1day'), extra || {}));
+    if (charts[name]) { charts[name].chart.applyOptions(chartTheme(isIntraday())); return charts[name]; }   // bar size may have changed
+    var chart = LW.createChart(el, Object.assign({ autoSize: true, handleScale: { axisPressedMouseMove: true } }, chartTheme(isIntraday()), extra || {}));
     charts[name] = { chart: chart, series: {}, el: el, group: (extra && extra._group) || 'main' };
     return charts[name];
   }
@@ -305,7 +324,7 @@
     Object.keys(charts).forEach(function (k) { if (charts[k].group === group) charts[k].chart.timeScale().fitContent(); });
   }
   function applyThemeToCharts() {
-    var intraday = state.interval !== '1day';
+    var intraday = isIntraday();
     Object.keys(charts).forEach(function (k) {
       var c = charts[k];
       c.chart.applyOptions(chartTheme(intraday));
@@ -374,14 +393,14 @@
     if (BT.a11y) {
       var lastB = bars[bars.length - 1], st0 = result.stats || {};
       BT.a11y.describeChart(P.el, T('{symbol} {interval} candlestick chart with {strategy} trade markers: {n} bars, last close {close}, strategy return {ret}, {trades} trades', {
-        symbol: state.symbol, interval: state.interval, strategy: result.strategy.name, n: bars.length, close: money(lastB.close), ret: pct(st0.totalReturnPct), trades: st0.trades == null ? '—' : st0.trades
+        symbol: dispSym(), interval: dispInterval(), strategy: result.strategy.name, n: bars.length, close: money(lastB.close), ret: pct(st0.totalReturnPct), trades: st0.trades == null ? '—' : st0.trades
       }));
     }
 
     var ind = engine.buildInd(bars);
     var strat = currentStrategy(result.strategy.params);
     var ov = overlaysFor(strat || result.strategy, ind);
-    var tag = ['<b>' + esc(state.symbol) + '</b> ' + esc(state.interval) + ' · ' + esc(result.strategy.name)];
+    var tag = ['<b>' + esc(dispSym()) + '</b> ' + esc(dispInterval()) + ' · ' + esc(result.strategy.name)];
     ov.lines.forEach(function (l, i) {
       var s = P.chart.addLineSeries(lineOpts(css(l.color), { lineStyle: l.style || 0, lineWidth: l.style ? 1 : 1.5 }));
       s._colorVar = l.color;
@@ -517,6 +536,13 @@
   function setDataPill(info) {
     var pill = $('datapill'), src = $('srcpill');
     if (!info) return;
+    if (info.csv) {
+      pill.className = 'pill live';
+      pill.textContent = T('your CSV');
+      pill.title = T('Bars from the CSV file you uploaded. It never leaves this device.');
+      if (src) { src.className = 'pill hide-sm live'; src.textContent = 'CSV'; }
+      return;
+    }
     var live = !!info.live && !info.fallback;
     pill.className = 'pill ' + (live ? 'live' : 'demo');
     pill.textContent = live ? 'live · ' + (data && data.PROVIDER_LABEL && data.PROVIDER_LABEL[info.source] || info.source) + (info.cached ? ' (cached)' : '') : 'demo prices';
@@ -525,6 +551,11 @@
   }
 
   async function loadBars() {
+    if (usingCsv()) {
+      var csvBars = BT.csv.get(state.csvId);
+      if (!csvBars || !csvBars.length) throw new Error(T('That uploaded dataset is no longer in this browser. Upload the CSV file again.'));
+      return { bars: csvBars, info: { source: 'csv', csv: true, live: false, fallback: false } };
+    }
     var sym = state.symbol, tf = state.interval, n = state.lookback;
     var res, info;
     try {
@@ -555,13 +586,13 @@
     setMsg('runmsg', '');
     $('priceoverlay').hidden = false;
     try {
-      if (!bars || opts.reload || barsInfo.key !== state.symbol + '|' + state.interval + '|' + state.lookback) {
+      if (!bars || opts.reload || barsInfo.key !== dataKey()) {
         var got = await loadBars();
-        bars = got.bars; barsInfo = got.info; barsInfo.key = state.symbol + '|' + state.interval + '|' + state.lookback;
+        bars = got.bars; barsInfo = got.info; barsInfo.key = dataKey();
         lastOpt = null; lastCmp = null;
         $('optout').hidden = true; $('cmpout').hidden = true;
       }
-      if (!bars || bars.length < 30) throw new Error('Only ' + (bars ? bars.length : 0) + ' bars came back for ' + state.symbol + '. Try another symbol or a daily bar size.');
+      if (!bars || bars.length < 30) throw new Error(usingCsv() ? T('Your CSV has only {n} usable bars. The back-tester needs at least 30.', { n: bars ? bars.length : 0 }) : 'Only ' + (bars ? bars.length : 0) + ' bars came back for ' + state.symbol + '. Try another symbol or a daily bar size.');
       var strat = currentStrategy();
       if (!strat) throw new Error('Unknown strategy');
       btn.textContent = 'Running…';
@@ -571,7 +602,8 @@
       setDataPill(barsInfo);
       $('barspill').textContent = T('{n} bars · {from} → {to}', { n: bars.length, from: fmtTime(bars[0].time), to: fmtTime(bars[bars.length - 1].time) });
       var fb = $('fallbacknote');
-      if (barsInfo.fallback || !barsInfo.live) { fb.hidden = false; fb.innerHTML = '<span><b>Simulated prices.</b> ' + esc(barsInfo.reason || 'These bars are a deterministic random walk per symbol, so the same test gives the same answer for every student.') + ' The mechanics and statistics are exactly what they would be on real data; only the price path is invented. Add a free API key on the <a href="index.html">dashboard</a> for real history.</span>'; }
+      if (barsInfo.csv) { fb.hidden = true; }
+      else if (barsInfo.fallback || !barsInfo.live) { fb.hidden = false; fb.innerHTML = '<span><b>Simulated prices.</b> ' + esc(barsInfo.reason || 'These bars are a deterministic random walk per symbol, so the same test gives the same answer for every student.') + ' The mechanics and statistics are exactly what they would be on real data; only the price path is invented. Add a free API key on the <a href="index.html">dashboard</a> for real history.</span>'; }
       else if (barsInfo.stale) { fb.hidden = false; fb.textContent = T('Live refresh failed; showing the last downloaded bars. {reason}', { reason: barsInfo.reason || '' }); }
       else fb.hidden = true;
       var pn = $('pendingnote');
@@ -579,7 +611,7 @@
       else pn.hidden = true;
       renderPriceChart(); renderEquityChart(); renderStats(); renderCoach(); renderTrades();
       var s = result.stats;
-      announce(result.strategy.name + ' on ' + state.symbol + ': ' + pct(s.totalReturnPct) + ' versus buy and hold ' + pct(s.buyHoldReturnPct) + ', ' + s.trades + ' trades.');
+      announce(result.strategy.name + ' on ' + dispSym() + ': ' + pct(s.totalReturnPct) + ' versus buy and hold ' + pct(s.buyHoldReturnPct) + ', ' + s.trades + ' trades.');
       setMsg('runmsg', result.strategy.name + ': ' + pct(s.totalReturnPct) + ' vs buy & hold ' + pct(s.buyHoldReturnPct) + ' · ' + s.trades + ' trades', s.excessVsBuyHoldPct >= 0 ? 'ok' : '');
       if (opts.scroll) $('pricepane').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
@@ -781,7 +813,7 @@
   function renderCompare() {
     var cmp = lastCmp, rows = cmp.rows, metric = cmp.metric;
     $('cmpout').hidden = false;
-    setMsg('cmpmsg', rows.length + ' strategies ranked by ' + metricLabel(metric) + ' on ' + bars.length + ' bars of ' + state.symbol + '.', 'ok');
+    setMsg('cmpmsg', rows.length + ' strategies ranked by ' + metricLabel(metric) + ' on ' + bars.length + ' bars of ' + dispSym() + '.', 'ok');
     renderCompareChart(cmp);
 
     // return bars relative to buy & hold
@@ -853,6 +885,188 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Uploaded CSV data
+   * ------------------------------------------------------------------ */
+  var MAX_FILE_BYTES = 25 * 1024 * 1024;
+  var lastCsv = null;   // last import summary, re-rendered when the language changes
+
+  function setSource(src, opts) {
+    opts = opts || {};
+    if (src === 'csv' && !BT.csv) src = 'market';
+    state.source = src;
+    var csv = src === 'csv';
+    $('csvpanel').hidden = !csv;
+    $('marketpanel').hidden = csv;
+    $('srcmarket').classList.toggle('on', !csv); $('srcmarket').setAttribute('aria-pressed', String(!csv));
+    $('srccsv').classList.toggle('on', csv); $('srccsv').setAttribute('aria-pressed', String(csv));
+    $('randsym').hidden = csv;
+    saveSettings();
+    if (opts.run && (!csv || state.csvId)) run({ reload: true, scroll: !!opts.scroll });
+  }
+
+  function fillDatasets() {
+    if (!BT.csv) return;
+    var list = BT.csv.list();
+    Object.keys(csvSession).forEach(function (id) { if (!list.some(function (m) { return m.id === id; })) list.unshift(csvSession[id]); });
+    var sel = $('dsselect');
+    $('dsrow').hidden = !list.length;
+    sel.innerHTML = list.map(function (m) {
+      var label = (m.name || m.symbol || T('My CSV')) + ' · ' + T('{n} bars', { n: m.rows }) + (m.stored === false ? ' · ' + T('this visit only') : '');
+      return '<option value="' + esc(m.id) + '"' + (m.id === state.csvId ? ' selected' : '') + '>' + esc(label) + '</option>';
+    }).join('');
+    if (state.csvId && list.some(function (m) { return m.id === state.csvId; })) sel.value = state.csvId;
+    var cur = csvMeta();
+    $('csvname').value = cur ? (cur.name || cur.symbol || '') : '';
+  }
+
+  function fmtRange(t) { return typeof t === 'number' ? fmtTime(t) : String(t || '—'); }
+
+  function renderCsvSummary(res, meta) {
+    var host = $('csvsum');
+    lastCsv = res ? { res: res, meta: meta } : null;
+    if (!res) { host.innerHTML = ''; return; }
+    var html = '';
+    if (res.errors.length) {
+      html += '<div class="callout warn"><div><b>' + esc(T('This file could not be used')) + '</b><ul class="err">' +
+        (res.errorKeys || res.errors.map(function (e) { return { t: e }; })).map(function (e) { return '<li>' + esc(T(e.t, e.v)) + '</li>'; }).join('') + '</ul></div></div>';
+    }
+    if (res.bars.length) {
+      var es = !!(BT.i18n && BT.i18n.lang && BT.i18n.lang() === 'es');
+      var COLS = es ? { open: 'Apertura', high: 'Máximo', low: 'Mínimo', close: 'Cierre', volume: 'Volumen' } : { open: 'Open', high: 'High', low: 'Low', close: 'Close', volume: 'Volume' };
+      var colNames = ['open', 'high', 'low', 'close', 'volume'].filter(function (k) { return res.columns[k] != null; }).map(function (k) { return COLS[k]; });
+      html += '<div class="kv">' +
+        '<span>' + esc(T('Bars')) + '</span><span>' + res.bars.length.toLocaleString('en-US') + (res.stats.skipped ? ' (' + esc(T('{n} skipped', { n: res.stats.skipped })) + ')' : '') + '</span>' +
+        '<span>' + esc(T('Bar size')) + '</span><span>' + esc(T(res.intervalLabel || res.interval || '')) + '</span>' +
+        '<span>' + esc(T('From')) + '</span><span>' + esc(fmtRange(res.stats.from)) + '</span>' +
+        '<span>' + esc(T('To')) + '</span><span>' + esc(fmtRange(res.stats.to)) + '</span>' +
+        '<span>' + esc(T('Columns')) + '</span><span class="no-i18n">' + esc(colNames.join(', ')) + (res.adjusted ? ' · ' + esc(T('adjusted')) : '') + '</span>' +
+        (meta && meta.stored === false ? '<span>' + esc(T('Saved')) + '</span><span>' + esc(T('this visit only')) + '</span>' : '') +
+        '</div>';
+      var b = res.bars, pick = b.length <= 5 ? b : b.slice(0, 3).concat([null], b.slice(-2));
+      html += '<div class="csvprev"><table><thead><tr><th>' + esc(T('Date')) + '</th><th>O</th><th>H</th><th>L</th><th>C</th><th>' + esc(T('Vol')) + '</th></tr></thead><tbody>' +
+        pick.map(function (r) {
+          if (!r) return '<tr><td colspan="6" style="text-align:center">⋯</td></tr>';
+          return '<tr><td>' + esc(fmtRange(r.time)) + '</td><td>' + num(r.open) + '</td><td>' + num(r.high) + '</td><td>' + num(r.low) + '</td><td>' + num(r.close) + '</td><td>' + Math.round(r.volume || 0).toLocaleString('en-US') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    if (res.warnings.length) html += '<ul>' + (res.warningKeys || res.warnings.map(function (w) { return { t: w }; })).map(function (w) { return '<li>' + esc(T(w.t, w.v)) + '</li>'; }).join('') + '</ul>';
+    host.innerHTML = html;
+  }
+
+  function useCsvText(text, filename) {
+    if (!BT.csv) { toast(T('CSV import did not load. Refresh the page and try again.'), 'warn'); return null; }
+    var res = BT.csv.parse(text, { filename: filename || '', useAdjusted: $('csvadj').checked });
+    if (res.errors.length || !res.bars.length) {
+      renderCsvSummary(res);
+      announce(T('This file could not be used') + ': ' + (res.errorKeys && res.errorKeys[0] ? T(res.errorKeys[0].t, res.errorKeys[0].v) : ''));
+      return res;
+    }
+    var name = ($('csvname').value || '').trim();
+    if (!name || (csvMeta() && name === (csvMeta().name || ''))) name = res.symbol || (filename || '').replace(/\.[^.]+$/, '') || T('My CSV');
+    var saved = BT.csv.save({ name: name, symbol: res.symbol, interval: res.interval, bars: res.bars, filename: filename || '' });
+    if (!saved.stored) csvSession[saved.id] = saved.meta;
+    state.csvId = saved.id;
+    renderCsvSummary(res, saved.meta);
+    fillDatasets();
+    if (saved.reason) toast(T(saved.reason), 'warn');
+    setSource('csv');
+    toast(T('Loaded {n} bars from {name}. Running the back-test…', { n: res.bars.length.toLocaleString('en-US'), name: name }), 'ok', T('CSV imported'));
+    run({ reload: true, scroll: window.innerWidth < 980 });
+    return res;
+  }
+
+  function readFile(file) {
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) { toast(T('That file is larger than 25 MB. Export fewer rows (for example daily bars, or a shorter date range) and try again.'), 'warn'); return; }
+    if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) { toast(T('That is a spreadsheet file, not CSV. In Excel or Google Sheets choose File → Save as / Download → CSV, then upload that.'), 'warn'); return; }
+    var done = function (text) { useCsvText(String(text || ''), file.name); };
+    if (file.text) file.text().then(done, function () { toast(T('The file could not be read. Try saving it again as CSV.'), 'warn'); });
+    else { var fr = new FileReader(); fr.onload = function () { done(fr.result); }; fr.onerror = function () { toast(T('The file could not be read. Try saving it again as CSV.'), 'warn'); }; fr.readAsText(file); }
+  }
+
+  function initCsvUi() {
+    if (!BT.csv) { $('srccsv').disabled = true; $('srccsv').title = T('CSV import did not load. Refresh the page and try again.'); return; }
+    $('srcmarket').addEventListener('click', function () { setSource('market', { run: true }); });
+    $('srccsv').addEventListener('click', function () {
+      setSource('csv', { run: !!state.csvId });
+      if (!state.csvId) { renderCsvSummary(null); setTimeout(function () { try { $('csvdrop').focus(); } catch (e) { /* ignore */ } }, 50); }
+    });
+    $('csvfile').addEventListener('change', function () { readFile(this.files && this.files[0]); this.value = ''; });
+    var drop = $('csvdrop');
+    drop.tabIndex = 0;
+    drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('csvfile').click(); } });
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault(); drop.classList.remove('over');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) readFile(f);
+    });
+    // Dropping a file anywhere on the page while the CSV panel is open also works
+    document.addEventListener('dragover', function (e) { if (!$('csvpanel').hidden && e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') !== -1) e.preventDefault(); });
+    document.addEventListener('drop', function (e) {
+      if ($('csvpanel').hidden || drop.contains(e.target)) return;
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) { e.preventDefault(); readFile(f); }
+    });
+    $('csvpastebtn').addEventListener('click', function () {
+      var w = $('csvpastewrap'); w.hidden = !w.hidden;
+      this.setAttribute('aria-expanded', String(!w.hidden));
+      if (!w.hidden) $('csvpaste').focus();
+    });
+    $('csvpasteuse').addEventListener('click', function () {
+      var t = $('csvpaste').value;
+      if (!t.trim()) { toast(T('Paste some CSV rows first.'), 'warn'); return; }
+      useCsvText(t, 'pasted.csv');
+    });
+    $('csvsample').addEventListener('click', function () {
+      var demoBars = data.demo('SPY', '1day', 1000);
+      var text = BT.csv.toCsv(Array.prototype.slice.call(demoBars));
+      $('csvpastewrap').hidden = false; $('csvpastebtn').setAttribute('aria-expanded', 'true');
+      $('csvpaste').value = text;
+      $('csvname').value = T('Sample (simulated SPY)');
+      toast(T('A sample file is in the box below: simulated SPY daily bars in the standard format. Edit it or upload your own.'), '', T('Sample loaded'));
+      useCsvText(text, 'sample-SPY.csv');
+    });
+    $('dsselect').addEventListener('change', function () {
+      state.csvId = this.value; saveSettings();
+      var m = csvMeta(); $('csvname').value = m ? (m.name || m.symbol || '') : '';
+      renderCsvSummary(null);
+      run({ reload: true });
+    });
+    var delArmed = null;
+    $('dsdelete').addEventListener('click', function () {
+      var btn = this, id = $('dsselect').value;
+      if (!id) return;
+      if (delArmed !== id) {
+        delArmed = id; btn.textContent = T('Confirm delete'); btn.classList.add('sell');
+        setTimeout(function () { if (delArmed === id) { delArmed = null; btn.textContent = T('Delete'); btn.classList.remove('sell'); } }, 4000);
+        return;
+      }
+      delArmed = null; btn.textContent = T('Delete'); btn.classList.remove('sell');
+      BT.csv.remove(id); delete csvSession[id];
+      var left = BT.csv.list();
+      state.csvId = left.length ? left[0].id : null;
+      fillDatasets(); renderCsvSummary(null);
+      toast(T('Dataset deleted from this browser.'), '');
+      if (state.csvId) run({ reload: true }); else { saveSettings(); setSource('csv'); }
+    });
+    $('csvname').addEventListener('change', function () {
+      var v = this.value.trim().slice(0, 40);
+      if (!state.csvId || !v) return;
+      BT.csv.rename(state.csvId, v);
+      if (csvSession[state.csvId]) csvSession[state.csvId].name = v;
+      fillDatasets();
+      if (result) run({});
+    });
+    $('csvadj').checked = state.csvAdj !== false;
+    $('csvadj').addEventListener('change', function () { state.csvAdj = this.checked; saveSettings(); });
+    fillDatasets();
+    setSource(state.source);
+    window.addEventListener('bt:langchange', function () { fillDatasets(); if (lastCsv) renderCsvSummary(lastCsv.res, lastCsv.meta); });
+  }
+
+  /* ------------------------------------------------------------------ *
    * Boot
    * ------------------------------------------------------------------ */
   function bind() {
@@ -898,6 +1112,7 @@
     fillSymbolList();
     writeControls();
     bind();
+    initCsvUi();
     renderGridEditor();
     try { applyHash(); } catch (e) { /* a bad deep link must not block the first run */ }
     run({ reload: true });   // always show a result on first visit: an empty lab teaches nothing
@@ -910,6 +1125,8 @@
     compare: runCompare,
     getState: function () { return Object.assign({}, state); },
     getResult: function () { return result; },
+    importCsv: function (text, filename) { return useCsvText(text, filename); },
+    setSource: function (src) { setSource(src, { run: true }); },
     version: '0.2.0'
   };
 

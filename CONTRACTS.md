@@ -157,3 +157,9 @@ Seven-day "First Week" path for complete beginners. `course/firstweek.json` defi
 
 ## Nav
 Add Leagues, Screener, Builder, Profile to js/nav.js (desktop nav and More sheet; phone primary tabs stay Dashboard / Learn / Replay / Portfolio / More).
+
+## CSV upload for back-testing → `BT.csv` (js/csv.js), backtest.html (shipped mid-v0.5)
+- `BT.csv.parse(text, {filename, useAdjusted=true, maxRows=50000})` → `{bars, interval ('1min'…'1month'|'custom'), intervalLabel, symbol (guessed from filename), columns, delimiter, decimalComma, adjusted, closeOnly, warnings[], errors[], warningKeys/errorKeys [{t, v}] (BT.t templates), stats:{rows, used, skipped, duplicates, repaired, from, to}}`. Handles Yahoo (Adj Close scaling), Nasdaq.com ($, Close/Last, newest-first), TradingView exports (epoch seconds on daily bars → dates), MetaTrader/broker Date+Time columns, ISO with zones, epoch s/ms, YYYYMMDD, US vs day-first dates (detected; European-format files default day-first), semicolons/tabs/pipes, decimal commas, accented Spanish headers, BOM, title lines, quoted fields. Naive intraday times are New York time.
+- Dataset library in localStorage: index `bt.csv.datasets`, bars `bt.csv.data.<id>` packed as arrays; `list/save/get/meta/rename/remove`; falls back to memory for the visit when storage is full or blocked.
+- backtest.html Data card has a Market data / Upload CSV toggle; when CSV is active the back-test, optimiser and compare-all run on the uploaded bars (`BT.backtestPage.importCsv(text, filename)` and `setSource('csv'|'market')` are test hooks). State keys `source`, `csvId`, `csvAdj` in the page settings.
+- Integrator: add js/csv.js to sw.js precache, cover the upload flow in tests/e2e.playwright.js (setInputFiles on #csvfile), and list it in docs/CHANGELOG.md [0.5.0]. Other pages (builder.html "Backtest it", replay) may reuse `BT.csv.list()/get()` as an extra data source.

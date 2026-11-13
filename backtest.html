@@ -73,6 +73,34 @@ footer.footer{color:var(--muted);font-size:11px;padding-block:14px 0;text-align:
 .run-row .primary{grid-column:1/-1;padding:9px}
 .costnote{font-size:var(--fs-xs);color:var(--muted);margin-top:8px;line-height:1.5}
 
+/* data source: market data vs uploaded CSV */
+.srcseg{display:grid;grid-template-columns:1fr 1fr;width:100%;margin:2px 0 10px}
+.srcseg button{min-height:40px}
+.drop{display:grid;gap:6px;justify-items:center;text-align:center;border:1.5px dashed var(--line);border-radius:var(--r,8px);padding:16px 10px;background:var(--panel2);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop:focus-within,.drop.over{border-color:var(--accent)}
+.drop.over{background:color-mix(in srgb,var(--accent) 10%,var(--panel2))}
+.drop b{font-weight:600}
+.drop small{color:var(--muted);font-size:var(--fs-xs)}
+.drop input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.csv-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.csv-actions button{flex:1 1 auto}
+#csvpaste{width:100%;min-height:120px;font-family:var(--mono);font-size:var(--fs-xs);margin-top:6px;resize:vertical}
+.csvsum{margin-top:10px;font-size:var(--fs-sm);display:grid;gap:4px}
+.csvsum .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.csvsum .kv span:nth-child(odd){color:var(--muted)}
+.csvsum .kv span:nth-child(even){font-family:var(--mono);text-align:right;overflow-wrap:anywhere}
+.csvsum ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:var(--fs-xs);line-height:1.5}
+.csvsum ul.err{color:var(--down)}
+.csvsum table{width:100%;font-family:var(--mono);font-size:var(--fs-xs);border-collapse:collapse;margin-top:6px}
+.csvsum th,.csvsum td{padding:2px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.csvsum th:first-child,.csvsum td:first-child{text-align:left}
+.csvprev{overflow-x:auto}
+.dsrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:8px}
+.csvhelp{margin-top:10px;font-size:var(--fs-xs);color:var(--muted);line-height:1.55}
+.csvhelp summary{cursor:pointer;color:var(--accent);font-size:var(--fs-sm)}
+.csvhelp pre{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;overflow-x:auto;font-size:var(--fs-xs);margin:6px 0}
+.csvhelp li{margin:3px 0}
+
 /* result column */
 @media (min-width:761px){.result .pane.price{height:440px} .result .pane.sub{height:140px}}
 /* <=760px: css/style.css governs the price pane (min(360px,52vh) portrait). Landscape phone: fit the chart above the browser chrome. */
@@ -321,6 +349,57 @@ table.opt .gap{font-family:var(--mono)}
     <aside class="rail" aria-label="Back-test settings">
       <div class="card">
         <h2>Data</h2>
+        <div class="btn-group srcseg" role="group" aria-label="Price data source">
+          <button type="button" id="srcmarket" class="on" aria-pressed="true">Market data</button>
+          <button type="button" id="srccsv" aria-pressed="false">Upload CSV</button>
+        </div>
+
+        <div id="csvpanel" hidden>
+          <label class="drop" id="csvdrop" for="csvfile">
+            <input type="file" id="csvfile" accept=".csv,.txt,.tsv,text/csv,text/plain">
+            <b>Choose a CSV file</b>
+            <small>or drag it here · one row per bar · up to 50,000 rows</small>
+          </label>
+          <div class="csv-actions">
+            <button type="button" id="csvpastebtn" aria-expanded="false" aria-controls="csvpastewrap">Paste CSV text</button>
+            <button type="button" id="csvsample">Load a sample</button>
+          </div>
+          <div id="csvpastewrap" hidden>
+            <label for="csvpaste" class="sr-only">CSV text</label>
+            <textarea id="csvpaste" spellcheck="false" placeholder="Date,Open,High,Low,Close,Volume&#10;2024-01-02,187.15,188.44,183.89,185.64,82488700"></textarea>
+            <button type="button" class="primary" id="csvpasteuse" style="width:100%;margin-top:6px">Use this data</button>
+          </div>
+
+          <div class="dsrow" id="dsrow" hidden>
+            <label for="dsselect" class="sr-only">Saved datasets</label>
+            <select id="dsselect" aria-label="Saved datasets"></select>
+            <button type="button" id="dsdelete" class="ghost" aria-label="Delete this saved dataset">Delete</button>
+          </div>
+
+          <div class="field" style="margin-top:8px">
+            <label for="csvname">Name on the chart</label>
+            <input id="csvname" type="text" maxlength="40" autocomplete="off" placeholder="e.g. AAPL 2015–2024">
+          </div>
+          <label class="check"><input type="checkbox" id="csvadj" checked> Use “Adj Close” when the file has it</label>
+
+          <div class="csvsum" id="csvsum" aria-live="polite"></div>
+
+          <details class="csvhelp">
+            <summary>What format works?</summary>
+            <p>A header row, then one row per bar. Column names are matched loosely, in English or Spanish:</p>
+            <pre>Date,Open,High,Low,Close,Volume
+2024-01-02,187.15,188.44,183.89,185.64,82488700
+2024-01-03,184.22,185.88,183.43,184.25,58414500</pre>
+            <ul>
+              <li><b>Dates:</b> 2024-01-02, 01/02/2024, 02/01/2024 (day first is detected), 2 Jan 2024, 20240102, or Unix timestamps. Add a time (09:30) or a separate Time column for intraday bars; times without a zone are read as New York time.</li>
+              <li><b>Prices:</b> Close is required. Open, High, Low and Volume are optional but make indicators more accurate. Dollar signs, thousands separators and decimal commas (1.234,56) are fine.</li>
+              <li><b>Works with:</b> Yahoo Finance “Download”, Nasdaq.com historical data, TradingView “Export chart data”, most broker exports, and any spreadsheet saved as CSV.</li>
+              <li><b>Privacy:</b> the file never leaves your device. It is read in your browser and saved only in this browser so you can come back to it.</li>
+            </ul>
+          </details>
+        </div>
+
+        <div id="marketpanel">
         <div class="field">
           <label for="symbol">Symbol</label>
           <div class="sym-row">
@@ -342,6 +421,7 @@ table.opt .gap{font-family:var(--mono)}
           <div class="field"><label for="lookback">History</label><select id="lookback"></select></div>
         </div>
         <p class="costnote" id="datanote">Daily bars give the most history and the most trustworthy tests. Intraday bars give more trades, but a 5-minute strategy must beat much larger relative costs.</p>
+        </div>
       </div>
 
       <div class="card">
@@ -432,6 +512,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/indicators.js"></script>
 <script src="js/data.js"></script>
 <script src="js/backtest.js"></script>
+<script src="js/csv.js"></script>
 <script src="js/backtest-ui.js"></script>
 <script>
 (function(){
