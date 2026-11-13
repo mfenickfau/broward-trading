@@ -10,6 +10,11 @@ The project's forward-looking plan is in `ROADMAP.md`; module interfaces are in 
 - Translate the JavaScript-built chart summaries (`BT.a11y.describeChart` callers) by adding their sentence templates to `i18n/es.json`; a keyboard-friendly date picker next to the journal heatmap (see `docs/ACCESSIBILITY.md`, follow-ups).
 - v0.5 follow-ups listed under "Known issues" below, then the Tier 2 backlog in `docs/COMPETITIVE_ANALYSIS.md`.
 
+## [0.5.1] - 2026-11-13
+
+### Fixed
+- Desktop top bar: with 18 pages, the links after "Compare" were cut off at 1280 px. The bar now shows nine primary links (Dashboard, Learn, Replay, Portfolio, Leagues, Backtest, Builder, Screener, Journal) and a "More" button that opens the same page sheet phones use, listing only the pages not already in the bar. A secondary page shows its own link while you are on it, and More lights up. Profile stays one tap away through the level chip. `tests/nav.test.js` and the e2e shell check updated.
+
 ## [0.5.0] - 2026-11-13
 
 Theme: compete, screen, build, coach. Every Tier 1 feature from `COMPETITIVE_ANALYSIS.md` shipped, each with a `CONTRACTS.md` entry ("v0.5 additions") and tests before its page, and none of them gives up the project's rules: free, no build step, honest labels, phone first, and process graded over profit.

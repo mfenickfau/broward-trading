@@ -141,7 +141,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       await expect('#nav [data-bt-lang-toggle]', 'language toggle in the shell');
       const i18nUp = await page.evaluate(() => !!(window.BT && BT.i18n && typeof BT.i18n.setLang === 'function') && document.documentElement.lang === 'en');
       if (!i18nUp) note(p + ': BT.i18n missing or <html lang> is not en'); else ok('BT.i18n loaded, lang=en');
-      await expect('#nav nav.topnav .links a', 'nav links', 10);
+      await expect('#nav nav.topnav .links a', 'nav links', 9); await expect('#nav #btMoreTop', 'desktop More button');
       // certificate.html is deliberately hidden from the nav (linked from Learn), so it has no active link.
       if (p !== 'certificate.html') await expect('#nav nav.topnav a.active, #nav nav.topnav a[aria-current="page"]', 'active nav link');
       await expect('#footer footer.footer', 'footer disclaimer');

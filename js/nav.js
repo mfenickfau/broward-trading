@@ -39,19 +39,21 @@
 
   /* ------------------------------------------------------------------ *
    * Page registry. `tab` marks the four primary tabs on phones; the rest
-   * live behind "More". `short` is the label used where space is tight.
+   * live behind "More". `top` marks the links shown in the desktop top bar;
+   * the others sit behind its "More" button (same sheet as on phones).
+   * `short` is the label used where space is tight.
    * ------------------------------------------------------------------ */
   var PAGES = [
-    { id: 'index',     file: 'index.html',     label: 'Dashboard', short: 'Dashboard', tab: true,  icon: 'chart',    desc: 'Charts, indicators and the paper trade ticket' },
-    { id: 'learn',     file: 'learn.html',     label: 'Learn',     short: 'Learn',     tab: true,  icon: 'book',     desc: 'The free course, quizzes and your certificate' },
+    { id: 'index',     file: 'index.html',     label: 'Dashboard', short: 'Dashboard', tab: true, top: true,  icon: 'chart',    desc: 'Charts, indicators and the paper trade ticket' },
+    { id: 'learn',     file: 'learn.html',     label: 'Learn',     short: 'Learn',     tab: true, top: true,  icon: 'book',     desc: 'The free course, quizzes and your certificate' },
     { id: 'start',     file: 'start.html',     label: 'First Week', short: 'First Week', tab: false, icon: 'flag',   desc: 'Seven days of guided first steps for complete beginners' },
-    { id: 'replay',    file: 'replay.html',    label: 'Replay',    short: 'Replay',    tab: true,  icon: 'play',     desc: 'Market Replay: trade past data bar by bar' },
-    { id: 'portfolio', file: 'portfolio.html', label: 'Portfolio', short: 'Portfolio', tab: true,  icon: 'wallet',   desc: 'Paper account, positions, orders and options lab' },
-    { id: 'leagues',   file: 'leagues.html',   label: 'Leagues',   short: 'Leagues',   tab: false, icon: 'trophy',   desc: 'Paper-trading competitions with classmates and friends' },
-    { id: 'backtest',  file: 'backtest.html',  label: 'Backtest',  short: 'Backtest',  tab: false, icon: 'flask',    desc: 'Test rule-based strategies on past prices' },
-    { id: 'builder',   file: 'builder.html',   label: 'Strategy Builder', short: 'Builder', tab: false, icon: 'blocks', desc: 'Build trading rules from blocks, then back-test them' },
-    { id: 'screener',  file: 'screener.html',  label: 'Screener',  short: 'Screener',  tab: false, icon: 'filter',   desc: 'Scan the market for setups with technical filters' },
-    { id: 'journal',   file: 'journal.html',   label: 'Journal',   short: 'Journal',   tab: false, icon: 'journal',  desc: 'Review every trade: setup, emotion, lesson' },
+    { id: 'replay',    file: 'replay.html',    label: 'Replay',    short: 'Replay',    tab: true, top: true,  icon: 'play',     desc: 'Market Replay: trade past data bar by bar' },
+    { id: 'portfolio', file: 'portfolio.html', label: 'Portfolio', short: 'Portfolio', tab: true, top: true,  icon: 'wallet',   desc: 'Paper account, positions, orders and options lab' },
+    { id: 'leagues',   file: 'leagues.html',   label: 'Leagues',   short: 'Leagues',   tab: false, top: true, icon: 'trophy',   desc: 'Paper-trading competitions with classmates and friends' },
+    { id: 'backtest',  file: 'backtest.html',  label: 'Backtest',  short: 'Backtest',  tab: false, top: true, icon: 'flask',    desc: 'Test rule-based strategies on past prices' },
+    { id: 'builder',   file: 'builder.html',   label: 'Strategy Builder', short: 'Builder', tab: false, top: true, icon: 'blocks', desc: 'Build trading rules from blocks, then back-test them' },
+    { id: 'screener',  file: 'screener.html',  label: 'Screener',  short: 'Screener',  tab: false, top: true, icon: 'filter',   desc: 'Scan the market for setups with technical filters' },
+    { id: 'journal',   file: 'journal.html',   label: 'Journal',   short: 'Journal',   tab: false, top: true, icon: 'journal',  desc: 'Review every trade: setup, emotion, lesson' },
     { id: 'news',      file: 'news.html',      label: 'News',      short: 'News',      tab: false, icon: 'news',     desc: 'Company profile, earnings and headlines' },
     { id: 'compare',   file: 'compare.html',   label: 'Compare',   short: 'Compare',   tab: false, icon: 'compare',  desc: 'Relative performance, correlation, heatmap' },
     { id: 'glossary',  file: 'glossary.html',  label: 'Glossary',  short: 'Glossary',  tab: false, icon: 'glossary', desc: 'Every term explained, flashcards, Daily 5' },
@@ -379,13 +381,15 @@
   }
   function safeSummary() { try { return BT.xp.summary(); } catch (e) { return null; } }
   function topnavHtml(active) {
-    var links = PAGES.map(function (p) {
+    var links = PAGES.filter(function (p) { return p.top || (active && active.id === p.id); }).map(function (p) {
       var on = active && active.id === p.id;
       return '<a href="' + p.file + '"' + (on ? ' class="active" aria-current="page"' : '') + (p.label !== p.short ? ' title="' + esc(p.label) + '"' : '') + '>' + esc(p.short) + '</a>';
     }).join('');
+    var moreOn = active && !active.top;
+    var moreTop = '<button class="navmore' + (moreOn ? ' on' : '') + '" id="btMoreTop" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="btSheet">More<span aria-hidden="true"> \u25BE</span></button>';
     return '<nav class="topnav" aria-label="Main">' +
       '<a class="brand" href="index.html"><span class="no-i18n" translate="no">Broward Trading</span><small>Paper-trading &amp; technical analysis lab</small></a>' +
-      '<div class="links">' + links + '</div>' +
+      '<div class="links">' + links + '</div>' + moreTop +
       '<div class="right">' + langButton('', false) + levelChipHtml(BT.xp && BT.xp.summary ? safeSummary() : null) + themeButton('themeToggle', '', false) + '</div>' +
       '</nav>';
   }
@@ -401,7 +405,7 @@
   function sheetHtml(active) {
     var items = morePages().map(function (p) {
       var on = active && active.id === p.id;
-      return '<li><a href="' + p.file + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + svg(p.icon) +
+      return '<li' + (p.top ? ' class="in-top"' : '') + '><a href="' + p.file + '"' + (on ? ' class="on" aria-current="page"' : '') + '>' + svg(p.icon) +
         '<span class="txt"><b>' + esc(p.label) + '</b><small>' + esc(p.desc) + '</small></span></a></li>';
     }).join('');
     return '<div class="sheet-backdrop" id="btSheet" hidden>' +
@@ -751,26 +755,31 @@
 
     // 6. More sheet.
     var moreBtn = navHost.querySelector('#btMore');
+    var moreTop = navHost.querySelector('#btMoreTop');
     var sheet = navHost.querySelector('#btSheet');
     var lastFocus = null;
+    function setExpanded(v) {
+      [moreBtn, moreTop].forEach(function (b) { if (b) b.setAttribute('aria-expanded', v); });
+    }
     function openSheet() {
       if (!sheet || !sheet.hidden) return;
       lastFocus = document.activeElement;
       sheet.hidden = false;
       document.body.classList.add('sheet-open');
-      moreBtn.setAttribute('aria-expanded', 'true');
-      var first = sheet.querySelector('.sheet-list a');
+      setExpanded('true');
+      var first = Array.prototype.filter.call(sheet.querySelectorAll('.sheet-list a'), function (a) { return a.offsetParent !== null; })[0];
       if (first) setTimeout(function () { first.focus({ preventScroll: true }); }, 30);
     }
     function closeSheet() {
       if (!sheet || sheet.hidden) return;
       sheet.hidden = true;
       document.body.classList.remove('sheet-open');
-      moreBtn.setAttribute('aria-expanded', 'false');
+      setExpanded('false');
       if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
     }
     if (moreBtn && sheet) {
       moreBtn.addEventListener('click', function () { if (sheet.hidden) openSheet(); else closeSheet(); });
+      if (moreTop) moreTop.addEventListener('click', function () { if (sheet.hidden) openSheet(); else closeSheet(); });
       sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
       sheet.querySelector('#btSheetClose').addEventListener('click', closeSheet);
       document.addEventListener('keydown', function (e) {

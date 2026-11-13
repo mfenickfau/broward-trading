@@ -58,7 +58,8 @@ test('v0.5 pages: in the desktop nav and the More sheet (not tabs), each with it
     const p = N.pages.find(x => x.file === f);
     assert.ok(p && !p.tab, f + ' is a More page');
     assert.ok(p.desc && p.desc.length > 20, f + ' has a description');
-    assert.ok(top.includes('href="' + f + '"'), f + ' in the top nav');
+    if (f !== 'profile.html') assert.ok(top.includes('href="' + f + '"'), f + ' in the top nav');
+    else assert.ok(!/<a href="profile\.html"/.test(top) && top.includes('href="profile.html"'), 'profile is reached from the level chip and More, not a plain top link');
     assert.ok(sheet.includes('href="' + f + '"'), f + ' in the More sheet');
   });
   const icons = ['trophy', 'filter', 'blocks', 'user'];
@@ -152,10 +153,22 @@ test('theme storage reads JSON-quoted and bare values, writes the JSON form app.
   localStorage.clear();
 });
 
-test('top nav markup: one link per page, active page marked with aria-current', () => {
+test('top nav markup: primary links plus a More button, active page marked with aria-current', () => {
   const html = N.html.topnav(N.activePage('/learn.html'));
   assert.ok(/<nav class="topnav" aria-label="Main">/.test(html));
-  assert.strictEqual((html.match(/<a href="[a-z]+\.html"/g) || []).length, N.pages.length);
+  const primary = N.pages.filter(p => p.top);
+  assert.ok(primary.length >= 6 && primary.length <= 10, 'a short list of primary links fits at desktop width');
+  assert.strictEqual((html.match(/<a href="[a-z]+\.html"/g) || []).length, primary.length);
+  assert.ok(/id="btMoreTop"[^>]*aria-haspopup="dialog"[^>]*aria-controls="btSheet"/.test(html), 'More button opens the page sheet');
+  assert.ok(!/class="navmore on"/.test(html), 'More is not lit on a primary page');
+  // A secondary page shows its own link (marked current) and lights up More.
+  const g = N.html.topnav(N.activePage('/glossary.html'));
+  assert.ok(/<a href="glossary\.html" class="active" aria-current="page"/.test(g));
+  assert.ok(/class="navmore on"/.test(g));
+  // Every page is still reachable: primary links + the sheet.
+  const sheet = N.html.sheet(null);
+  N.pages.forEach(p => assert.ok(p.top || p.tab || sheet.includes('href="' + p.file + '"'), p.file + ' reachable'));
+  assert.ok(/<li class="in-top"><a href="leagues\.html"/.test(sheet), 'sheet items already in the top bar are tagged for desktop hiding');
   assert.ok(/<a href="learn\.html" class="active" aria-current="page"/.test(html));
   assert.ok(!/<a href="index\.html" class="active"/.test(html));
   assert.ok(/id="themeToggle"/.test(html), 'keeps the #themeToggle id the v0.2 page scripts look up');
@@ -190,7 +203,7 @@ test('footer carries the disclaimer and links every page', () => {
 });
 
 test('markup escapes labels (no raw < from data)', () => {
-  const bad = { id: 'x', file: 'x.html', label: '<b>x</b>', short: '<b>x</b>', tab: true, icon: 'info', desc: '"q"' };
+  const bad = { id: 'x', file: 'x.html', label: '<b>x</b>', short: '<b>x</b>', tab: true, top: true, icon: 'info', desc: '"q"' };
   const saved = N.pages.slice();
   N.pages.push(bad);
   try {
