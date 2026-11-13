@@ -881,6 +881,7 @@
     ['cash', 'sizePct', 'commission', 'slippageBps'].forEach(function (k) { if (q[k] != null && isNum(+q[k])) { state[k] = +q[k]; changed = true; } });
     if (q.allowShort != null) { state.allowShort = q.allowShort === '1' || q.allowShort === 'true'; changed = true; }
     if (changed) { if (!LOOKBACKS[state.interval]) state.interval = '1day'; writeControls(); saveSettings(); }
+    if ((q.upload != null || q.source === 'csv') && BT.csv) { openUpload(); return false; }
     return q.run === '1' || q.run === 'true';
   }
 
@@ -984,6 +985,16 @@
     else { var fr = new FileReader(); fr.onload = function () { done(fr.result); }; fr.onerror = function () { toast(T('The file could not be read. Try saving it again as CSV.'), 'warn'); }; fr.readAsText(file); }
   }
 
+  // Open the upload panel from a link (#upload), the header button, or the empty state.
+  function openUpload() {
+    if (!BT.csv) return;
+    setSource('csv', { run: !!state.csvId });
+    var panel = $('csvpanel'), rail = panel.closest('.card') || panel;
+    try { rail.scrollIntoView({ behavior: window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); } catch (e) { rail.scrollIntoView(); }
+    panel.classList.remove('flash'); void panel.offsetWidth; panel.classList.add('flash');
+    setTimeout(function () { try { $('csvdrop').focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, 400);
+  }
+
   function initCsvUi() {
     if (!BT.csv) { $('srccsv').disabled = true; $('srccsv').title = T('CSV import did not load. Refresh the page and try again.'); return; }
     $('srcmarket').addEventListener('click', function () { setSource('market', { run: true }); });
@@ -1061,6 +1072,13 @@
     });
     $('csvadj').checked = state.csvAdj !== false;
     $('csvadj').addEventListener('change', function () { state.csvAdj = this.checked; saveSettings(); });
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href="#upload"]');
+      if (!a) return;
+      e.preventDefault();
+      try { history.replaceState(null, '', '#upload'); } catch (err) { /* sandboxed */ }
+      openUpload();
+    });
     fillDatasets();
     setSource(state.source);
     window.addEventListener('bt:langchange', function () { fillDatasets(); if (lastCsv) renderCsvSummary(lastCsv.res, lastCsv.meta); });

@@ -227,6 +227,14 @@
     if (!cls) return { status: 'no-class' };
     if (!snap || typeof snap !== 'object' || !validId(snap.studentId)) return { status: 'invalid' };
     snap = sanitizeSnapshot(snap, opts.source, cls);
+    // Clamp forged future stamps ONCE, when the snapshot is stored. (Clamping only at comparison
+    // time re-clamps the stored row to the current instant on every later import, so a forged
+    // future date would still beat every genuine snapshot made before that moment.)
+    var nowMs = clock();
+    ['updatedAt', 'receivedAt'].forEach(function (k) {
+      var t = Date.parse(snap[k] || '');
+      if (isFinite(t) && t > nowMs) snap[k] = new Date(nowMs).toISOString();
+    });
     var id = snap.studentId;
     var mismatched = !!(snap.classCode && snap.classCode !== cls.code);
     if (mismatched && !opts.allowMismatch) return { status: 'mismatched', studentId: id, mismatched: true, classCode: snap.classCode };

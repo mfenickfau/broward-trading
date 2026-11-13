@@ -3,7 +3,7 @@
     "lang": "es",
     "label": "Español",
     "version": "0.4.0",
-    "entries": 3242,
+    "entries": 3247,
     "note": "Keys are exact English UI strings (trimmed, whitespace-collapsed); see js/i18n.js. {name} placeholders are filled by BT.t()."
   },
   "ui": {
@@ -3232,7 +3232,12 @@
     "{n} bar(s) had a high below the open/close or a low above it; those highs/lows were widened to fit.": "{n} velas tenían un máximo por debajo de la apertura o el cierre, o un mínimo por encima; esos máximos y mínimos se ampliaron para que encajen.",
     "{n} unusually large gap(s) in the dates. Missing data can make a strategy look better or worse than it really is.": "Hay {n} huecos inusualmente grandes en las fechas. Los datos faltantes pueden hacer que una estrategia parezca mejor o peor de lo que realmente es.",
     "Only {n} usable bars. The back-tester needs at least 30, and 200+ gives far more trustworthy results.": "Solo hay {n} velas utilizables. El backtest necesita al menos 30, y con más de 200 los resultados son mucho más confiables.",
-    "Only {n} bars. Long moving averages (like the 200-bar) need more history, and results from a short sample are mostly luck.": "Solo hay {n} velas. Las medias móviles largas (como la de 200) necesitan más historial, y los resultados de una muestra corta son en gran parte suerte."
+    "Only {n} bars. Long moving averages (like the 200-bar) need more history, and results from a short sample are mostly luck.": "Solo hay {n} velas. Las medias móviles largas (como la de 200) necesitan más historial, y los resultados de una muestra corta son en gran parte suerte.",
+    "Upload your own data (CSV)": "Subir tus propios datos (CSV)",
+    "Have your own price history?": "¿Tienes tu propio historial de precios?",
+    "Upload a CSV file": "Sube un archivo CSV",
+    "and test on that instead.": "y haz la prueba con esos datos.",
+    "Upload your CSV in the Strategy Lab": "Sube tu CSV en el Laboratorio de estrategias"
   },
   "attrs": {
     "Switch theme": "Cambiar tema",

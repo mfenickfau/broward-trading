@@ -141,6 +141,15 @@
           "action": { "page": "backtest.html", "hash": "sym=MSFT&tf=1day&strategy=breakout&n=20&run=1", "label": "Run the channel breakout on MSFT" }
         },
         {
+          "type": "exercise",
+          "md": "**Test on your own data.** Download daily price history for a stock you follow as a CSV file (for example from the Historical Data page on Yahoo Finance or Nasdaq.com), then open the Strategy Lab, tap **Upload your own data (CSV)** and choose the file. Run the same strategy you just tested on the simulated prices. Write down two numbers for each: total return and maximum drawdown. Did the strategy behave the same way on real history? If not, which market conditions in your file (a crash, a long sideways stretch) explain the difference?",
+          "action": {
+            "page": "backtest.html",
+            "hash": "upload",
+            "label": "Upload your CSV in the Strategy Lab"
+          }
+        },
+        {
           "type": "quiz",
           "questions": [
             {

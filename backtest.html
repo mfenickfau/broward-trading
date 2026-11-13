@@ -74,6 +74,11 @@ footer.footer{color:var(--muted);font-size:11px;padding-block:14px 0;text-align:
 .costnote{font-size:var(--fs-xs);color:var(--muted);margin-top:8px;line-height:1.5}
 
 /* data source: market data vs uploaded CSV */
+.upload-cta{display:inline-flex;align-items:center;gap:8px;margin-top:10px;min-height:44px;padding:8px 14px;border:1px solid var(--accent);border-radius:var(--r,8px);color:var(--accent);background:transparent;font-weight:600;text-decoration:none}
+.upload-cta:hover,.upload-cta:focus-visible{background:var(--accent);color:var(--accent-fg,#fff)}
+#csvpanel.flash .drop{animation:csvflash 1.2s ease-out 1}
+@keyframes csvflash{0%{box-shadow:0 0 0 0 var(--accent)}100%{box-shadow:0 0 0 14px transparent}}
+@media (prefers-reduced-motion:reduce){#csvpanel.flash .drop{animation:none}}
 .srcseg{display:grid;grid-template-columns:1fr 1fr;width:100%;margin:2px 0 10px}
 .srcseg button{min-height:40px}
 .drop{display:grid;gap:6px;justify-items:center;text-align:center;border:1.5px dashed var(--line);border-radius:var(--r,8px);padding:16px 10px;background:var(--panel2);cursor:pointer;transition:border-color .15s,background .15s}
@@ -204,6 +209,7 @@ table.opt .gap{font-family:var(--mono)}
     <div>
       <h1>Strategy Lab</h1>
       <p class="sub">Write down a rule, run it on years of price history, and look at every trade it would have made. The goal is not to find a money machine: it is to learn what a trading rule really does before you risk anything on it.</p>
+      <a class="btn upload-cta" id="uploadcta" href="#upload"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg><span>Upload your own data (CSV)</span></a>
     </div>
     <div class="status">
       <span class="pill demo hide-sm" id="srcpill" title="Prices are simulated unless you add a free API key on the dashboard">demo</span>
@@ -219,6 +225,7 @@ table.opt .gap{font-family:var(--mono)}
       <div id="empty" class="result-empty">
         <b>No back-test yet</b>
         Pick a symbol and a strategy on the right, then press <strong>Run back-test</strong>.
+        <p>Have your own price history? <a href="#upload">Upload a CSV file</a> and test on that instead.</p>
         <ol>
           <li>Every entry and exit is drawn on the price chart as an arrow.</li>
           <li>The equity curve shows your account against simply buying and holding.</li>

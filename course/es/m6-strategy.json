@@ -141,6 +141,15 @@
           "action": { "page": "backtest.html", "hash": "sym=MSFT&tf=1day&strategy=breakout&n=20&run=1", "label": "Correr la ruptura de canal en MSFT" }
         },
         {
+          "type": "exercise",
+          "md": "**Prueba con tus propios datos.** Descarga el historial de precios diarios de una acción que sigas como archivo CSV (por ejemplo, desde la página de datos históricos de Yahoo Finance o de Nasdaq.com). Luego abre el Laboratorio de estrategias, toca **Subir tus propios datos (CSV)** y elige el archivo. Ejecuta la misma estrategia que acabas de probar con los precios simulados. Anota dos números de cada prueba: el rendimiento total y la caída máxima (drawdown). ¿La estrategia se comportó igual con el historial real? Si no, ¿qué condiciones del mercado en tu archivo (una caída fuerte, un periodo largo sin tendencia) explican la diferencia?",
+          "action": {
+            "page": "backtest.html",
+            "hash": "upload",
+            "label": "Sube tu CSV en el Laboratorio de estrategias"
+          }
+        },
+        {
           "type": "quiz",
           "questions": [
             {
