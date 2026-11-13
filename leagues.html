@@ -78,6 +78,10 @@
   .teams-list li{padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
   .teams-list b{display:block;font-size:var(--fs-md)}
   .teams-list span{font-family:var(--mono);font-size:var(--fs-sm);color:var(--muted)}
+  .teams-list span + span{margin-left:var(--sp-2)}
+  .st-card .spark-none{grid-column:1/-1;margin-top:4px}
+  .rank-note{margin:0 0 var(--sp-3)}
+  .pill.mismatch{margin-left:4px}
   .rules-sum{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 var(--sp-3);padding:0;list-style:none}
   details.how summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--fg);font-weight:500}
   details.how p,details.how li{color:var(--muted);font-size:var(--fs-sm);line-height:1.6}
@@ -182,6 +186,7 @@
             <div class="field"><label for="cComm">Commission per order ($)</label><input id="cComm" type="number" inputmode="decimal" min="0" max="100" step="0.05"></div>
             <div class="field"><label for="cSlip">Slippage (basis points)</label><input id="cSlip" type="number" inputmode="numeric" min="0" max="500" step="1"><span class="help">10 bps = 0.10 % worse fill on each trade.</span></div>
             <div class="field"><label for="cMaxPos">Max position (% of equity)</label><input id="cMaxPos" type="number" inputmode="numeric" min="1" max="100" step="1"></div>
+            <div class="field"><label for="cRank">Rank by</label><select id="cRank"><option value="riskAdjusted">Risk-adjusted return (recommended)</option><option value="return">Raw return</option><option value="consistency">Consistency</option></select><span class="help">Risk-adjusted ranks divide return by the worst drawdown, so one all-in bet cannot win on luck alone.</span></div>
             <fieldset class="wide">
               <legend>Allowed assets</legend>
               <div class="checks">

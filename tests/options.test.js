@@ -569,19 +569,51 @@ test('curves: today, mid-life and expiry lines; expiry matches payoff()', () => 
   assert.deepStrictEqual(O.curves([], null, null), []);
 });
 
-test('probRange: symmetric in log space, 1σ inside 2σ, matches σ√t', () => {
+test('probRange: symmetric in log space about the model median, 1σ inside 2σ, matches σ√t', () => {
   const r = O.probRange(200, 0.3, 30);
-  const sd = 0.3 * Math.sqrt(30 / 365);
+  const t = 30 / 365, sd = 0.3 * Math.sqrt(t), med = 200 * Math.exp(-0.5 * 0.09 * t);
   near(r.sdLog, sd, 1e-12);
-  near(Math.log(r.high1 / 200), -Math.log(r.low1 / 200), 1e-12, '1σ symmetric in log space');
-  near(Math.log(r.high2 / 200), -Math.log(r.low2 / 200), 1e-12, '2σ symmetric in log space');
-  near(Math.log(r.high2 / 200), 2 * Math.log(r.high1 / 200), 1e-12);
-  near(r.low1 * r.high1, 200 * 200, 1e-6, 'geometric mean is spot');
+  near(r.median, med, 1e-9, 'driftless (martingale) median is S·e^(−σ²t/2)');
+  near(Math.log(r.high1 / med), -Math.log(r.low1 / med), 1e-12, '1σ symmetric in log space');
+  near(Math.log(r.high2 / med), -Math.log(r.low2 / med), 1e-12, '2σ symmetric in log space');
+  near(Math.log(r.high2 / med), 2 * Math.log(r.high1 / med), 1e-12);
+  near(r.low1 * r.high1, med * med, 1e-6, 'geometric mean is the median');
   assert.ok(r.low2 < r.low1 && r.low1 < 200 && 200 < r.high1 && r.high1 < r.high2);
-  assert.ok(r.high1 - 200 > 200 - r.low1, 'dollar move up is larger than down');
+  assert.ok(r.high1 - med > med - r.low1, 'dollar move up from the median is larger than down');
   near(r.move1, 200 * sd, 1e-9);
+  // r shifts the centre by e^(rt)
+  near(O.probRange(200, 0.3, 30, 0.05).median, med * Math.exp(0.05 * t), 1e-9);
   const z = O.probRange(50, 0.4, 0); assert.strictEqual(z.low2, 50); assert.strictEqual(z.high2, 50);
   assert.throws(() => O.probRange(0, 0.3, 30));
+});
+
+test('probRange and probProfit use the same model (cone agrees with PoP)', () => {
+  // long stock at spot: P(profit) = P(S_T > S); the cone median must sit on the same side
+  const stock = [{ right: 'S', strike: 100, qty: 100 }];
+  const r = O.probRange(100, 0.5, 365);
+  const pop = O.probProfit(stock, 100, 0.5, 365);
+  near(pop, 1 - O.normCdf(Math.log(100 / r.median) / r.sdLog), 1e-6, 'PoP equals P(S_T > 100) under the cone model');
+  assert.ok(r.median < 100 && pop < 0.5);
+  // shares bought exactly at the cone's 1σ low / high: 84 % / 16 % chance of profit
+  near(O.probProfit([{ right: 'S', strike: r.low1, qty: 1 }], 100, 0.5, 365), O.normCdf(1), 1e-6);
+  near(O.probProfit([{ right: 'S', strike: r.high1, qty: 1 }], 100, 0.5, 365), 1 - O.normCdf(1), 1e-6);
+});
+
+test('probProfit before expiry: boundaries refined, matches a dense independent integration', () => {
+  const cal = [{ right: 'C', strike: 100, qty: -1, days: 20 }, { right: 'C', strike: 100, qty: 1, days: 50 }];
+  cal.forEach(l => { l.premium = O.bs({ S: 100, K: 100, T: l.days / 365, r: 0, sigma: 0.3, type: 'call' }).price; });
+  const pp = O.probProfit(cal, 100, 0.3, 20, { iv: 0.3 });
+  const sd = 0.3 * Math.sqrt(20 / 365), mu = Math.log(100) - 0.5 * 0.09 * 20 / 365;
+  const win = z => O.whatIf(cal, { S: Math.exp(mu + sd * z), daysForward: 20, iv: 0.3 }).pnl > 0;
+  // locate the two breakevens independently by a fine scan + bisection, then integrate exactly
+  const edges = [];
+  for (let z = -6, prev = win(-6); z < 6; z += 0.001) {
+    const w = win(z + 0.001);
+    if (w !== prev) { let a = z, b = z + 0.001; for (let k = 0; k < 60; k++) { const m = (a + b) / 2; if (win(m) === prev) a = m; else b = m; } edges.push(a); }
+    prev = w;
+  }
+  assert.strictEqual(edges.length, 2, 'calendar has a profit tent with two breakevens');
+  near(pp, O.normCdf(edges[1]) - O.normCdf(edges[0]), 2e-6, 'calendar PoP');
 });
 
 test('probProfit: lognormal estimate agrees with analyze(), stock and calendar sanity', () => {

@@ -86,7 +86,7 @@
   .expiries{display:flex;gap:4px;flex-wrap:wrap;margin:var(--sp-2) 0}
   .expiries button{font-size:var(--fs-xs);padding:4px 9px}
   .expiries button small{color:var(--muted);margin-left:4px}
-  .expiries button.on small{color:inherit;opacity:.85}
+  .expiries button.on small{color:inherit}
   .chain-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:var(--r)}
   table.chain{min-width:860px;font-size:var(--fs-xs)}
   table.chain thead th{position:sticky;top:0;background:var(--panel);z-index:2;padding:6px 6px;text-align:right;white-space:nowrap}
@@ -188,7 +188,25 @@
     .wi-sliders input[type="range"],.ivrow input[type="range"]{min-height:44px}
     .acct{width:100%} .acct select{max-width:none;flex:1}
     .sim .setting .check{min-height:44px}
-    .greek-pick button{min-height:40px}
+    .greek-pick button{min-height:44px;min-width:44px}
+    /* small header buttons and checkbox labels: full 44px tap targets */
+    .card > h2 #wi-reset,.card > h2 #legs-clear,.legs button[data-rm]{min-height:44px;min-width:44px}
+    .card > h2 .right-tools label.xs{min-height:44px;display:inline-flex;align-items:center}
+    /* payoff header: the two checkboxes drop below the title instead of squeezing it */
+    .payoff-card > h2{flex-wrap:wrap}
+    .payoff-card > h2 .right-tools{flex-wrap:wrap;flex-basis:100%;gap:0 var(--sp-3)}
+    /* position legs: each leg becomes a card (label on top, then qty / premium / cost / remove).
+       The column headers stay visible once above the list, aligned to the same grid. */
+    .legs .table-wrap{overflow-x:visible}
+    .legs .table-wrap table,.legs thead,.legs tbody{display:block;width:100%;min-width:0}
+    .legs tr{display:grid;grid-template-columns:80px 80px minmax(0,1fr) 44px;gap:4px 6px;align-items:center}
+    .legs thead th:first-child{display:none}
+    .legs thead th{border-bottom:0;padding-bottom:0}
+    .legs tbody tr{border-top:1px solid var(--line);padding:6px 0}
+    .legs tbody td{border:0;padding:0}
+    .legs td.lbl{grid-column:1 / -1;white-space:normal}
+    .legs td.num{text-align:right}
+    .legs input[type="number"]{width:100%;min-height:44px;font-size:16px}
     table.chain td{padding:2px 6px}
     .chain-wrap{max-height:60vh;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
     /* a soft fade on the left and right edges says "there is more this way" */
@@ -429,7 +447,7 @@
             <div class="preset-desc" id="preset-desc" hidden></div>
           </div>
 
-          <div class="card">
+          <div class="card payoff-card">
             <h2>Payoff at expiration <span class="right-tools"><label class="xs"><input type="checkbox" id="show-t0" checked> show today's value curve</label><label class="xs"><input type="checkbox" id="show-cone" checked> show probability range</label></span></h2>
             <div class="payoff-wrap"><canvas id="payoff" role="img" aria-label="Profit and loss at expiration versus underlying price"></canvas><div class="readout" id="payoff-readout"></div></div>
             <div class="note">Green area: profit at expiration for that stock price. Red: loss. Vertical markers show your breakevens and the current spot. The dotted curve is what the position is worth <em>today</em> under the model: notice how it is smoother than the expiration payoff, and how it drifts toward the kinked line as days pass (that drift is theta). The shaded bands are the probability range: under the model the stock finishes inside the darker band about 68% of the time and inside the lighter band about 95% of the time.</div>

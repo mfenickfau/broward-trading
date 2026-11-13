@@ -23,6 +23,17 @@
  * league finished 50. Every award is keyed ('lesson:m1-l1') so it is granted at most once;
  * XP once earned is never taken away (resetting the paper account does not erase learning).
  *
+ * Anti-farming rules (XP rewards learning and reflection, never trading volume):
+ *   - a journal entry pays only when it holds a written reflection (notes or a lesson of at
+ *     least JOURNAL_MIN_CHARS characters; picking a setup, emotion or tag alone does not), and
+ *     at most JOURNAL_PER_DAY journal awards are paid per local day;
+ *   - alerts pay at most ALERT_PER_DAY award per local day (creating and deleting alerts is not practice);
+ *   - activity (streak) days come from lessons, quizzes, finished replays, written journal entries,
+ *     flashcards, Daily 5, the strategy tools and the personality quiz, never from paper orders or fills;
+ *   - Replay Pro judges the FIRST finished attempt of each drill (remembered in bt.xp, so clearing
+ *     the replay history does not reset it) and needs every drill check passed as well;
+ *   - Risk Manager counts each order once and measures the risk of the whole position after it.
+ *
  * Public surface
  *   BT.xp.EVENTS / LEVELS / BADGES / KEY / PROFILE_KEY
  *   award(event, key?, opts?)  → {awarded, xp, total, level, leveledUp, badges[]}   fires window 'bt:xp'
@@ -51,6 +62,13 @@
   var DEFAULT_LESSON_TOTAL = 45;
   var DEFAULT_MODULE_SIZE = 5;
   var FLASH_SESSION_MIN = 5;          // grades in one day that make a "session"
+  var JOURNAL_MIN_CHARS = 20;         // written notes or lesson that make an entry a reflection
+  var JOURNAL_PER_DAY = 3;            // journal awards paid per local day
+  var ALERT_PER_DAY = 1;              // alert awards paid per local day
+  var RISK_MAX_PCT = 1;               // Risk Manager: whole-position risk to the stop, % of equity
+  var SIZE_MAX_PCT = 25;              // mirrors BT.coach.THRESHOLDS.maxPositionPct
+  /* Events that never mark an activity day: they are trading or setup actions, not practice. */
+  var NO_DAY_EVENTS = { firstTrade: true, alert: true, options: true };
   var DEFAULT_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY', 'AMZN'];   // mirrors js/app.js
 
   /* ------------------------------------------------------------------ *
@@ -162,15 +180,15 @@
     { id: 'first-week',       name: 'First Week Done',     icon: '7', group: 'learn',    criteria: 'Finish all seven days of the First Week path.', progress: function (f) { return count(f.firstWeekDone ? 1 : 0, 1); } },
     { id: 'flashcard-regular',name: 'Flashcard Regular',   icon: '❏', group: 'learn',    criteria: 'Review at least 5 flashcards on 5 different days.', progress: function (f) { return count(f.flashDays.length, 5); } },
     { id: 'first-fill',       name: 'First Fill',          icon: '◆', group: 'practice', criteria: 'Get your first paper order filled (any account).', progress: function (f) { return count(f.fills > 0 ? 1 : 0, 1); } },
-    { id: 'risk-manager',     name: 'Risk Manager',        icon: '⛨', group: 'practice', criteria: '10 paper trades opened with a stop-loss and no more than 1 % of the account at risk (planned stop on the order, or a protective stop order placed after the fill).', progress: function (f) { return count(f.riskManaged, 10); } },
+    { id: 'risk-manager',     name: 'Risk Manager',        icon: '⛨', group: 'practice', criteria: '10 paper orders where the whole position after the order had a stop-loss and no more than 1 % of the account at risk, was worth no more than 25 % of the account, and did not add to a losing position.', progress: function (f) { return count(f.riskManaged, 10); } },
     { id: 'options-explorer', name: 'Options Explorer',    icon: 'Ω', group: 'practice', criteria: 'Place a paper options trade.', progress: function (f) { return count(f.optionTrades > 0 ? 1 : 0, 1); } },
     { id: 'on-alert',         name: 'On Alert',            icon: '◉', group: 'practice', criteria: 'Create a price or indicator alert.', progress: function (f) { return count(f.alerts.length, 1); } },
     { id: 'watchlist-builder',name: 'Watchlist Builder',   icon: '☰', group: 'practice', criteria: 'Add 3 symbols of your own to the dashboard watchlist.', progress: function (f) { return count(f.watchlistOwn, 3); } },
     { id: 'replay-rookie',    name: 'Replay Rookie',       icon: '▶', group: 'replay',   criteria: 'Finish a Market Replay drill to the last bar.', progress: function (f) { return count(f.drillsCompleted.length, 1); } },
     { id: 'drill-passed',     name: 'Drill Passed',        icon: '✔', group: 'replay',   criteria: 'Pass every check of a Market Replay drill.', progress: function (f) { return count(f.drillsPassed.length, 1); } },
-    { id: 'replay-pro',       name: 'Replay Pro',          icon: '⏩', group: 'replay',   criteria: 'Beat buy-and-hold in 5 different finished drills.', progress: function (f) { return count(f.drillsBeatBH.length, 5); } },
-    { id: 'journal-starter',  name: 'Journal Starter',     icon: '✎', group: 'reflect',  criteria: 'Write your first journal entry (an entry with your own setup, emotion, notes or lesson).', progress: function (f) { return count(f.journal.length, 1); } },
-    { id: 'journal-keeper',   name: 'Journal Keeper',      icon: '✐', group: 'reflect',  criteria: 'Write 14 journal entries.', progress: function (f) { return count(f.journal.length, 14); } },
+    { id: 'replay-pro',       name: 'Replay Pro',          icon: '⏩', group: 'replay',   criteria: 'On your first finished attempt, pass every check and beat buy-and-hold in 5 different drills (retries do not count).', progress: function (f) { return count(f.drillsBeatBH.length, 5); } },
+    { id: 'journal-starter',  name: 'Journal Starter',     icon: '✎', group: 'reflect',  criteria: 'Write your first journal reflection (notes or a lesson of at least 20 characters).', progress: function (f) { return count(f.journal.length, 1); } },
+    { id: 'journal-keeper',   name: 'Journal Keeper',      icon: '✐', group: 'reflect',  criteria: 'Write 14 journal reflections (notes or a lesson of at least 20 characters).', progress: function (f) { return count(f.journal.length, 14); } },
     { id: 'weekly-reviewer',  name: 'Weekly Reviewer',     icon: '☑', group: 'reflect',  criteria: 'Save a weekly review in the journal.', progress: function (f) { return count(f.weeklyReviews, 1); } },
     { id: 'know-yourself',    name: 'Know Yourself',       icon: '?', group: 'reflect',  criteria: 'Take the trader personality quiz.', progress: function (f) { return count(f.personality ? 1 : 0, 1); } },
     { id: 'backtester',       name: 'Backtester',          icon: '⟲', group: 'build',    criteria: 'Run a backtest of your own in the Strategy Lab: change the strategy, symbol or a setting from the default.', progress: function (f) { return count(f.backtested ? 1 : 0, 1); } },
@@ -178,7 +196,7 @@
     { id: 'rule-maker',       name: 'Rule Maker',          icon: '⚙', group: 'build',    criteria: 'Save a strategy of your own in the Strategy Builder.', progress: function (f) { return count(f.rules, 1); } },
     { id: 'league-joined',    name: 'Contender',           icon: '⚑', group: 'compete',  criteria: 'Join a paper-trading league.', progress: function (f) { return count(f.leaguesJoined.length, 1); } },
     { id: 'league-finisher',  name: 'League Finisher',     icon: '⚐', group: 'compete',  criteria: 'Trade in a league until its end date.', progress: function (f) { return count(f.leaguesFinished.length, 1); } },
-    { id: 'streak-7',         name: 'Streak 7',            icon: '7', group: 'habit',    criteria: 'Practise on 7 days in a row (lessons, quizzes, trades, drills, journal, flashcards or Daily 5).', progress: function (f) { return count(f.bestStreak, 7); } },
+    { id: 'streak-7',         name: 'Streak 7',            icon: '7', group: 'habit',    criteria: 'Practise on 7 days in a row (lessons, quizzes, replay drills, journal notes, flashcards, Daily 5 or the strategy tools; placing orders does not count).', progress: function (f) { return count(f.bestStreak, 7); } },
     { id: 'streak-30',        name: 'Streak 30',           icon: '30', group: 'habit',   criteria: 'Practise on 30 days in a row.', progress: function (f) { return count(f.bestStreak, 30); } }
   ];
   var BADGE_GROUPS = { learn: 'Learning', practice: 'Paper trading', replay: 'Market Replay', reflect: 'Reflection', build: 'Tools', compete: 'Leagues', habit: 'Habits' };
@@ -187,7 +205,7 @@
    * XP state (bt.xp)
    * ------------------------------------------------------------------ */
   function freshState() {
-    return { v: 1, awarded: {}, badges: {}, flags: {}, days: {}, lessonLangs: {}, knownLessons: null, updatedAt: null };
+    return { v: 1, awarded: {}, badges: {}, flags: {}, days: {}, lessonLangs: {}, drillFirst: {}, knownLessons: null, updatedAt: null };
   }
   function loadState() {
     var s = freshState(), saved = lsGet(KEY, null);
@@ -198,19 +216,29 @@
         if (isObj(a) && isNum(a.xp) && a.xp >= 0 && a.xp <= 1000) s.awarded[id] = { xp: a.xp, at: isNum(a.at) ? a.at : 0, e: str(a.e || id.split(':')[0]) };
       });
     }
-    ['badges', 'flags', 'days', 'lessonLangs'].forEach(function (k) { if (isObj(saved[k])) s[k] = saved[k]; });
+    ['badges', 'flags', 'days', 'lessonLangs', 'drillFirst'].forEach(function (k) { if (isObj(saved[k])) s[k] = saved[k]; });
     if (Array.isArray(saved.knownLessons)) s.knownLessons = saved.knownLessons.filter(function (x) { return typeof x === 'string'; });
     s.updatedAt = isNum(saved.updatedAt) ? saved.updatedAt : null;
     return s;
   }
   function saveState(s) { s.updatedAt = now(); return lsSet(KEY, s); }
   function totalOf(s) { var t = 0; Object.keys(s.awarded).forEach(function (id) { t += s.awarded[id].xp; }); return t; }
+  function awardAt(at) { return isNum(at) && at > 0 && at <= now() + DAY_MS ? at : now(); }
   function grant(s, event, key, at, xp) {
     var id = event + ':' + key;
     if (s.awarded[id]) return null;
     var amount = isNum(xp) ? xp : (EVENTS[event] ? EVENTS[event].xp : 0);
-    s.awarded[id] = { xp: amount, at: isNum(at) && at > 0 && at <= now() + DAY_MS ? at : now(), e: event };
+    s.awarded[id] = { xp: amount, at: awardAt(at), e: event };
     return { id: id, event: event, key: key, xp: amount };
+  }
+  /** grant(), but at most `cap` paid awards of this event on the award's local day. */
+  function grantCapped(s, event, key, at, cap) {
+    var id = event + ':' + key;
+    if (s.awarded[id]) return null;
+    var day = dayKey(awardAt(at)), n = 0;
+    Object.keys(s.awarded).forEach(function (k) { var a = s.awarded[k]; if (a.e === event && a.xp > 0 && dayKey(a.at) === day) n++; });
+    if (n >= cap) return null;
+    return grant(s, event, key, at);
   }
 
   /* ------------------------------------------------------------------ *
@@ -268,35 +296,95 @@
     var risk = [p.riskPct, m.riskPct, m.plannedRiskPct].filter(isNum)[0];
     return { stop: isNum(stop) ? stop : null, riskPct: isNum(risk) ? risk : null };
   }
+  function equityAt(st, t) {
+    var hist = arr(st.equityHistory).filter(function (e) { return isObj(e) && isNum(e.t) && isNum(e.equity) && e.equity > 0; });
+    var pick = null;
+    hist.forEach(function (e) { if (!isNum(t) || e.t <= t) { if (!pick || e.t >= pick.t) pick = e; } });
+    if (pick) return pick.equity;
+    return isNum(st.startingCash) && st.startingCash > 0 ? st.startingCash : 100000;
+  }
+  /**
+   * Risk Manager: count ORDERS (not fills) that opened or added to a stock position where the
+   * WHOLE position after the order had a stop, at most RISK_MAX_PCT of equity at risk to that stop,
+   * a value of at most SIZE_MAX_PCT of equity, and the order did not add to a losing position.
+   * Several partial fills of one order count once; a protective stop placed later is measured
+   * against the position held when it was placed (scaling in before protecting does not count).
+   */
   function riskManagedCount(acct) {
-    var st = acct.state, trades = arr(st.trades), orders = arr(st.orders);
-    var equity = isNum(st.startingCash) && st.startingCash > 0 ? st.startingCash : 100000;
+    var st = acct.state, orders = arr(st.orders);
+    var trades = arr(st.trades).map(function (t, i) { return { t: t, i: i }; }).filter(function (x) {
+      return isObj(x.t) && isNum(x.t.price) && isNum(x.t.qty) && x.t.qty > 0 && (x.t.side === 'buy' || x.t.side === 'sell') && (!x.t.kind || x.t.kind === 'stock');
+    }).sort(function (a, b) { return ((toMs(a.t.time) || 0) - (toMs(b.t.time) || 0)) || (a.i - b.i); });
     var byId = {};
     orders.forEach(function (o) { if (isObj(o) && o.id != null) byId[o.id] = o; });
+
+    // Replay the fills per symbol: signed quantity and average cost before/after each fill.
+    var pos = {}, groups = {}, order = [];
+    function posAt(sym, ms) {
+      // signed quantity of `sym` after every fill at or before ms
+      var q = 0;
+      trades.forEach(function (x) { if (x.t.symbol === sym && (toMs(x.t.time) || 0) <= ms) q += x.t.side === 'buy' ? x.t.qty : -x.t.qty; });
+      return q;
+    }
+    trades.forEach(function (x) {
+      var t = x.t, sym = str(t.symbol), dir = t.side === 'buy' ? 1 : -1;
+      var p = pos[sym] || (pos[sym] = { q: 0, avg: 0 });
+      var before = { q: p.q, avg: p.avg };
+      // update the running position
+      var q2 = p.q + dir * t.qty;
+      if (p.q === 0 || (p.q > 0) === (dir > 0)) p.avg = (Math.abs(p.q) * p.avg + t.qty * t.price) / (Math.abs(p.q) + t.qty);
+      else if (q2 !== 0 && (q2 > 0) !== (p.q > 0)) p.avg = t.price;       // flipped through zero
+      p.q = q2;
+      if (!(isNum(t.openedQty) && t.openedQty > 0)) return;
+      var gk = t.orderId != null ? 'o:' + t.orderId : 't:' + x.i;
+      var g = groups[gk];
+      if (!g) {
+        g = groups[gk] = { key: gk, sym: sym, dir: dir, entry: t.orderId != null ? byId[t.orderId] || null : null,
+          first: t, firstMs: toMs(t.time) || 0, pre: before, opened: 0, cost: 0, lastMs: 0, after: 0,
+          mult: isNum(t.multiplier) && t.multiplier > 0 ? t.multiplier : 1 };
+        order.push(g);
+      }
+      if (g.dir !== dir) return;
+      g.opened += t.openedQty; g.cost += t.openedQty * t.price;
+      g.lastMs = toMs(t.time) || g.lastMs; g.after = p.q;
+    });
+
     var n = 0;
-    trades.forEach(function (t) {
-      if (!isObj(t) || !(isNum(t.openedQty) && t.openedQty > 0) || !isNum(t.price)) return;
-      if (t.kind && t.kind !== 'stock') return;
-      var entry = t.orderId != null ? byId[t.orderId] : null;
-      var plan = plannedStop(entry);
-      var stop = plan.stop, riskPct = plan.riskPct;
-      var long = t.side === 'buy';
+    order.forEach(function (g) {
+      if (!(g.opened > 0)) return;
+      var long = g.dir > 0, entryPx = g.cost / g.opened;
+      // Same-direction shares already held before the order; skip adds to a losing position (coach avgDown).
+      var preSame = (g.pre.q > 0) === long && g.pre.q !== 0 ? Math.abs(g.pre.q) : 0;
+      if (preSame > 0 && (long ? entryPx < g.pre.avg * 0.999 : entryPx > g.pre.avg * 1.001)) return;
+      var qty = preSame + g.opened;
+      var plan = plannedStop(g.entry);
+      var stop = plan.stop;
       if (stop == null) {
-        var after = entry && isNum(entry.placedAt) ? entry.placedAt : (isNum(t.time) ? t.time : 0);
+        var after = g.entry && isNum(g.entry.placedAt) ? g.entry.placedAt : g.firstMs;
         var prot = orders.filter(function (o) {
-          if (!isObj(o) || o === entry) return false;
+          if (!isObj(o) || o === g.entry) return false;
           if (o.type !== 'stop' && o.type !== 'stop_limit') return false;
-          if (o.symbol !== t.symbol || str(o.status) === 'rejected' || !isNum(o.stopPrice)) return false;
+          if (o.symbol !== g.sym || str(o.status) === 'rejected' || !isNum(o.stopPrice)) return false;
           if (o.side !== (long ? 'sell' : 'buy')) return false;
           if (isNum(o.placedAt) && o.placedAt + 1000 < after) return false;
-          return long ? o.stopPrice < t.price : o.stopPrice > t.price;
+          return long ? o.stopPrice < entryPx : o.stopPrice > entryPx;
         })[0];
-        if (prot) stop = prot.stopPrice;
+        if (prot) {
+          stop = prot.stopPrice;
+          // The stop protects the position held when it was placed: if it grew first, that size counts.
+          if (isNum(prot.placedAt)) {
+            var held = posAt(g.sym, prot.placedAt);
+            if ((held > 0) === long && held !== 0) qty = Math.max(qty, Math.abs(held));
+          }
+        }
       }
       if (stop == null) return;
-      if (long ? stop >= t.price : stop <= t.price) return;
-      if (riskPct == null) riskPct = Math.abs(t.price - stop) * t.openedQty * (isNum(t.multiplier) ? t.multiplier : 1) / equity * 100;
-      if (riskPct > 0 && riskPct <= 1.0001) n++;
+      if (long ? stop >= entryPx : stop <= entryPx) return;
+      var equity = equityAt(st, g.firstMs);
+      var riskPct = qty * Math.abs(entryPx - stop) * g.mult / equity * 100;
+      if (isNum(plan.riskPct) && plan.riskPct > riskPct) riskPct = plan.riskPct;
+      var sizePct = qty * entryPx * g.mult / equity * 100;
+      if (riskPct > 0 && riskPct <= RISK_MAX_PCT + 1e-4 && sizePct <= SIZE_MAX_PCT + 1e-4) n++;
     });
     return n;
   }
@@ -336,29 +424,35 @@
     var certificate = isObj(c.certificate) && !!(c.certificate.id || c.certificate.date || c.certificate.name);
 
     /* replay */
-    var sessions = arr(lsGet('bt.replay.sessions', [])).filter(isObj);
-    var drillsCompleted = {}, drillsPassed = {}, drillsBeatBH = {};
+    var sessions = arr(lsGet('bt.replay.sessions', [])).map(function (s, i) { return { s: s, i: i }; })
+      .filter(function (x) { return isObj(x.s); })
+      .sort(function (a, b) { return ((toMs(a.s.at) || 0) - (toMs(b.s.at) || 0)) || (a.i - b.i); })
+      .map(function (x) { return x.s; });
+    var drillsCompleted = {}, drillsPassed = {}, drillFirst = {};
     sessions.forEach(function (s) {
-      addDay(s.at);
+      if (s.completed) addDay(s.at);
       if (!isObj(s.drill) || !s.drill.id || !s.completed) return;
       var id = str(s.drill.id).slice(0, 80), at = toMs(s.at) || 0;
       if (!drillsCompleted[id] || at < drillsCompleted[id]) drillsCompleted[id] = at;
-      if (s.drill.passed && (!drillsPassed[id] || at < drillsPassed[id])) drillsPassed[id] = at;
-      if (isNum(s.returnPct) && isNum(s.buyHoldPct) && s.returnPct > s.buyHoldPct) drillsBeatBH[id] = true;
+      if (s.drill.passed === true && (!drillsPassed[id] || at < drillsPassed[id])) drillsPassed[id] = at;
+      // Replay Pro judges only the first finished attempt (sessions are sorted oldest first).
+      if (!drillFirst[id]) drillFirst[id] = { at: at, pro: s.drill.passed === true && isNum(s.returnPct) && isNum(s.buyHoldPct) && s.returnPct > s.buyHoldPct };
     });
 
-    /* journal: only entries the student actually wrote something in (auto-synced fills start empty) */
+    /* journal: only real reflections count: written notes or a lesson, not a picked setup, emotion or tag
+       (every paper fill auto-creates an entry, so anything less would pay XP per trade) */
     var j = lsGet('bt.journal', null);
     var entries = Array.isArray(j) ? j : (isObj(j) ? arr(j.entries) : []);
     var journal = [];
     entries.forEach(function (e, i) {
       if (!isObj(e)) return;
-      var wrote = ['setup', 'emotion', 'notes', 'lessons'].some(function (k) { return str(e[k]).trim().length > 0; }) || (arr(e.tags).length > 0 && str(e.source) === 'manual');
+      var wrote = str(e.notes).trim().length >= JOURNAL_MIN_CHARS || str(e.lessons).trim().length >= JOURNAL_MIN_CHARS;
       if (!wrote) return;
       var at = toMs(e.createdAt) || toMs(e.date) || toMs(e.updatedAt);
-      journal.push({ key: str(e.id || e.tradeId || ('i' + i)).slice(0, 80), at: at });
+      journal.push({ key: str(e.id || e.tradeId || ('i' + i)).slice(0, 80), at: at, i: i });
       addDay(at);
     });
+    journal.sort(function (a, b) { return ((a.at || 0) - (b.at || 0)) || (a.i - b.i); });
     var weeklyReviews = isObj(j) && isObj(j.reviews) ? Object.keys(j.reviews).filter(function (k) { return isObj(j.reviews[k]); }).length : 0;
 
     /* paper accounts (main, replay, leagues) */
@@ -369,12 +463,12 @@
       fills += trades.length;
       trades.forEach(function (t) {
         var ms = toMs(t.time);
-        if (a.id !== 'replay' && ms != null) { addDay(ms); if (firstFillAt == null || ms < firstFillAt) firstFillAt = ms; }
+        // Fills are not activity days (a streak must not reward trading every day).
+        if (a.id !== 'replay' && ms != null && (firstFillAt == null || ms < firstFillAt)) firstFillAt = ms;
         if (t.kind === 'option') optionTrades++;
       });
       arr(a.state.orders).forEach(function (o) {
         if (!isObj(o)) return;
-        if (isNum(o.placedAt)) addDay(o.placedAt);
         if (o.kind === 'option' && str(o.status) !== 'rejected') optionTrades++;
       });
       if (trades.length && firstFillAt == null) firstFillAt = now();
@@ -383,7 +477,7 @@
 
     /* alerts */
     var alerts = arr(lsGet('bt.alerts', [])).filter(function (a) { return isObj(a) && a.id != null; }).map(function (a) {
-      addDay(a.createdAt); return { key: str(a.id).slice(0, 60), at: toMs(a.createdAt) };
+      return { key: str(a.id).slice(0, 60), at: toMs(a.createdAt) };
     });
 
     /* flashcards + Daily 5 */
@@ -440,6 +534,11 @@
     if (s.flags.screener) scans = Math.max(scans, 1);
     if (s.flags.rule) rules = Math.max(rules, 1);
     if (s.flags.options) optionTrades = Math.max(optionTrades, 1);
+    // First attempts already remembered in bt.xp win over the (trimmable, clearable) session list.
+    var firsts = {};
+    Object.keys(drillFirst).forEach(function (id) { firsts[id] = drillFirst[id]; });
+    if (isObj(s.drillFirst)) Object.keys(s.drillFirst).forEach(function (id) { var r = s.drillFirst[id]; if (isObj(r)) firsts[id] = { at: isNum(r.at) ? r.at : 0, pro: r.pro === true }; });
+    var drillsBeatBH = Object.keys(firsts).filter(function (id) { return firsts[id].pro; }).sort();
 
     var dayList = Object.keys(days).sort().slice(-MAX_HISTORY_DAYS);
     var st = streakOf(dayList, today);
@@ -449,7 +548,7 @@
       quizPassed: quizPassed, quizPerfect: quizPerfect, certificate: certificate,
       lessonLangs: Object.keys(s.lessonLangs).filter(function (k) { return s.lessonLangs[k]; }),
       drillsCompleted: Object.keys(drillsCompleted).sort().map(function (id) { return { id: id, at: drillsCompleted[id] }; }),
-      drillsPassed: Object.keys(drillsPassed).sort(), drillsBeatBH: Object.keys(drillsBeatBH).sort(),
+      drillsPassed: Object.keys(drillsPassed).sort(), drillsBeatBH: drillsBeatBH, drillFirst: firsts,
       journal: journal, weeklyReviews: weeklyReviews,
       fills: fills, firstFillAt: firstFillAt, optionTrades: optionTrades, riskManaged: riskManaged,
       alerts: alerts, flashDays: flashDays, activityDays: dayList, streak: st.current, bestStreak: st.best,
@@ -489,6 +588,8 @@
   }
   function updateBadges(s, f) {
     var fresh = [];
+    if (!isObj(s.drillFirst)) s.drillFirst = {};
+    if (isObj(f.drillFirst)) Object.keys(f.drillFirst).slice(0, 500).forEach(function (id) { if (!isObj(s.drillFirst[id])) s.drillFirst[id] = { at: f.drillFirst[id].at, pro: !!f.drillFirst[id].pro }; });
     evalBadges(f, s).forEach(function (b) {
       if (b.progress.n >= b.progress.of && !s.badges[b.id]) { s.badges[b.id] = now(); fresh.push(b); }
     });
@@ -558,8 +659,8 @@
     if (FLAG_EVENTS[event]) {
       var had = !!s.flags[event];
       s.flags[event] = true;
-      s.days[today] = true;
-      var g0 = grant(s, 'streakDay', today);
+      var g0 = null;
+      if (!NO_DAY_EVENTS[event]) { s.days[today] = true; g0 = grant(s, 'streakDay', today); }
       var nb0 = updateBadges(s, facts({ state: s }));
       saveState(s);
       var t0 = totalOf(s);
@@ -574,21 +675,26 @@
     key = str(key == null || key === '' ? (event === 'streakDay' ? today : 'once') : key).slice(0, 120);
     if (event === 'quiz' && opts.pct != null && !(+opts.pct >= PASS_PCT)) { res.reason = 'below-pass'; return res; }
     var granted = [];
-    var g = grant(s, event, key);
+    var g = event === 'journal' ? grantCapped(s, event, key, now(), JOURNAL_PER_DAY)
+      : event === 'alert' ? grantCapped(s, event, key, now(), ALERT_PER_DAY)
+      : grant(s, event, key);
     if (g) granted.push(g);
     if (event === 'quiz' && +opts.pct >= 100) { var gp = grant(s, 'quizPerfect', key); if (gp) granted.push(gp); }
     if (event === 'lesson') {
       s.lessonLangs[curLang()] = true;
       if (Array.isArray(s.knownLessons) && s.knownLessons.indexOf(key) === -1) s.knownLessons.push(key);
     }
-    s.days[today] = true;
-    if (event !== 'streakDay') { var gd = grant(s, 'streakDay', today); if (gd) granted.push(gd); }
+    // Trading/setup events never mark an activity day; a capped journal award marks one only when paid.
+    if (!NO_DAY_EVENTS[event] && (event !== 'journal' || g)) {
+      s.days[today] = true;
+      if (event !== 'streakDay') { var gd = grant(s, 'streakDay', today); if (gd) granted.push(gd); }
+    }
     var nb = updateBadges(s, facts({ state: s }));
     saveState(s);
     var after = totalOf(s);
     res.awarded = !!g; res.xp = after - before; res.total = after; res.level = levelFor(after);
     res.leveledUp = res.level.index > levelFor(before).index; res.badges = nb;
-    if (!g) res.reason = 'already-awarded';
+    if (!g) res.reason = s.awarded[event + ':' + key] ? 'already-awarded' : 'daily-cap';
     if (granted.length || nb.length) {
       emit({ source: 'award', event: event, key: key, xp: res.xp, granted: granted, newBadges: nb });
       if (!opts.silent) announce(granted, nb, before, after);
@@ -621,9 +727,9 @@
     f.quizPassed.forEach(function (id) { add(grant(s, 'quiz', id, courseAt)); });
     f.quizPerfect.forEach(function (id) { add(grant(s, 'quizPerfect', id, courseAt)); });
     f.drillsCompleted.forEach(function (d) { add(grant(s, 'drill', d.id, d.at)); });
-    f.journal.forEach(function (e) { add(grant(s, 'journal', e.key, e.at)); });
+    f.journal.forEach(function (e) { add(grantCapped(s, 'journal', e.key, e.at, JOURNAL_PER_DAY)); });
     if (f.fills > 0) add(grant(s, 'firstTrade', 'once', f.firstFillAt));
-    f.alerts.forEach(function (a) { add(grant(s, 'alert', a.key, a.at)); });
+    f.alerts.forEach(function (a) { add(grantCapped(s, 'alert', a.key, a.at, ALERT_PER_DAY)); });
     f.flashDays.forEach(function (d) { add(grant(s, 'flashcards', d, toMs(d))); });
     f.activityDays.forEach(function (d) { add(grant(s, 'streakDay', d, toMs(d))); });
     f.leaguesFinished.forEach(function (l) { add(grant(s, 'league', l.code, l.at)); });
@@ -847,15 +953,15 @@
     'First Week Done': 'Primera semana completada', 'Finish all seven days of the First Week path.': 'Termina los siete días del recorrido Primera semana.',
     'Flashcard Regular': 'Constancia con tarjetas', 'Review at least 5 flashcards on 5 different days.': 'Repasa al menos 5 tarjetas en 5 días distintos.',
     'First Fill': 'Primera ejecución', 'Get your first paper order filled (any account).': 'Consigue que se ejecute tu primera orden simulada (en cualquier cuenta).',
-    'Risk Manager': 'Gestor de riesgo', '10 paper trades opened with a stop-loss and no more than 1 % of the account at risk (planned stop on the order, or a protective stop order placed after the fill).': '10 operaciones simuladas abiertas con stop-loss y sin arriesgar más del 1 % de la cuenta (stop planificado en la orden o una orden stop de protección colocada tras la ejecución).',
+    'Risk Manager': 'Gestor de riesgo', '10 paper orders where the whole position after the order had a stop-loss and no more than 1 % of the account at risk, was worth no more than 25 % of the account, and did not add to a losing position.': '10 órdenes simuladas en las que la posición completa tras la orden tenía stop-loss y no arriesgaba más del 1 % de la cuenta, no valía más del 25 % de la cuenta y no ampliaba una posición en pérdidas.',
     'Options Explorer': 'Explorador de opciones', 'Place a paper options trade.': 'Haz una operación simulada con opciones.',
     'On Alert': 'Alerta activada', 'Create a price or indicator alert.': 'Crea una alerta de precio o de indicador.',
     'Watchlist Builder': 'Lista de seguimiento propia', 'Add 3 symbols of your own to the dashboard watchlist.': 'Añade 3 símbolos elegidos por ti a la lista de seguimiento del panel.',
     'Replay Rookie': 'Novato de Replay', 'Finish a Market Replay drill to the last bar.': 'Termina un ejercicio de Market Replay hasta la última vela.',
     'Drill Passed': 'Ejercicio superado', 'Pass every check of a Market Replay drill.': 'Supera todas las comprobaciones de un ejercicio de Market Replay.',
-    'Replay Pro': 'Experto en Replay', 'Beat buy-and-hold in 5 different finished drills.': 'Supera a comprar y mantener en 5 ejercicios distintos terminados.',
-    'Journal Starter': 'Primer diario', 'Write your first journal entry (an entry with your own setup, emotion, notes or lesson).': 'Escribe tu primera entrada de diario (con tu propia configuración, emoción, notas o lección).',
-    'Journal Keeper': 'Diario constante', 'Write 14 journal entries.': 'Escribe 14 entradas de diario.',
+    'Replay Pro': 'Experto en Replay', 'On your first finished attempt, pass every check and beat buy-and-hold in 5 different drills (retries do not count).': 'En tu primer intento terminado, supera todas las comprobaciones y a comprar y mantener en 5 ejercicios distintos (los reintentos no cuentan).',
+    'Journal Starter': 'Primer diario', 'Write your first journal reflection (notes or a lesson of at least 20 characters).': 'Escribe tu primera reflexión en el diario (notas o una lección de al menos 20 caracteres).',
+    'Journal Keeper': 'Diario constante', 'Write 14 journal reflections (notes or a lesson of at least 20 characters).': 'Escribe 14 reflexiones en el diario (notas o una lección de al menos 20 caracteres).',
     'Weekly Reviewer': 'Revisión semanal', 'Save a weekly review in the journal.': 'Guarda una revisión semanal en el diario.',
     'Know Yourself': 'Conócete', 'Take the trader personality quiz.': 'Haz el cuestionario de personalidad de trader.',
     'Backtester': 'Backtester', 'Run a backtest of your own in the Strategy Lab: change the strategy, symbol or a setting from the default.': 'Haz un backtest propio en el Laboratorio de estrategias: cambia la estrategia, el símbolo o algún ajuste predeterminado.',
@@ -863,7 +969,7 @@
     'Rule Maker': 'Creador de reglas', 'Save a strategy of your own in the Strategy Builder.': 'Guarda una estrategia propia en el Constructor de estrategias.',
     'Contender': 'Competidor', 'Join a paper-trading league.': 'Únete a una liga de trading simulado.',
     'League Finisher': 'Liga completada', 'Trade in a league until its end date.': 'Opera en una liga hasta su fecha de fin.',
-    'Streak 7': 'Racha de 7', 'Practise on 7 days in a row (lessons, quizzes, trades, drills, journal, flashcards or Daily 5).': 'Practica 7 días seguidos (lecciones, cuestionarios, operaciones, ejercicios, diario, tarjetas o Daily 5).',
+    'Streak 7': 'Racha de 7', 'Practise on 7 days in a row (lessons, quizzes, replay drills, journal notes, flashcards, Daily 5 or the strategy tools; placing orders does not count).': 'Practica 7 días seguidos (lecciones, cuestionarios, ejercicios de Replay, notas del diario, tarjetas, Daily 5 o las herramientas de estrategia; colocar órdenes no cuenta).',
     'Streak 30': 'Racha de 30', 'Practise on 30 days in a row.': 'Practica 30 días seguidos.',
     'From {n} activities': 'De {n} actividades', '+{n} XP': '+{n} XP', 'Level up': 'Subes de nivel',
     'You reached {level}. XP measures practice, not trading skill.': 'Has llegado a {level}. Los XP miden la práctica, no la habilidad para operar.',

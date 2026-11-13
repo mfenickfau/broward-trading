@@ -364,6 +364,37 @@ test('format helpers', () => {
   assert.strictEqual(S.format.price(0.12345), '$0.1235');
 });
 
+test('cross filter: a golden cross reversed by a later death cross no longer matches', () => {
+  const base = { sma20: 86.51, sma50: 86.52, sma200: 80 };
+  const whip = Object.assign({}, base, { cross: { '20/50': { golden: 1, death: 0 }, '50/200': { golden: null, death: null } } });
+  assert.strictEqual(S.evaluate(whip, [{ id: 'goldenCross', params: { pair: '20/50', within: 5 } }]).pass, false);
+  assert.strictEqual(S.evaluate(whip, [{ id: 'deathCross', params: { pair: '20/50', within: 5 } }]).pass, true);
+  const held = Object.assign({}, base, { sma20: 87, cross: { '20/50': { golden: 1, death: 9 }, '50/200': { golden: null, death: null } } });
+  assert.strictEqual(S.evaluate(held, [{ id: 'goldenCross', params: { pair: '20/50', within: 5 } }]).pass, true);
+});
+test('snapshot: 52-week fields only on daily/weekly intervals', () => {
+  const closes = []; for (let i = 0; i < 260; i++) closes.push(50 + i * 0.01);
+  const bars = toBars(closes);
+  assert.strictEqual(S.snapshot(bars, { kind: 'stock' }).newHigh52, true);           // default 1day
+  assert.strictEqual(S.snapshot(bars, { kind: 'stock' }, '1week').newHigh52, true);
+  assert.strictEqual(S.snapshot(bars, { kind: 'stock' }, '1h').newHigh52, null);
+  assert.strictEqual(S.snapshot(bars, { kind: 'stock', interval: '5min' }).high52, null);
+  assert.strictEqual(S.evaluate(S.snapshot(bars, { kind: 'stock' }, '1h'), [{ id: 'high52' }]).pass, false);
+});
+test('describe: joiner keeps its spaces when BT.t trims keys (es: "y"/"o")', () => {
+  const prev = window.BT.t;
+  window.BT.t = (s, v) => {
+    const k = String(s).trim().replace(/\s+/g, ' ');
+    const out = ({ and: 'y', or: 'o' })[k] || k;
+    return out.replace(/\{(\w+)\}/g, (m, x) => v && x in v ? v[x] : m);
+  };
+  try {
+    const txt = S.describe([{ id: 'rsi', params: { max: 35 } }, { id: 'sma', params: { n: '200', side: 'above' } }]);
+    assert.ok(/ y /.test(txt) && !/\dy\w/.test(txt), txt);
+    assert.ok(/ o /.test(S.describe([{ id: 'squeeze' }, { id: 'high52' }], 'any')));
+  } finally { if (prev) window.BT.t = prev; else delete window.BT.t; }
+});
+
 // ---- runner ----------------------------------------------------------------
 (async () => {
   for (const t of queue) {

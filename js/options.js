@@ -1010,21 +1010,28 @@
   }
 
   /**
-   * probRange(S, iv, days) → {S, iv, days, sdLog, low1, high1, low2, high2, move1, move2}
+   * probRange(S, iv, days, r=0) → {S, iv, days, r, sdLog, median, low1, high1, low2, high2, move1, move2}
    * The range the stock lands in about 68 % (1σ) and 95 % (2σ) of the time
-   * if it follows a driftless lognormal walk at volatility iv: the bounds
-   * are S·e^(±kσ√t), symmetric in log space (so the dollar move up is a
-   * little larger than the move down). move1/move2 are the simple
-   * S·kσ√t "expected move" numbers traders quote.
+   * under the SAME lognormal model probProfit() and the Black-Scholes prices
+   * use: ln S_T ~ N(ln S + (r − σ²/2)t, σ²t). With r = 0 the walk is
+   * driftless in the martingale sense (the average future price is S), so
+   * its median sits slightly below spot at S·e^(−σ²t/2). The bounds are
+   * median·e^(±kσ√t), symmetric in log space about that median (so the
+   * dollar move up is a little larger than the move down), and the band
+   * shaded on a chart therefore agrees with the probability of profit
+   * printed next to it. move1/move2 are the simple S·kσ√t "expected move"
+   * numbers traders quote.
    */
-  function probRange(S, iv, days) {
-    S = num(S, NaN); iv = Math.max(0, num(iv, 0)); days = Math.max(0, num(days, 0));
+  function probRange(S, iv, days, r) {
+    S = num(S, NaN); iv = Math.max(0, num(iv, 0)); days = Math.max(0, num(days, 0)); r = num(r, 0);
     if (!isNum(S) || S <= 0) throw new Error('options.probRange: spot must be > 0');
-    var sd = iv * Math.sqrt(days / DAYS_PER_YEAR);
+    var t = days / DAYS_PER_YEAR;
+    var sd = iv * Math.sqrt(t);
+    var med = S * Math.exp((r - 0.5 * iv * iv) * t);
     return {
-      S: S, iv: iv, days: days, sdLog: sd,
-      low1: S * Math.exp(-sd), high1: S * Math.exp(sd),
-      low2: S * Math.exp(-2 * sd), high2: S * Math.exp(2 * sd),
+      S: S, iv: iv, days: days, r: r, sdLog: sd, median: med,
+      low1: med * Math.exp(-sd), high1: med * Math.exp(sd),
+      low2: med * Math.exp(-2 * sd), high2: med * Math.exp(2 * sd),
       move1: S * sd, move2: 2 * S * sd
     };
   }
@@ -1032,11 +1039,16 @@
   /**
    * probProfit(legs, S, iv, days, {r=0, daysForward, ivShift, ivFor, now}) → 0..1
    * Lognormal estimate of the chance the position shows a profit `days`
-   * from now (default: its last expiry). With r = 0 the walk is driftless,
-   * a neutral assumption for teaching; pass r to use the risk-neutral drift.
-   * When every option leg has expired by then the payoff is piecewise
-   * linear and the answer is exact; otherwise (calendars, or a date before
-   * expiry) it integrates the model value over the lognormal density.
+   * from now (default: its last expiry), with ln S_T ~ N(ln S + (r − σ²/2)t, σ²t)
+   * — the same model probRange() shades and Black-Scholes prices with. With
+   * r = 0 the walk is driftless (average future price = S, median slightly
+   * below S), a neutral assumption for teaching; pass r for the risk-neutral
+   * drift. When every option leg has expired by then the payoff is
+   * piecewise linear and the answer is exact; otherwise (calendars, or a
+   * date before expiry) it scans the model P&L on a fine log-price grid,
+   * pins each profit/loss boundary by bisection, and integrates the normal
+   * density exactly between boundaries (accurate to ~1e-6 unless a profit
+   * zone is narrower than the 0.01σ grid).
    */
   function probProfit(legs, S, iv, days, opts) {
     opts = opts || {};
@@ -1057,16 +1069,29 @@
     }
     var allExpired = L.every(function (l) { return l.right === 'S' || l.days <= days + 1e-9; });
     if (allExpired) return round(probabilityOfProfit(L, S, sig, T, r), 6);
-    // Midpoint rule over log-price from −6σ to +6σ.
+    // Scan the profit sign on a grid in z = (ln S_T − mu)/sd, refine every
+    // sign change by bisection, then add the exact normal mass of each
+    // profitable stretch. Beyond ±8σ the sign is taken from the edge point.
     var sd = sig * Math.sqrt(T), mu = Math.log(S) + (r - 0.5 * sig * sig) * T;
-    var n = 600, lo = -6, hi = 6, step = (hi - lo) / n, p = 0, mass = 0;
-    for (var i = 0; i < n; i++) {
-      var z = lo + (i + 0.5) * step;
-      var w = normCdf(z + step / 2) - normCdf(z - step / 2);
-      mass += w;
-      if (valueLegsAt(L, Math.exp(mu + sd * z), days, opts).pnl > 0) p += w;
+    var win = function (z) { return valueLegsAt(L, Math.exp(mu + sd * z), days, opts).pnl > 0; };
+    var n = 1600, lo = -8, hi = 8, step = (hi - lo) / n, p = 0;
+    var prevZ = lo, prevW = win(lo), startZ = prevW ? -Infinity : null;
+    for (var i = 1; i <= n; i++) {
+      var z = lo + i * step, w = win(z);
+      if (w !== prevW) {
+        var a = prevZ, b = z;
+        for (var k = 0; k < 40 && b - a > 1e-12; k++) {
+          var m = (a + b) / 2;
+          if (win(m) === prevW) a = m; else b = m;
+        }
+        var edge = (a + b) / 2;
+        if (w) startZ = edge;
+        else { p += normCdf(edge) - (startZ === -Infinity ? 0 : normCdf(startZ)); startZ = null; }
+      }
+      prevZ = z; prevW = w;
     }
-    return round(Math.min(1, Math.max(0, p / mass)), 6);
+    if (startZ !== null) p += 1 - (startZ === -Infinity ? 0 : normCdf(startZ));
+    return round(Math.min(1, Math.max(0, p)), 6);
   }
 
   /**

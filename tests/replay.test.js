@@ -177,6 +177,51 @@ test('resting limit and stop orders are processed against each newly revealed ba
   s.destroy();
 });
 
+test('intrabar ticks use the bar\'s own precision: no extreme stands out by decimals, and sub-$1 ticks are not clamped onto the range', () => {
+  const dec = v => { for (let d = 0; d <= 6; d++) if (Math.abs(Math.round(v * Math.pow(10, d)) / Math.pow(10, d) - v) < 1e-12) return d; return 99; };
+  const cases = [
+    { name: 'sub-$1 crypto', bar: { open: 0.121, high: 0.1288, low: 0.1201, close: 0.125 }, dp: 4 },
+    { name: '4-dp stock', bar: { open: 186.5, high: 187.3456, low: 186.1012, close: 187 }, dp: 4 },
+    { name: '2-dp stock', bar: { open: 100, high: 106, low: 97, close: 104 }, dp: 2 }
+  ];
+  for (const c of cases) {
+    assert.strictEqual(R.barDecimals(c.bar), c.dp, c.name + ': bar precision');
+    const N = 300;
+    let crowded = 0, bothEarly = 0;
+    for (let i = 0; i < N; i++) {
+      const b = Object.assign({ time: 1700000000 + i * 86400, volume: 1000 }, c.bar);
+      const p = R.intrabar(b, 'SEED' + i).path;
+      const inner = p.slice(1, -1);
+      assert.ok(p.every(x => dec(x) <= c.dp), c.name + ': every tick is quoted at the bar\'s precision, got ' + JSON.stringify(p));
+      assert.strictEqual(Math.max(...p), c.bar.high); assert.strictEqual(Math.min(...p), c.bar.low);
+      const atExtreme = inner.filter(x => x === c.bar.high || x === c.bar.low).length;
+      assert.ok(atExtreme <= 3, c.name + ': ordinary ticks are not clamped onto the extremes, path ' + JSON.stringify(p));
+      if (atExtreme > 2) crowded++;
+      const hiAt = inner.indexOf(c.bar.high), loAt = inner.indexOf(c.bar.low);
+      if (Math.max(hiAt, loAt) <= 1) bothEarly++;
+    }
+    assert.ok(crowded <= N * 0.1, c.name + ': more than two interior ticks on an extreme in ' + crowded + '/' + N + ' paths (only chance ties allowed)');
+    assert.ok(bothEarly <= N * 0.2, c.name + ': both extremes visible by the 2nd interior tick in ' + bothEarly + '/' + N + ' paths');
+  }
+});
+
+test('honesty: trading at a finished bar\'s close is disclosed in HONESTY and in the ticket note', () => {
+  fresh();
+  assert.ok(/next bar's open/i.test(R.HONESTY) && /cannot/i.test(R.HONESTY), 'HONESTY explains the same-bar-close fill');
+  const bars = dailyBars(30);
+  const s = R.createSession(bars, { startIndex: 5, ticks: false });
+  s.step();
+  assert.strictEqual(s.fillNote(), R.CLOSE_FILL_NOTE, 'ticks off: the ticket warns that the fill is at the close just seen');
+  const o = s.buy(1);
+  assert.strictEqual(o.fillPrice, s.currentBar().close, 'documented behaviour: fills at the revealed close');
+  s.setTicks(true); s.step();
+  assert.strictEqual(s.phase, 1);
+  assert.strictEqual(s.fillNote(), '', 'while a bar is forming the price is live, so no caveat');
+  s.stepBar();
+  assert.strictEqual(s.fillNote(), R.CLOSE_FILL_NOTE, 'between bars with ticks on the caveat returns');
+  s.destroy();
+});
+
 test('intrabar ticks follow a seeded synthetic path: open → (high and low at unknown sub-steps) → close, deterministic per symbol+bar', () => {
   fresh();
   const up = { time: '2024-02-01', open: 100, high: 106, low: 97, close: 104, volume: 1000 };

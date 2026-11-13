@@ -394,6 +394,7 @@
             <button type="button" class="cover" id="coverBtn">Cover</button>
           </div>
           <button type="button" class="close ghost" id="closeBtn" hidden>Close position at market</button>
+          <p class="note" id="fillNote" aria-live="polite" hidden></p>
           <div class="msg" id="tmsg" role="status" aria-live="polite"></div>
           <div class="coach" id="rCoach" role="status" aria-live="polite" hidden></div>
           <div class="hint" id="thint"></div>
@@ -483,6 +484,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/leagues.js"></script>
 <script src="js/xp.js"></script>
 <script src="js/coach.js"></script>
+<script src="js/journal.js"></script>
 <script>
 /* Broward Trading — replay.html page script (UI only; the engine is js/replay.js → BT.replay) */
 (function () {
@@ -841,8 +843,10 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     $('speed').value = String(S.speed);
     ensureChart(S.interval !== '1day');
     S.on('step', onStep); S.on('fill', onFill); S.on('order', function () { renderAccount(); renderOrders(); drawPriceLines(); });
-    S.on('log', onLog); S.on('end', onEnd); S.on('play', renderControls); S.on('pause', renderControls); S.on('jump', function () { renderChart(false); renderAll(); });
+    S.on('log', onLog); S.on('end', onEnd); S.on('play', renderControls); S.on('pause', renderControls); S.on('jump', function () { renderChart(false); renderAll(); renderFillNote(); });
+    S.on('ticks', renderFillNote);
     S.log.forEach(onLog);
+    renderFillNote();
     renderChart(false); renderAll();
     $('qty').value = String(defaultQty(0.1));
     $('tmsg').textContent = ''; $('tmsg').className = 'msg'; showCoach([]);
@@ -857,7 +861,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     if (toSetup) { $('setup').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
 
-  function onStep(p) { updateChart(p); renderAccount(); renderOrders(); renderProgress(); if (p.fills.length) drawPriceLines(); if ($('planBox').open && !S.playing) renderPlan(false); }
+  function onStep(p) { updateChart(p); renderAccount(); renderOrders(); renderProgress(); renderFillNote(); if (p.fills.length) drawPriceLines(); if ($('planBox').open && !S.playing) renderPlan(false); }
   function onFill(f) {
     if (!f || !f.trade) return;
     var v = { qty: f.trade.qty, price: money(f.trade.price), realized: signed(f.trade.realized) };
@@ -866,7 +870,7 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
     var notes = coachReview('order', f.order);
     if (f.trade.closedQty > 0) notes = notes.concat(coachReview('trade', f.trade));
     var seen = {}; notes = notes.filter(function (n) { var k = (n.title || '') + '|' + (n.message || ''); if (seen[k]) return false; seen[k] = 1; return true; });
-    if (notes.length) showCoach(notes);
+    if (notes.length) { showCoach(notes); saveCoachToJournal(notes, f.trade); }
     awardXp('firstTrade', 'once');
     // A planned entry that was resting as a limit / stop: place its protective stop now that it filled.
     var m = f.order.meta || {};
@@ -875,6 +879,21 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
       var entryOrder = f.order;
       setTimeout(function () { placeProtectiveStop(entryOrder, m.protectStop); }, 0);   // outside the engine's fill callback
     }
+  }
+  /** Copy the coach notes into this fill's journal entry (BT.journal, when loaded). Never breaks the session. */
+  function saveCoachToJournal(notes, trade) {
+    var J = BT.journal, C = BT.coach;
+    if (!S || !trade || trade.id == null || !J || typeof J.setCoach !== 'function' || !C || typeof C.toJournal !== 'function') return;
+    try {
+      if (typeof J.load === 'function') J.load();
+      J.setCoach({ trade: trade, account: S.account || replay.ACCOUNT || 'replay' }, C.toJournal(notes));
+    } catch (e) { console.warn('Could not save coach notes to the journal', e); }
+  }
+  function renderFillNote() {
+    var el = $('fillNote'); if (!el) return;
+    var txt = S && typeof S.fillNote === 'function' ? S.fillNote() : '';
+    if (el.textContent !== txt) el.textContent = txt;
+    el.hidden = !txt;
   }
   function onLog(e) {
     var host = $('log');

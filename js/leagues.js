@@ -7,7 +7,7 @@
  * League shape (CONTRACTS.md "v0.5 additions"):
  *   {id, code (6 chars), name, createdBy, startDate, endDate,
  *    rules:{startingCash, commission, slippageBps, assets:['stock','etf','crypto','option'],
- *           dayTrading, maxPositionPct, shortSelling, teams, teamNames?},
+ *           dayTrading, maxPositionPct, shortSelling, teams, teamNames?, rankBy:'riskAdjusted'|'return'|'consistency'},
  *    members:[{studentId, displayName, team?}]}
  *
  * Two ways to run a league, chosen automatically:
@@ -29,15 +29,16 @@
  *   normalizeRules(rules) / normalizeLeague(obj)
  *   encodeLeague(league) → 'BTL1.…'     decodeLeague(str) → {ok, league} | {ok:false, error}
  *   parseLeagueCodes(text) → ['BTL1.…', …]
- *   list() / get(code) / save(league) / remove(code)
+ *   list() / get(code) / save(league, {force}) / addLeague(leagueOrString) / remove(code)
+ *   lockedConflict(league) / rulesHash(league)   (a started league's name, dates and rules never change)
  *   join(leagueOrString, {displayName, team}) / leave(code) / joined() / membership(code)
  *   accountId(code) / accountCode(accountId) / leagueForAccount(accountId)
  *   validateOrder(order, league, account) → {ok, reason}
- *   phase(league, now) / countdown(league, now)
+ *   phase(league, now) / countdown(league, now) / tradingOpen(codeOrAccountId, now) / finishedReason(league)
  *   leagueSnapshot(code) / snapshot() / encodeShare(snap?) / decodeShare(str)
  *   importShares(code, snapshots) / imported(code) / clearImported(code, studentId?)
  *   standings(league, snapshots) / teamStandings(rows, league) / movers(rows, opts)
- *   metrics(equityHistory, startingCash)  sparkPath(values, w, h)
+ *   metrics(equityHistory, startingCash)  rankScore(ret, dd)  rankNote(league)  sparkPath(values, w, h)
  *   remote.{create, fetch, join, sync, standings}   (online mode; all return Promises)
  */
 (function () {
@@ -68,10 +69,12 @@
     return String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && k in v ? v[k] : m; });
   }
 
+  /* Custom leagues cap a single position at 25 % so the leaderboard never rewards one all-in bet. */
+  var RANK_BY = ['riskAdjusted', 'return', 'consistency'];
   var DEFAULT_RULES = {
     startingCash: 100000, commission: 0, slippageBps: 0,
-    assets: ['stock', 'etf'], dayTrading: true, maxPositionPct: 100,
-    shortSelling: false, teams: false, teamNames: []
+    assets: ['stock', 'etf'], dayTrading: true, maxPositionPct: 25,
+    shortSelling: false, teams: false, teamNames: [], rankBy: 'riskAdjusted'
   };
 
   /* Presets shown as chips on leagues.html. `days` sets the default length. */
@@ -173,7 +176,8 @@
       maxPositionPct: num(r.maxPositionPct, 1, 100, d.maxPositionPct, 0),
       shortSelling: typeof r.shortSelling === 'boolean' ? r.shortSelling : d.shortSelling,
       teams: typeof r.teams === 'boolean' ? r.teams : d.teams,
-      teamNames: teamNames
+      teamNames: teamNames,
+      rankBy: RANK_BY.indexOf(r.rankBy) >= 0 ? r.rankBy : d.rankBy
     };
   }
   function normalizeMember(m) {
@@ -221,6 +225,20 @@
     var r = lg.rules || {};
     if (r.teams && (!Array.isArray(r.teamNames) || r.teamNames.length < 2)) errs.push(T('Team leagues need at least two team names.'));
     return errs;
+  }
+  /* The parts of a league that must never change once it has started. */
+  function definitionJson(lg, withName) {
+    var n = normalizeLeague(lg);
+    var d = { startDate: n.startDate, endDate: n.endDate, rules: n.rules };
+    if (withName) d.name = n.name;
+    return JSON.stringify(d);
+  }
+  /* rulesHash(league) → 8 hex chars (FNV-1a of {startDate, endDate, rules}); share codes carry it so the
+   * organiser can spot a member whose copy of the rules was edited. */
+  function rulesHash(lg) {
+    var str = definitionJson(lg, false), h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ('0000000' + h.toString(16)).slice(-8);
   }
   /**
    * create({name, startDate?, endDate?, preset?, rules?, createdBy?, code?, now?}) → {ok, league} | {ok:false, errors}
@@ -310,11 +328,43 @@
       .sort(function (a, b) { return String(b.startDate).localeCompare(String(a.startDate)) || a.name.localeCompare(b.name); });
   }
   function get(code) { var s = load(); var c = normalizeCode(code); return s.leagues[c] ? normalizeLeague(s.leagues[c]) : null; }
-  function save(lg) {
+  /* lockedConflict(league) → the stored league when it has already started and `league` would change its
+   * name, dates or rules; null when the change is allowed (new league, still upcoming, or same definition). */
+  function lockedConflict(lg) {
     var n = normalizeLeague(lg);
     if (!n || !CODE_RE.test(n.code)) return null;
+    var ex = get(n.code);
+    if (!ex || phase(ex) === 'upcoming') return null;
+    return definitionJson(ex, true) === definitionJson(n, true) ? null : ex;
+  }
+  /**
+   * save(league, {force}) → stored league | null
+   * Refuses (null) to change the name, dates or rules of a league that has already started, so a re-pasted,
+   * edited code cannot relax the rules mid-contest. `force` is for the league server's own copy.
+   */
+  function save(lg, opts) {
+    var n = normalizeLeague(lg);
+    if (!n || !CODE_RE.test(n.code)) return null;
+    if (!(opts && opts.force) && lockedConflict(n)) return null;
     var s = load(); s.leagues[n.code] = n; store(s);
     return n;
+  }
+  /**
+   * addLeague(leagueOrString) → {ok, league} | {ok:false, reason, error}
+   * Saves a league definition without joining (the organiser's or instructor's copy), keeping the members
+   * this device already knows and refusing rule changes once the league has started.
+   */
+  function addLeague(input) {
+    var lg;
+    if (typeof input === 'string') { var d = decodeLeague(input); if (!d.ok) return d; lg = d.league; }
+    else { lg = normalizeLeague(input); var errs = validateLeague(lg); if (errs.length) return { ok: false, reason: 'invalid', error: errs[0] }; }
+    if (lockedConflict(lg)) return { ok: false, reason: 'locked', error: T('This league already started; its rules cannot change.') };
+    var known = get(lg.code);
+    if (known) {
+      known.members.forEach(function (m) { if (!lg.members.some(function (x) { return x.studentId === m.studentId; })) lg.members.push(m); });
+      if (known.online) lg.online = true;
+    }
+    return { ok: true, league: save(lg) };
   }
   function remove(code) {
     var c = normalizeCode(code), s = load();
@@ -367,14 +417,18 @@
     var lg;
     if (typeof input === 'string') { var d = decodeLeague(input); if (!d.ok) return d; lg = d.league; }
     else { lg = normalizeLeague(input); var errs = validateLeague(lg); if (errs.length) return { ok: false, error: errs[0] }; }
+    if (lockedConflict(lg)) return { ok: false, reason: 'locked', error: T('This league already started; its rules cannot change.') };
+    var existing = get(lg.code);
+    var locked = !!existing && phase(existing) !== 'upcoming';
+    var prevJoin = load().joined[lg.code] || null;
     var name = cleanText(opts.displayName, 40);
     var team = cleanText(opts.team, 24);
+    if (locked && prevJoin && prevJoin.team) team = prevJoin.team;   // teams are fixed once the league is running
     if (lg.rules.teams) {
       var match = lg.rules.teamNames.filter(function (t) { return t.toLowerCase() === team.toLowerCase(); })[0];
       if (!match) return { ok: false, error: T('Pick one of the league teams: {teams}.', { teams: lg.rules.teamNames.join(', ') }) };
       team = match;
     } else team = '';
-    var existing = get(lg.code);
     if (existing) { existing.members.forEach(function (m) { if (!lg.members.some(function (x) { return x.studentId === m.studentId; })) lg.members.push(m); }); if (existing.online) lg.online = true; }
     var id = studentId();
     lg.members = lg.members.filter(function (m) { return m.studentId !== id; });
@@ -429,6 +483,21 @@
     return { phase: ph, msLeft: ms, days: days, hours: hours, minutes: minutes, label: label };
   }
 
+  /**
+   * tradingOpen(codeOrAccountId, now?) → true when that league is active (or the id is not a league account).
+   * The dashboard and replay call it before filling working orders: when false, cancel the league account's
+   * open orders with finishedReason(league) instead of filling them, so results freeze at the end date.
+   */
+  function tradingOpen(id, nowMs) {
+    var c = accountCode(id) || (isValidCode(id) ? normalizeCode(id) : null);
+    var lg = c ? get(c) : null;
+    return !lg || phase(lg, nowMs) === 'active';
+  }
+  function finishedReason(lg) {
+    if (lg && phase(lg) === 'upcoming') return T('League not started');
+    return T('League finished');
+  }
+
   /* ------------------------------------------------------------------ *
    * order validation (called by the dashboard and replay tickets)
    * ------------------------------------------------------------------ */
@@ -481,8 +550,18 @@
     var acct = account || {};
     var pos = acct.positions && acct.positions[sym];
     var held = pos && isNum(pos.qty) ? pos.qty : 0;
-    var after = held + (side === 'buy' ? qty : -qty);
+    // Working orders count too: several resting limits must not add up past the rules once they fill.
+    var pendBuy = 0, pendSell = 0;
+    (Array.isArray(acct.orders) ? acct.orders : []).forEach(function (o) {
+      if (!o || o.status !== 'open' || String(o.symbol || o.contract || '').toUpperCase() !== sym) return;
+      var left = (+o.qty || 0) - (isNum(o.filledQty) ? o.filledQty : 0);
+      if (!(left > 0)) return;
+      if (o.side === 'sell') pendSell += left; else pendBuy += left;
+    });
+    var after = side === 'buy' ? held + pendBuy + qty : held - pendSell - qty;
     if (!r.shortSelling && after < -1e-9) {
+      var canSell = Math.max(0, held - pendSell);
+      if (pendSell > 0 && held > 0) return { ok: false, reason: T('Short selling is off in this league: you own {n} and {p} are already in open sell orders, so you can sell up to {left} more.', { n: held, p: pendSell, left: canSell }) };
       return { ok: false, reason: held > 0 ? T('Short selling is off in this league: you can sell up to the {n} you own, not more.', { n: held }) : T('Short selling is off in this league: you can only sell what you own.') };
     }
     var closing = (held > 0 && side === 'sell') || (held < 0 && side === 'buy');
@@ -501,8 +580,12 @@
       var value = Math.abs(after) * px * mult;
       var pct = value / eq * 100;
       if (pct > r.maxPositionPct + 1e-9) {
-        var maxQty = Math.floor(r.maxPositionPct / 100 * eq / (px * mult)) - Math.abs(held);
-        return { ok: false, reason: T('This order would make {sym} {pct}% of your league equity; the limit is {max}%. The most you can add is {q}.', { sym: sym, pct: round(pct, 1), max: r.maxPositionPct, q: Math.max(0, maxQty) }) };
+        var pend = side === 'buy' ? pendBuy : pendSell;
+        var maxQty = Math.floor(r.maxPositionPct / 100 * eq / (px * mult) + 1e-9) - Math.abs(held) - pend;
+        var vars = { sym: sym, pct: round(pct, 1), max: r.maxPositionPct, q: Math.max(0, maxQty), p: pend };
+        return { ok: false, reason: pend > 0
+          ? T('This order plus your {p} in open orders would make {sym} {pct}% of your league equity; the limit is {max}%. The most you can add is {q}.', vars)
+          : T('This order would make {sym} {pct}% of your league equity; the limit is {max}%. The most you can add is {q}.', vars) };
       }
     }
     return { ok: true, reason: '' };
@@ -517,26 +600,60 @@
     for (var i = 0; i < n; i++) out.push(arr[Math.round(i * (arr.length - 1) / (n - 1))]);
     return out;
   }
+  /* dailyCloses([{t, equity}]) → [{t, day, equity}]: the last point of each local calendar day, oldest first
+   * (the same resampling BT.paper.stats() uses). */
+  function dailyCloses(hist) {
+    var pts = (hist || []).filter(function (h) { return h && isNum(h.t) && isNum(h.equity); })
+      .slice().sort(function (a, b) { return a.t - b.t; });
+    var out = [];
+    pts.forEach(function (h) {
+      var key = dayKey(h.t), last = out[out.length - 1];
+      if (last && last.day === key) { last.t = h.t; last.equity = h.equity; }
+      else out.push({ t: h.t, day: key, equity: h.equity });
+    });
+    return out;
+  }
   /**
    * metrics(equityHistory, startingCash) → {returnPct, maxDrawdownPct, sharpe, consistencyScore}
-   *   equityHistory: numbers or {t, equity}, oldest first.
-   *   sharpe: mean/stdev of point-to-point returns × √252 (points are roughly daily), null under 3 points.
-   *   consistencyScore 0–100: 60 % share of rising steps + 40 % drawdown score (0 % dd → 1, ≥ 20 % → 0).
+   *   equityHistory: numbers or {t, equity}, oldest first. Return and drawdown use every point (plus the
+   *   starting cash in front).
+   *   With timestamps ({t} on at least two points): Sharpe and consistency use one close per calendar day,
+   *   never the synthetic starting-cash step, and Sharpe is annualised with √(periods per year), where
+   *   periods per year = min(252, 365.25 / average calendar days between closes). So opening the app often
+   *   (many intraday points) or rarely does not change the score; only day-to-day results do.
+   *   Without timestamps (bare numbers, e.g. a server sparkline): each step is taken as one trading day, ×√252,
+   *   starting-cash step included (the formula server/worker.js leagueMetrics() uses).
+   *   sharpe: null under 3 returns. consistencyScore 0–100: 60 % share of rising steps + 40 % drawdown score
+   *   (0 % dd → 1, ≥ 20 % → 0); null under 2 non-flat steps.
    */
   function metrics(hist, startingCash) {
-    var vals = (Array.isArray(hist) ? hist : []).map(function (h) { return isNum(h) ? h : (h && isNum(h.equity) ? h.equity : null); }).filter(isNum);
+    var pts = (Array.isArray(hist) ? hist : []).map(function (h) {
+      if (isNum(h)) return { t: null, equity: h };
+      return h && isNum(h.equity) ? { t: isNum(h.t) ? h.t : null, equity: h.equity } : null;
+    }).filter(Boolean);
+    var vals = pts.map(function (p) { return p.equity; });
     var start = isNum(startingCash) && startingCash > 0 ? startingCash : (vals[0] || null);
     var curve = start != null ? [start].concat(vals) : vals;
     var last = curve.length ? curve[curve.length - 1] : null;
     var peak = -Infinity, dd = 0;
     curve.forEach(function (v) { if (v > peak) peak = v; if (peak > 0) dd = Math.max(dd, (peak - v) / peak * 100); });
-    var rets = [];
-    for (var i = 1; i < curve.length; i++) if (curve[i - 1] > 0) rets.push(curve[i] / curve[i - 1] - 1);
+    var rets = [], annual = Math.sqrt(252), i;
+    var timed = pts.filter(function (p) { return p.t != null; });
+    if (timed.length >= 2) {
+      var daily = dailyCloses(timed);
+      for (i = 1; i < daily.length; i++) if (daily[i - 1].equity > 0) rets.push(daily[i].equity / daily[i - 1].equity - 1);
+      if (daily.length > 1) {
+        var gapDays = Math.max(1, (startOf(daily[daily.length - 1].day) - startOf(daily[0].day)) / DAY_MS / (daily.length - 1));
+        annual = Math.sqrt(Math.min(252, 365.25 / gapDays));
+      }
+    } else {
+      for (i = 1; i < curve.length; i++) if (curve[i - 1] > 0) rets.push(curve[i] / curve[i - 1] - 1);
+    }
     var sharpe = null;
     if (rets.length >= 3) {
       var mean = rets.reduce(function (a, b) { return a + b; }, 0) / rets.length;
       var sd = Math.sqrt(rets.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / (rets.length - 1));
-      sharpe = sd > 0 ? round(mean / sd * Math.sqrt(252), 2) : null;
+      sharpe = sd > 0 ? round(mean / sd * annual, 2) : null;
     }
     var moves = rets.filter(function (x) { return Math.abs(x) > 1e-9; });
     var consistency = null;
@@ -551,19 +668,48 @@
       consistencyScore: consistency
     };
   }
-  /* The league block of a snapshot for this device's own league account (reads storage; never switches accounts). */
+  /* End of the league in ms (local midnight after the end date); Infinity when unknown. */
+  function endCutoff(lg) { return lg && validDate(lg.endDate) ? startOf(lg.endDate) + DAY_MS : Infinity; }
+  /**
+   * leagueSnapshot(code) → the league block of a snapshot for this device's own league account
+   * (reads storage; never switches accounts).
+   *   {equity, startingCash, returnPct, trades, fills, maxDrawdownPct, sharpe, consistencyScore,
+   *    equityHistory:[{t, equity}] (≤ MAX_HISTORY daily closes, for the sparkline), rulesHash, asOf, final}
+   * Drawdown is measured over the full, minute-level history so a deep intraday dip is never thinned away.
+   * Once the league has ended the result is frozen: only history before the end counts and the equity is
+   * the last value recorded before the end, never today's marks.
+   */
   function leagueSnapshot(code) {
     var c = normalizeCode(code), lg = get(c);
     var st = lsGet(paperKey(c), null);
-    var startCash = lg ? lg.rules.startingCash : (st && isNum(st.startingCash) ? st.startingCash : 100000);
-    if (!st || typeof st !== 'object') return { equity: startCash, returnPct: 0, trades: 0, maxDrawdownPct: 0, equityHistory: [] };
-    if (isNum(st.startingCash) && st.startingCash > 0) startCash = st.startingCash;
-    var eq = equityOf({ cash: isNum(st.cash) ? st.cash : startCash, positions: st.positions || {}, marks: st.marks || {} });
-    var hist = (Array.isArray(st.equityHistory) ? st.equityHistory : []).filter(function (h) { return h && isNum(h.equity) && isNum(h.t); });
-    var pts = downsample(hist, MAX_HISTORY).map(function (h) { return { t: h.t, equity: round(h.equity, 2) }; });
-    var m = metrics(pts.concat([{ t: Date.now(), equity: eq }]), startCash);
-    var trades = (Array.isArray(st.trades) ? st.trades : []).filter(function (t) { return t && t.closedQty > 0; }).length;
-    return { equity: round(eq, 2), startingCash: startCash, returnPct: m.returnPct, trades: trades, fills: Array.isArray(st.trades) ? st.trades.length : 0, maxDrawdownPct: m.maxDrawdownPct, equityHistory: pts };
+    var startCash = lg ? lg.rules.startingCash : (st && isNum(st.startingCash) && st.startingCash > 0 ? st.startingCash : 100000);
+    var hash = lg ? rulesHash(lg) : null;
+    if (!st || typeof st !== 'object') return { equity: startCash, startingCash: startCash, returnPct: 0, trades: 0, fills: 0, maxDrawdownPct: 0, sharpe: null, consistencyScore: null, equityHistory: [], rulesHash: hash, asOf: null, final: false };
+    var ended = !!lg && phase(lg) === 'ended';
+    var cutoff = ended ? endCutoff(lg) : Infinity;
+    var hist = (Array.isArray(st.equityHistory) ? st.equityHistory : [])
+      .filter(function (h) { return h && isNum(h.equity) && isNum(h.t) && h.t < cutoff; })
+      .slice().sort(function (a, b) { return a.t - b.t; });
+    var eq, asOf;
+    if (ended) {
+      eq = hist.length ? hist[hist.length - 1].equity : startCash;
+      asOf = hist.length ? hist[hist.length - 1].t : cutoff - 1;
+    } else {
+      eq = equityOf({ cash: isNum(st.cash) ? st.cash : startCash, positions: st.positions || {}, marks: st.marks || {} });
+      asOf = Date.now();
+    }
+    var full = hist.concat([{ t: asOf, equity: eq }]);
+    var dd = metrics(full.map(function (h) { return h.equity; }), startCash).maxDrawdownPct;
+    var daily = dailyCloses(full);
+    var m = metrics(daily, startCash);
+    var pts = downsample(daily, MAX_HISTORY).map(function (h) { return { t: h.t, equity: round(h.equity, 2) }; });
+    var tradesArr = Array.isArray(st.trades) ? st.trades.filter(function (t) { return t && (!ended || !isNum(t.time) || t.time < cutoff); }) : [];
+    var trades = tradesArr.filter(function (t) { return t.closedQty > 0; }).length;
+    return {
+      equity: round(eq, 2), startingCash: startCash, returnPct: round((eq - startCash) / startCash * 100, 2),
+      trades: trades, fills: tradesArr.length, maxDrawdownPct: dd, sharpe: m.sharpe, consistencyScore: m.consistencyScore,
+      equityHistory: pts, rulesHash: hash, asOf: asOf, final: ended
+    };
   }
   /* snapshot() → BT.classroom.snapshot() (when loaded) + {leagues:{CODE: leagueSnapshot}} for every joined league. */
   function snapshot() {
@@ -603,6 +749,7 @@
     while ((m = re.exec(s))) { if (!seen[m[0]]) { seen[m[0]] = 1; out.push(m[0]); } }
     return out;
   }
+  /* Self-reported fields are kept only for display; standings() recomputes everything that ranks. */
   function cleanLeagueBlock(b) {
     if (!b || typeof b !== 'object') return null;
     var n = function (v, lo, hi) { v = +v; return isFinite(v) ? clamp(v, lo, hi) : null; };
@@ -610,11 +757,26 @@
       var e = isNum(h) ? h : (h && n(h.equity, 0, 1e12)); var t = h && isNum(h.t) ? h.t : null;
       return isNum(e) ? { t: t, equity: e } : null;
     }).filter(Boolean);
-    return { equity: n(b.equity, 0, 1e12), startingCash: n(b.startingCash, 0, 1e12), returnPct: n(b.returnPct, -100, 1e6), trades: Math.round(n(b.trades, 0, 1e6) || 0), maxDrawdownPct: n(b.maxDrawdownPct, 0, 100), equityHistory: hist, displayName: cleanText(b.displayName, 40), team: cleanText(b.team, 24) || null };
+    return {
+      equity: n(b.equity, 0, 1e12), startingCash: n(b.startingCash, 0, 1e12), returnPct: n(b.returnPct, -100, 1e6),
+      trades: Math.round(n(b.trades, 0, 1e6) || 0), maxDrawdownPct: n(b.maxDrawdownPct, 0, 100), equityHistory: hist,
+      displayName: cleanText(b.displayName, 40), team: cleanText(b.team, 24) || null,
+      rulesHash: /^[0-9a-f]{8}$/.test(String(b.rulesHash || '')) ? String(b.rulesHash) : null,
+      final: b.final === true
+    };
+  }
+  /* updatedAt → ms, or null unless it is an ISO date-time no more than a day in the future. */
+  function stampOf(v) {
+    var str = String(v == null ? '' : v);
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) return null;
+    var ms = Date.parse(str);
+    return isFinite(ms) && ms <= Date.now() + DAY_MS ? ms : null;
   }
   /**
    * importShares(code, snapshots) → {added, updated, skipped}
-   * Keeps the newest snapshot per student (by updatedAt) that carries a block for this league.
+   * Keeps the newest snapshot per student (by updatedAt, an ISO time no more than a day ahead) that carries a
+   * block for this league. Snapshots with a missing, malformed or far-future updatedAt are skipped, so a forged
+   * '9999' can never lock a real member's later imports out.
    */
   function importShares(code, snaps) {
     var c = normalizeCode(code), s = load();
@@ -623,11 +785,11 @@
     (Array.isArray(snaps) ? snaps : [snaps]).forEach(function (snap) {
       if (!snap || typeof snap !== 'object' || !/^[A-Za-z0-9_-]{4,40}$/.test(String(snap.studentId || ''))) { res.skipped++; return; }
       var block = cleanLeagueBlock(snap.leagues && snap.leagues[c]);
-      if (!block) { res.skipped++; return; }
+      var at = stampOf(snap.updatedAt);
+      if (!block || at == null) { res.skipped++; return; }
       var prev = bucket[snap.studentId];
-      var at = String(snap.updatedAt || '');
-      if (prev && String(prev.updatedAt || '') > at) { res.skipped++; return; }
-      bucket[snap.studentId] = { studentId: snap.studentId, displayName: block.displayName || cleanText(snap.displayName, 40), updatedAt: at || new Date().toISOString(), leagues: {} };
+      if (prev && (stampOf(prev.updatedAt) || 0) > at) { res.skipped++; return; }
+      bucket[snap.studentId] = { studentId: snap.studentId, displayName: block.displayName || cleanText(snap.displayName, 40), updatedAt: new Date(at).toISOString(), leagues: {} };
       bucket[snap.studentId].leagues[c] = block;
       if (prev) res.updated++; else res.added++;
     });
@@ -654,13 +816,40 @@
     return out;
   }
   /**
-   * standings(league, snapshots) → rows sorted by return (ties: smaller drawdown first)
-   *   row {rank, studentId, displayName, team, equity, returnPct, sharpe, maxDrawdownPct, trades, consistencyScore, equityHistory, me}
+   * rankScore(returnPct, maxDrawdownPct) → risk-adjusted score: return ÷ max(drawdown, 1) for gains,
+   * return × max(drawdown, 1) for losses (a deeper drawdown always scores lower; 0 stays 0).
+   */
+  function rankScore(ret, dd) {
+    var d = Math.max(isNum(dd) ? dd : 0, 1);
+    ret = isNum(ret) ? ret : 0;
+    return round(ret >= 0 ? ret / d : ret * d, 4);
+  }
+  /* rankNote(league) → the one-line explanation shown above a standings table. */
+  function rankNote(league) {
+    var by = league && league.rules && RANK_BY.indexOf(league.rules.rankBy) >= 0 ? league.rules.rankBy : DEFAULT_RULES.rankBy;
+    if (by === 'return') return T('Ranks follow raw return only. Remember: a big return from one all-in bet is luck, not skill (see m10-l5).');
+    if (by === 'consistency') return T('Ranks reward consistency: steady gains with small drawdowns. A big return from one all-in bet is luck, not skill (see m10-l5).');
+    return T('Ranks reward risk-adjusted results; a big return from one all-in bet is luck, not skill (see m10-l5).');
+  }
+  /**
+   * standings(league, snapshots) → rows sorted by the league's rankBy rule
+   *   'riskAdjusted' (default): rankScore(return, drawdown); 'return': raw return; 'consistency': consistencyScore.
+   *   Ties: higher return, then smaller drawdown, then anyone who traded, then name.
+   *   row {rank, studentId, displayName, team, equity, returnPct, sharpe, maxDrawdownPct, trades, consistencyScore,
+   *        rankScore, equityHistory, updatedAt, rulesMismatch, final, me}
    *   snapshots: classroom-shaped snapshots with leagues[code], or server rows that already carry the fields.
+   * Nothing self-reported decides a rank: return, Sharpe and consistency are recomputed from the equity and
+   * history against the league's own starting cash; drawdown is the larger of the claimed and recomputed
+   * values; a team counts only when it is one of the league's teams (the stored member record wins).
+   * rulesMismatch is true when a share code was made under different dates or rules than this device's copy.
    */
   function standings(league, snaps) {
     var lg = typeof league === 'string' ? (get(league) || { code: normalizeCode(league), rules: normalizeRules({}), members: [] }) : normalizeLeague(league);
     var c = lg.code;
+    var start = lg.rules.startingCash;
+    var hash = validDate(lg.startDate) && validDate(lg.endDate) ? rulesHash(lg) : null;
+    var names = lg.rules.teams ? lg.rules.teamNames : [];
+    var canonTeam = function (t) { var k = cleanText(t, 24).toLowerCase(); return k ? names.filter(function (n) { return n.toLowerCase() === k; })[0] || null : null; };
     var me = null; try { me = studentId(); } catch (e) { me = null; }
     var byId = {};
     (Array.isArray(snaps) ? snaps : []).forEach(function (s) {
@@ -670,42 +859,55 @@
       var b = s.leagues && s.leagues[c] ? cleanLeagueBlock(s.leagues[c]) : cleanLeagueBlock(s);
       if (!b) return;
       var prev = byId[id];
-      if (prev && String(prev.updatedAt || '') > String(s.updatedAt || '')) return;
+      if (prev && (stampOf(prev.updatedAt) || 0) > (stampOf(s.updatedAt) || 0)) return;
       byId[id] = { s: s, b: b, updatedAt: s.updatedAt };
     });
     var members = {};
     (lg.members || []).forEach(function (m) { members[m.studentId] = m; });
     var rows = Object.keys(byId).map(function (id) {
       var b = byId[id].b, s = byId[id].s;
-      var start = b.startingCash || lg.rules.startingCash;
       var m = metrics(b.equityHistory.concat(isNum(b.equity) ? [{ equity: b.equity }] : []), start);
       var mem = members[id] || {};
+      var dd = isNum(b.maxDrawdownPct) ? round(Math.max(b.maxDrawdownPct, m.maxDrawdownPct), 2) : m.maxDrawdownPct;
       return {
         studentId: id,
         displayName: b.displayName || cleanText(s.displayName, 40) || mem.displayName || '',
-        team: b.team || mem.team || null,
+        team: canonTeam(mem.team) || canonTeam(b.team),
         equity: isNum(b.equity) ? round(b.equity, 2) : null,
-        returnPct: isNum(b.returnPct) ? round(b.returnPct, 2) : m.returnPct,
-        sharpe: isNum(s.sharpe) ? s.sharpe : m.sharpe,
-        maxDrawdownPct: isNum(b.maxDrawdownPct) ? round(Math.max(b.maxDrawdownPct, m.maxDrawdownPct), 2) : m.maxDrawdownPct,
+        returnPct: m.returnPct,
+        sharpe: m.sharpe,
+        maxDrawdownPct: dd,
         trades: b.trades || 0,
-        consistencyScore: isNum(s.consistencyScore) ? s.consistencyScore : m.consistencyScore,
+        consistencyScore: m.consistencyScore,
+        rankScore: rankScore(m.returnPct, dd),
         equityHistory: b.equityHistory.map(function (h) { return h.equity; }),
         updatedAt: byId[id].updatedAt || null,
+        rulesMismatch: !!(hash && b.rulesHash && b.rulesHash !== hash),
+        final: b.final,
         me: id === me
       };
     });
+    var by = lg.rules.rankBy;
     rows.sort(function (a, b) {
-      return (b.returnPct - a.returnPct) || (a.maxDrawdownPct - b.maxDrawdownPct) || (b.trades > 0) - (a.trades > 0) || String(a.displayName).localeCompare(String(b.displayName)) || (a.studentId < b.studentId ? -1 : 1);
+      var primary = by === 'return' ? 0
+        : by === 'consistency' ? ((isNum(b.consistencyScore) ? b.consistencyScore : -1) - (isNum(a.consistencyScore) ? a.consistencyScore : -1)) || (b.rankScore - a.rankScore)
+        : (b.rankScore - a.rankScore);
+      return primary || (b.returnPct - a.returnPct) || (a.maxDrawdownPct - b.maxDrawdownPct) || (b.trades > 0) - (a.trades > 0) || String(a.displayName).localeCompare(String(b.displayName)) || (a.studentId < b.studentId ? -1 : 1);
     });
     rows.forEach(function (r, i) { r.rank = i + 1; });
     return rows;
   }
-  /* teamStandings(rows, league?) → [{rank, team, members, avgReturnPct, avgDrawdownPct, best}] sorted by average return. */
+  /* teamStandings(rows, league?) → [{rank, team, members, avgReturnPct, avgDrawdownPct, best}] sorted by average return.
+   * When the league lists team names, only those teams count (a forged team name never appears). */
   function teamStandings(rows, league) {
     var teams = {};
-    (league && league.rules && league.rules.teamNames || []).forEach(function (t) { teams[t] = []; });
-    (rows || []).forEach(function (r) { if (r.team) (teams[r.team] = teams[r.team] || []).push(r); });
+    var listed = league && league.rules && Array.isArray(league.rules.teamNames) ? league.rules.teamNames : [];
+    listed.forEach(function (t) { teams[t] = []; });
+    (rows || []).forEach(function (r) {
+      if (!r.team) return;
+      if (listed.length && !Object.prototype.hasOwnProperty.call(teams, r.team)) return;
+      (teams[r.team] = teams[r.team] || []).push(r);
+    });
     var out = Object.keys(teams).map(function (t) {
       var rs = teams[t];
       var avg = function (k) { return rs.length ? round(rs.reduce(function (a, r) { return a + (+r[k] || 0); }, 0) / rs.length, 2) : null; };
@@ -768,13 +970,13 @@
     create: function (lg) {
       var n = normalizeLeague(lg);
       return call('POST', '/leagues', { name: n.name, createdBy: n.createdBy, startDate: n.startDate, endDate: n.endDate, rules: n.rules }).then(function (r) {
-        if (r.ok && r.league && isValidCode(r.league.code)) { r.league.online = true; r.league = save(r.league); }
+        if (r.ok && r.league && isValidCode(r.league.code)) { r.league.online = true; r.league = save(r.league, { force: true }); }
         return r;
       });
     },
     fetch: function (code) {
       return call('GET', '/leagues/' + encodeURIComponent(normalizeCode(code))).then(function (r) {
-        if (r.ok && r.league) { r.league.online = true; var known = get(r.league.code); if (known) r.league.members = known.members; r.league = save(r.league); }
+        if (r.ok && r.league) { r.league.online = true; var known = get(r.league.code); if (known) r.league.members = known.members; r.league = save(r.league, { force: true }); }
         return r;
       });
     },
@@ -786,9 +988,16 @@
         return r;
       });
     },
+    /* sync(code): posts this device's league block. After the league ends it sends the frozen final result
+     * once, then stops (later calls resolve {ok:false, skipped:'ended'}). */
     sync: function (code) {
       var c = normalizeCode(code), mem = membership(c);
       if (!mem) return Promise.resolve({ ok: false, skipped: 'not-joined' });
+      var lg = get(c);
+      if (lg && phase(lg) === 'ended') {
+        var lastSent = Date.parse(load().lastSync[c] || '');
+        if (isFinite(lastSent) && lastSent >= endCutoff(lg)) return Promise.resolve({ ok: false, skipped: 'ended', error: T('This league has finished and your final result was already sent.') });
+      }
       var b = leagueSnapshot(c);
       return call('POST', '/leagues/' + encodeURIComponent(c) + '/snapshots', { studentId: studentId(), ownerToken: mem.ownerToken || undefined, league: b }).then(function (r) {
         if (r.ok) { var s = load(); s.lastSync[c] = new Date().toISOString(); store(s); if (r.ownerToken) setOwnerToken(c, r.ownerToken); }
@@ -804,14 +1013,15 @@
     normalizeCode: normalizeCode, isValidCode: isValidCode, newCode: newCode,
     normalizeRules: normalizeRules, normalizeLeague: normalizeLeague, validateLeague: validateLeague, create: create,
     encodeLeague: encodeLeague, decodeLeague: decodeLeague, parseLeagueCodes: parseLeagueCodes,
-    list: list, get: get, save: save, remove: remove,
+    RANK_BY: RANK_BY,
+    list: list, get: get, save: save, addLeague: addLeague, lockedConflict: lockedConflict, rulesHash: rulesHash, remove: remove,
     join: join, leave: leave, joined: joined, membership: membership, setOwnerToken: setOwnerToken, studentId: studentId,
     accountId: accountId, accountCode: accountCode, leagueForAccount: leagueForAccount,
-    validateOrder: validateOrder, assetKind: assetKind, phase: phase, countdown: countdown,
+    validateOrder: validateOrder, assetKind: assetKind, phase: phase, countdown: countdown, tradingOpen: tradingOpen, finishedReason: finishedReason,
     leagueSnapshot: leagueSnapshot, snapshot: snapshot, encodeShare: encodeShare, decodeShare: decodeShare, parseShareCodes: parseShareCodes,
     importShares: importShares, imported: imported, clearImported: clearImported, knownSnapshots: knownSnapshots,
-    standings: standings, teamStandings: teamStandings, movers: movers, metrics: metrics, sparkPath: sparkPath,
+    standings: standings, teamStandings: teamStandings, movers: movers, metrics: metrics, sparkPath: sparkPath, rankScore: rankScore, rankNote: rankNote,
     remote: remote,
-    _internal: { load: load, dayKey: dayKey, addDays: addDays, startOf: startOf, validDate: validDate, b64url: b64url, b64urlDecode: b64urlDecode, paperKey: paperKey, equityOf: equityOf, downsample: downsample }
+    _internal: { load: load, dayKey: dayKey, addDays: addDays, startOf: startOf, validDate: validDate, b64url: b64url, b64urlDecode: b64urlDecode, paperKey: paperKey, equityOf: equityOf, downsample: downsample, dailyCloses: dailyCloses, stampOf: stampOf }
   };
 })();

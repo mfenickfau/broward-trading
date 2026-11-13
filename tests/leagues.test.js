@@ -9,6 +9,7 @@
 'use strict';
 const assert = require('assert');
 const path = require('path');
+const fs = require('fs');
 
 const store = {};
 global.localStorage = {
@@ -204,7 +205,7 @@ function snap(id, name, equities, over) {
 
 test('standings sort by return, break ties on drawdown, and teams/movers aggregate', () => {
   reset();
-  const lg = mkLeague({ rules: { teams: true, teamNames: ['Bulls', 'Bears', 'Owls'] } });
+  const lg = mkLeague({ rules: { teams: true, teamNames: ['Bulls', 'Bears', 'Owls'], rankBy: 'return' } });
   const c = lg.code;
   const rows = L.standings(lg, [
     snap('s-aaaa1', 'Ana', [100000, 104000, 103000, 106000], { code: c, block: { team: 'Bulls' } }),
@@ -261,6 +262,186 @@ test('share codes carry the league block, round-trip and import (compressed and 
   assert.strictEqual(rows[0].displayName, 'Mo');
   L.clearImported(lg.code);
   assert.strictEqual(L.imported(lg.code).length, 0);
+});
+
+/* ---- reviewer fixes: fair scoring, frozen results, locked rules -------------- */
+function putAccount(code, over) {
+  const key = L._internal.paperKey(code);
+  const st = Object.assign({ cash: 100000, startingCash: 100000, positions: {}, orders: [], trades: [], equityHistory: [], marks: {} }, over);
+  localStorage.setItem(key, JSON.stringify(st));
+}
+
+test('metrics: timestamped points score per calendar day, so app-opening frequency does not matter', () => {
+  const t0 = new Date(2026, 5, 1, 16, 0).getTime();
+  const closes = []; let e = 100000;
+  for (let d = 0; d < 20; d++) { e *= (d % 2 ? 1.004 : 0.999); closes.push(+e.toFixed(2)); }
+  const A = closes.map((v, d) => ({ t: t0 + d * DAY, equity: v }));
+  const B = [];
+  closes.forEach((v, d) => {
+    if (d === 10) for (let k = 0; k < 40; k++) B.push({ t: t0 + d * DAY - 3600e3 + k * 60e3, equity: v + (k % 2 ? 300 : -300) });
+    B.push({ t: t0 + d * DAY, equity: v });
+  });
+  const a = L.metrics(A, 100000), b = L.metrics(B, 100000);
+  assert.ok(a.sharpe != null);
+  assert.strictEqual(b.sharpe, a.sharpe, 'intraday ticks do not change Sharpe');
+  assert.ok(b.maxDrawdownPct >= a.maxDrawdownPct, 'drawdown still sees the intraday dip');
+  // weekly points annualise with √52, not √252
+  const W = closes.slice(0, 8).map((v, i) => ({ t: t0 + i * 7 * DAY, equity: v }));
+  const D = closes.slice(0, 8).map((v, i) => ({ t: t0 + i * DAY, equity: v }));
+  const ratio = L.metrics(W, 100000).sharpe / L.metrics(D, 100000).sharpe;
+  assert.ok(Math.abs(ratio - Math.sqrt(52.18 / 252)) < 0.02, 'ratio ' + ratio);
+  // bare numbers keep the worker-compatible formula
+  assert.deepStrictEqual(L.metrics([101000, 102000, 99000, 104000, 105000], 100000).returnPct, 5);
+});
+
+test('leagueSnapshot: drawdown uses the full history; history is one close per day', () => {
+  reset();
+  const lg = mkLeague({ startDate: daysFrom(-20), endDate: daysFrom(20), rules: { startingCash: 100000 } });
+  L.join(lg, { displayName: 'Dee' });
+  const t0 = Date.now() - 2 * DAY;
+  const hist = [];
+  for (let i = 0; i < 600; i++) hist.push({ t: t0 + i * 60000, equity: i === 301 ? 70000 : 100000 });
+  putAccount(lg.code, { equityHistory: hist });
+  const b = L.snapshot().leagues[lg.code];
+  assert.strictEqual(b.maxDrawdownPct, 30, 'a one-minute 30 % crash is never thinned away');
+  const days = new Set(b.equityHistory.map(h => dayKey(h.t)));
+  assert.strictEqual(days.size, b.equityHistory.length, 'one point per calendar day');
+  assert.strictEqual(b.rulesHash, L.rulesHash(lg));
+  const rows = L.standings(lg, [{ studentId: 's-dee001', updatedAt: new Date().toISOString(), leagues: { [lg.code]: b } }]);
+  assert.strictEqual(rows[0].maxDrawdownPct, 30, 'standings keep the full-history drawdown');
+  // a long history is resampled per day before the 60-point cap
+  const long = [];
+  for (let d = 0; d < 90; d++) for (let k = 0; k < 5; k++) long.push({ t: Date.now() - (90 - d) * DAY + k * 3600e3, equity: 100000 + d * 10 + k });
+  putAccount(lg.code, { equityHistory: long });
+  const b2 = L.leagueSnapshot(lg.code);
+  assert.ok(b2.equityHistory.length <= L.MAX_HISTORY);
+  assert.strictEqual(new Set(b2.equityHistory.map(h => dayKey(h.t))).size, b2.equityHistory.length);
+});
+
+test('validateOrder counts working orders toward position size and the no-shorting rule', () => {
+  const lg = mkLeague({ preset: 'investor', startDate: daysFrom(-10), endDate: daysFrom(10) });
+  const acct = { cash: 100000, positions: { MSFT: { qty: 100, avg: 120 } }, marks: { MSFT: 120 }, trades: [], orders: [] };
+  const buy = { symbol: 'AAPL', side: 'buy', qty: 100, limitPrice: 190, type: 'limit' };
+  assert.ok(L.validateOrder(buy, lg, acct).ok, 'first 19 % limit is fine');
+  acct.orders.push(Object.assign({ id: 'o1', status: 'open', filledQty: 0 }, buy));
+  const second = L.validateOrder(buy, lg, acct);
+  assert.strictEqual(second.ok, false, 'two resting limits would make 38 %');
+  assert.match(second.reason, /open orders/); assert.match(second.reason, /most you can add is 17\b/, '20 % of $112,000 at $190 is 117 shares, minus the 100 working');
+  acct.orders[0].status = 'cancelled';
+  assert.ok(L.validateOrder(buy, lg, acct).ok, 'cancelled orders do not count');
+  const sell = { symbol: 'MSFT', side: 'sell', qty: 100, limitPrice: 125, type: 'limit' };
+  assert.ok(L.validateOrder(sell, lg, acct).ok, 'selling what you own');
+  acct.orders.push(Object.assign({ id: 'o2', status: 'open', filledQty: 0 }, sell));
+  const again = L.validateOrder(sell, lg, acct);
+  assert.strictEqual(again.ok, false, 'a second sell of the same 100 would go short');
+  assert.match(again.reason, /Short selling is off/); assert.match(again.reason, /up to 0 more/);
+  acct.orders[1].filledQty = 60;   // 40 left working
+  assert.ok(L.validateOrder(Object.assign({}, sell, { qty: 60 }), lg, acct).ok, 'only the unfilled remainder counts');
+});
+
+test('standings recompute every ranked number and ignore forged teams; importShares rejects future stamps', () => {
+  reset();
+  const lg = mkLeague({ rules: { teams: true, teamNames: ['Red', 'Blue'] } });
+  const c = lg.code;
+  const evil = { studentId: 'evil1', displayName: 'Mallory', updatedAt: '9999', sharpe: 99, consistencyScore: 100, leagues: { [c]: { equity: 100000, startingCash: 1000, returnPct: 999999, trades: 1, maxDrawdownPct: 0, equityHistory: [], team: 'Hackers' } } };
+  const alice = snap('s-alice1', 'Alice', [100000, 101000, 102000], { code: c, block: { team: 'Red' } });
+  const rows = L.standings(lg, [Object.assign({}, evil, { updatedAt: new Date().toISOString() }), alice]);
+  const m = rows.find(r => r.studentId === 'evil1');
+  assert.strictEqual(m.returnPct, 0, 'return comes from equity and the league starting cash');
+  assert.notStrictEqual(m.sharpe, 99); assert.notStrictEqual(m.consistencyScore, 100);
+  assert.strictEqual(m.team, null, 'unknown team dropped');
+  assert.strictEqual(rows[0].displayName, 'Alice');
+  const teams = L.teamStandings(rows.concat([{ team: 'Hackers', returnPct: 1e6, maxDrawdownPct: 0, displayName: 'x' }]), lg);
+  assert.deepStrictEqual(teams.map(t => t.team).sort(), ['Blue', 'Red'], 'only league teams appear');
+  // the stored member record's team wins over the share code's claim
+  const withMember = Object.assign({}, lg, { members: [{ studentId: 's-alice1', displayName: 'Alice', team: 'Blue' }] });
+  assert.strictEqual(L.standings(withMember, [alice])[0].team, 'Blue');
+  // '9999' and far-future stamps are skipped, so the real member's later import still lands
+  assert.deepStrictEqual(L.importShares(c, [evil]), { added: 0, updated: 0, skipped: 1 });
+  const forged = Object.assign({}, alice, { updatedAt: new Date(Date.now() + 30 * DAY).toISOString() });
+  assert.strictEqual(L.importShares(c, [forged]).skipped, 1);
+  const old = snap('s-alice1', 'Alice', [100000, 50], { code: c }); old.updatedAt = new Date(Date.now() - DAY).toISOString();
+  L.importShares(c, [old]);
+  assert.strictEqual(L.importShares(c, [alice]).updated, 1, 'a newer real snapshot replaces the older one');
+  assert.strictEqual(L.imported(c)[0].leagues[c].equity, 102000);
+});
+
+test('a started league keeps its rules, dates and teams; edited codes are refused and flagged', () => {
+  reset();
+  const lg = mkLeague({ preset: 'investor', startDate: daysFrom(-3), endDate: daysFrom(30), rules: { teams: true, teamNames: ['Red', 'Blue'] } });
+  assert.ok(L.join(L.encodeLeague(lg), { displayName: 'Ann', team: 'Red' }).ok);
+  const relaxed = Object.assign({}, lg, { endDate: daysFrom(300), rules: Object.assign({}, lg.rules, { shortSelling: true, dayTrading: true, maxPositionPct: 100, assets: ['stock', 'etf', 'crypto', 'option'] }) });
+  const r = L.join(L.encodeLeague(relaxed), { displayName: 'Ann', team: 'Blue' });
+  assert.strictEqual(r.ok, false); assert.strictEqual(r.reason, 'locked'); assert.match(r.error, /already started/);
+  assert.deepStrictEqual(L.get(lg.code).rules, lg.rules, 'stored rules unchanged');
+  assert.strictEqual(L.get(lg.code).endDate, lg.endDate);
+  assert.strictEqual(L.save(relaxed), null, 'save refuses too');
+  assert.strictEqual(L.addLeague(L.encodeLeague(relaxed)).reason, 'locked', 'instructor path refuses');
+  assert.ok(L.save(relaxed, { force: true }), 'the league server copy may overwrite');
+  L.save(lg, { force: true });
+  const same = L.join(L.encodeLeague(lg), { displayName: 'Ann B.', team: 'Blue' });
+  assert.ok(same.ok, 'rejoining with the same code works');
+  assert.strictEqual(L.membership(lg.code).team, 'Red', 'team fixed once the league runs');
+  // still upcoming: the organiser may fix the rules
+  const soon = mkLeague({ startDate: daysFrom(3), endDate: daysFrom(10) });
+  L.join(soon, { displayName: 'Ann' });
+  assert.ok(L.join(Object.assign({}, soon, { rules: Object.assign({}, soon.rules, { commission: 0 }) }), { displayName: 'Ann' }).ok);
+  // a share code made under other rules is flagged
+  const b = { equity: 101000, equityHistory: [], rulesHash: L.rulesHash(relaxed), team: 'Red' };
+  const rows = L.standings(lg, [{ studentId: 's-ann001', updatedAt: new Date().toISOString(), leagues: { [lg.code]: b } }, snap('s-bob001', 'Bob', [100000, 100500], { code: lg.code, block: { rulesHash: L.rulesHash(lg) } })]);
+  assert.strictEqual(rows.find(x => x.studentId === 's-ann001').rulesMismatch, true);
+  assert.strictEqual(rows.find(x => x.studentId === 's-bob001').rulesMismatch, false);
+});
+
+test('an ended league freezes the snapshot at the end date and syncs once', async () => {
+  reset();
+  const lg = mkLeague({ startDate: daysFrom(-20), endDate: daysFrom(-2), rules: { startingCash: 100000 } });
+  L.join(lg, { displayName: 'Eve' });
+  const end = L._internal.startOf(lg.endDate) + DAY;
+  putAccount(lg.code, {
+    cash: 0, positions: { AAPL: { qty: 1000, avg: 100 } }, marks: { AAPL: 130 },
+    equityHistory: [{ t: end - 5 * DAY, equity: 100000 }, { t: end - 3600e3, equity: 104000 }, { t: end + 3600e3, equity: 130000 }]
+  });
+  const b = L.leagueSnapshot(lg.code);
+  assert.strictEqual(b.final, true);
+  assert.strictEqual(b.equity, 104000, 'last value before the end, not today\'s marks');
+  assert.strictEqual(b.returnPct, 4);
+  assert.ok(b.equityHistory.every(h => h.t < end));
+  assert.strictEqual(L.tradingOpen(L.accountId(lg.code)), false);
+  assert.strictEqual(L.tradingOpen('main'), true);
+  assert.strictEqual(L.finishedReason(lg), 'League finished');
+  // sync: the final result goes once, then stops
+  const calls = [];
+  window.BT.auth = { config: { apiBase: 'https://api.example' } };
+  const prevFetch = global.fetch;
+  global.fetch = async (url, opts) => { calls.push([url, opts]); return { ok: true, status: 200, text: async () => '{"ok":true}' }; };
+  try {
+    assert.strictEqual((await L.remote.sync(lg.code)).ok, true);
+    assert.strictEqual(JSON.parse(calls[0][1].body).league.equity, 104000);
+    const again = await L.remote.sync(lg.code);
+    assert.strictEqual(again.skipped, 'ended'); assert.strictEqual(calls.length, 1);
+  } finally { global.fetch = prevFetch; delete window.BT.auth; }
+});
+
+test('rankBy: risk-adjusted by default, raw return or consistency on request; custom leagues cap positions at 25 %', () => {
+  reset();
+  assert.strictEqual(L.DEFAULT_RULES.maxPositionPct, 25);
+  assert.strictEqual(L.create({ name: 'Custom' }).league.rules.maxPositionPct, 25);
+  assert.strictEqual(L.normalizeRules({}).rankBy, 'riskAdjusted');
+  assert.strictEqual(L.normalizeRules({ rankBy: 'bogus' }).rankBy, 'riskAdjusted');
+  const lg = mkLeague();
+  const c = lg.code;
+  const snaps = [
+    snap('s-gamb01', 'Gambler', [100000, 140000, 80000, 112000], { code: c }),   // +12 %, 43 % drawdown
+    snap('s-stdy01', 'Steady', [100000, 102000, 104000, 106000], { code: c })    // +6 %, no drawdown
+  ];
+  assert.deepStrictEqual(L.standings(lg, snaps).map(r => r.displayName), ['Steady', 'Gambler']);
+  const byReturn = Object.assign({}, lg, { rules: Object.assign({}, lg.rules, { rankBy: 'return' }) });
+  assert.deepStrictEqual(L.standings(byReturn, snaps).map(r => r.displayName), ['Gambler', 'Steady']);
+  assert.ok(L.rankScore(-5, 10) < L.rankScore(-5, 2), 'deeper drawdown scores lower on a loss too');
+  assert.ok(L.rankScore(0, 50) === 0);
+  assert.match(L.rankNote(lg), /risk-adjusted/);
+  assert.match(L.rankNote(byReturn), /raw return/);
 });
 
 test('fallback share codec works without js/classroom.js', async () => {
@@ -328,7 +509,8 @@ const workerTests = (async () => {
     assert.strictEqual((await send(env, 'GET', '/leagues/ABCDEF')).status, 404);
     // the client-side code string decodes what the server returned
     const local = L.normalizeLeague(Object.assign({}, g.body.league, { online: true }));
-    assert.deepStrictEqual(L.decodeLeague(L.encodeLeague(local)).league.rules, g.body.league.rules);
+    // the worker stores rankBy too (default 'riskAdjusted'); Object.assign keeps the check valid either way
+    assert.deepStrictEqual(L.decodeLeague(L.encodeLeague(local)).league.rules, Object.assign({ rankBy: 'riskAdjusted' }, g.body.league.rules));
 
     assert.strictEqual((await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-ana001', displayName: 'Ana' })).status, 400, 'team required');
     const j = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-ana001', displayName: 'Ana', team: 'bulls' });
@@ -382,6 +564,63 @@ const workerTests = (async () => {
     env.LEAGUES.m.set(`league:${c.body.code}`, JSON.stringify(rec));
     const late = await send(env, 'POST', `/leagues/${c.body.code}/snapshots`, { studentId: 's-early1', ownerToken: j.body.ownerToken, league: { equity: 1 } });
     assert.strictEqual(late.body.ended, true);
+  });
+
+  test('worker: teams are fixed once the league starts (switching allowed while upcoming)', async () => {
+    const env = { LEAGUES: fakeKv(), HMAC_SECRET: 'k' };
+    const c = await send(env, 'POST', '/leagues', { name: 'Teams', startDate: iso(3), endDate: iso(9), rules: { teams: true, teamNames: ['Bulls', 'Bears'] } });
+    const code = c.body.code;
+    const j = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-team01', team: 'Bears' });
+    const tok = j.body.ownerToken;
+    const pre = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-team01', ownerToken: tok, team: 'Bulls' });
+    assert.strictEqual(pre.status, 200); assert.strictEqual(pre.body.team, 'Bulls', 'switching before the start is fine');
+    const rec = JSON.parse(env.LEAGUES.m.get(`league:${code}`)); rec.startDate = iso(-1);
+    env.LEAGUES.m.set(`league:${code}`, JSON.stringify(rec));
+    const mid = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-team01', ownerToken: tok, team: 'Bears' });
+    assert.strictEqual(mid.status, 409); assert.strictEqual(mid.body.teamLocked, true); assert.strictEqual(mid.body.team, 'Bulls');
+    const same = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-team01', ownerToken: tok, team: 'bulls', displayName: 'Renamed' });
+    assert.strictEqual(same.status, 200, 're-joining the same team (e.g. a rename) still works'); assert.strictEqual(same.body.team, 'Bulls');
+    const late = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-team02', team: 'Bears' });
+    assert.strictEqual(late.status, 200, 'a new member may still join mid-league');
+  });
+
+  test('worker: implausible league snapshots are capped and flagged, and rank below verified rows', async () => {
+    const env = { LEAGUES: fakeKv(), HMAC_SECRET: 'k' };
+    const c = await send(env, 'POST', '/leagues', { name: 'Sanity', startDate: iso(-2), endDate: iso(9), rules: { startingCash: 100000, teams: true, teamNames: ['Bulls', 'Bears'] } });
+    const code = c.body.code;
+    const a = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-cheat1', displayName: 'Cheat', team: 'Bulls' });
+    const b = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-honest', displayName: 'Honest', team: 'Bears' });
+    const s = await send(env, 'POST', `/leagues/${code}/snapshots`, { studentId: 's-cheat1', ownerToken: a.body.ownerToken, league: { equity: 1e12, trades: 4, equityHistory: [] } });
+    assert.strictEqual(s.status, 200);
+    assert.strictEqual(s.body.returnPct, 1900, 'equity capped at 20 × starting cash');
+    await send(env, 'POST', `/leagues/${code}/snapshots`, { studentId: 's-honest', ownerToken: b.body.ownerToken, league: { equity: 102000, trades: 2, equityHistory: [100500, 102000] } });
+    const st = await send(env, 'GET', `/leagues/${code}/standings`);
+    assert.deepStrictEqual(st.body.standings.map(r => [r.displayName, !!r.flagged]), [['Honest', false], ['Cheat', true]]);
+    assert.strictEqual(st.body.teams[0].team, 'Bears', 'flagged rows are left out of team averages');
+
+    const B = (blk, lg) => W.sanitizeLeagueBlock(blk, 100000, lg);
+    assert.strictEqual(B({ equity: 101000, trades: 1, equityHistory: [100500] }).flagged, undefined, 'a normal block is not flagged');
+    assert.strictEqual(B({ equity: 100300 }).flagged, undefined, 'tiny drift without trades is tolerated');
+    assert.strictEqual(B({ equity: 110000, trades: 0, fills: 0 }).flagged, true, 'a 10 % move with no trades or fills');
+    assert.strictEqual(B({ equity: 110000, trades: 0, fills: 1 }).flagged, undefined, 'an open position (a fill, no closed trade) may move equity');
+    assert.strictEqual(B({ equity: 700000, trades: 3, equityHistory: [100000, 120000, 700000] }).flagged, true, '> 5× jump between points');
+    assert.strictEqual(B({ equity: 3e6, trades: 3 }).equity, 2e6);
+    const lg = { startDate: iso(-2), endDate: iso(9) };
+    const kept = B({ equity: 101000, trades: 1, equityHistory: [{ t: Date.now() - 30 * DAY, equity: 900000 }, { t: Date.now() - DAY, equity: 100500 }, 100700] }, lg).equityHistory;
+    assert.deepStrictEqual(kept.map(h => h.equity), [100500, 100700], 'points dated outside the league are dropped; undated points kept');
+  });
+
+  test('worker: coach prompt judges process and names only real lessons', () => {
+    assert.ok(!/one sentence on what went well/.test(W.COACH_SYSTEM));
+    assert.match(W.COACH_SYSTEM, /never praise a profit on its own/);
+    assert.match(W.COACH_SYSTEM, /Review: <lesson id> <lesson title>/);
+    for (const l of W.COACH_LESSONS) {
+      assert.ok(W.COACH_SYSTEM.includes(`${l.id} ${l.title}`), l.id);
+      const mod = fs.readdirSync(path.join(__dirname, '..', 'course')).filter(f => /^m\d+-.*\.json$/.test(f))
+        .map(f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'course', f), 'utf8')))
+        .flatMap(m => m.lessons || []).find(x => x.id === l.id);
+      assert.ok(mod && mod.title === l.title, `${l.id} matches the course title`);
+    }
   });
 
   /* ---- /coach ---- */
@@ -456,6 +695,57 @@ const workerTests = (async () => {
       r = await send(env, 'POST', '/coach', { trade }, auth);
       assert.strictEqual(r.body.remaining, 1);
     } finally { global.fetch = realFetch; }
+  });
+
+  test('worker: rankBy is stored and applied; timestamped Sharpe matches the client', async () => {
+    const env = { LEAGUES: fakeKv(), HMAC_SECRET: 'k' };
+    const mk = async rankBy => (await send(env, 'POST', '/leagues', { name: 'Rank ' + rankBy, startDate: iso(-3), endDate: iso(9), rules: { startingCash: 100000, rankBy } })).body;
+    const bogus = await send(env, 'POST', '/leagues', { name: 'Bogus', startDate: iso(-3), endDate: iso(9), rules: { rankBy: 'luck' } });
+    assert.strictEqual(bogus.body.league.rules.rankBy, 'riskAdjusted');
+    for (const by of ['riskAdjusted', 'return']) {
+      const c = await mk(by);
+      assert.strictEqual(c.league.rules.rankBy, by);
+      const g = await send(env, 'GET', '/leagues/' + c.code);
+      const j1 = await send(env, 'POST', `/leagues/${c.code}/join`, { studentId: 's-gamb01', displayName: 'Gambler' });
+      const j2 = await send(env, 'POST', `/leagues/${c.code}/join`, { studentId: 's-stdy01', displayName: 'Steady' });
+      // Gambler: +12 % after a 40 % drawdown; Steady: +5 % with ~1 % drawdown.
+      await send(env, 'POST', `/leagues/${c.code}/snapshots`, { studentId: 's-gamb01', ownerToken: j1.body.ownerToken, league: { equity: 112000, trades: 4, fills: 4, equityHistory: [100000, 60000, 90000, 112000] } });
+      await send(env, 'POST', `/leagues/${c.code}/snapshots`, { studentId: 's-stdy01', ownerToken: j2.body.ownerToken, league: { equity: 105000, trades: 6, fills: 6, equityHistory: [100000, 101000, 102500, 104000, 105000] } });
+      const st = await send(env, 'GET', `/leagues/${c.code}/standings`);
+      const names = st.body.standings.map(x => x.displayName);
+      assert.deepStrictEqual(names, by === 'return' ? ['Gambler', 'Steady'] : ['Steady', 'Gambler'], by);
+      assert.ok(st.body.standings.every(x => typeof x.rankScore === 'number'));
+      // the client ranks the same server rows the same way
+      const local = L.normalizeLeague(Object.assign({}, g.body.league, { online: true }));
+      assert.deepStrictEqual(L.standings(local, st.body.standings.map(x => Object.assign({}, x, { equityHistory: x.spark }))).map(x => x.displayName), names);
+    }
+    const t0 = Date.UTC(2026, 0, 5, 15);
+    const hist = [];
+    [100000, 100800, 100400, 101500, 101200, 102600, 103000].forEach((e, i) => { hist.push({ t: t0 + i * DAY, equity: e - 300 }); hist.push({ t: t0 + i * DAY + 3 * 3600e3, equity: e }); });
+    const a = W.leagueMetrics(hist.concat([{ equity: 103100 }]), 100000), b = L.metrics(hist.concat([{ equity: 103100 }]), 100000);
+    assert.deepStrictEqual(a, b);
+    assert.strictEqual(W.leagueRankScore(10, 0.5), 10);
+    assert.strictEqual(W.leagueRankScore(10, 4), 2.5);
+    assert.strictEqual(W.leagueRankScore(-10, 4), -40);
+  });
+
+  test('worker: after the end only frozen results are accepted and new members cannot join', async () => {
+    const env = { LEAGUES: fakeKv(), HMAC_SECRET: 'k' };
+    const c = await send(env, 'POST', '/leagues', { name: 'Ending', startDate: iso(-5), endDate: iso(2) });
+    const code = c.body.code;
+    const j = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-end001' });
+    const rec = JSON.parse(env.LEAGUES.m.get(`league:${code}`)); rec.startDate = iso(-6); rec.endDate = iso(-1);
+    env.LEAGUES.m.set(`league:${code}`, JSON.stringify(rec));
+    assert.strictEqual(W.leaguePhase(rec), 'ended');
+    const endMs = Date.parse(`${rec.endDate}T00:00:00Z`);
+    const late = await send(env, 'POST', `/leagues/${code}/snapshots`, { studentId: 's-end001', ownerToken: j.body.ownerToken, league: { equity: 101000, trades: 1, equityHistory: [{ t: endMs - 3600e3, equity: 100500 }, { t: Date.now(), equity: 101000 }] } });
+    assert.strictEqual(late.status, 409); assert.strictEqual(late.body.afterEnd, true);
+    const ok = await send(env, 'POST', `/leagues/${code}/snapshots`, { studentId: 's-end001', ownerToken: j.body.ownerToken, league: { equity: 100500, trades: 1, final: true, asOf: endMs - 3600e3, equityHistory: [{ t: endMs - 3600e3, equity: 100500 }] } });
+    assert.strictEqual(ok.status, 200);
+    const newbie = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-late01' });
+    assert.strictEqual(newbie.status, 409); assert.strictEqual(newbie.body.ended, true);
+    const again = await send(env, 'POST', `/leagues/${code}/join`, { studentId: 's-end001', ownerToken: j.body.ownerToken, displayName: 'Renamed' });
+    assert.strictEqual(again.status, 200, 'an existing member can still re-join (e.g. a rename) during the grace period');
   });
 })();
 

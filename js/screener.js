@@ -15,7 +15,8 @@
  *       rows:     [{symbol, name, price, chg1d, rsi, signal, matched:[filterIds], ...more}]
  *                 plus array props: total, scanned, skipped:[{symbol, reason}], errors, simulated,
  *                 elapsedMs, mode ('demo-workers' | 'demo' | 'live' | 'custom'), cancelled
- *   BT.screener.snapshot(bars, meta)       → plain object of the values the filters read
+ *   BT.screener.snapshot(bars, meta[, interval]) → plain object of the values the filters read
+ *                 (interval defaults to meta.interval || '1day'; 52-week fields only for 1day/1week)
  *   BT.screener.evaluate(snap, filters)    → {pass, matched, results}
  *   BT.screener.builtins / scans() / saveScan() / deleteScan() / getScan()   (bt.screener.scans)
  *   BT.screener.describe(filters, match)   → plain-English sentence for the scan
@@ -108,11 +109,14 @@
   }
 
   /**
-   * snapshot(bars, meta) → plain, structured-clone-safe object. `meta` = {symbol, name, sector, kind}.
+   * snapshot(bars, meta[, interval]) → plain, structured-clone-safe object. `meta` = {symbol, name, sector, kind, interval?}.
    * Fields are null when there is not enough history (a filter that reads a null never matches).
+   * The 52-week fields are only computed for daily or weekly bars: on intraday bars "52 weeks"
+   * would silently mean a few sessions, so they stay null there.
    */
-  function snapshot(bars, meta) {
+  function snapshot(bars, meta, interval) {
     meta = meta || {};
+    interval = interval || meta.interval || '1day';
     var I = BT.ind;
     if (!I) throw new Error('BT.ind (js/indicators.js) must be loaded before the screener');
     bars = Array.isArray(bars) ? bars : [];
@@ -156,9 +160,10 @@
       if (ok) { snap.bwRank = round(below / SQUEEZE_WINDOW * 100, 2); snap.squeeze = below / SQUEEZE_WINDOW <= 0.10; }
     }
 
-    // 52-week high/low: 252 sessions for exchange-traded assets, 365 days for 24/7 crypto.
-    var W = kind === 'crypto' ? 365 : 252;
-    if (n >= W) {
+    // 52-week high/low: 252 sessions for exchange-traded assets, 365 days for 24/7 crypto,
+    // 52 bars on weekly data. Intraday intervals cannot express a year in our bar limits → null.
+    var W = interval === '1day' ? (kind === 'crypto' ? 365 : 252) : interval === '1week' ? 52 : 0;
+    if (W && n >= W) {
       var hi = -Infinity, lo = Infinity;
       for (var h = n - W; h < L; h++) { if (bars[h].high > hi) hi = bars[h].high; if (bars[h].low < lo) lo = bars[h].low; }
       snap.newHigh52 = bars[L].high > hi;
@@ -392,8 +397,9 @@
     if (!c) return null;
     var slowNull = p.pair === '20/50' ? s.sma50 == null : s.sma200 == null;
     if (slowNull) return null;                  // not enough history to know
-    var ago = c[which];
-    return ago != null && ago < crossWithin(p);
+    var ago = c[which], other = c[which === 'golden' ? 'death' : 'golden'];
+    // The cross must still hold: no opposite cross since (other === 0 with ago === 1 = whipsaw).
+    return ago != null && ago < crossWithin(p) && (other == null || other > ago);
   }
   function crossExplain(s, p, which) {
     var c = s.cross && s.cross[p.pair === '20/50' ? '20/50' : '50/200'], ago = c ? c[which] : null;
@@ -449,7 +455,7 @@
     try { list = normFilters(filters); } catch (e) { return ''; }
     if (!list.length) return T('No filters: every symbol in the universe is listed.');
     var parts = list.map(function (f) { return FILTER_BY_ID[f.id].describe(f.params); });
-    var joiner = match === 'any' ? T(' or ') : T(' and ');
+    var joiner = match === 'any' ? ' ' + T('or') + ' ' : ' ' + T('and') + ' ';   // BT.t trims keys
     return T(match === 'any' ? 'Symbols with any of: {list}.' : 'Symbols with {list}.', { list: parts.join(joiner) });
   }
 
@@ -736,7 +742,7 @@
       if (m.type !== 'scan') return;
       (m.metas || []).forEach(function (meta) {
         var item = { symbol: meta.symbol };
-        try { item.snap = snapshot(BT.data.demo(meta.symbol, m.interval, m.limit, m.nowMs), meta); }
+        try { item.snap = snapshot(BT.data.demo(meta.symbol, m.interval, m.limit, m.nowMs), meta, m.interval); }
         catch (e) { item.error = String(e && e.message || e); }
         self.postMessage({ type: 'progress', id: m.id, item: item });
       });
@@ -860,7 +866,7 @@
       while (queue0.length) {
         if (stopped()) break;
         var m = queue0.shift();
-        try { onSnap(m, snapshot(D.demo(m.symbol, interval, limit, tNow), m)); }
+        try { onSnap(m, snapshot(D.demo(m.symbol, interval, limit, tNow), m, interval)); }
         catch (e) { onSnap(m, null, String(e && e.message || e)); }
         if (poolP || perfNow() - sliceStart > 40) { await yieldTick(); sliceStart = perfNow(); }
       }
@@ -872,7 +878,7 @@
           var rest = need.filter(function (x) { return !handled[x.symbol]; });
           for (var r2 = 0; r2 < rest.length; r2++) {
             if (stopped()) break;
-            try { onSnap(rest[r2], snapshot(D.demo(rest[r2].symbol, interval, limit, tNow), rest[r2])); }
+            try { onSnap(rest[r2], snapshot(D.demo(rest[r2].symbol, interval, limit, tNow), rest[r2], interval)); }
             catch (e) { onSnap(rest[r2], null, String(e && e.message || e)); }
             if (perfNow() - sliceStart > 40) { await yieldTick(); sliceStart = perfNow(); }
           }
@@ -921,7 +927,7 @@
               break;
             }
             if (!bars || !bars.length) throw new Error(T('No bars returned'));
-            var snap = snapshot(bars, meta);
+            var snap = snapshot(bars, meta, interval);
             accept(meta, snap, bars.fallback ? { simulated: true, reason: bars.reason || '' } : null);
           } catch (e) {
             rows.errors.push({ symbol: meta.symbol, reason: String(e && e.message || e) });

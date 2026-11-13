@@ -200,6 +200,13 @@ footer,.footer{
 }
 .footer a{color:var(--muted);text-decoration:underline}
 .footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--sp-2) var(--sp-4);margin-bottom:var(--sp-2)}
+/* WCAG 2.2 target-size (2.5.8): footer links must be >=24px tall even when long
+   (Spanish) labels wrap; on phones use the project's 44px tap-target rule. */
+.footer .links a{display:inline-flex;align-items:center;justify-content:center;min-height:24px;text-underline-offset:2px}
+@media (max-width:720px){
+  .footer .links{gap:0 var(--sp-3)}
+  .footer .links a{min-height:44px;padding-inline:var(--sp-1)}
+}
 
 /* ------------------------------------------------------------------ */
 /* 4. Top nav (sticky; collapses to a scrollable row on phones)       */

@@ -309,6 +309,20 @@ test('evaluate() and propose() look at the last bar only and never place orders'
   assert.strictEqual(warm.ready, false);
 });
 
+test('propose() tracks trailing-stop and max-bars exits only when the entry bar is known (dashboard semi-auto)', () => {
+  const path = [100]; for (let p = 101; p <= 139; p++) path.push(p); for (let p = 138; p >= 102; p -= 4) path.push(p);
+  const bars = fromCloses(path);
+  const trail = { name: 'Trail', side: 'long', entry: { conditions: [{ left: close, cmp: '>', right: val(1e9) }] }, exit: { trailingPct: 5 } };
+  const withEntry = R.propose(trail, bars, { side: 'long', entry: 100, entryIndex: 0, barsHeld: bars.length - 1 }, 'en');
+  assert.ok(withEntry && withEntry.intent === 'exit' && /trailing/.test(withEntry.reason), 'trailing stop fires from the entry bar');
+  assert.strictEqual(R.propose(trail, bars, { side: 'long', entry: 100 }, 'en'), null, 'without an entry bar the trailing exit cannot be tracked');
+  const timed = { name: 'Time', side: 'long', entry: { conditions: [{ left: close, cmp: '>', right: val(1e9) }] }, exit: { maxBars: 5 } };
+  const flat = fromCloses([10, 10, 10, 10, 10, 10, 10, 10]);
+  const t = R.propose(timed, flat, { side: 'long', entry: 10, entryIndex: 1, barsHeld: 6 }, 'en');
+  assert.ok(t && t.intent === 'exit' && /time/.test(t.reason), 'max-bars exit fires once held long enough');
+  assert.strictEqual(R.propose(timed, flat, { side: 'long', entry: 10, entryIndex: 5, barsHeld: 2 }, 'en'), null);
+});
+
 /* ---------------- describe ---------------- */
 
 test('describe() writes natural English', () => {

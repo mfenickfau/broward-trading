@@ -62,7 +62,12 @@
     'With intrabar ticks on, the path inside a forming bar is synthetic: a seeded random walk between the bar\'s real open, high, low and close. ' +
     'Nobody knows the true order of trades inside a historical bar, so a forming bar\'s price, range and volume are a simulation, not a record. ' +
     'Demo prices are simulated, so a replay dated 2022 is a scenario, not the real 2022. Fills are idealised (no spread, no slippage, no partial fills), ' +
-    'which flatters your results; real trading costs more. Nothing here is investment advice.';
+    'which flatters your results; real trading costs more. ' +
+    'A market order placed after a bar has finished fills at that bar\'s close, a price you have already seen and a real trader cannot get; ' +
+    'in real markets the first price you could trade at is the next bar\'s open. Intrabar ticks let you trade while a bar is still forming. ' +
+    'Nothing here is investment advice.';
+  // Short version for the order ticket (shown while the trade price is a finished bar's close).
+  var CLOSE_FILL_NOTE = 'Market orders fill at the close of the bar you just watched finish, which a real trader cannot do; real fills come at the next bar\'s open. Turn on intrabar ticks to trade while a bar forms.';
 
   /* ------------------------------------------------------------------ *
    * Helpers
@@ -70,6 +75,24 @@
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function cents(v) { return Math.round(v * 100) / 100; }
   function round2(v) { return Math.round(v * 100) / 100; }
+  function roundTo(v, dp) { var f = Math.pow(10, dp); return Math.round(v * f) / f; }
+  // Decimal places a price is quoted at (0..6): the smallest d at which rounding leaves it unchanged.
+  function decimalsOf(v) {
+    if (!isNum(v)) return 0;
+    for (var d = 0; d < 6; d++) if (Math.abs(roundTo(v, d) - v) <= 1e-9 * Math.max(1, Math.abs(v))) return d;
+    return 6;
+  }
+  /**
+   * The tick size a bar is quoted at: the finest precision among its open, high,
+   * low and close (capped at 6 dp), and never coarser than BT.paper's priceRound
+   * rule (4 dp below $1, 2 dp otherwise). Every synthetic intrabar tick uses this
+   * precision, so an extreme never stands out by having more decimals.
+   */
+  function barDecimals(bar) {
+    var dp = Math.max(decimalsOf(bar.open), decimalsOf(bar.high), decimalsOf(bar.low), decimalsOf(bar.close));
+    var ref = Math.max(Math.abs(bar.high), Math.abs(bar.low));
+    return Math.min(6, Math.max(dp, ref < 1 ? 4 : 2));
+  }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function normSymbol(s) { return String(s == null ? '' : s).trim().toUpperCase(); }
 
@@ -172,7 +195,9 @@
    * path    : L = K + 2 prices (K interior points, 5..8, itself seeded). The
    *           bar's high and low each sit at a distinct random interior index
    *           among the first K-1 interior points; every other interior point
-   *           is uniform inside [low, high], rounded to cents and clamped.
+   *           is uniform inside [low, high], rounded to the bar's own tick
+   *           size (barDecimals) and clamped. The extremes are rounded the same
+   *           way, so no tick's precision reveals that it is a final extreme.
    * volume  : cumulative share of the bar's volume traded after each of the L
    *           sub-steps (strictly increasing, volume[L-1] = 1), also seeded so
    *           the final volume cannot be recovered from a forming bar.
@@ -184,13 +209,14 @@
     var slots = K - 1;                                   // the last interior point is never forced to be an extreme
     var iHi = Math.floor(r() * slots);
     var iLo = Math.floor(r() * (slots - 1)); if (iLo >= iHi) iLo += 1;
-    var hi = Math.max(bar.high, bar.low), lo = Math.min(bar.high, bar.low);
+    var dp = barDecimals(bar);
+    var hi = roundTo(Math.max(bar.high, bar.low), dp), lo = roundTo(Math.min(bar.high, bar.low), dp);
     var path = [bar.open];
     for (var i = 0; i < K; i++) {
       var px;
       if (i === iHi) px = hi;
       else if (i === iLo) px = lo;
-      else { px = cents(lo + r() * (hi - lo)); px = Math.min(hi, Math.max(lo, px)); }
+      else { px = roundTo(lo + r() * (hi - lo), dp); px = Math.min(hi, Math.max(lo, px)); }
       path.push(px);
     }
     path.push(bar.close);
@@ -314,6 +340,11 @@
     }
     /** 'bar forming' while a partial bar is showing, '' otherwise. Deliberately says nothing about which sub-step this is. */
     function phaseLabel() { return S.ticks && phase > 0 ? T('bar forming') : ''; }
+    /**
+     * fillNote() → the ticket caveat while a market order would fill at the close of a bar that has
+     * already finished (ticks off, or between bars with ticks on); '' while a bar is forming.
+     */
+    function fillNote() { return phase > 0 && cursor < all.length ? '' : T(CLOSE_FILL_NOTE); }
 
     /* ---- account plumbing ---- */
     // paper.use() saves the outgoing account from memory before switching. That
@@ -807,7 +838,7 @@
       get note() { return S.note; },
       get steps() { return steps; },
       get account() { return accountId; },
-      visible: visible, currentBar: currentBar, currentTime: currentTime, price: price, nowMs: nowMs, index: index, progress: progress, phaseLabel: phaseLabel,
+      visible: visible, currentBar: currentBar, currentTime: currentTime, price: price, nowMs: nowMs, index: index, progress: progress, phaseLabel: phaseLabel, fillNote: fillNote,
       step: step, stepBar: stepBar, play: play, pause: pause, toggle: toggle, setSpeed: setSpeed, setTicks: setTicks, jumpTo: jumpTo, jumpToEnd: jumpToEnd,
       order: order, buy: buy, sell: sell, short: short, cover: cover, closePosition: closePosition, cancel: cancel,
       position: position, openOrders: openOrders, trades: trades, snapshot: snapshot, scorecard: scorecard, finish: finish,
@@ -1090,6 +1121,8 @@
     WARMUP: WARMUP,
     MAX_LIMIT: MAX_LIMIT,
     HONESTY: HONESTY,
+    CLOSE_FILL_NOTE: CLOSE_FILL_NOTE,
+    barDecimals: barDecimals,
     createSession: createSession,
     loadBars: loadBars,
     barBudget: barBudget,

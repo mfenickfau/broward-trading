@@ -481,6 +481,13 @@
         var sym = b.dataset.close;
         if (b.dataset.arm) {
           var row = rows.filter(function (r) { return r.symbol === sym; })[0];
+          delete b.dataset.arm; b.textContent = 'Close'; b.classList.remove('sell');
+          if (row) {
+            // Same league rules as the dashboard's Close button (day trading, league dates, frozen accounts).
+            var isOpt = row.kind === 'option';
+            var chk = leagueCheck({ symbol: sym, side: row.qty > 0 ? 'sell' : 'buy', qty: Math.abs(row.qty), type: 'market', price: row.price, kind: isOpt ? 'option' : undefined, contract: isOpt ? sym : undefined });
+            if (!chk.ok) { toast(T('League rule: {reason}', { reason: chk.reason }), 'err', T('Not closed')); return; }
+          }
           var o = paper.closePosition(sym, row ? row.price : undefined);
           if (o.status === 'filled') { toast(o.reason || T('Closed {symbol} at {price}.', { symbol: sym, price: money(o.fillPrice) }), 'ok', 'Position closed'); }
           else toast(o.reason || 'Could not close.', 'err', 'Not closed');
@@ -648,6 +655,7 @@
   function renderSettings() {
     var c = $('commission');
     if (c && document.activeElement !== c) c.value = paper.settings.commission;
+    renderLeagueLock();
     var html = '';
     try {
       var s = data.status(), r = s.rate || {};
@@ -663,6 +671,7 @@
     $('datasrc').innerHTML = html;
   }
   $('save-settings').onclick = function () {
+    if (leagueOf(activeAccount())) { renderLeagueLock(); setMsg('settings-msg', leagueCostsText(leagueOf(activeAccount())), 'warn'); return; }
     var v = Number($('commission').value);
     if (!isNum(v) || v < 0) { setMsg('settings-msg', 'Commission must be zero or a positive number.', 'err'); return; }
     paper.setSettings({ commission: v });
@@ -670,8 +679,18 @@
   };
   var resetTimer = null;
   function hideReset() { $('reset-confirm').hidden = true; $('reset').textContent = 'Reset paper account…'; clearTimeout(resetTimer); }
+  var LEAGUE_RESET_MSG = 'League accounts cannot be reset: every member starts with the same cash and keeps their own record until the league ends.';
+  /** True (and tells the user) when the active account belongs to a league, which can never be reset. */
+  function refuseLeagueReset() {
+    if (!leagueOf(activeAccount())) return false;
+    hideReset();
+    setMsg('reset-msg', T(LEAGUE_RESET_MSG), 'warn');
+    toast(T(LEAGUE_RESET_MSG), 'warn', T('League rule'));
+    return true;
+  }
   $('reset').onclick = function () {
     var box = $('reset-confirm');
+    if (refuseLeagueReset()) return;
     if (box.hidden) {
       box.hidden = false; $('reset').textContent = 'Cancel';
       $('reset-cash').value = paper.state.startingCash || paper.DEFAULT_CASH;
@@ -681,6 +700,7 @@
   };
   $('reset-no').onclick = hideReset;
   $('reset-yes').onclick = function () {
+    if (refuseLeagueReset()) return;
     var cash = Number($('reset-cash').value);
     if (!isNum(cash) || cash < 1000) { setMsg('reset-msg', 'Starting cash must be at least $1,000.', 'err'); return; }
     paper.reset(cash);
@@ -739,6 +759,7 @@
     if (!id || typeof paper.use !== 'function' || id === activeAccount()) return;
     paper.use(id);
     ui.account = activeAccount(); saveUi();
+    enforceLeagueSettings();
     mtm = null; lastMarkAt = 0;
     renderAccounts();
     renderAll();
@@ -754,14 +775,72 @@
     var exists = accountList().some(function (a) { return a.id === ui.account && (a.id === 'main' || isNum(a.equity)); });
     if (exists) paper.use(ui.account); else { ui.account = activeAccount(); saveUi(); }
   })();
+  enforceLeagueSettings();
   // Another tab traded on the active account: repaint from the reloaded state.
   window.addEventListener('bt:paper-sync', function () { mtm = null; renderAll(); });
 
   /** League check for orders placed from this page (Options Lab), as the dashboard ticket does. */
+  /* League rules for the active account. Main / Replay pass; a league account fails closed when its
+   * league is not saved here, js/leagues.js did not load, or the check throws. */
   function leagueCheck(order) {
+    var id = activeAccount();
+    var isLg = /^league[:\-][a-z0-9]+$/i.test(String(id || '')) || !!(BT.leagues && typeof BT.leagues.accountCode === 'function' && BT.leagues.accountCode(id));
+    if (!isLg) return { ok: true, reason: '' };
+    var lg = leagueOf(id);
+    if (!lg || !BT.leagues || typeof BT.leagues.validateOrder !== 'function') return { ok: false, reason: T('This league is not saved on this device any more, so its rules cannot be checked. Rejoin it on the Leagues page.') };
+    try { return BT.leagues.validateOrder(order, lg, paper.getState()); } catch (e) { return { ok: false, reason: T('The league rules could not be checked, so this order was not placed. Reload the page and try again.') }; }
+  }
+
+  /* League accounts trade under the organiser's costs: commission and slippage come from the league
+   * rules, and no free extras (cash interest, borrow-fee waivers, dividends, softer fill models) can be
+   * switched on from this page. */
+  function leagueRules(lg) { return (lg && lg.rules) || {}; }
+  function leagueCostsText(lg) {
+    var r = leagueRules(lg);
+    return T("League accounts use the organiser's costs: {commission}, {slippage} bps.", {
+      commission: T('{fee} per order', { fee: money(Number(r.commission) || 0) }),
+      slippage: Number(r.slippageBps) || 0
+    });
+  }
+  function leagueSettingsPatch(lg) {
+    var r = leagueRules(lg);
+    return {
+      commission: Number(r.commission) || 0, commissionPreset: 'per-trade', slippageBps: Number(r.slippageBps) || 0,
+      cashInterestPct: 0, borrowFeePct: 0, dividends: false, fillModel: 'instant'
+    };
+  }
+  /** Re-apply the league's costs to the active league account (fixes anything changed earlier). */
+  function enforceLeagueSettings() {
     var lg = leagueOf(activeAccount());
-    if (!lg || !BT.leagues || typeof BT.leagues.validateOrder !== 'function') return { ok: true, reason: '' };
-    try { return BT.leagues.validateOrder(order, lg, paper.getState()); } catch (e) { return { ok: true, reason: '' }; }
+    if (!lg || typeof paper.setSettings !== 'function') return false;
+    var want = leagueSettingsPatch(lg), cur = paper.settings || {}, diff = {};
+    Object.keys(want).forEach(function (k) { if (cur[k] !== undefined && cur[k] !== want[k]) diff[k] = want[k]; else if (cur[k] === undefined && (k === 'commission' || k === 'slippageBps')) diff[k] = want[k]; });
+    if (!Object.keys(diff).length) return false;
+    try { paper.setSettings(diff); return true; } catch (e) { return false; }
+  }
+  /** Disable the cost and simulation controls while a league account is active, with a short note. */
+  function renderLeagueLock() {
+    var lg = leagueOf(activeAccount()), locked = !!lg;
+    var ids = ['commission', 'save-settings', 'sim-save', 'sim-defaults'];
+    Object.keys(SIM_FIELDS || {}).forEach(function (k) { ids.push(SIM_FIELDS[k].id); });
+    ids.forEach(function (id) {
+      var el = $(id); if (!el) return;
+      el.disabled = locked;
+      if (locked) el.setAttribute('aria-disabled', 'true'); else el.removeAttribute('aria-disabled');
+    });
+    [['save-settings', 'league-cost-note'], ['sim-save', 'league-sim-note']].forEach(function (pair) {
+      var anchor = $(pair[0]), note = $(pair[1]);
+      if (!anchor) return;
+      if (!note && locked) {
+        note = document.createElement('p');
+        note.id = pair[1]; note.className = 'msg warn';
+        var host = anchor.closest('.row') || anchor.parentNode;
+        if (host && host.parentNode) host.parentNode.insertBefore(note, host.nextSibling);
+      }
+      if (!note) return;
+      note.hidden = !locked;
+      note.textContent = locked ? leagueCostsText(lg) : '';
+    });
   }
 
   /* ------------------------------------------------------------------ *
@@ -861,12 +940,14 @@
     else setMsg('sim-msg', doneMsg, 'ok');
   }
   if ($('sim-save')) $('sim-save').onclick = function () {
+    if (leagueOf(activeAccount())) { renderLeagueLock(); renderSim(); setMsg('sim-msg', leagueCostsText(leagueOf(activeAccount())), 'warn'); return; }
     var c = simCollect();
     if (c.errors.length) { setMsg('sim-msg', c.errors.join(' '), 'err'); return; }
     simSave(c.patch, T('Saved for {name}. New fills use these settings.', { name: accountLabel(activeAccount()) }));
   };
   if ($('sim-comm')) $('sim-comm').addEventListener('change', renderSimInfo);
   if ($('sim-defaults')) $('sim-defaults').onclick = function () {
+    if (leagueOf(activeAccount())) { renderLeagueLock(); renderSim(); setMsg('sim-msg', leagueCostsText(leagueOf(activeAccount())), 'warn'); return; }
     simSave(Object.assign({ commission: 0, _keepFee: true }, SIM_DEFAULTS), T('Defaults restored: instant fills, no slippage, $0 commission, and no dividends, interest, day-trade limit or borrow fee.'));
   };
 
@@ -1089,7 +1170,7 @@
     var head = $('chain-head'), tb = $('chain');
     if (!lab.rows) { head.innerHTML = ''; tb.innerHTML = '<tr><td colspan="17" class="emptyline" style="text-align:center">Load an underlying to see its chain.</td></tr>'; return; }
     var th = function (c) { return '<th title="' + esc(c.tip || '') + '">' + c.h + (c.tip ? '<button class="tip" type="button" aria-label="Explain ' + esc(c.h) + '" data-tip="' + esc(c.tip) + '"></button>' : '') + '</th>'; };
-    head.innerHTML = COLS.map(th).join('') + '<th></th><th class="strike">Strike</th><th></th>' + COLS.slice().reverse().map(th).join('');
+    head.innerHTML = COLS.map(th).join('') + '<th><span class="sr-only">' + esc(T('Trade calls')) + '</span></th><th class="strike">' + esc(T('Strike')) + '</th><th><span class="sr-only">' + esc(T('Trade puts')) + '</span></th>' + COLS.slice().reverse().map(th).join('');
     var calls = opt.chainSlice(lab.rows, lab.expiry, 'C'), puts = opt.chainSlice(lab.rows, lab.expiry, 'P');
     var putBy = {}; puts.forEach(function (p) { putBy[p.strike] = p; });
     var atm = opt.atmRow(lab.rows, lab.expiry, 'C');
@@ -1312,9 +1393,6 @@
         ctx.fillStyle = C.accent;
         ctx.globalAlpha = 0.07; ctx.fillRect(X(cone.low2), Tp, X(cone.high2) - X(cone.low2), ph);
         ctx.globalAlpha = 0.09; ctx.fillRect(X(cone.low1), Tp, X(cone.high1) - X(cone.low1), ph);
-        ctx.globalAlpha = 0.8; ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        var c1 = (X(cone.low1) + X(cone.high1)) / 2;
-        if (X(cone.high1) - X(cone.low1) > 40) ctx.fillText('68%', c1, Tp + 16);
         ctx.restore();
       }
     }
@@ -1367,24 +1445,90 @@
         ctx.strokeStyle = (p0.pnl + p1.pnl) / 2 >= 0 ? C.up : C.down; ctx.beginPath(); ctx.moveTo(X(p0.S), Y(p0.pnl)); ctx.lineTo(X(p1.S), Y(p1.pnl)); ctx.stroke();
       }
     }
-    // breakevens
-    ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.warn; ctx.fillStyle = C.warn; ctx.lineWidth = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    a.breakevens.forEach(function (b) { if (b < xmin || b > xmax) return; var x = X(b); ctx.beginPath(); ctx.moveTo(x, Tp); ctx.lineTo(x, Tp + ph); ctx.stroke(); ctx.fillText('BE ' + (b < 10 ? b.toFixed(2) : b.toFixed(b % 1 ? 2 : 0)), x, Tp + ph - 2); });
+    // Text labels are laid out together so they never overlap on a 390 px phone:
+    // readout (HTML, top right) -> spot label below it if needed -> staggered BE labels -> 68 % label.
+    var hits = function (r1, r2) { return r1.x0 < r2.x1 && r2.x0 < r1.x1 && r1.y0 < r2.y1 && r2.y0 < r1.y1; };
+    var hovering = hoverX != null && hoverX >= L && hoverX <= L + pw;
+    var S, pnl, now;
+    if (hovering) {
+      S = xmin + (hoverX - L) / pw * (xmax - xmin);
+      pnl = opt.pnlAt(legsN, S);
+      now = showT0 ? t0Value(S, legsN, Tyr) : null;
+      readout.textContent = T('At {price}: {pnl} at expiry', { price: money(S), pnl: signed(pnl) }) + (now != null ? ' · ' + T('{pnl} today', { pnl: signed(now) }) : '');
+    } else {
+      readout.textContent = a.breakevens.length ? T('Breakevens: {list}.', { list: a.breakevens.map(function (b) { return money(b); }).join(', ') }) : T('Tap or hover for values');
+    }
+    var roRect = null;
+    if (readout.offsetWidth && readout.textContent) roRect = { x0: readout.offsetLeft - 2, x1: readout.offsetLeft + readout.offsetWidth + 2, y0: readout.offsetTop - 2, y1: readout.offsetTop + readout.offsetHeight + 2 };
+    var LH = 13; // label line height at 11 px
+
+    // breakevens: label rows alternate when neighbours are closer than the labels are wide
+    ctx.save(); ctx.font = '11px ' + C.mono;
+    var beRects = [], prevBe = null;
+    a.breakevens.filter(function (b) { return b >= xmin && b <= xmax; }).sort(function (p, q) { return p - q; }).forEach(function (b) {
+      var x = X(b), txt = T('BE {p}', { p: b < 10 ? b.toFixed(2) : b.toFixed(b % 1 ? 2 : 0) }), w = ctx.measureText(txt).width;
+      var row = 0;
+      if (prevBe && (x - prevBe.x < Math.max(70, (w + prevBe.w) / 2 + 6))) row = prevBe.row ? 0 : 1;
+      var bottom = Tp + ph - 2 - row * 14;
+      var cx = Math.min(Math.max(x, L + w / 2 + 1), L + pw - w / 2 - 1);
+      beRects.push({ x: x, cx: cx, txt: txt, bottom: bottom, x0: cx - w / 2 - 2, x1: cx + w / 2 + 2, y0: bottom - LH, y1: bottom });
+      prevBe = { x: x, w: w, row: row };
+    });
     ctx.restore();
-    // spot
+
+    // 68 % probability label: bottom of the band, only where it collides with nothing
+    if (cone && X(cone.high1) - X(cone.low1) > 40) {
+      ctx.save(); ctx.font = '11px ' + C.mono;
+      var texts = [T('68% range'), '68%'];
+      var bandL = Math.max(L, X(cone.low1)), bandR = Math.min(L + pw, X(cone.high1));
+      var spotX = X(lab.spot);
+      var c0 = (bandL + bandR) / 2;
+      var ys0 = [Tp + ph - 18, Tp + ph - 32];
+      var placed = null;
+      texts.some(function (lbl) {
+        var lw = ctx.measureText(lbl).width;
+        var cands = [c0, (bandL + spotX) / 2, (spotX + bandR) / 2, bandL + lw / 2 + 4, bandR - lw / 2 - 4];
+        return ys0.some(function (yb) {
+          return cands.some(function (cx) {
+            var r = { x0: cx - lw / 2 - 2, x1: cx + lw / 2 + 2, y0: yb - LH, y1: yb };
+            if (r.x0 < bandL || r.x1 > bandR) return false;
+            if (spotX > r.x0 - 2 && spotX < r.x1 + 2) return false;   // never hide the spot line
+            if (beRects.some(function (q) { return hits(r, q); })) return false;
+            placed = { cx: cx, yb: yb, lbl: lbl, r: r }; return true;
+          });
+        });
+      });
+      if (placed) {
+        ctx.globalAlpha = 0.85; ctx.fillStyle = C.panel; ctx.fillRect(placed.r.x0, placed.r.y0, placed.r.x1 - placed.r.x0, placed.r.y1 - placed.r.y0);
+        ctx.globalAlpha = 1; ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(placed.lbl, placed.cx, placed.yb);
+      }
+      ctx.restore();
+    }
+
+    // breakeven lines + labels
+    ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.warn; ctx.lineWidth = 1;
+    beRects.forEach(function (q) { ctx.beginPath(); ctx.moveTo(q.x, Tp); ctx.lineTo(q.x, Tp + ph); ctx.stroke(); });
+    ctx.setLineDash([]); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    beRects.forEach(function (q) {
+      ctx.globalAlpha = 0.85; ctx.fillStyle = C.panel; ctx.fillRect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
+      ctx.globalAlpha = 1; ctx.fillStyle = C.warn; ctx.fillText(q.txt, q.cx, q.bottom);
+    });
+    ctx.restore();
+
+    // spot: label below the readout box whenever they would overlap
     var sx = X(lab.spot);
     ctx.save(); ctx.strokeStyle = C.accent; ctx.fillStyle = C.accent; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx, Tp); ctx.lineTo(sx, Tp + ph); ctx.stroke();
-    ctx.textAlign = sx > W - 90 ? 'right' : 'left'; ctx.textBaseline = 'top'; ctx.fillText('spot ' + money(lab.spot), sx + (sx > W - 90 ? -4 : 4), Tp + 2); ctx.restore();
+    var stxt = T('spot {p}', { p: money(lab.spot) }), sw = ctx.measureText(stxt).width, right = sx > W - R - sw - 8;
+    var sx0 = right ? sx - 4 - sw : sx + 4, sy = Tp + 2;
+    if (roRect && hits({ x0: sx0 - 2, x1: sx0 + sw + 2, y0: sy, y1: sy + LH }, roRect)) sy = Math.max(Tp + 22, roRect.y1 + 2);
+    ctx.globalAlpha = 0.85; ctx.fillStyle = C.panel; ctx.fillRect(sx0 - 2, sy - 1, sw + 4, LH + 1);
+    ctx.globalAlpha = 1; ctx.fillStyle = C.accent;
+    ctx.textAlign = right ? 'right' : 'left'; ctx.textBaseline = 'top'; ctx.fillText(stxt, right ? sx - 4 : sx + 4, sy); ctx.restore();
     // hover crosshair
-    if (hoverX != null && hoverX >= L && hoverX <= L + pw) {
-      var S = xmin + (hoverX - L) / pw * (xmax - xmin);
-      var pnl = opt.pnlAt(legsN, S);
-      var now = showT0 ? t0Value(S, legsN, Tyr) : null;
+    if (hovering) {
       ctx.save(); ctx.strokeStyle = C.fg; ctx.globalAlpha = 0.5; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(hoverX, Tp); ctx.lineTo(hoverX, Tp + ph); ctx.stroke(); ctx.restore();
       ctx.fillStyle = pnl >= 0 ? C.up : C.down; ctx.beginPath(); ctx.arc(hoverX, Y(pnl), 4, 0, Math.PI * 2); ctx.fill();
-      readout.textContent = 'at ' + money(S) + ': ' + signed(pnl) + ' at expiry' + (now != null ? ' · ' + signed(now) + ' today' : '');
-    } else {
-      readout.textContent = a.breakevens.length ? 'breakeven' + (a.breakevens.length > 1 ? 's' : '') + ' ' + a.breakevens.map(function (b) { return money(b); }).join(', ') : 'hover for values';
     }
   }
   if (canvas) {

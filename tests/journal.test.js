@@ -614,5 +614,72 @@ test('journal.html renders user-typed text (setup/notes/lessons/tags/account) in
   assert.ok(/class="chip sug sm no-i18n" translate="no"/.test(html), 'suggested tag chip guarded');
 });
 
+test('coach notes: normalizeEntry keeps a sanitized coach field; update/sync preserve it; null clears it', () => {
+  fresh();
+  const long = 'x'.repeat(5000);
+  const raw = { symbol: 'AAPL', notes: 'n', coach: { at: 123, ai: long, findings: [
+    { id: 'noStop', level: 'warn', title: 'No stop', message: 'Plan a stop.', lessonId: 'm4-l2', extra: 'drop me' },
+    { id: 'rr', level: 'weird', title: 'Low R:R', message: 'm', lessonId: '<script>' },
+    'junk', null, { level: 'tip' }
+  ].concat(Array.from({ length: 20 }, (_, i) => ({ id: 'f' + i, title: 't' + i }))) } };
+  const e = J.add(raw);
+  assert.ok(e.coach, 'coach kept');
+  assert.strictEqual(e.coach.at, 123);
+  assert.strictEqual(e.coach.ai.length, 2000, 'ai capped at 2000 chars');
+  assert.strictEqual(e.coach.findings.length, 10, 'at most 10 findings');
+  assert.deepStrictEqual(e.coach.findings[0], { id: 'noStop', level: 'warn', title: 'No stop', message: 'Plan a stop.', lessonId: 'm4-l2' });
+  assert.strictEqual(e.coach.findings[1].level, 'tip', 'unknown level becomes tip');
+  assert.strictEqual(e.coach.findings[1].lessonId, null, 'unsafe lesson id dropped');
+  // survives a patch that does not mention coach, a reload and an export/import round trip
+  const u = J.update(e.id, { notes: 'changed' });
+  assert.strictEqual(u.coach.findings[0].id, 'noStop');
+  J.load();
+  assert.strictEqual(J.get(e.id).coach.findings.length, 10, 'persisted');
+  const dump = J.exportJSON();
+  J.reset(); J.importJSON(dump);
+  assert.strictEqual(J.get(e.id).coach.findings[0].title, 'No stop', 'import keeps coach');
+  // explicit null clears; empty coach is dropped
+  assert.strictEqual(J.update(e.id, { coach: null }).coach, undefined);
+  assert.strictEqual(J.normalizeCoach({ findings: [] }), null);
+  assert.strictEqual(J.add({ symbol: 'X', coach: 'nope' }).coach, undefined);
+});
+
+test('coach notes: setCoach finds the synced entry for a paper fill and keeps an earlier AI note', () => {
+  fresh(); seedPaper();
+  P.use('main');
+  const trades = P.getState().trades;
+  const closeFill = trades[trades.length - 1];               // MSFT close
+  // no sync yet: setCoach syncs once so the fill gets its entry
+  const notes = { at: fakeNow, findings: [{ id: 'stopSlip', level: 'warn', title: 'Bigger loss than planned', message: 'm', lessonId: 'm4-l2' }] };
+  const e1 = J.setCoach({ trade: closeFill, account: 'main' }, notes);
+  assert.ok(e1, 'entry found');
+  assert.strictEqual(e1.symbol, 'MSFT');
+  assert.strictEqual(e1.trade.role, 'close');
+  assert.strictEqual(e1.coach.findings[0].id, 'stopSlip');
+  assert.strictEqual(J.findByTrade(closeFill, 'main').id, e1.id);
+  assert.strictEqual(J.findByTrade(closeFill, 'replay'), null, 'account filter respected');
+  // the student's edits and the coach notes survive a re-sync
+  J.update(e1.id, { setup: 'Breakout' });
+  J.sync(P);
+  assert.strictEqual(J.get(e1.id).coach.findings[0].id, 'stopSlip');
+  assert.strictEqual(J.get(e1.id).setup, 'Breakout');
+  // AI note added, then a rules-only refresh keeps it unless keepAi:false
+  J.setCoach(e1.id, { findings: notes.findings, ai: 'Your stop was further than planned.' });
+  assert.strictEqual(J.get(e1.id).coach.ai, 'Your stop was further than planned.');
+  J.setCoach(e1, [{ id: 'size', level: 'tip', title: 'Big position', message: 'm' }]);
+  assert.strictEqual(J.get(e1.id).coach.findings[0].id, 'size', 'bare findings array accepted');
+  assert.strictEqual(J.get(e1.id).coach.ai, 'Your stop was further than planned.', 'AI note kept');
+  J.setCoach(e1.id, { findings: notes.findings }, { keepAi: false });
+  assert.strictEqual(J.get(e1.id).coach.ai, undefined);
+  // lookups by tradeId string and unknown refs
+  assert.strictEqual(J.setCoach(e1.tradeId, notes).id, e1.id);
+  assert.strictEqual(J.setCoach('nope', notes), null);
+  assert.strictEqual(J.setCoach({ trade: { id: 999 }, account: 'main' }, notes), null);
+  // coachView adds lesson links (fallback URL without BT.coach)
+  const v = J.coachView(J.get(e1.id));
+  assert.strictEqual(v[0].lessonUrl, 'learn.html#/lesson/m4-l2');
+  assert.deepStrictEqual(J.coachView({}), []);
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);

@@ -32,18 +32,18 @@
       "name": "Swing trader",
       "tagline": "Activo, atento a los patrones, entra y sale en cuestión de días.",
       "summary": "Te gusta leer el gráfico con detalle y actuar sobre movimientos más cortos, de unos días a un par de semanas, usando patrones, osciladores y niveles claros.",
-      "body": "Tus fortalezas son la atención al detalle y la capacidad de decidir: disfrutas detectando configuraciones como un rebote en un soporte, un giro del RSI o la ruptura de un rango estrecho, y te sientes cómodo tomando una decisión y pasando a lo siguiente. El swing trading da una respuesta rápida, lo cual es ideal para aprender, pero cada operación tiene costes y existe la tentación de operar en exceso.",
+      "body": "Tus fortalezas son la atención al detalle y la capacidad de decidir: disfrutas detectando configuraciones como un rebote en un soporte, un giro del RSI o la ruptura de un rango estrecho, y te sientes cómodo tomando una decisión y pasando a lo siguiente. El swing trading da una respuesta rápida, lo cual es ideal para aprender, pero cada operación tiene costos y existe la tentación de operar en exceso.",
       "tip": "Algo a vigilar: más operaciones significa más comisiones, más deslizamiento y más decisiones emocionales. Define tu configuración con precisión, mantén pequeño el riesgo por operación y usa el diario para comprobar si tus mejores configuraciones realmente lo son.",
       "steps": [
         "Elige como mucho dos configuraciones y escribe una definición de una línea para cada una.",
-        "Planifica entrada, stop y objetivo antes de cada operación y comprueba que la relación beneficio/riesgo sea de al menos 1,5.",
+        "Planifica entrada, stop y objetivo antes de cada operación y comprueba que la relación riesgo/beneficio sea de al menos 1.5.",
         "Revisa tu diario cada semana por configuración y por emoción para descubrir qué funciona de verdad para ti."
       ],
       "path": [
         { "type": "lesson", "id": "m2-l4", "why": "Los patrones de velas son las piezas básicas de las configuraciones de corto plazo." },
         { "type": "lesson", "id": "m3-l2", "why": "El RSI y el estocástico ayudan a elegir el momento de entrada en movimientos y rangos." },
         { "type": "lesson", "id": "m3-l3", "why": "MACD, Bandas de Bollinger y ATR añaden impulso, volatilidad y distancia del stop." },
-        { "type": "lesson", "id": "m4-l2", "why": "Los stops, la relación beneficio/riesgo y la esperanza matemática deciden si operar activamente compensa." },
+        { "type": "lesson", "id": "m4-l2", "why": "Los stops, la relación riesgo/beneficio y la expectativa deciden si operar activamente compensa." },
         { "type": "drill", "id": "range-trading-spy-2018", "why": "Practica comprar en las caídas y vender en las subidas dentro de un rango." },
         { "type": "drill", "id": "hourly-swing-msft-2024", "why": "Una operación swing de dos semanas en el gráfico horario, vela a vela." },
         { "type": "drill", "id": "breakout-meta-2023", "why": "Practica entrar en rupturas con un stop planificado." }
@@ -51,10 +51,10 @@
     },
     {
       "id": "value",
-      "name": "Inversor orientado al valor",
+      "name": "Inversionista orientado al valor",
       "tagline": "Horizonte largo, visión de conjunto, cómodo haciendo menos.",
       "summary": "Piensas en meses y años más que en días, te importa qué es realmente una empresa o un fondo, y prefieres tener pocas cosas que entiendes antes que operar a menudo.",
-      "body": "Tus fortalezas son un horizonte temporal largo y un temperamento tranquilo: es menos probable que reacciones a cada titular, y entiendes que la diversificación y los costes bajos se acumulan en silencio. Este curso se centra en el análisis técnico, así que usa los gráficos como herramienta para el momento de entrada y el riesgo, no como sustituto de entender la empresa o el fondo que tienes.",
+      "body": "Tus fortalezas son un horizonte temporal largo y un temperamento tranquilo: es menos probable que reacciones a cada titular, y entiendes que la diversificación y los costos bajos se acumulan en silencio. Este curso se centra en el análisis técnico, así que usa los gráficos como herramienta para el momento de entrada y el riesgo, no como sustituto de entender la empresa o el fondo que tienes.",
       "tip": "Algo a vigilar: un horizonte largo no elimina el riesgo. Los precios pueden caer mucho y tardar años en recuperarse, así que decide de antemano cuánta caída puedes tolerar, evita concentrar demasiado en una sola posición y revisa tus motivos con regularidad en lugar de mantener por pura esperanza.",
       "steps": [
         "Escribe por qué tendrías cada posición y qué te haría cambiar de opinión.",
@@ -64,9 +64,9 @@
       "path": [
         { "type": "lesson", "id": "m1-l1", "why": "Empieza por lo que significa de verdad tener una acción de una empresa." },
         { "type": "lesson", "id": "m1-l5", "why": "Qué mueve los precios y cómo una cuenta simulada te ayuda a aprender sin riesgo." },
-        { "type": "lesson", "id": "m9-l2", "why": "Los ETF, el seguimiento de índices y los gastos anuales son herramientas clave para el inversor a largo plazo." },
+        { "type": "lesson", "id": "m9-l1", "why": "Qué es un ETF y cuánto te cuesta de verdad su ratio de gastos con los años." },
         { "type": "lesson", "id": "m4-l3", "why": "Caídas y psicología: lo más difícil de mantener a largo plazo." },
-        { "type": "lesson", "id": "m4-l1", "why": "El tamaño de posición también vale para inversores: ninguna posición debería hundir el plan." },
+        { "type": "lesson", "id": "m4-l1", "why": "El tamaño de posición también vale para inversionistas: ninguna posición debería hundir el plan." },
         { "type": "drill", "id": "bear-market-survival-2022", "why": "Siente cómo es una caída de un año entero, con el futuro oculto." },
         { "type": "drill", "id": "crash-and-recovery-xom-2020", "why": "Practica mantener la disciplina durante una caída fuerte y su recuperación." }
       ]
@@ -80,7 +80,7 @@
       "tip": "Algo a vigilar: el apalancamiento funciona en los dos sentidos y la complejidad puede ocultar riesgos. Aprende las griegas y las reglas de asignación antes de operar spreads, prefiere posiciones de riesgo definido mientras aprendes y conoce siempre tu pérdida máxima antes de colocar una orden simulada.",
       "steps": [
         "Aprende primero lo básico de las acciones y la gestión del riesgo; las opciones se apoyan en ambas cosas.",
-        "Usa el Laboratorio de opciones de la página Portafolio para dibujar el gráfico de resultados de cada posición antes de abrirla.",
+        "Usa el Laboratorio de opciones de la página Portafolio para dibujar el diagrama de pago de cada posición antes de abrirla.",
         "Empieza con estrategias de riesgo definido, como los spreads verticales, y anota la pérdida máxima en tu diario."
       ],
       "path": [
@@ -149,10 +149,10 @@
       "id": "q6",
       "q": "¿Qué herramienta te gustaría dominar más?",
       "choices": [
-        { "text": "Un gráfico de resultados y las griegas.", "points": { "options": 2 } },
+        { "text": "Un diagrama de pago y las griegas.", "points": { "options": 2 } },
         { "text": "Las medias móviles y la fuerza de la tendencia.", "points": { "trend": 2 } },
         { "text": "Los patrones de velas, el RSI y las Bandas de Bollinger.", "points": { "swing": 2 } },
-        { "text": "Comparar fondos, costes y rendimiento a largo plazo.", "points": { "value": 2 } }
+        { "text": "Comparar fondos, costos y rendimiento a largo plazo.", "points": { "value": 2 } }
       ]
     },
     {

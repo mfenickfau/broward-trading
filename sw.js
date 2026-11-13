@@ -24,7 +24,7 @@
 /* eslint-env serviceworker */
 'use strict';
 
-const VERSION = 'bt-v0.5.0';
+const VERSION = 'bt-v0.5.1';
 const SHELL_CACHE = VERSION + '-shell';
 const RUNTIME_CACHE = VERSION + '-runtime';
 

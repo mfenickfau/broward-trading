@@ -64,7 +64,7 @@
       "path": [
         { "type": "lesson", "id": "m1-l1", "why": "Start with what owning a share of a company really means." },
         { "type": "lesson", "id": "m1-l5", "why": "What moves prices, and how a paper account helps you learn safely." },
-        { "type": "lesson", "id": "m9-l2", "why": "ETFs, index tracking and expense ratios are core tools for long-term investors." },
+        { "type": "lesson", "id": "m9-l1", "why": "What an ETF is and what its expense ratio really costs you over the years." },
         { "type": "lesson", "id": "m4-l3", "why": "Drawdowns and psychology: the hardest part of holding for the long run." },
         { "type": "lesson", "id": "m4-l1", "why": "Position sizing applies to investors too: no single holding should sink the plan." },
         { "type": "drill", "id": "bear-market-survival-2022", "why": "Feel what a year-long decline is like, with the future hidden." },

@@ -124,6 +124,15 @@
   .ed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:var(--sp-2)}
   .ed-fill{font-size:var(--fs-sm);color:var(--muted);padding:8px 10px;border:1px dashed var(--line);border-radius:var(--r);background:var(--panel2)}
   .ed-fill b{color:var(--fg);font-family:var(--mono);font-weight:500}
+  .ed-coach{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .ed-coach h3{margin:0 0 6px;font-size:var(--fs-sm)}
+  .ed-coach ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+  .ed-coach li{font-size:var(--fs-sm);line-height:1.45;border-left:3px solid var(--accent);padding-left:8px}
+  .ed-coach li.warn{border-left-color:var(--warn)}
+  .ed-coach li a{display:inline-flex;align-items:center;min-height:44px}
+  .ed-coach .ed-ai{margin-top:8px;font-size:var(--fs-sm);line-height:1.5}
+  .ed-coach .ed-ai div{white-space:pre-wrap;margin-top:4px}
+  .entry .coach-sum{margin-top:6px}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:var(--r-pill);font-size:var(--fs-sm);white-space:normal}
   .chip.on{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
@@ -328,6 +337,15 @@
     <div class="modal-head"><h2 id="edTitle">Edit entry</h2><button type="button" class="close ghost" id="edClose" aria-label="Close">✕</button></div>
     <form id="edForm" novalidate>
       <div class="ed-fill" id="edFill" hidden></div>
+      <section class="ed-coach mt-2" id="edCoach" aria-labelledby="edCoachTitle" hidden>
+        <h3 id="edCoachTitle">Coach notes</h3>
+        <ul id="edCoachList"></ul>
+        <p class="xs muted" id="edCoachNone" hidden>No coach notes were saved for this fill. The coach reviews new fills on the Dashboard and in Market Replay.</p>
+        <div class="ed-ai" id="edCoachAiWrap" hidden><b>AI coach</b><div class="no-i18n" translate="no" id="edCoachAi"></div></div>
+        <div class="row mt-2"><button type="button" class="sm" id="edAskAi">Ask the AI coach (Pro)</button></div>
+        <p class="xs muted" id="edAiStatus" role="status" aria-live="polite"></p>
+        <p class="xs muted">The coach checks habits (risk, stops, trend, overtrading). It never tells you what to buy or sell.</p>
+      </section>
       <div class="ed-grid mt-2">
         <div class="field"><label for="edSymbol">Symbol</label><input id="edSymbol" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="24" placeholder="AAPL"></div>
         <div class="field"><label for="edDate">Date</label><input id="edDate" type="date"></div>
@@ -394,6 +412,10 @@
 
 <script src="js/paper.js"></script>
 <script src="js/journal.js"></script>
+<!-- optional: coach notes view and the Pro AI coach; the page script guards every use -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/coach.js"></script>
 <script>
 /* Broward Trading — journal.html page script (UI only; the engine is js/journal.js → BT.journal) */
 (function () {
@@ -584,6 +606,14 @@
   // inside .no-i18n / translate="no" so the i18n DOM walker never rewrites their own words.
   var UT = ' no-i18n" translate="no"';
   function userSpan(cls, text) { return '<span class="' + cls + UT + '>' + esc(text) + '</span>'; }
+  // Coach notes count on the card (the notes themselves open in the editor, so the card stays one tap target).
+  function coachSummary(e) {
+    var f = e.coach && Array.isArray(e.coach.findings) ? e.coach.findings : [];
+    if (!f.length && !(e.coach && e.coach.ai)) return '';
+    var warn = f.filter(function (x) { return x.level === 'warn'; }).length;
+    var label = f.length === 1 ? T('1 coach note') : T('{n} coach notes', { n: f.length });
+    return '<div class="coach-sum"><span class="pill ' + (warn ? 'demo' : 'solid') + '">' + esc(label) + (e.coach.ai ? ' · ' + esc(T('AI note')) : '') + '</span></div>';
+  }
   function entryCard(e) {
     var em = emotionOf(e.emotion);
     var reviewed = !!(e.setup && e.emotion);
@@ -597,6 +627,7 @@
       e.tags.slice(0, 8).map(function (t) { return userSpan('tag', t); }).join('') + (e.tags.length > 8 ? '<span class="tag">+' + (e.tags.length - 8) + '</span>' : '') + '</div>' +
       (e.notes ? '<div class="notes' + UT + '>' + esc(e.notes) + '</div>' : '') +
       (e.lessons ? '<div class="lesson' + UT + '>' + esc(e.lessons) + '</div>' : '') +
+      (e.coach ? coachSummary(e) : '') +
       '<div class="e-foot"><span>' + esc(niceDate(e.date)) + (e.trade && isNum(e.trade.time) ? ' ' + new Date(e.trade.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '') + '</span>' +
       '<button type="button" class="edit sm" data-edit="' + esc(e.id) + '">' + (reviewed ? 'Edit' : 'Review') + '</button></div></article>';
   }
@@ -944,6 +975,7 @@
         ' · account <b class="no-i18n" translate="no">' + esc(e.account || e.source) + '</b>' + (t && isNum(t.time) ? ' · ' + new Date(t.time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '') +
         '<br><span class="xs">Copied from your paper account; the fill itself cannot be edited here. Add the thinking around it.</span>';
     } else fill.hidden = true;
+    renderCoach(e);
     $('setupList').innerHTML = J.setupSuggestions(all).map(function (s) { return '<option value="' + esc(s) + '"></option>'; }).join('');
     $('edMsg').textContent = '';
     renderChips();
@@ -952,6 +984,51 @@
     setTimeout(function () { (manual ? $('edSymbol') : $('edSetup')).focus(); }, 30);
     try { history.replaceState(null, '', e ? '#entry=' + encodeURIComponent(e.id) : '#new'); } catch (err) { /* file:// */ }
   }
+  /* Coach notes in the editor: rule-based findings saved after the fill, plus an optional Pro AI note. */
+  function renderCoach(e) {
+    var box = $('edCoach'); if (!box) return;
+    var hasTrade = !!(e && e.trade), view = e && typeof J.coachView === 'function' ? J.coachView(e) : [];
+    var ai = e && e.coach && e.coach.ai ? e.coach.ai : '';
+    box.hidden = !(e && (hasTrade || view.length || ai));
+    if (box.hidden) return;
+    $('edCoachList').innerHTML = view.map(function (f) {
+      var badge = '<span class="pill ' + (f.level === 'warn' ? 'demo' : 'solid') + '">' + esc(f.level === 'warn' ? T('Warning') : T('Tip')) + '</span> ';
+      var link = f.lessonUrl ? ' <a href="' + esc(f.lessonUrl) + '">' + esc(T('Related lesson')) + ' ▸</a>' : '';
+      return '<li class="' + (f.level === 'warn' ? 'warn' : 'tip') + '">' + badge + '<b>' + esc(f.title || '') + '</b> ' + esc(f.message || '') + link + '</li>';
+    }).join('');
+    $('edCoachList').hidden = !view.length;
+    $('edCoachNone').hidden = !!view.length;
+    $('edCoachAiWrap').hidden = !ai;
+    $('edCoachAi').textContent = ai;
+    var canAsk = !!(BT.coach && typeof BT.coach.ai === 'function' && hasTrade);
+    $('edAskAi').hidden = !canAsk;
+    $('edAskAi').disabled = false;
+    $('edAskAi').textContent = ai ? T('Ask the AI coach again (Pro)') : T('Ask the AI coach (Pro)');
+    $('edAiStatus').textContent = '';
+  }
+  var AI_REASONS = {
+    'not-configured': 'The AI coach needs the class server, which this site does not have set up. The rule-based notes above are free and always available.',
+    'not-pro': 'The AI coach is part of Pro. The rule-based notes above are free and always available.',
+    'not-signed-in': 'Sign in on the Profile page to use the AI coach.',
+    'limit': 'You reached today\'s AI coach limit. Try again tomorrow.',
+    'network': 'Could not reach the AI coach. Check your connection and try again.'
+  };
+  function askAi() {
+    var e = ed.id ? J.get(ed.id) : null, btn = $('edAskAi'), st = $('edAiStatus');
+    if (!e || !e.trade || !BT.coach || typeof BT.coach.ai !== 'function') return;
+    btn.disabled = true;
+    st.textContent = T('Asking the AI coach…');
+    var findings = e.coach && Array.isArray(e.coach.findings) ? e.coach.findings : [];
+    var trade = Object.assign({ symbol: e.symbol }, e.trade);
+    Promise.resolve(BT.coach.ai(trade, { note: [e.notes, e.lessons].filter(Boolean).join('\n'), findings: findings })).then(function (r) {
+      btn.disabled = false;
+      if (!r || !r.ok || !r.text) { st.textContent = T(AI_REASONS[r && r.reason] || 'The AI coach is not available right now. The rule-based notes above still apply.'); return; }
+      var saved = J.setCoach(e.id, BT.coach.toJournal(findings, { ai: r.text }), { keepAi: false });
+      if (saved) { renderCoach(saved); render(); }
+      $('edAiStatus').textContent = T('AI coach note saved to this entry.');
+    }, function () { btn.disabled = false; st.textContent = T(AI_REASONS.network); });
+  }
+  if ($('edAskAi')) $('edAskAi').addEventListener('click', askAi);
   function closeEditor() {
     backdrop.hidden = true;
     document.body.classList.remove('modal-open');

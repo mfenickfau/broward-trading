@@ -29,9 +29,9 @@ Code: `js/leagues.js` (`BT.leagues`, pure logic), `leagues.html` + `js/leagues-u
 |---|---|
 | **League** | A name, a start and end date (at most 366 days apart), a set of rules, and a six-character code such as `K7Q2MX`. Codes never contain `0`, `O`, `1` or `I`, the same alphabet as class codes. |
 | **League account** | Each league a student joins gets its own paper account (`BT.paper.use('league:<CODE>')`, stored as `bt.portfolio.league-<code>`). It starts with the league's starting cash. The main account, the Replay account and every other league stay untouched. |
-| **Account switcher** | The trade ticket on the dashboard and in Market Replay has an account switcher: Main, Replay and one entry per joined league. When a league account is active, every order is checked against the league's rules (`BT.leagues.validateOrder`) before it reaches the paper engine, and a rejected order explains which rule stopped it. |
+| **Account switcher** | The trade ticket on the dashboard has an account switcher: Main, Replay and one entry per joined league. When a league account is active, every order is checked against the league's rules (`BT.leagues.validateOrder`) before it reaches the paper engine, and a rejected order explains which rule stopped it. In Market Replay the selector only lets you practise under a league's rules; those trades stay on the Replay account and never count in the league. |
 | **Snapshot** | A small summary of a member's league account: equity, return, closed trades, max drawdown and at most 60 points of the equity curve. This is all that ever leaves the device. |
-| **Standings** | Members ranked by return, with ties broken by the smaller drawdown. Sharpe ratio, consistency and a sparkline sit next to each row. |
+| **Standings** | Members ranked by the league's **Rank by** rule (risk-adjusted return unless the organiser picks raw return or consistency), with ties broken by higher return, then the smaller drawdown. Sharpe ratio, consistency and a sparkline sit next to each row. |
 
 A league moves through three phases. **Upcoming**: members can join, but orders are refused until the start date. **Active**: trading under the rules. **Ended**: from the day after the end date the league account is frozen, so the final standings cannot change. Members who are still in the league when it ends and placed at least one trade in it earn the *League Finisher* badge and 50 XP. Rank and return play no part in that award.
 
@@ -80,7 +80,7 @@ An instructor can also add the league to the **Leagues** tab on `instructor.html
 
 1. Open **More → Leagues**, paste the `BTL1.` code into **Join a league**, add a display name (optional; a first name or nickname is enough) and pick a team if the league has teams.
 2. Tap **Join league**. A league card appears under **My leagues** with a countdown to the start or the end.
-3. Trade from the dashboard or Replay with the league selected in the ticket's account switcher.
+3. Trade from the dashboard with the league selected in the ticket's account switcher. (Replay can practise a league's rules, but Replay trades never count in the standings.)
 4. When the organiser asks (weekly works well, plus once after the end date), tap **Copy my share code** on the league card and send the code to the organiser. It is a line starting with `BT1.`, the same format the Classroom card uses, with a `leagues` block added.
 
 ### Collecting standings
@@ -129,9 +129,10 @@ The same formulas run on the device (`BT.leagues.metrics`) and on the server, so
 
 | Column | Meaning |
 |---|---|
-| **Return** | Equity now versus the league's starting cash. The table is sorted by this, and ties go to the smaller drawdown. |
+| **Return** | Equity now versus the league's starting cash. |
+| **Rank** | Set by the organiser's **Rank by** choice when the league is created. *Risk-adjusted* (the default): return ÷ max(drawdown, 1) for gains and return × max(drawdown, 1) for losses, so +12 % after a 40 % drawdown ranks below +5 % with a 1 % drawdown. *Raw return*: return only. *Consistency*: the consistency score below. Ties go to the higher return, then the smaller drawdown. A one-line note above the table says which rule applies. |
 | **Max drawdown** | The biggest fall from a peak to a later low on the equity curve. Smaller means the account took less pain. |
-| **Sharpe ratio** | Average step-to-step return divided by how much it swung, annualised as if the points were daily (×√252). It needs at least three equity points. It rewards steady gains over wild swings. |
+| **Sharpe ratio** | Average day-to-day return divided by how much it swung, from one closing equity value per calendar day (so opening the app often or rarely does not change it), annualised with √(trading periods per year, at most 252). It needs at least three daily returns. It rewards steady gains over wild swings. |
 | **Consistency** (0 to 100) | 60 % from how often the account rose between equity points, plus 40 % from keeping drawdown small (0 % drawdown scores full marks, 20 % or more scores nothing). |
 | **Trades** | Closed trades in the league account. |
 | **Sparkline** | The equity curve, at most 60 points. |
@@ -184,7 +185,7 @@ A league is only useful if everyone believes the table. These are the design cho
 - **No email, no real name, no account.** A league member is a random student id generated on the device, an optional display name and an optional team.
 - **What leaves the device:** the league block of the snapshot only (equity, return, closed-trade count, max drawdown, up to 60 equity points). The trade list, symbols, journal text and the main account never leave.
 - **Where it is stored:** offline, in the organiser's browser (`bt.leagues`); online, in the Worker's `LEAGUES` namespace with automatic expiry. The server does not log the sender's IP address with league data.
-- **Leaving:** a member can leave a league from its card at any time. Online, the organiser or site owner can delete the member's key from `LEAGUES` (`server/README.md`, "Maintenance").
+- **Leaving:** a member can leave a league from its card at any time. Online, the organiser or site owner can delete the member's key from `LEAGUES` (`server/README.md`, "Privacy & data retention").
 
 Read the classroom privacy line from `docs/TEACHING_GUIDE.md` section 10 aloud when a class joins a league. It is just as true here.
 

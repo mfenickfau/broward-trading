@@ -25,6 +25,11 @@
  *             entry survives an account reset
  *   pnl      realized P&L of a closing fill (null for opening fills and for
  *            manual entries without a P&L)
+ *   coach    optional rule-based / Pro AI coach notes (CONTRACTS.md v0.5),
+ *            the shape BT.coach.toJournal() returns:
+ *            {at, findings:[{id, level:'tip'|'warn', title, message, lessonId}], ai?}
+ *            (at most 10 findings, ai text at most 2000 chars). Written with
+ *            setCoach(); re-syncing a fill never touches it.
  *   createdAt, updatedAt (ms)
  *
  * Auto-sync: sync() reads every paper account (BT.paper.accounts() plus each
@@ -184,6 +189,33 @@
   function freshState() { return { version: VERSION, entries: [], reviews: {}, hidden: [], updatedAt: 0 }; }
   var state = freshState();
 
+  /* ------------------------------------------------------------------ *
+   * Coach notes (BT.coach.toJournal shape)
+   * ------------------------------------------------------------------ */
+  var MAX_COACH_FINDINGS = 10;
+  var MAX_COACH_AI = 2000;
+  function coachText(v, max) { return typeof v === 'string' ? v.slice(0, max).trim() : ''; }
+  /** normalizeCoach(c) → {at, findings[], ai?} or null. Accepts toJournal() output or a bare findings array. */
+  function normalizeCoach(c) {
+    if (Array.isArray(c)) c = { findings: c };
+    if (!c || typeof c !== 'object') return null;
+    var findings = (Array.isArray(c.findings) ? c.findings : []).filter(function (f) { return f && typeof f === 'object'; }).map(function (f) {
+      var lessonId = typeof f.lessonId === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(f.lessonId) ? f.lessonId : null;
+      return {
+        id: coachText(typeof f.id === 'string' ? f.id : '', 40),
+        level: f.level === 'warn' ? 'warn' : 'tip',
+        title: coachText(f.title, 200),
+        message: coachText(f.message, 1000),
+        lessonId: lessonId
+      };
+    }).filter(function (f) { return f.title || f.message; }).slice(0, MAX_COACH_FINDINGS);
+    var ai = coachText(c.ai, MAX_COACH_AI);
+    if (!findings.length && !ai) return null;
+    var out = { at: isNum(c.at) ? c.at : now(), findings: findings };
+    if (ai) out.ai = ai;
+    return out;
+  }
+
   /** normalizeEntry(obj) → a clean entry or null when nothing usable is there. */
   function normalizeEntry(e, existing) {
     if (!e || typeof e !== 'object') return null;
@@ -231,6 +263,9 @@
       out.replay = e.replay;
       if (out.pnl == null && isNum(e.replay.equity) && isNum(e.replay.startingCash)) out.pnl = cents(e.replay.equity - e.replay.startingCash);
     } else if (base.replay) out.replay = base.replay;
+    // Coach notes: an explicit null clears them; otherwise keep the new (sanitized) copy or the existing one.
+    var coach = e.coach === null ? null : (e.coach !== undefined ? normalizeCoach(e.coach) : normalizeCoach(base.coach));
+    if (coach) out.coach = coach;
     if (!out.symbol && !out.setup && !out.notes && !out.lessons && !out.trade && !out.replay) return null;
     return out;
   }
@@ -753,6 +788,77 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Coach helpers
+   * ------------------------------------------------------------------ */
+  /**
+   * findByTrade(trade, accountId?) → the synced entry for a BT.paper fill (or null).
+   * trade: a BT.paper trade object ({id, time, ...}) or a numeric trade id. Synced entries are keyed
+   * '<account>:<generation>:<id>' (see sync()); when several generations share the id, the one whose
+   * copied fill time matches wins, then the newest.
+   */
+  function findByTrade(trade, accountId) {
+    var tid = trade && typeof trade === 'object' ? trade.id : trade;
+    if (tid == null || tid === '') return null;
+    var suffix = ':' + String(tid);
+    var acc = typeof accountId === 'string' && accountId ? accountId : null;
+    var time = trade && typeof trade === 'object' && isNum(trade.time) ? trade.time : null;
+    var hits = state.entries.filter(function (e) {
+      if (!e.tradeId || e.tradeId.slice(-suffix.length) !== suffix) return false;
+      return !acc || e.account === acc;
+    });
+    if (!hits.length) return null;
+    if (time != null) {
+      var exact = hits.filter(function (e) { return e.trade && e.trade.time === time; });
+      if (exact.length) hits = exact;
+    }
+    return hits.reduce(function (b, e) { return !b || (e.createdAt || 0) >= (b.createdAt || 0) ? e : b; }, null);
+  }
+
+  /**
+   * setCoach(ref, coach, opts?) → the updated entry or null.
+   * ref: an entry id, an entry, or a paper fill ({trade, account} / a BT.paper trade with opts.account).
+   * coach: BT.coach.toJournal(findings, {ai}) output (or a bare findings array); null clears the notes.
+   * opts.keepAi (default true): a rules-only update keeps an earlier Pro AI note.
+   * opts.sync (default true): when the fill has no entry yet, run sync() once so it gets one.
+   */
+  function setCoach(ref, coach, opts) {
+    opts = opts || {};
+    var entry = null;
+    if (typeof ref === 'string') entry = get(ref) || (state.entries.filter(function (e) { return e.tradeId === ref; })[0] || null);
+    else if (ref && typeof ref === 'object') {
+      if (typeof ref.id === 'string' && get(ref.id)) entry = get(ref.id);
+      else {
+        var trade = ref.trade && typeof ref.trade === 'object' ? ref.trade : ref;
+        var acc = typeof ref.account === 'string' ? ref.account : opts.account;
+        entry = findByTrade(trade, acc);
+        if (!entry && opts.sync !== false && BT.paper) { sync(); entry = findByTrade(trade, acc); }
+      }
+    }
+    if (!entry) return null;
+    var next = coach === null ? null : normalizeCoach(coach);
+    if (coach !== null && !next) return entry;   // nothing to write
+    if (next && !next.ai && opts.keepAi !== false && entry.coach && entry.coach.ai) next.ai = entry.coach.ai;
+    return update(entry.id, { coach: next });
+  }
+
+  /**
+   * coachView(entry) → [{id, level, title, message, lessonId, lessonUrl}] for the journal UI
+   * (lessonUrl from BT.coach.lessonUrl when loaded, else 'learn.html#/lesson/<id>').
+   */
+  function coachView(entry) {
+    var c = entry && entry.coach;
+    if (!c || !Array.isArray(c.findings)) return [];
+    return c.findings.map(function (f) {
+      var url = null;
+      if (f.lessonId) {
+        try { url = BT.coach && typeof BT.coach.lessonUrl === 'function' ? BT.coach.lessonUrl(f.lessonId) : null; } catch (e) { url = null; }
+        if (!url) url = 'learn.html#/lesson/' + encodeURIComponent(f.lessonId);
+      }
+      return { id: f.id, level: f.level, title: f.title, message: f.message, lessonId: f.lessonId, lessonUrl: url };
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
    * Public API
    * ------------------------------------------------------------------ */
   BT.journal = {
@@ -770,6 +876,7 @@
     normalizeEntry: normalizeEntry, normTag: normTag, normTags: normTags,
     entries: entries, get: get, add: add, update: update, remove: remove,
     sync: sync,
+    normalizeCoach: normalizeCoach, findByTrade: findByTrade, setCoach: setCoach, coachView: coachView,
     filter: filter, summary: summary, groupStats: groupStats, calendar: calendar, streaks: streaks,
     tagSuggestions: tagSuggestions, setupSuggestions: setupSuggestions,
     weekKey: weekKey, weekRange: weekRange, getReview: getReview, saveReview: saveReview, reviewWeeks: reviewWeeks, weekSummary: weekSummary,

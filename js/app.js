@@ -764,7 +764,7 @@
     if (lg) {
       var cd = null; try { cd = BT.leagues.countdown ? BT.leagues.countdown(lg) : null; } catch (e) { cd = null; }
       txt = T('{name}: {status}. League rules are checked before every order ({rules}).', { name: lg.name, status: cd && cd.label ? cd.label : T('active'), rules: leagueRulesText(lg) });
-    } else if (leagueCode(cur)) txt = T('This league is not saved on this device any more, so its rules cannot be checked. Rejoin it on the Leagues page.');
+    } else if (isLeagueAccount(cur)) txt = T('This league is not saved on this device any more, so its rules cannot be checked. Rejoin it on the Leagues page.');
     else if (cur === 'replay') txt = T('The Replay account is reset each time you start a Market Replay session, so trades placed here do not last. Use Main for practice that sticks.');
     else if (cur === 'main') txt = ids.length > 1 ? T('Your main practice account. League and Replay accounts keep separate cash and positions.') : '';
     note.textContent = txt; note.hidden = !txt;
@@ -795,16 +795,25 @@
     if (e && e.key && (/^bt\.leagues/.test(e.key) || e.key === 'bt.portfolio.accounts')) renderAccountSwitcher();
   });
 
-  /** League rules for the active account: {ok, reason}. Main / Replay accounts always pass. */
+  /** True for a league account id, even when js/leagues.js is missing ('league:ABC234' / 'league-abc234'). */
+  function isLeagueAccount(id) { return !!leagueCode(id) || /^league[:\-][a-z0-9]+$/i.test(String(id || '')); }
+  /**
+   * League rules for the active account: {ok, reason}. Main / Replay accounts always pass.
+   * A league account fails closed: if its league cannot be loaded (cleared storage, missing module)
+   * or the check throws, the order is refused rather than placed with no rules.
+   */
   function leagueCheck(order, refPrice) {
-    var lg = leagueOf(activeAccount());
-    if (!lg) return { ok: true, reason: '' };
-    var st = paper.state;
-    var acct = Object.assign({}, st, { marks: Object.assign({}, st.marks || {}, priceMap()) });
+    var id = activeAccount();
+    if (!isLeagueAccount(id)) return { ok: true, reason: '' };
+    var blocked = { ok: false, reason: T('This league is not saved on this device any more, so its rules cannot be checked. Rejoin it on the Leagues page.') };
+    var lg = leagueOf(id);
+    if (!lg || !leaguesApi()) return blocked;
     try {
+      var st = paper.state;
+      var acct = Object.assign({}, st, { marks: Object.assign({}, st.marks || {}, priceMap()) });
       var res = BT.leagues.validateOrder(Object.assign({}, order, { price: refPrice || lastPrice(), time: Date.now() }), lg, acct);
       return res && res.ok === false ? { ok: false, reason: res.reason || T('This order breaks a league rule.') } : { ok: true, reason: '' };
-    } catch (e) { console.warn('League check failed', e); return { ok: true, reason: '' }; }
+    } catch (e) { console.warn('League check failed', e); return { ok: false, reason: T('The league rules could not be checked, so this order was not placed. Reload the page and try again.') }; }
   }
 
   /* ------------------------------------------------------------------ *
@@ -935,7 +944,18 @@
     var seen = {};
     notes = notes.filter(function (n) { var k = (n.title || '') + '|' + (n.message || ''); if (seen[k]) return false; seen[k] = 1; return true; });
     showCoach(notes);
+    saveCoachToJournal(notes, newTrades);
     awardXp('firstTrade', 'once');
+  }
+  /** Copy the coach notes into the journal entry of each new fill (BT.journal, when loaded). Never breaks trading. */
+  function saveCoachToJournal(notes, newTrades) {
+    var J = BT.journal, C = BT.coach;
+    if (!notes || !notes.length || !newTrades.length || !J || typeof J.setCoach !== 'function' || !C || typeof C.toJournal !== 'function') return;
+    try {
+      if (typeof J.load === 'function') J.load();   // another tab (journal.html) may have edited entries since this page loaded
+      var acct = activeAccount(), payload = C.toJournal(notes);
+      newTrades.forEach(function (tr) { if (tr && tr.id != null) J.setCoach({ trade: tr, account: acct }, payload); });
+    } catch (e) { console.warn('Could not save coach notes to the journal', e); }
   }
 
   /* ------------------------------------------------------------------ *
@@ -994,6 +1014,57 @@
     var stop = long ? entry * (1 - rule.exit.stopPct / 100) : entry * (1 + rule.exit.stopPct / 100);
     try { var s = R.positionSize({ equity: currentEquity(), riskPct: planNum('planRisk') || 1, entry: entry, stop: stop }); s.stop = stop; return s; } catch (e) { return null; }
   }
+  /** Bar or trade time → ms (unix seconds, ms, 'YYYY-MM-DD' at 00:00 UTC, or a {year, month, day} business day). Same as coach.barIndexAt. */
+  function timeMs(t) {
+    if (typeof t === 'number' && isFinite(t)) return t < 1e11 ? t * 1000 : t;
+    if (typeof t === 'string' && t) { var p = Date.parse(t.length === 10 ? t + 'T00:00:00Z' : t); return isFinite(p) ? p : null; }
+    if (t && typeof t === 'object' && typeof t.year === 'number') return Date.UTC(t.year, (t.month || 1) - 1, t.day || 1);
+    return null;
+  }
+  /** Index of the last bar whose time is at or before t; -1 when t is before the first bar or unknown. */
+  function barIndexAt(list, t) {
+    var ms = timeMs(t), idx = -1;
+    if (ms == null || !list || !list.length) return -1;
+    for (var i = 0; i < list.length; i++) {
+      var b = timeMs(list[i] && list[i].time);
+      if (b == null) continue;
+      if (b <= ms) idx = i; else break;
+    }
+    return idx;
+  }
+  /**
+   * The trade that opened the position currently held in `sym`: walk this symbol's trades backwards,
+   * undoing each one, until the quantity before a trade was flat (or on the other side). null if unknown.
+   */
+  function openingTrade(sym, pos) {
+    var trades = (paper.state && paper.state.trades) || [], q = pos ? pos.qty : 0, eps = 1e-9;
+    if (!q) return null;
+    var dir = q > 0 ? 1 : -1;
+    for (var i = trades.length - 1; i >= 0; i--) {
+      var tr = trades[i]; if (!tr || tr.symbol !== sym || !(tr.qty > 0)) continue;
+      var prev = q - (tr.side === 'buy' ? tr.qty : -tr.qty);
+      if (Math.abs(prev) < eps || prev * dir < 0) return tr;
+      q = prev;
+    }
+    return null;
+  }
+  /**
+   * The dashboard position in the shape BT.rules.propose expects. entryIndex / barsHeld let the rule's
+   * trailing stop and time exit run; `tracked` is false when the entry bar is not in the loaded bars.
+   */
+  function heldForRules(pos) {
+    if (!pos) return null;
+    var held = { side: pos.qty > 0 ? 'long' : 'short', entry: pos.avg, qty: Math.abs(pos.qty), tracked: false };
+    var tr = openingTrade(symbol, pos);
+    if (tr) {
+      var idx = barIndexAt(bars, tr.barTime != null ? tr.barTime : tr.time);
+      if (idx >= 0) { held.entryIndex = idx; held.barsHeld = bars.length - 1 - idx; held.tracked = true; }
+    }
+    return held;
+  }
+  function needsEntryBar(rule) {
+    var ex = rule && rule.exit; return !!ex && (ex.trailingPct != null || ex.maxBars != null);
+  }
   function checkAuto() {
     var R = rulesApi(); if (!R || !$('panel-auto') || !bars.length) return;
     var cfg = autoCfg();
@@ -1009,7 +1080,18 @@
     if (!strat || (strat.errors && strat.errors.length)) { hideProposal(); autoMsg(T('This rule cannot run yet: {problems}', { problems: strat && strat.errors ? strat.errors.join(' ') : T('it did not compile') }), 'err'); return; }
     auto.rule = strat.rule || rule;
     var pos = position();
-    var held = pos ? { side: pos.qty > 0 ? 'long' : 'short', entry: pos.avg, qty: Math.abs(pos.qty) } : null;
+    var held = heldForRules(pos);
+    // Never fail silently: tell the student when the rule's trailing stop / time exit cannot be followed.
+    var untracked = !!held && !held.tracked && needsEntryBar(auto.rule);
+    var tn = $('autoTrackNote');
+    if (untracked && !tn && $('autoControls')) {
+      tn = document.createElement('p'); tn.id = 'autoTrackNote'; tn.className = 'note';
+      $('autoControls').appendChild(tn);
+    }
+    if (tn) {
+      tn.hidden = !untracked;
+      tn.textContent = untracked ? T('The bar where this {symbol} position was opened is not in the loaded chart, so the rule’s trailing stop and time exit cannot be tracked for it. Any stop-loss, profit target or exit condition in the rule is still checked. Watch the trailing and time exits yourself, or load a longer range.', { symbol: symbol }) : '';
+    }
     var prop = null;
     try {
       if (typeof R.propose === 'function') prop = R.propose(rule, bars, held);
@@ -1147,7 +1229,7 @@
   $('reset').onclick = function () {
     var b = this;
     if (b.dataset.arm) {
-      var lgR = leagueOf(activeAccount());
+      var lgR = isLeagueAccount(activeAccount());
       if (lgR) { delete b.dataset.arm; b.textContent = T('Reset'); toast(T('League accounts cannot be reset: every member starts with the same cash and keeps their own record until the league ends.'), 'warn', T('League rule'), 7000); return; }
       var start = paper.state.startingCash || 100000;
       paper.reset(start); delete b.dataset.arm; b.textContent = T('Reset'); hideConfirm(); renderAccount(); renderOrders(); renderAccountSwitcher();
@@ -1156,13 +1238,43 @@
     else { b.dataset.arm = '1'; b.textContent = T('Confirm reset'); setTimeout(function () { b.textContent = T('Reset'); delete b.dataset.arm; }, 4000); }
   };
 
+  /**
+   * League accounts freeze at the end date: once BT.leagues.tradingOpen() is false, working orders on the
+   * league account are cancelled with finishedReason() instead of filling. An orphaned league account
+   * (league no longer saved here) fills nothing, because its rules cannot be checked. → true when frozen.
+   */
+  function freezeLeagueOrders() {
+    var id = activeAccount();
+    if (!isLeagueAccount(id)) return false;
+    var L = BT.leagues, lg = leagueOf(id);
+    if (!lg || !L) return true;
+    var open = true;
+    try { open = typeof L.tradingOpen === 'function' ? L.tradingOpen(id) : (typeof L.phase === 'function' ? L.phase(lg) === 'active' : true); } catch (e) { open = true; }
+    if (open) return false;
+    var working = paper.openOrders();
+    if (!working.length) return true;
+    var reason = typeof L.finishedReason === 'function' ? L.finishedReason(lg) : T('League finished');
+    working.forEach(function (o) { var c = paper.cancelOrder(o.id); if (c) c.reason = reason; });
+    if (typeof paper.save === 'function') paper.save();
+    toast(T(working.length === 1 ? '{reason}: 1 working order on this league account was cancelled instead of filling, so your result stays as it was at the end date.' : '{reason}: {n} working orders on this league account were cancelled instead of filling, so your result stays as it was at the end date.', { reason: reason, n: working.length }), 'warn', T('League rule'), 7000);
+    renderOrders(); renderAccount();
+    return true;
+  }
+
   /** Fill resting orders against a bar and tell the student. */
   function processFills(sym, bar) {
+    if (freezeLeagueOrders()) return [];
     var before = paper.openOrders(sym);
     var fills = paper.processOrders(sym, bar) || [];
     fills.forEach(function (f) {
-      var o = f.order;
-      toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — your {type} price was reached.' : 'Sold {qty} {symbol} @ {price} — your {type} price was reached.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), type: T(TYPE_NAMES[o.type] || o.type).toLowerCase() }), 'ok', 'Order filled');
+      var o = f.order, tr = f.trade;
+      // Report what traded on THIS bar: with the volume fill model one order can fill in several pieces.
+      var fillQty = tr && tr.qty > 0 ? tr.qty : o.qty, fillPx = tr && tr.price > 0 ? tr.price : o.fillPrice;
+      var isPartial = o.status === 'open' && !!o.partial;
+      var msg = T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — your {type} price was reached.' : 'Sold {qty} {symbol} @ {price} — your {type} price was reached.', { qty: fillQty, symbol: o.symbol, price: money(fillPx), type: T(TYPE_NAMES[o.type] || o.type).toLowerCase() });
+      if (isPartial) msg += ' ' + T('Partial fill: {filled} of {qty} done so far; the remaining {left} keep working on later bars.', { filled: o.filledQty, qty: o.qty, left: o.qty - o.filledQty });
+      else if (o.filledQty > fillQty) msg += ' ' + T('Order complete: all {qty} filled, average {avg}.', { qty: o.qty, avg: money(o.fillPrice) });
+      toast(msg, 'ok', isPartial ? T('Partial fill') : T('Order filled'));
       if (o.meta && o.meta.protectStop && !o.meta.protectPlaced && o.status === 'filled') {
         o.meta.protectPlaced = true;
         placeProtectiveStop(o, o.meta.protectStop);

@@ -69,6 +69,21 @@ test('every lessonId used by the coach exists in course/index.json', () => {
   assert.strictEqual(C.lessonUrl('m4-l1'), 'learn.html#/lesson/m4-l1');
 });
 
+test('each rule links to a lesson whose text teaches that rule', () => {
+  const dir = path.join(__dirname, '..', 'course');
+  const text = {};
+  fs.readdirSync(dir).filter(f => /^m\d+-.*\.json$/.test(f)).forEach(f => {
+    const j = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+    (j.lessons || []).forEach(l => { text[l.id] = JSON.stringify(l).toLowerCase(); });
+  });
+  const keyword = { overtrade: /overtrad/, avgDown: /averaging down/, revenge: /revenge/, noStop: /stop/, stopSlip: /stop/, risk: /1%/, size: /1%/, trend: /moving average/, rr: /reward/ };
+  Object.keys(keyword).forEach(rule => {
+    const id = C.LESSONS[rule];
+    assert.ok(text[id], rule + ' -> ' + id + ' has lesson text');
+    assert.ok(keyword[rule].test(text[id]), rule + ' -> ' + id + ' mentions ' + keyword[rule]);
+  });
+});
+
 /* ---------------------------- no false positives ------------------- */
 test('a well-planned order (stop, 0.2% risk, 3:1 target, with the trend) gets no findings', () => {
   fresh();
@@ -223,7 +238,7 @@ test('averaging down a loser → warn; adding to a winner → no warning', () =>
   fakeNow += 2 * 86400e3;
   const down = C.reviewOrder({ symbol: 'MSFT', side: 'buy', qty: 50, type: 'market', meta: { plan: { stop: 90, target: 120 } } }, ctx({ price: 96, bars: bars('up', 96) }));
   assert.deepStrictEqual(ids(down), ['avgDown']);
-  assert.strictEqual(down[0].lessonId, 'm4-l3');
+  assert.strictEqual(down[0].lessonId, 'm7-l4');
   const up = C.reviewOrder({ symbol: 'MSFT', side: 'buy', qty: 50, type: 'market', meta: { plan: { stop: 100, target: 120 } } }, ctx({ price: 104, bars: bars('up', 104) }));
   assert.deepStrictEqual(ids(up), []);
 });
@@ -268,6 +283,46 @@ test('closed trade is judged against the trend at its entry bar', () => {
   fakeNow += 3600e3;
   P.placeOrder({ symbol: 'X', side: 'sell', qty: 100, type: 'market' }, 101);
   assert.deepStrictEqual(ids(C.reviewTrade(P.getState().trades.slice(-1)[0], ctx({ bars: b }))), ['trend']);
+});
+
+test('closed trade: the entry is judged on what was visible at entry, not the entry bar\'s later close', () => {
+  fresh();
+  // 70 daily bars, SMA50 rising; the student buys at 125 mid-day on the last day, which then closes at 95.
+  const b = [];
+  for (let i = 0; i < 70; i++) {
+    const c = i < 69 ? 100 + i * 0.5 : 95;
+    b.push({ time: new Date(Date.UTC(2024, 0, 1) + i * 86400000).toISOString().slice(0, 10), open: c, high: c + 1, low: c - 1, close: c, volume: 1e6 });
+  }
+  const day = b[69].time;
+  const summary = { symbol: 'X', side: 'long', qty: 10, entry: 125, exit: 120, stop: 121, target: 140,
+    entryTime: Date.parse(day + 'T15:00:00Z'), exitTime: Date.parse(day + 'T19:00:00Z') };
+  // At entry only bars through D-1 plus the forming bar at 125 were visible: no trend finding.
+  const forming = b.slice(0, 69).concat([{ time: day, open: 125, high: 125, low: 125, close: 125, volume: 1 }]);
+  assert.ok(!ids(C.reviewOrder({ symbol: 'X', side: 'buy', qty: 10, meta: { plan: { stop: 121, target: 140 } } }, ctx({ price: 125, bars: forming }))).includes('trend'));
+  // Reviewed after exit on the finished bars: still no trend finding.
+  const after = ids(C.reviewTrade(summary, ctx({ bars: b })));
+  assert.ok(!after.includes('trend'), JSON.stringify(after));
+  // Unknown entry time: no trend opinion (it used to be judged on the exit-day bar).
+  const noTime = Object.assign({}, summary); delete noTime.entryTime;
+  assert.ok(!ids(C.reviewTrade(noTime, ctx({ bars: bars('down') }))).includes('trend'));
+  // A Replay fill exactly at the bar's close (ticks off) is judged on that bar.
+  const down = bars('down');
+  const atClose = { symbol: 'X', side: 'long', qty: 10, entry: down[79].close, exit: 101, stop: 98, target: 106, entryBarTime: down[79].time };
+  assert.deepStrictEqual(ids(C.reviewTrade(atClose, ctx({ bars: down }))), ['trend']);
+});
+
+test('large-position copy fits the asset: single stock, index ETF, crypto', () => {
+  fresh();
+  window.BT.data = { kindOf: s => (s === 'SPY' ? 'etf' : (/-USD$/.test(s) ? 'crypto' : 'stock')), universe: [{ symbol: 'SPY', kind: 'etf', etfType: 'index' }] };
+  try {
+    const big = (sym, px) => C.reviewOrder({ symbol: sym, side: 'buy', qty: 300, type: 'market', meta: { plan: { stop: px * 0.99, target: px * 1.05 } } }, ctx({ price: px, bars: bars('up', px) }));
+    const stock = find(big('MSFT', 100), 'size'), etf = find(big('SPY', 100), 'size'), coin = find(big('BTC-USD', 100), 'size');
+    assert.ok(/overnight gap/.test(stock.message), stock.message);
+    assert.ok(/diversified fund/.test(etf.message) && !/one name|overnight/.test(etf.message), etf.message);
+    assert.ok(/around the clock/.test(coin.message) && !/overnight/.test(coin.message), coin.message);
+    const t = C.reviewTrade({ symbol: 'BTC-USD', side: 'long', qty: 300, entry: 100, exit: 101, stop: 99.5, target: 102, entryTime: T0 }, ctx({ bars: bars('up', 100) }));
+    assert.ok(/around the clock/.test(find(t, 'size').message));
+  } finally { delete window.BT.data; }
 });
 
 /* ---------------------------- revenge ------------------------------ */
@@ -329,7 +384,7 @@ test('overtrading: the 6th new position in a day → warn; the 5th → nothing',
   const f = C.reviewOrder(next('F'), ctx({ price: 100 }));
   assert.deepStrictEqual(ids(f), ['overtrade']);
   assert.ok(/6/.test(f[0].message));
-  assert.strictEqual(f[0].lessonId, 'm4-l5');
+  assert.strictEqual(f[0].lessonId, 'm10-l4');
   // reviewed after its own fill it is counted once, not twice
   const filled = plan(P.placeOrder(next('F'), 100), 98, 106);
   const g = C.reviewOrder(filled, ctx());

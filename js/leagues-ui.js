@@ -78,7 +78,19 @@
     out.push(r.shortSelling ? T('Shorting on') : T('No shorting'));
     if (r.maxPositionPct < 100) out.push(T('Max {n}% per position', { n: r.maxPositionPct }));
     if (r.teams) out.push(T('Teams: {t}', { t: r.teamNames.join(', ') }));
+    out.push(rankLabel(lg));
     return out;
+  }
+  function rankBy(lg) { var b = lg && lg.rules && lg.rules.rankBy; return b === 'return' || b === 'consistency' ? b : 'riskAdjusted'; }
+  function rankLabel(lg) {
+    var b = rankBy(lg);
+    return b === 'return' ? T('Ranked by raw return') : b === 'consistency' ? T('Ranked by consistency') : T('Ranked by risk-adjusted return');
+  }
+  function standingsCaption(lg) {
+    var b = rankBy(lg);
+    return b === 'return' ? T('Standings for {name}, sorted by return', { name: lg.name })
+      : b === 'consistency' ? T('Standings for {name}, sorted by consistency', { name: lg.name })
+      : T('Standings for {name}, sorted by risk-adjusted return', { name: lg.name });
   }
   function phasePill(ph) {
     if (ph === 'active') return '<span class="pill live"><span class="dot"></span>' + esc(T('Live')) + '</span>';
@@ -232,7 +244,16 @@
     var lg = pendingJoin;
     var opts = { displayName: $('joinName').value, team: $('joinTeam').value };
     var r = L.join(lg, opts);
-    if (!r.ok) { flash(msg, r.error, 'err'); return; }
+    if (!r.ok) {
+      if (r.reason === 'locked') {
+        // The pasted code differs from the copy this device already holds for a running league.
+        var known = L.get(lg.code);
+        flash(msg, r.error + ' ' + T('This device keeps the rules the league started with; ask the organiser for the original code if you think this is a mistake.'), 'err');
+        if (known) { uiSet({ selected: known.code }); renderAll(); }
+        return;
+      }
+      flash(msg, r.error, 'err'); return;
+    }
     var done = function (extra) {
       flash(msg, T('You joined {name}. A fresh {cash} paper account is ready for it.', { name: r.league.name, cash: money(r.league.rules.startingCash) }) + (extra ? ' ' + extra : ''), 'ok');
       $('joinCode').value = ''; $('joinPreview').textContent = ''; pendingJoin = null; setTeams(null);
@@ -262,6 +283,7 @@
     $('cCash').value = r.startingCash; $('cComm').value = r.commission; $('cSlip').value = r.slippageBps; $('cMaxPos').value = r.maxPositionPct;
     Array.prototype.forEach.call(document.querySelectorAll('input[name=asset]'), function (c) { c.checked = r.assets.indexOf(c.value) >= 0; });
     $('cDay').checked = r.dayTrading; $('cShort').checked = r.shortSelling;
+    if ($('cRank')) $('cRank').value = r.rankBy;
     var start = $('cStart').value || dateKey(new Date());
     $('cStart').value = start;
     $('cEnd').value = L._internal.addDays(start, p.days - 1);
@@ -278,7 +300,8 @@
     return {
       startingCash: +$('cCash').value, commission: +$('cComm').value, slippageBps: +$('cSlip').value, maxPositionPct: +$('cMaxPos').value,
       assets: Array.prototype.filter.call(document.querySelectorAll('input[name=asset]'), function (c) { return c.checked; }).map(function (c) { return c.value; }),
-      dayTrading: $('cDay').checked, shortSelling: $('cShort').checked, teams: $('cTeams').checked, teamNames: $('cTeamNames').value
+      dayTrading: $('cDay').checked, shortSelling: $('cShort').checked, teams: $('cTeams').checked, teamNames: $('cTeamNames').value,
+      rankBy: $('cRank') ? $('cRank').value : undefined
     };
   }
   function showCode(lg) {
@@ -346,12 +369,16 @@
   }
   function paintStandings(lg, data) {
     var rows = data.rows, body = $('stBody');
-    var head = data.error ? '<p class="msg err" role="status">' + esc(T('Showing this device\'s copy: {err}', { err: data.error })) + '</p>' : '';
+    var head = (data.error ? '<p class="msg err" role="status">' + esc(T('Showing this device\'s copy: {err}', { err: data.error })) + '</p>' : '') +
+      '<p class="note rank-note">' + esc(L.rankNote ? L.rankNote(lg) : '') + '</p>';
+    var mismatch = function (r) {
+      return r.rulesMismatch ? ' <span class="pill demo mismatch" title="' + esc(T('This result was made under different dates or rules than your copy of the league.')) + '">' + esc(T('Rules differ')) + '</span>' : '';
+    };
     if (!rows.length) {
       body.innerHTML = head + '<div class="empty"><b>' + esc(T('Nobody on the board yet.')) + '</b>' + esc(lg.online && online() ? T('Members appear after they join and sync.') : T('Join the league yourself, or import members\' share codes below.')) + '</div>';
     } else {
-      var who = function (r) { return '<b>' + esc(r.displayName || T('Anonymous')) + (r.me ? ' <span class="pill accent">' + esc(T('You')) + '</span>' : '') + '</b><span>' + esc(r.team ? T('Team {t}', { t: r.team }) : r.studentId) + '</span>'; };
-      var table = '<div class="table-wrap st-table"><table class="standings"><caption class="sr-only">' + esc(T('Standings for {name}, sorted by return', { name: lg.name })) + '</caption><thead><tr>' +
+      var who = function (r) { return '<b>' + esc(r.displayName || T('Anonymous')) + (r.me ? ' <span class="pill accent">' + esc(T('You')) + '</span>' : '') + mismatch(r) + '</b><span>' + esc(r.team ? T('Team {t}', { t: r.team }) : r.studentId) + '</span>'; };
+      var table = '<div class="table-wrap st-table"><table class="standings"><caption class="sr-only">' + esc(standingsCaption(lg)) + '</caption><thead><tr>' +
         '<th scope="col">#</th><th scope="col">' + esc(T('Member')) + '</th><th scope="col" class="num">' + esc(T('Return')) + '</th><th scope="col" class="num">' + esc(T('Max drawdown')) + '</th><th scope="col" class="num">' + esc(T('Sharpe')) + '</th><th scope="col" class="num">' + esc(T('Consistency')) + '</th><th scope="col" class="num">' + esc(T('Trades')) + '</th><th scope="col">' + esc(T('Equity')) + '</th></tr></thead><tbody>' +
         rows.map(function (r) {
           return '<tr' + (r.me ? ' class="me"' : '') + '><td class="rank">' + r.rank + '</td><td class="who">' + who(r) + '</td>' +
@@ -359,17 +386,19 @@
             '<td class="num">' + esc(num(r.sharpe)) + '</td><td class="num">' + esc(isNum(r.consistencyScore) ? String(r.consistencyScore) : '—') + '</td><td class="num">' + esc(String(r.trades || 0)) + '</td>' +
             '<td>' + sparkSvg(r.equityHistory) + '</td></tr>';
         }).join('') + '</tbody></table></div>';
-      var cards = '<ol class="st-cards" aria-label="' + esc(T('Standings for {name}, sorted by return', { name: lg.name })) + '">' + rows.map(function (r) {
+      var cards = '<ol class="st-cards" aria-label="' + esc(standingsCaption(lg)) + '">' + rows.map(function (r) {
         return '<li class="st-card' + (r.me ? ' me' : '') + '"><span class="rank">' + r.rank + '</span><span class="who">' + who(r) + '</span><span class="ret ' + tone(r.returnPct) + '">' + esc(pct(r.returnPct)) + '</span>' +
           '<dl><div><dt>' + esc(T('Drawdown')) + '</dt><dd>' + esc(num(r.maxDrawdownPct, 1)) + '%</dd></div><div><dt>' + esc(T('Sharpe')) + '</dt><dd>' + esc(num(r.sharpe)) + '</dd></div><div><dt>' + esc(T('Consistency')) + '</dt><dd>' + esc(isNum(r.consistencyScore) ? String(r.consistencyScore) : '—') + '</dd></div><div><dt>' + esc(T('Trades')) + '</dt><dd>' + esc(String(r.trades || 0)) + '</dd></div></dl>' +
-          sparkSvg(r.equityHistory, '', 300, 32) + '</li>';
+          ((r.equityHistory || []).filter(isNum).length >= 2 ? sparkSvg(r.equityHistory, '', 300, 32) : '<span class="muted xs spark-none">' + esc(T('Not enough equity points yet')) + '</span>') + '</li>';
       }).join('') + '</ol>';
-      body.innerHTML = head + table + cards;
+      var diff = rows.some(function (r) { return r.rulesMismatch; })
+        ? '<p class="note">' + esc(T('Rows marked "Rules differ" come from share codes made under different dates or rules than your copy of this league, so their results are not comparable. Ask those members to rejoin with the current league code.')) + '</p>' : '';
+      body.innerHTML = head + table + cards + diff;
     }
     var teams = data.teams || [];
     $('teamBlock').hidden = !(lg.rules.teams && teams.length);
     $('teamList').innerHTML = teams.map(function (t) {
-      return '<li><b>' + t.rank + '. ' + esc(t.team) + '</b><span class="' + tone(t.avgReturnPct) + '">' + esc(t.members ? pct(t.avgReturnPct) : '—') + '</span> <span>' + esc(T('{n} members · avg drawdown {dd}%', { n: t.members, dd: num(t.avgDrawdownPct, 1) })) + '</span></li>';
+      return '<li><b>' + t.rank + '. ' + esc(t.team) + '</b><span class="' + tone(t.avgReturnPct) + '">' + esc(t.members ? pct(t.avgReturnPct) : '—') + '</span> <span>' + esc(T(t.members === 1 ? '{n} member · avg drawdown {dd}%' : '{n} members · avg drawdown {dd}%', { n: t.members, dd: num(t.avgDrawdownPct, 1) })) + '</span></li>';
     }).join('');
   }
   function onImport() {
@@ -405,7 +434,7 @@
     }
     for (var p = 0; p * ROWS_PER_SLIDE < rows.length && p < 6; p++) {
       var part = rows.slice(p * ROWS_PER_SLIDE, (p + 1) * ROWS_PER_SLIDE);
-      slides.push({ title: lg.name, sub: rows.length > ROWS_PER_SLIDE ? T('Standings · places {a}–{b} of {n}', { a: p * ROWS_PER_SLIDE + 1, b: p * ROWS_PER_SLIDE + part.length, n: rows.length }) : T('Standings · by return'), html: '<ol class="proj-rows">' + part.map(function (r) { return row(r); }).join('') + '</ol>' });
+      slides.push({ title: lg.name, sub: rows.length > ROWS_PER_SLIDE ? T('Standings · places {a}–{b} of {n}', { a: p * ROWS_PER_SLIDE + 1, b: p * ROWS_PER_SLIDE + part.length, n: rows.length }) : (rankBy(lg) === 'return' ? T('Standings · by return') : rankBy(lg) === 'consistency' ? T('Standings · by consistency') : T('Standings · risk-adjusted')), html: '<ol class="proj-rows">' + part.map(function (r) { return row(r); }).join('') + '</ol>' });
     }
     var mv = L.movers(rows, { lookback: 5, count: 4 });
     if (mv.up.length || mv.down.length) {
@@ -418,7 +447,7 @@
     }
     var teams = (data.teams || []).filter(function (t) { return t.members > 0; });
     if (lg.rules.teams && teams.length) {
-      slides.push({ title: T('Team standings'), sub: T('Average return of each team'), html: '<ol class="proj-rows">' + teams.map(function (t) { return '<li><span class="r">' + t.rank + '</span><span class="n">' + esc(t.team) + '<small>' + esc(T('{n} members', { n: t.members })) + '</small></span><span class="v ' + (t.avgReturnPct > 0 ? 'up' : t.avgReturnPct < 0 ? 'down' : '') + '">' + esc(pct(t.avgReturnPct, 1)) + '</span></li>'; }).join('') + '</ol>' });
+      slides.push({ title: T('Team standings'), sub: T('Average return of each team'), html: '<ol class="proj-rows">' + teams.map(function (t) { return '<li><span class="r">' + t.rank + '</span><span class="n">' + esc(t.team) + '<small>' + esc(T(t.members === 1 ? '{n} member' : '{n} members', { n: t.members })) + '</small></span><span class="v ' + (t.avgReturnPct > 0 ? 'up' : t.avgReturnPct < 0 ? 'down' : '') + '">' + esc(pct(t.avgReturnPct, 1)) + '</span></li>'; }).join('') + '</ol>' });
     }
     return slides;
   }

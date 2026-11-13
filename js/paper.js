@@ -596,22 +596,40 @@
     }
     return out;
   }
-  // Would a `side` fill of `symbol` on `day` close a position that was opened that same day?
-  function isDayTrade(symbol, side, day) {
+  // Would a `side` fill of `symbol` on `day` close shares that were opened that same day?
+  // FINRA day-trade accounting treats shares held overnight as sold first, so
+  // selling part of a position that was added to today is only a day trade
+  // once the closing quantity exceeds what was still held from before today.
+  function isDayTrade(symbol, side, day, qty) {
     var pos = state.positions[symbol];
     if (!pos || pos.qty === 0) return false;
     var closing = side === 'buy' ? pos.qty < 0 : pos.qty > 0;
     if (!closing) return false;
-    var openSide = pos.qty > 0 ? 'buy' : 'sell';
-    return state.trades.some(function (t) {
-      return t.symbol === symbol && t.side === openSide && t.openedQty > 0 && tradeDay(t) === day;
-    });
+    var dir = pos.qty > 0 ? 1 : -1;
+    var today = state.trades.filter(function (t) { return t.symbol === symbol && tradeDay(t) === day; });
+    var openedToday = today.some(function (t) { return t.side === (dir > 0 ? 'buy' : 'sell') && t.openedQty > 0; });
+    if (!openedToday) return false;
+    // Position at the start of the day = current position minus today's fills.
+    var startQty = pos.qty;
+    today.forEach(function (t) { startQty -= t.side === 'buy' ? t.qty : -t.qty; });
+    var overnightLeft = sign(startQty) === dir ? Math.abs(startQty) : 0;
+    // Today's earlier closing fills used up the overnight shares first.
+    today.forEach(function (t) { if (t.closedQty > 0) overnightLeft = Math.max(0, overnightLeft - t.closedQty); });
+    var closeQty = Math.min(isNum(qty) && qty > 0 ? qty : Math.abs(pos.qty), Math.abs(pos.qty));
+    return closeQty > overnightLeft + 1e-9;
   }
-  /** dayTradeCount(day?) → day trades in the 5 business days ending on `day` (default today). */
+  /**
+   * dayTradeCount(day?) → day trades in the 5 business days ending on `day` (default today).
+   * One closing order counts once, however many partial fills it took.
+   */
   function dayTradeCount(day) {
     day = day || fillDay(now());
     var win = businessDays(day, PDT_WINDOW_DAYS);
-    return state.trades.filter(function (t) { return t.dayTrade && win.indexOf(tradeDay(t)) !== -1; }).length;
+    var seen = {};
+    state.trades.forEach(function (t) {
+      if (t.dayTrade && win.indexOf(tradeDay(t)) !== -1) seen[t.orderId != null ? 'o' + t.orderId : 't' + t.id] = true;
+    });
+    return Object.keys(seen).length;
   }
   /** pdtStatus(day?) → {enabled, dayTrades, max, equity, minEquity, restricted, remaining} */
   function pdtStatus(day) {
@@ -624,10 +642,12 @@
       remaining: restricted ? Math.max(0, PDT_MAX_DAY_TRADES - count) : null
     };
   }
-  function pdtBlock(symbol, side, time) {
+  function pdtBlock(symbol, side, time, qty, orderId) {
     if (!state.settings.pdtRule) return null;
     var day = fillDay(time);
-    if (!isDayTrade(symbol, side, day)) return null;
+    if (!isDayTrade(symbol, side, day, qty)) return null;
+    // A later partial fill of an order already counted as a day trade adds no new one.
+    if (orderId != null && state.trades.some(function (t) { return t.orderId === orderId && t.dayTrade && tradeDay(t) === day; })) return null;
     var st = pdtStatus(day);
     if (!st.restricted || st.dayTrades < PDT_MAX_DAY_TRADES) return null;
     return T('Blocked by the pattern day trader (PDT) rule: closing {symbol} today would be your {n}th day trade (opening and closing the same position on the same day) in 5 business days, and your equity of {equity} is under {min}. US brokers stop margin accounts below $25,000 from doing that, so this order did not fill. You can close the position on the next trading day; a stop-loss on a position opened today is blocked the same way. You can turn the PDT rule off in the realism settings.', {
@@ -638,16 +658,29 @@
   /* ------------------------------------------------------------------ *
    * The fill engine — the only place positions and cash change
    * ------------------------------------------------------------------ */
+  // Settle everything owed on the balances as they stood BEFORE a fill changes
+  // them: daily interest / borrow fees for the days already elapsed, and any
+  // dividend ex-dates since the last bar seen for this symbol (paid to the
+  // pre-fill position). Afterwards the symbol's last-seen day is the fill day,
+  // so a position opened from flat only receives ex-dates after it.
+  // Idempotent: a second call for the same time is a no-op.
+  function settleBefore(symbol, kind, time, price) {
+    var t = time == null ? now() : time;
+    accrue(toMs(t));
+    if (kind !== 'option') processDividends(symbol, fillDay(t), t, price);
+  }
+
   function applyFill(symbol, side, qty, price, opts) {
     opts = opts || {};
     var kind = opts.kind || (state.positions[symbol] ? state.positions[symbol].kind : 'stock');
     var meta = opts.meta || (state.positions[symbol] ? state.positions[symbol].meta : {});
-    var dayTrade = (isNum(qty) && qty > 0) ? isDayTrade(symbol, side, fillDay(opts.time)) : false;
     if (!(isNum(qty) && qty > 0 && isNum(price) && price >= 0) || (side !== 'buy' && side !== 'sell')) {
       // Never let a malformed fill reach the books: NaN cash would be saved
       // and silently "repaired" on the next reload, erasing the student's P&L.
       throw new Error('applyFill: invalid fill (symbol ' + symbol + ', side ' + side + ', qty ' + qty + ', price ' + price + ')');
     }
+    settleBefore(symbol, kind, opts.time, price);
+    var dayTrade = isDayTrade(symbol, side, fillDay(opts.time), qty);
     var pos = state.positions[symbol] || { qty: 0, avg: 0, kind: kind, meta: meta };
     var mult = multiplierOf(pos);
     var commission = isNum(opts.commission) ? opts.commission : commissionFor(qty, price, mult, kind, true);
@@ -791,7 +824,8 @@
     var firstFill = !(order.filledQty > 0);
     var commission = commissionFor(q, price, mult, order.kind, firstFill);
     var partialPrefix = firstFill ? '' : T('Partially filled {filled} of {qty}, then: ', { filled: order.filledQty, qty: order.qty });
-    var reason = pdtBlock(order.symbol, order.side, time) ||
+    settleBefore(order.symbol, order.kind, time, basePrice);
+    var reason = pdtBlock(order.symbol, order.side, time, q, order.id) ||
       checkFill(order.symbol, order.side, q, price, order.kind, order.meta, commission);
     if (reason) {
       order.status = 'rejected';
@@ -1217,6 +1251,7 @@
     if (!pos || pos.kind === 'option' || !(isNum(perShare) && perShare > 0)) return null;
     var amount = cents(pos.qty * perShare);
     if (amount === 0) return null;
+    accrue(toMs(opts.time == null ? now() : opts.time)); // earlier days accrue on the pre-dividend cash
     var day = opts.day || fillDay(opts.time);
     state.cash = cents(state.cash + amount);
     state.income.dividends = cents(state.income.dividends + amount);

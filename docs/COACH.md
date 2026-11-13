@@ -57,7 +57,7 @@ Each check maps to a rule the course already teaches, and each one is something 
 - **1 % / 2 % risk.** Ten losses in a row happen to every trader eventually. At 1 % risk that costs about 10 % of the account; at 5 % it costs about 40 %, and recovering from a 40 % drawdown needs a 67 % gain. Module 4, Lesson 1 works through the numbers.
 - **A stop on every position.** The stop is where the trade idea is proven wrong. Without one, position size cannot be computed and a single bad move has no limit.
 - **Reward-to-risk of at least 1.5.** At 1:1 a trader must win more than half of all trades just to break even, before costs; at 2:1 a third is enough. The coach shows the breakeven win rate (`100 ÷ (1 + R:R)`) so the number means something.
-- **Loss bigger than planned.** A plan that is not followed is not a plan. This is the most useful check for the journal's weekly review.
+- **Loss bigger than planned.** A plan that is not followed is not a plan. This is the most useful check to bring to the journal's weekly review.
 - **Trend.** Counter-trend trades are not forbidden. They fail more often, so they deserve a reason and a smaller size. That is why this one is a tip, not a warning.
 - **Revenge trading and overtrading.** These are the two emotional patterns that journals show to be most expensive, and the hardest to see in yourself while it is happening.
 - **25 % in one position.** A gap through the stop overnight hurts in proportion to size. The coach's limit matches the Classroom 4-week league preset (`docs/LEAGUES.md`).
@@ -66,7 +66,7 @@ Each check maps to a rule the course already teaches, and each one is something 
 ## 4. Where the notes appear
 
 - **Dashboard and Replay.** After each fill, a **Coach notes** box under the trade ticket lists the findings for the order and, when the fill closed a position, for the whole round trip. Each note links to its lesson. The box is a polite live region, so screen readers announce it without stealing focus. **Got it** closes it.
-- **Journal.** `BT.coach.toJournal(findings)` produces a compact copy for the trade's journal entry (`coach` field), so the weekly review can count, for example, how many trades last week had no stop.
+- **Journal.** After each fill on the Dashboard and in Market Replay, the notes are saved into that fill's journal entry (`BT.journal.setCoach(fill, BT.coach.toJournal(notes))`, in the entry's `coach` field). Journal cards show how many coach notes a trade got; the entry editor lists them with links to the related lessons, and Pro members can add an AI review there with **Ask the AI coach (Pro)**. Notes are saved only for fills placed after this shipped, and only on the device that placed the trade. Reviews of resting orders that fill later (a limit order on a later bar) are saved the same way.
 - **Language.** Every title and message goes through `BT.t`, with Spanish in `i18n/es.json`. The linked lesson opens in the student's language.
 
 The coach never blocks an order. In a league, the league's rules may refuse an order (`docs/LEAGUES.md`); the coach only comments.
@@ -139,7 +139,7 @@ npx wrangler deploy
 
 ## 7. For instructors
 
-- **Use the notes as conversation starters.** "The coach flagged three trades without a stop last week. What happened on those days?" is a better journal prompt than any generic question.
+- **Use the notes as conversation starters.** Ask students to open the coach notes saved on a journal entry and write one sentence on each in the entry's notes. "The coach said this trade had no stop. What happened that day?" is a better journal prompt than any generic question.
 - **Do not grade the number of warnings.** A student who hides trades to avoid warnings has learned the wrong lesson. Grade the journal's reflection on them instead (`docs/TEACHING_GUIDE.md`, section 6).
 - **Thresholds are teaching defaults, not laws.** 1 % risk and 1.5 R:R are common guidelines for people who are still learning. If your section teaches different numbers, a fork can change `BT.coach.THRESHOLDS`; say why in class.
 - **The AI coach is optional.** Nothing in the syllabus depends on it. If your school runs the backend with Pro seats, treat the AI text like a tutor's comment: useful, fallible and never a recommendation.
@@ -153,7 +153,7 @@ const tradeNotes = BT.coach.reviewTrade(trade, { account, bars });
 
 BT.coach.summary(notes);          // one friendly sentence
 BT.coach.lessonUrl('m4-l1');      // 'learn.html#/lesson/m4-l1'
-BT.coach.toJournal(notes);        // compact copy for journal.coach
+BT.coach.toJournal(notes);        // compact copy for journal.coach (written by BT.journal.setCoach after each fill)
 
 const r = await BT.coach.ai(trade, { ctx: { account } });
 // r.source === 'ai' with r.text, or r.source === 'rules' with r.fallback === true and r.reason

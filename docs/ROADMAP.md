@@ -87,7 +87,8 @@ Goal: adopt the features that the best learning and trading products have and we
 ### v0.5 follow-ups (before tagging, or first thing in v0.6)
 
 - [ ] Wire a "Ask the AI coach" button into the coach notes box (dashboard and Replay) for Pro members, labelled as an AI review and shown under the rule-based notes (`docs/COACH.md`, section 6).
-- [ ] Confirm coach findings land in the journal entry's `coach` field after a fill, and show them in the journal's weekly review.
+- [x] Coach findings land in the journal entry's `coach` field after a fill (dashboard and Replay) and show in the journal entry editor, with an 'Ask the AI coach (Pro)' button there.
+- [ ] Show coach findings in the journal's weekly review.
 - [x] `course/es/m10-toolkit.json` (Spanish Module 10) and Spanish strings for the league, screener, builder and profile pages (the e2e Spanish pass measures 85–98 % of visible text changing).
 - [x] Extend `tests/e2e.playwright.js` to the four new pages (league create → join → order refused by a rule → standings → projector; a built-in scan; a template backtest in the builder; the profile page) and refresh `docs/screenshots/`.
 - [ ] Screener "open in Replay" from a result row; share a rule as a short code.

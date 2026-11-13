@@ -108,7 +108,8 @@ function seedVeteran() {
     { id: 's4', at: day(1), completed: true, returnPct: 3, buyHoldPct: 1, drill: null }
   ]);
   set('bt.journal', { entries: [
-    { id: 'j1', source: 'paper', setup: 'Breakout', emotion: 'calm', createdAt: day(2) },
+    { id: 'j1', source: 'paper', setup: 'Breakout', emotion: 'calm', createdAt: day(2) },           // tags only: not a reflection
+    { id: 'j4', source: 'paper', setup: 'Pullback', lessons: 'Sized from the stop, not from hope.', createdAt: day(2) },
     { id: 'j2', source: 'paper', setup: '', emotion: '', notes: '', lessons: '', createdAt: day(2) },   // auto-synced, untouched
     { id: 'j3', source: 'manual', notes: 'Waited for the close.', createdAt: day(0) }
   ], reviews: { '2026-W45': { checks: {} } } });
@@ -127,14 +128,14 @@ test('recompute derives XP from course, paper, replay, journal, alerts and flash
   assert.ok(ids.has('quizPerfect:m1-l1') && !ids.has('quizPerfect:m1-l2'));
   assert.ok(ids.has('drill:sma-cross-msft-2024'));
   assert.ok(!ids.has('drill:bear-market-survival-2022'), 'unfinished drill is not completed');
-  assert.ok(ids.has('journal:j1') && ids.has('journal:j3') && !ids.has('journal:j2'), 'only written entries earn XP');
+  assert.ok(ids.has('journal:j4') && ids.has('journal:j3') && !ids.has('journal:j2') && !ids.has('journal:j1'), 'only written reflections earn XP');
   assert.ok(ids.has('firstTrade:once'));
-  assert.ok(ids.has('alert:1') && ids.has('alert:2'));
+  assert.ok(ids.has('alert:1') && !ids.has('alert:2'), 'one alert award per day');
   assert.ok(ids.has('flashcards:' + X.dayKey(day(0))));
   assert.ok(!ids.has('flashcards:' + X.dayKey(day(5))), 'one card is not a session');
-  // 5 lessons*20 + 2 quizzes*30 + 10 + drill 25 + 2 journal*10 + 15 + 2 alerts*5 + 10 flash = 250, plus active days
+  // 5 lessons*20 + 2 quizzes*30 + 10 + drill 25 + 2 journal*10 + 15 + 1 alert*5 (same day) + 10 flash = 245, plus active days
   const streakXp = r.granted.filter(g => g.event === 'streakDay').length * 5;
-  assert.strictEqual(r.total, 250 + streakXp);
+  assert.strictEqual(r.total, 245 + streakXp);
   assert.ok(streakXp >= 4 * 5, 'days 0..3 active');
   assert.strictEqual(r.level.name, 'Sophomore');
 });
@@ -209,7 +210,7 @@ test('onChange notifies subscribers and can unsubscribe', () => {
   const off = X.onChange((sum, detail) => seen.push([sum.total, detail.source]), { immediate: true });
   assert.deepStrictEqual(seen[0], [0, 'init']);
   X.award('alert', '9', { silent: true });
-  assert.deepStrictEqual(seen[1], [10, 'award']);
+  assert.deepStrictEqual(seen[1], [5, 'award'], 'an alert pays 5 XP and is not an activity day');
   off();
   X.award('alert', '10', { silent: true });
   assert.strictEqual(seen.length, 2);
@@ -246,11 +247,12 @@ test('Risk Manager counts trades with a planned stop or a protective stop order 
     orders.push({ id: i, symbol: 'AAPL', side: 'buy', qty: 10, type: 'market', status: 'filled', placedAt: day(1) + i, meta: { plan: { stop: 195 } } });
     trades.push({ id: i, orderId: i, symbol: 'AAPL', side: 'buy', qty: 10, price: 200, openedQty: 10, closedQty: 0, kind: 'stock', time: day(1) + i });
   }
-  for (let i = 7; i <= 10; i++) {         // protective stop order placed afterwards
-    orders.push({ id: i, symbol: 'MSFT', side: 'buy', qty: 20, type: 'market', status: 'filled', placedAt: day(1) + i, meta: {} });
-    trades.push({ id: i, orderId: i, symbol: 'MSFT', side: 'buy', qty: 20, price: 400, openedQty: 20, closedQty: 0, kind: 'stock', time: day(1) + i });
-    orders.push({ id: 100 + i, symbol: 'MSFT', side: 'sell', qty: 20, type: 'stop', stopPrice: 380, status: 'open', placedAt: day(1) + i + 5, meta: {} });
-  }
+  ['MSFT', 'AMZN', 'GOOG', 'META'].forEach((sym, k) => {   // protective stop order placed afterwards: 20 sh x $20 = 0.4 %
+    const i = 7 + k;
+    orders.push({ id: i, symbol: sym, side: 'buy', qty: 20, type: 'market', status: 'filled', placedAt: day(1) + i, meta: {} });
+    trades.push({ id: i, orderId: i, symbol: sym, side: 'buy', qty: 20, price: 400, openedQty: 20, closedQty: 0, kind: 'stock', time: day(1) + i });
+    orders.push({ id: 100 + i, symbol: sym, side: 'sell', qty: 20, type: 'stop', stopPrice: 380, status: 'open', placedAt: day(1) + i + 5, meta: {} });
+  });
   // too much risk: 100 sh x $50 = $5,000 = 5 %
   orders.push({ id: 50, symbol: 'TSLA', side: 'buy', qty: 100, type: 'market', status: 'filled', placedAt: day(1), meta: { stop: 150 } });
   trades.push({ id: 50, orderId: 50, symbol: 'TSLA', side: 'buy', qty: 100, price: 200, openedQty: 100, closedQty: 0, kind: 'stock', time: day(1) });
@@ -280,10 +282,138 @@ test('replay account fills do not create activity days from historical bar times
 test('Replay Pro: beat buy-and-hold in 5 different finished drills', () => {
   fresh();
   const ids = ['sma-cross-msft-2024', 'bear-market-survival-2022', 'ride-the-trend-nvda-2023', 'range-trading-spy-2018', 'breakout-meta-2023'];
-  set('bt.replay.sessions', ids.map((id, i) => ({ id: 's' + i, at: day(1), completed: true, returnPct: 4, buyHoldPct: 1, drill: { id, passed: false } })));
+  set('bt.replay.sessions', ids.map((id, i) => ({ id: 's' + i, at: day(1), completed: true, returnPct: 4, buyHoldPct: 1, drill: { id, passed: true } })));
   X.recompute({ toast: false });
   assert.ok(X.badges().find(b => b.id === 'replay-pro').earned);
   assert.strictEqual(X.history().filter(h => h.event === 'drill').length, 5);
+});
+
+/* ---------------- anti-farming (reviewer findings) ---------------- */
+test('journal: 40 auto trade entries with only an emotion tap earn 0 XP and no journal badge', () => {
+  fresh();
+  const entries = [];
+  for (let i = 0; i < 40; i++) entries.push({ id: 'a' + i, tradeId: 'main:' + i, source: 'paper', symbol: 'AAPL', setup: i % 2 ? 'Breakout' : '', tags: ['long'], emotion: 'calm', notes: i % 3 ? 'ok' : '', lessons: '', createdAt: day(0) });
+  set('bt.journal', { entries, reviews: {} });
+  const r = X.recompute({ toast: false });
+  assert.strictEqual(r.total, 0);
+  assert.strictEqual(X.facts().journal.length, 0);
+  assert.ok(!X.badges().find(b => b.id === 'journal-starter').earned);
+});
+test('journal: 5 real reflections in one day earn 30 XP (3 per day cap); the next day pays again', () => {
+  fresh();
+  const note = 'I entered before the close confirmed the breakout.';
+  const entries = [];
+  for (let i = 0; i < 5; i++) entries.push({ id: 'm' + i, source: 'manual', notes: note, createdAt: day(1) + i });
+  set('bt.journal', { entries, reviews: {} });
+  let r = X.recompute({ toast: false });
+  assert.strictEqual(r.granted.filter(g => g.event === 'journal').length, 3);
+  assert.strictEqual(r.granted.filter(g => g.event === 'journal').reduce((n, g) => n + g.xp, 0), 30);
+  assert.ok(X.badges().find(b => b.id === 'journal-starter').earned);
+  assert.deepStrictEqual(X.badges().find(b => b.id === 'journal-keeper').progress, { n: 5, of: 14 }, 'badges count every reflection');
+  r = X.recompute({ toast: false });
+  assert.strictEqual(r.gained, 0, 'recompute stays capped');
+  entries.push({ id: 'n1', source: 'manual', lessons: 'Waiting for my level paid off today.', createdAt: day(0) });
+  set('bt.journal', { entries, reviews: {} });
+  r = X.recompute({ toast: false });
+  assert.ok(r.granted.some(g => g.id === 'journal:n1'));
+  // live awards share the same daily cap
+  for (let i = 0; i < 5; i++) X.award('journal', 'live' + i, { silent: true });
+  assert.strictEqual(X.history().filter(h => h.event === 'journal' && X.dayKey(h.at) === X.dayKey(NOW)).length, 3);
+});
+test('alerts: 50 create/delete cycles earn at most 5 XP per day and no activity day', () => {
+  fresh();
+  for (let i = 0; i < 50; i++) {
+    set('bt.alerts', [{ id: 'a' + i, symbol: 'AAPL', kind: 'price_above', value: 210, createdAt: NOW }]);
+    X.recompute({ toast: false });
+    X.award('alert', 'a' + i, { silent: true });
+  }
+  set('bt.alerts', []); X.recompute({ toast: false });
+  assert.strictEqual(X.total(), 5);
+  assert.strictEqual(X.award('alert', 'zzz', { silent: true }).reason, 'daily-cap');
+  assert.strictEqual(X.streak().days, 0);
+});
+test('streak: cancelled, rejected and filled orders never make activity days', () => {
+  fresh();
+  const orders = [], trades = [];
+  for (let d = 0; d < 7; d++) {
+    orders.push({ id: d, symbol: 'AAPL', side: 'buy', type: 'limit', limitPrice: 1, qty: 1, status: d % 2 ? 'cancelled' : 'rejected', placedAt: day(d) });
+    orders.push({ id: 100 + d, symbol: 'AAPL', side: 'buy', type: 'market', qty: 1, status: 'filled', placedAt: day(d) });
+    trades.push({ id: 100 + d, orderId: 100 + d, symbol: 'AAPL', side: 'buy', qty: 1, price: 200, openedQty: 1, closedQty: 0, kind: 'stock', time: day(d) });
+  }
+  set('bt.portfolio', { cash: 1e5, startingCash: 1e5, trades, orders, positions: {} });
+  const r = X.recompute({ toast: false });
+  assert.strictEqual(r.total, 15, 'only the one-time First trade XP');
+  assert.deepStrictEqual(X.facts().activityDays, []);
+  assert.ok(!X.badges().find(b => b.id === 'streak-7').earned);
+  X.award('firstTrade', 'once', { silent: true });
+  assert.strictEqual(X.streak().days, 0, 'a live first-trade award is not an activity day');
+  assert.ok(!/trades/.test(X.BADGES.find(b => b.id === 'streak-7').criteria));
+});
+test('Risk Manager: 10 scaled-in buys under one later stop (9 % at risk) earn 0', () => {
+  fresh();
+  const trades = [], orders = [];
+  for (let i = 0; i < 10; i++) {
+    orders.push({ id: i, symbol: 'XYZ', side: 'buy', type: 'market', qty: 90, status: 'filled', placedAt: day(1) + i });
+    trades.push({ id: 't' + i, orderId: i, symbol: 'XYZ', side: 'buy', qty: 90, openedQty: 90, closedQty: 0, price: 100, time: day(1) + i, kind: 'stock' });
+  }
+  orders.push({ id: 100, symbol: 'XYZ', side: 'sell', type: 'stop', stopPrice: 90, status: 'open', placedAt: day(1) + 100, qty: 900 });
+  set('bt.portfolio', { cash: 10000, startingCash: 100000, trades, orders, positions: { XYZ: { qty: 900, avg: 100 } } });
+  assert.strictEqual(X.facts().riskManaged, 0);
+});
+test('Risk Manager: one 5 % risk order filled in 10 partial fills earns 0; one 0.5 % order in 10 fills counts once', () => {
+  fresh();
+  const mk = (qty, stop) => {
+    const orders = [{ id: 1, symbol: 'XYZ', side: 'buy', type: 'market', qty, status: 'filled', placedAt: day(1), meta: { plan: { stop } } }];
+    const trades = [];
+    for (let i = 0; i < 10; i++) trades.push({ id: 't' + i, orderId: 1, symbol: 'XYZ', side: 'buy', qty: qty / 10, openedQty: qty / 10, closedQty: 0, price: 100, time: day(1) + i * 60000, kind: 'stock' });
+    set('bt.portfolio', { cash: 0, startingCash: 100000, trades, orders, positions: {} });
+  };
+  mk(5000, 99);
+  assert.strictEqual(X.facts().riskManaged, 0);
+  mk(100, 95);                                   // 100 sh x $5 = 0.5 %, $10k = 10 % of equity
+  assert.strictEqual(X.facts().riskManaged, 1);
+});
+test('Risk Manager: uses equity at the time, skips oversized and averaging-down orders', () => {
+  fresh();
+  // 40 sh x $5 = $200: 0.2 % of $100k but 4 % of $5k equity after losses
+  set('bt.portfolio', { startingCash: 100000, cash: 0, positions: {}, equityHistory: [{ t: day(3), equity: 100000 }, { t: day(2), equity: 5000 }],
+    orders: [{ id: 1, symbol: 'AAPL', side: 'buy', qty: 40, type: 'market', status: 'filled', placedAt: day(1), meta: { plan: { stop: 195 } } }],
+    trades: [{ id: 1, orderId: 1, symbol: 'AAPL', side: 'buy', qty: 40, price: 200, openedQty: 40, closedQty: 0, kind: 'stock', time: day(1) }] });
+  assert.strictEqual(X.facts().riskManaged, 0, 'risk measured against current equity');
+  // 300 sh x $100 = 30 % of equity, tight stop (0.3 % risk) still too big a position
+  set('bt.portfolio', { startingCash: 100000, cash: 0, positions: {},
+    orders: [{ id: 1, symbol: 'KO', side: 'buy', qty: 300, type: 'market', status: 'filled', placedAt: day(1), meta: { plan: { stop: 99 } } }],
+    trades: [{ id: 1, orderId: 1, symbol: 'KO', side: 'buy', qty: 300, price: 100, openedQty: 300, closedQty: 0, kind: 'stock', time: day(1) }] });
+  assert.strictEqual(X.facts().riskManaged, 0, 'more than 25 % of equity');
+  // first buy fine, second buy adds below the average cost
+  set('bt.portfolio', { startingCash: 100000, cash: 0, positions: {},
+    orders: [{ id: 1, symbol: 'PEP', side: 'buy', qty: 20, type: 'market', status: 'filled', placedAt: day(2), meta: { plan: { stop: 95 } } },
+             { id: 2, symbol: 'PEP', side: 'buy', qty: 20, type: 'market', status: 'filled', placedAt: day(1), meta: { plan: { stop: 85 } } }],
+    trades: [{ id: 1, orderId: 1, symbol: 'PEP', side: 'buy', qty: 20, price: 100, openedQty: 20, closedQty: 0, kind: 'stock', time: day(2) },
+             { id: 2, orderId: 2, symbol: 'PEP', side: 'buy', qty: 20, price: 90, openedQty: 20, closedQty: 0, kind: 'stock', time: day(1) }] });
+  assert.strictEqual(X.facts().riskManaged, 1, 'the add to a losing position does not count');
+});
+test('Replay Pro: only the first finished attempt counts and it must pass every check', () => {
+  fresh();
+  const ids = ['sma-cross-msft-2024', 'ride-the-trend-nvda-2023', 'breakout-meta-2023', 'hourly-swing-msft-2024', 'range-trading-spy-2018'];
+  const sess = [];
+  ids.forEach((id, k) => {
+    for (let i = 0; i < 9; i++) sess.push({ id: id + i, at: day(5) + i, completed: true, returnPct: -30, buyHoldPct: 10, drill: { id, passed: false } });
+    sess.push({ id: id + 'x', at: day(4), completed: true, returnPct: 60, buyHoldPct: 10, drill: { id, passed: true } });
+  });
+  set('bt.replay.sessions', sess);
+  X.recompute({ toast: false });
+  assert.strictEqual(X.facts().drillsBeatBH.length, 0, 'retries after a failed first attempt do not count');
+  assert.ok(!X.badges().find(b => b.id === 'replay-pro').earned);
+  // clearing the history and retrying does not reset the first attempt (remembered in bt.xp)
+  set('bt.replay.sessions', ids.map((id, i) => ({ id: 'r' + i, at: day(0), completed: true, returnPct: 50, buyHoldPct: 1, drill: { id, passed: true } })));
+  X.recompute({ toast: false });
+  assert.strictEqual(X.facts().drillsBeatBH.length, 0);
+  // beat buy-and-hold but failed a check on the first attempt: not counted either
+  fresh();
+  set('bt.replay.sessions', ids.map((id, i) => ({ id: 'q' + i, at: day(1), completed: true, returnPct: 50, buyHoldPct: 1, drill: { id, passed: false } })));
+  X.recompute({ toast: false });
+  assert.ok(!X.badges().find(b => b.id === 'replay-pro').earned);
 });
 
 /* ---------------- leagues, tools, misc ---------------- */

@@ -1034,7 +1034,9 @@ test('dividends: credited to longs and debited from shorts on the ex-date, never
 
   // short: the dividend is owed to the lender
   const s2 = real({ dividends: true });
+  fakeNow = Date.UTC(2024, 5, 12, 15);                                 // short opened 12 June, after the March ex-date
   P.placeOrder({ symbol: 'KO', side: 'sell', qty: 100, type: 'market' }, 60);
+  fakeNow = T0;
   const cashAfterShort = s2.cash;
   P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-06-13'));
   P.processOrders('KO', vbar(60, 61, 59, 60, 1e6, '2024-06-17'));      // ex-date 14 June fell between bars
@@ -1162,6 +1164,100 @@ test('PDT counts day trades on daily bars by bar date (resting stop on a same-da
   assert.strictEqual(stop.status, 'rejected');
   assert.ok(/PDT/.test(stop.reason), stop.reason);
   assert.strictEqual(P.dayTradeCount('2024-03-11'), 2, 'the window rolls forward over 5 business days');
+});
+
+test('interest and borrow fees for elapsed days are settled at the pre-fill balances', () => {
+  // (a) a short opened today owes nothing for the 10 days before it existed
+  const s = real({ borrowFeePct: 36.5 });
+  P.markToMarket({}, T0);
+  fakeNow = T0 + 10 * DAY;
+  P.placeOrder({ symbol: 'XYZ', side: 'sell', qty: 100, type: 'market' }, 100);
+  P.markToMarket({ XYZ: 100 }, fakeNow);
+  assert.strictEqual(s.income.borrowFees, 0);
+  fakeNow = T0 + 11 * DAY;
+  P.markToMarket({ XYZ: 100 }, fakeNow);
+  near(s.income.borrowFees, 10, 0.001, 'one day of fees after it was opened');
+  // (b) cash freed today earned nothing while it was invested
+  const s2 = real({ cashInterestPct: 18.25 });
+  P.placeOrder({ symbol: 'XYZ', side: 'buy', qty: 1000, type: 'market' }, 100);
+  P.markToMarket({ XYZ: 100 }, T0);
+  assert.strictEqual(s2.cash, 0);
+  fakeNow = T0 + 10 * DAY;
+  P.closePosition('XYZ', 100);
+  P.markToMarket({ XYZ: 100 }, fakeNow);
+  assert.strictEqual(s2.income.interest, 0);
+  fakeNow = T0 + 11 * DAY;
+  P.markToMarket({ XYZ: 100 }, fakeNow);
+  near(s2.income.interest, 50, 0.001, 'interest starts once the cash is free');
+  fakeNow = T0;
+});
+
+test('dividends follow the position held on the ex-date, even when fills skip processOrders', () => {
+  // bought after the 14 March ex-date: no March dividend
+  const s = real({ dividends: true });
+  P.processOrders('KO', vbar(60, 60, 60, 60, 1e6, '2024-03-01'));   // seen while flat
+  fakeNow = Date.UTC(2024, 3, 1, 15);
+  P.placeOrder({ symbol: 'KO', side: 'buy', qty: 100, type: 'market' }, 60);
+  P.processOrders('KO', vbar(60, 60, 60, 60, 1e6, '2024-04-02'));
+  assert.strictEqual(s.income.dividends, 0);
+  // held through the ex-date, sold afterwards without a bar in between: still paid
+  const s2 = real({ dividends: true });
+  fakeNow = Date.UTC(2024, 1, 28, 15);
+  P.placeOrder({ symbol: 'KO', side: 'buy', qty: 100, type: 'market' }, 60);
+  P.processOrders('KO', vbar(60, 60, 60, 60, 1e6, '2024-03-01'));
+  fakeNow = Date.UTC(2024, 3, 1, 15);
+  P.closePosition('KO', 60);
+  P.processOrders('KO', vbar(60, 60, 60, 60, 1e6, '2024-04-02'));
+  near(s2.income.dividends, 43.5, 0.001);
+  assert.strictEqual(P.cashflows().filter(c => c.type === 'dividend').length, 1);
+  assert.strictEqual(P.cashflows()[0].day, '2024-03-14');
+  // a short covered after the ex-date still owes it
+  const s3 = real({ dividends: true });
+  fakeNow = Date.UTC(2024, 1, 28, 15);
+  P.placeOrder({ symbol: 'KO', side: 'sell', qty: 100, type: 'market' }, 60);
+  fakeNow = Date.UTC(2024, 3, 1, 15);
+  P.closePosition('KO', 60);
+  near(s3.income.dividends, -43.5, 0.001);
+  fakeNow = T0;
+});
+
+test('PDT: one closing order counts once however many partial fills it takes', () => {
+  real({ pdtRule: true, fillModel: 'volume' }, 10000);
+  fakeNow = Date.UTC(2024, 2, 4, 15);
+  P.placeOrder({ symbol: 'ABC', side: 'buy', qty: 30, type: 'market' }, 10);
+  const o = P.placeOrder({ symbol: 'ABC', side: 'sell', qty: 30, type: 'limit', limitPrice: 11 }, 10);
+  const t = Date.UTC(2024, 2, 4, 15) / 1000;
+  for (let i = 0; i < 3; i++) P.processOrders('ABC', vbar(11, 11, 11, 11, 100, t + 60 * i));
+  assert.strictEqual(o.status, 'filled');
+  assert.strictEqual(o.fills.length, 3);
+  assert.strictEqual(P.pdtStatus('2024-03-04').dayTrades, 1);
+  P.setSettings({ fillModel: 'instant' });
+  P.placeOrder({ symbol: 'DEF', side: 'buy', qty: 10, type: 'market' }, 10);
+  const o2 = P.placeOrder({ symbol: 'DEF', side: 'sell', qty: 10, type: 'market' }, 10);
+  assert.strictEqual(o2.status, 'filled', o2.reason);
+  assert.strictEqual(P.pdtStatus('2024-03-04').dayTrades, 2);
+  fakeNow = T0;
+});
+
+test('PDT: shares held overnight are treated as sold first', () => {
+  real({ pdtRule: true }, 10000);
+  fakeNow = Date.UTC(2024, 2, 4, 15);
+  P.placeOrder({ symbol: 'GHI', side: 'buy', qty: 10, type: 'market' }, 10);
+  fakeNow = Date.UTC(2024, 2, 5, 15);
+  P.placeOrder({ symbol: 'GHI', side: 'buy', qty: 10, type: 'market' }, 10);
+  P.placeOrder({ symbol: 'GHI', side: 'sell', qty: 10, type: 'market' }, 10);
+  assert.strictEqual(P.pdtStatus('2024-03-05').dayTrades, 0, 'the 10 sold were the overnight shares');
+  P.placeOrder({ symbol: 'GHI', side: 'sell', qty: 5, type: 'market' }, 10);
+  assert.strictEqual(P.pdtStatus('2024-03-05').dayTrades, 1, 'now selling shares bought today');
+  // one order that sells overnight and same-day shares together is a day trade
+  real({ pdtRule: true }, 10000);
+  fakeNow = Date.UTC(2024, 2, 4, 15);
+  P.placeOrder({ symbol: 'GHI', side: 'buy', qty: 10, type: 'market' }, 10);
+  fakeNow = Date.UTC(2024, 2, 5, 15);
+  P.placeOrder({ symbol: 'GHI', side: 'buy', qty: 10, type: 'market' }, 10);
+  P.placeOrder({ symbol: 'GHI', side: 'sell', qty: 15, type: 'market' }, 10);
+  assert.strictEqual(P.pdtStatus('2024-03-05').dayTrades, 1);
+  fakeNow = T0;
 });
 
 test('league:* accounts are isolated from main and from each other, settings included', () => {

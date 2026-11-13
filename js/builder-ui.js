@@ -373,17 +373,20 @@
       s.setData(toLine(bars, R.series(bars, ov.operand)));
       legend.push('<span><span class="sw" style="background:' + color + '"></span>' + esc(R.operandText(ov.operand, lang())) + '</span>');
     });
-    candles.setMarkers(res.markers || []);
+    // On phone-width charts the per-trade price labels collide into unreadable clusters;
+    // keep the arrows and drop the text (the text summary below still carries the trade count).
+    var narrow = (priceEl.clientWidth || 0) < 560;
+    candles.setMarkers((res.markers || []).map(function (m) { return narrow ? Object.assign({}, m, { text: '' }) : m; }));
     legend.push('<span>▲ ' + esc(rule.side === 'short' ? T('short entry') : T('entry')) + '</span><span>▼ ' + esc(T('exit (colour = profit or loss)')) + '</span>');
     $('btLegend').innerHTML = legend.join('');
     pc.timeScale().fitContent();
 
     var ec = LW.createChart(eqEl, chartTheme(intraday));
     charts.equity = ec;
-    var eq = ec.addLineSeries({ color: css('--accent'), lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
+    var eq = ec.addLineSeries({ priceFormat: { type: 'price', precision: 0, minMove: 1 }, color: css('--accent'), lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
     eq.setData(res.equity.filter(Boolean).map(function (e) { return { time: e.time, value: round(e.equity, 2) }; }));
     if (BT.backtest.buyHoldEquity) {
-      var bh = ec.addLineSeries({ color: css('--muted'), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+      var bh = ec.addLineSeries({ priceFormat: { type: 'price', precision: 0, minMove: 1 }, color: css('--muted'), lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
       bh.setData(BT.backtest.buyHoldEquity(bars, res.stats.startCash || costs().cash).map(function (e) { return { time: e.time, value: round(e.equity, 2) }; }));
     }
     ec.timeScale().fitContent();

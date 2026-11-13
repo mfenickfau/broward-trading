@@ -591,11 +591,21 @@
     codes.forEach(function (c) {
       var d = L.decodeLeague(c);
       if (!d || !d.ok) { out.failed.push({ code: c.slice(0, 24) + (c.length > 24 ? '…' : ''), error: (d && d.error) || T('That league code could not be read.') }); return; }
+      var label = c.slice(0, 24) + (c.length > 24 ? '…' : '');
+      if (typeof L.addLeague === 'function') {
+        // addLeague keeps members this device already knows and refuses rule changes once a league has started.
+        var res = L.addLeague(d.league);
+        if (!res || !res.ok || !res.league) out.failed.push({ code: label, error: (res && res.error) || T('That league code could not be read.') });
+        else out.added.push(res.league);
+        return;
+      }
       var known = L.get(d.league.code);
       if (known && known.members && known.members.length) {   // keep members this device already knows
         d.league.members = (d.league.members || []).concat(known.members.filter(function (m) { return !(d.league.members || []).some(function (x) { return x.studentId === m.studentId; }); }));
       }
-      out.added.push(L.save(d.league) || d.league);
+      var saved = L.save(d.league);
+      if (saved) out.added.push(saved);
+      else out.failed.push({ code: label, error: T('This league already started; its rules cannot change.') });
     });
     out.ok = out.added.length > 0;
     return out;
@@ -647,8 +657,8 @@
   function csvLeague(code) {
     var st = leagueStandings(code);
     if (!st) return '';
-    var head = ['rank', 'name', 'student_id', 'team', 'return_pct', 'max_drawdown_pct', 'sharpe', 'trades', 'consistency_score', 'equity', 'updated_at'];
-    return csv([head].concat(st.rows.map(function (r) { return [r.rank, r.displayName, r.studentId, r.team || '', r.returnPct, r.maxDrawdownPct, r.sharpe, r.trades, r.consistencyScore, r.equity, r.updatedAt || '']; })));
+    var head = ['rank', 'name', 'student_id', 'team', 'return_pct', 'max_drawdown_pct', 'sharpe', 'trades', 'consistency_score', 'equity', 'updated_at', 'rules_mismatch'];
+    return csv([head].concat(st.rows.map(function (r) { return [r.rank, r.displayName, r.studentId, r.team || '', r.returnPct, r.maxDrawdownPct, r.sharpe, r.trades, r.consistencyScore, r.equity, r.updatedAt || '', r.rulesMismatch ? 'yes' : '']; })));
   }
 
   var REMOVE_BATCH = 50;   // server/worker.js caps {ids} at 50 per call and {all:true} at 50 records per call

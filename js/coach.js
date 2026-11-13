@@ -64,16 +64,18 @@
     stopSlip: 'm4-l2',
     trend: 'm3-l1',      // Moving averages and crossovers
     revenge: 'm4-l3',    // Drawdowns, Streaks and Trading Psychology
-    overtrade: 'm4-l5',  // Your Trading Plan, Journal and Using the Paper Account Well
+    overtrade: 'm10-l4', // Risk sizing with the calculator and the coach (the five-trades-a-day rule)
     size: 'm4-l1',
-    avgDown: 'm4-l3'
+    avgDown: 'm7-l4'     // Risk drills: bear markets, stop discipline and sizing (averaging down)
   };
   var LESSON_TITLES = {
     'm3-l1': 'Moving averages and crossovers',
     'm4-l1': 'Position Sizing and the 1% Rule',
     'm4-l2': 'Stop Losses, Risk/Reward and Expectancy',
     'm4-l3': 'Drawdowns, Streaks and Trading Psychology',
-    'm4-l5': 'Your Trading Plan, Journal and Using the Paper Account Well'
+    'm4-l5': 'Your Trading Plan, Journal and Using the Paper Account Well',
+    'm7-l4': 'Risk drills: bear markets, stop discipline and sizing',
+    'm10-l4': 'Risk sizing with the calculator and the coach'
   };
 
   /* ------------------------------------------------------------------ *
@@ -196,13 +198,14 @@
     for (var k = i - 49; k <= i; k++) { var c = bars[k] && bars[k].close; if (!isNum(c)) return null; sum += c; }
     return sum / 50;
   }
-  /** {against, close, sma, dir} for a position direction (+1 long, -1 short) at bar i; null when unknown. */
-  function trendCheck(ctx, dir, i) {
+  /** {against, close, sma, dir} for a position direction (+1 long, -1 short) at bar i; null when unknown.
+   *  priceOverride: the price actually paid, used instead of bar i's close (the SMA values still come from bar i). */
+  function trendCheck(ctx, dir, i, priceOverride) {
     var bars = arr(ctx && ctx.bars);
     if (!bars.length) return null;
     if (i == null || i < 0 || i >= bars.length) i = bars.length - 1;
     var now = sma50At(ctx, bars, i), before = i >= 5 ? sma50At(ctx, bars, i - 5) : null;
-    var close = bars[i] && bars[i].close;
+    var close = isNum(priceOverride) ? priceOverride : (bars[i] && bars[i].close);
     if (!isNum(now) || !isNum(before) || !isNum(close)) return null;
     var falling = now < before, rising = now > before;
     var against = dir > 0 ? (close < now && falling) : (close > now && rising);
@@ -258,13 +261,32 @@
         ? T('No stop was planned or placed for this trade. Without one, a single bad move can turn a small loss into a large one. Decide where you are wrong before you enter, and save the stop with the order.')
         : T('This order has no planned stop and there is no protective stop order for it. Decide the price where your idea is wrong before you enter, and size the trade from that distance.'));
   }
-  function sizeFinding(value, equity) {
+  /** {kind, etfType} from BT.data when it is loaded; plain 'stock' otherwise. */
+  function assetOf(symbol) {
+    var D = root.BT && root.BT.data, out = { kind: 'stock', etfType: null };
+    if (!D || !symbol) return out;
+    try {
+      if (typeof D.kindOf === 'function') out.kind = D.kindOf(symbol) || 'stock';
+      if (out.kind === 'etf' && Array.isArray(D.universe)) {
+        var u = D.universe.filter(function (x) { return isObj(x) && x.symbol === String(symbol).toUpperCase(); })[0];
+        if (u && u.etfType) out.etfType = u.etfType;
+      }
+    } catch (e) { /* ignore */ }
+    return out;
+  }
+  function sizeFinding(value, equity, symbol) {
     if (!(isNum(equity) && equity > 0 && isNum(value))) return null;
     var p = Math.abs(value) / equity * 100;
     if (p <= THRESHOLDS.maxPositionPct + 1e-9) return null;
-    return finding('size', 'warn', T('Large position'),
-      T('This position is worth {value}, {pct}% of your account. With more than a quarter of the account in one name, an overnight gap through your stop would hurt far more than planned.',
-        { value: money(Math.abs(value)), pct: pct(p) }));
+    var a = assetOf(symbol), v = { value: money(Math.abs(value)), pct: pct(p) }, msg;
+    if (a.kind === 'crypto') {
+      msg = T('This position is worth {value}, {pct}% of your account. Crypto trades around the clock and can move 10% or more in hours, so a stop can fill far from its price.', v);
+    } else if (a.kind === 'etf' && a.etfType === 'index') {
+      msg = T('This position is worth {value}, {pct}% of your account. Even a diversified fund can fall 20-30% or more in a bear market; size it so your plan survives that.', v);
+    } else {
+      msg = T('This position is worth {value}, {pct}% of your account. With more than a quarter of the account in one name, an overnight gap through your stop would hurt far more than planned.', v);
+    }
+    return finding('size', 'warn', T('Large position'), msg);
   }
   function trendFinding(dir) {
     return finding('trend', 'tip', T('Against the SMA50 trend'),
@@ -398,7 +420,7 @@
     if (!isNum(stop)) out.push(noStopFinding(false));
     else riskFindings(out, dir, entry, stop, plan.target, totalQty, mult, equity, false);
 
-    var sf = sizeFinding(totalQty * entry * mult, equity);
+    var sf = sizeFinding(totalQty * entry * mult, equity, symbol);
     if (sf) out.push(sf);
 
     if (preQty !== 0 && sign(preQty) === dir && isNum(preAvg) && (dir > 0 ? entry < preAvg * 0.999 : entry > preAvg * 1.001)) {
@@ -546,19 +568,28 @@
       }
     }
 
-    var sf = sizeFinding(rt.maxQty * rt.entry * rt.mult, equity);
+    var sf = sizeFinding(rt.maxQty * rt.entry * rt.mult, equity, rt.symbol);
     if (sf) out.push(sf);
     if (rt.avgDown) out.push(avgDownFinding(rt.avgDown.avg, rt.avgDown.price));
 
     if (rt.kind !== 'option') {
-      var bars = arr(ctx.bars), bi = null;
+      // Judge the entry only on what was visible when it was made. The bar that contains the entry
+      // usually finished after the fill (a dashboard fill mid-day, a Replay fill on an intrabar tick),
+      // so its final close and an SMA that includes it are later information. Use the bar before it
+      // and the price actually paid, unless the fill happened exactly at that bar's close.
+      var bars = arr(ctx.bars), bi = -1, atClose = false;
       if (bars.length) {
-        if (rt.entryBarTime != null) bi = barIndexAt(bars, rt.entryBarTime);
-        else if (isNum(rt.entryTime)) bi = barIndexAt(bars, rt.entryTime);
-        if (bi != null && bi < 0) bi = -2;                 // entry before the loaded bars: unknown
+        if (rt.entryBarTime != null) {
+          var ex = exactBarIndex(bars, rt.entryBarTime);
+          if (ex >= 0 && isObj(bars[ex]) && isNum(bars[ex].close) && Math.abs(rt.entry - bars[ex].close) <= Math.max(1e-6, Math.abs(bars[ex].close) * 1e-6)) {
+            bi = ex; atClose = true;
+          } else bi = barIndexAt(bars, rt.entryBarTime);
+        } else if (isNum(rt.entryTime)) bi = barIndexAt(bars, rt.entryTime);
       }
-      if (bi !== -2) {
-        var tc = trendCheck(ctx, rt.dir, bi);
+      // bi < 0: the entry bar is unknown or before the loaded bars, so there is no trend opinion.
+      var ti = atClose ? bi : bi - 1;
+      if (bi >= 0 && ti >= 0) {
+        var tc = trendCheck(ctx, rt.dir, ti, atClose ? null : rt.entry);
         if (tc && tc.against) out.push(trendFinding(rt.dir));
       }
     }
@@ -613,8 +644,8 @@
   function noteFor(trade, opts) {
     if (opts && typeof opts.note === 'string') return opts.note;
     var list = arr(opts && opts.journal);
-    if (!list.length && root.BT && root.BT.journal && typeof root.BT.journal.list === 'function') {
-      try { list = arr(root.BT.journal.list()); } catch (e) { list = []; }
+    if (!list.length && root.BT && root.BT.journal && typeof root.BT.journal.entries === 'function') {
+      try { list = arr(root.BT.journal.entries()); } catch (e) { list = []; }
     }
     var e = list.filter(function (x) {
       return isObj(x) && isObj(x.trade) && trade && (x.trade.id === trade.id || (x.tradeId && String(x.tradeId).slice(-String(trade.id).length - 1) === ':' + trade.id));
