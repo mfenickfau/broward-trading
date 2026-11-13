@@ -1,0 +1,272 @@
+{
+  "version": "0.3.0",
+  "note": "Ejercicios (drills) de Market Replay. Las fechas se refieren a la serie de precios de demostración (simulada), que es determinista: todos los estudiantes ven las mismas velas. Un año en el título es una etiqueta del escenario, no el mercado real de ese año. Tipos de criterio: min_trades, max_trades, min_return_pct, positive_return, beat_buy_hold, max_drawdown_pct, min_win_rate_pct, min_profit_factor, flat_at_end, used_stop, used_limit, used_short, no_short.",
+  "drills": [
+    {
+      "id": "sma-cross-msft-2024",
+      "title": "Opera el cruce de SMA en MSFT 2024",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "MSFT",
+      "interval": "1day",
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m3-l1",
+      "tags": ["trend", "moving-averages", "daily"],
+      "objective": "Sigue una sola regla durante todo un año: compra (ponte largo) cuando la SMA de 20 días cruza por encima de la SMA de 50 días y vende cuando vuelve a cruzar por debajo. El resto del tiempo, quédate en efectivo. El objetivo no es ganar dinero esta vez: es sentir lo que una regla mecánica de tendencia te hace vivir durante los meses lentos y laterales, cuando genera señales falsas una tras otra (whipsaws).",
+      "hints": [
+        "Activa las superposiciones SMA 20 y SMA 50 antes de empezar; el gráfico solo las dibuja con las velas ya reveladas, así que un cruce aparece exactamente cuando un trader lo habría visto.",
+        "Avanza una vela a la vez cerca de un cruce. Entrar una vela después de la señal (en la siguiente apertura) es lo que consigue un trader real.",
+        "Cuenta tus señales falsas: dos pérdidas rápidas seguidas son normales en un sistema de cruces. Abandonar la regla después de ellas es el error del que trata este ejercicio.",
+        "Comprar y mantener (buy-and-hold) es tu referencia. Una regla de tendencia suele quedarse atrás en un año estable y brilla en uno malo."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 2, "text": "Actúa en al menos dos cruces (dos operaciones completas de ida y vuelta)" },
+        { "type": "max_trades", "value": 8, "text": "No más de ocho operaciones de ida y vuelta: opera solo los cruces" },
+        { "type": "no_short" },
+        { "type": "flat_at_end", "text": "Termina el año sin posiciones: cierra la última posición cuando acabe la sesión" }
+      ]
+    },
+    {
+      "id": "bear-market-survival-2022",
+      "title": "Sobrevivir al mercado bajista de 2022",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "META",
+      "interval": "1day",
+      "start": "2022-01-03",
+      "end": "2022-12-30",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l3",
+      "tags": ["risk", "drawdown", "daily"],
+      "objective": "Este año simulado pierde más de un tercio de su valor, con rebotes brutales en el camino hacia abajo. Tu trabajo es sobrevivir: mantén la caída máxima de tu capital (drawdown) por debajo del 15 % mientras comprar y mantener pierde mucho más. Puedes quedarte en efectivo, operar en pequeño o vender en corto, pero cada posición debe estar protegida con una orden stop (stop loss).",
+      "hints": [
+        "Preservar el capital es un resultado en sí mismo. Terminar sin posiciones con una pérdida del 2 % supera al índice por treinta puntos aquí.",
+        "Coloca el stop en el mismo paso que la entrada. Un stop que piensas agregar después es un stop que nunca agregas.",
+        "Los rebotes en un mercado bajista son violentos; no agregues a una posición larga porque 'tiene que rebotar'. Dimensiona las posiciones para que un movimiento del 10 % en tu contra te cueste menos del 1 % del capital.",
+        "Vender en corto está permitido, pero una posición corta necesita un stop por encima igual que una larga lo necesita por debajo."
+      ],
+      "criteria": [
+        { "type": "max_drawdown_pct", "value": 15, "text": "Mantén la caída máxima de tu capital por debajo del 15 %" },
+        { "type": "beat_buy_hold", "text": "Termina el año por delante de comprar y mantener" },
+        { "type": "used_stop", "value": 1, "text": "Protege tus posiciones con al menos una orden stop" }
+      ]
+    },
+    {
+      "id": "ride-the-trend-nvda-2023",
+      "title": "Sigue la tendencia: NVDA 2023",
+      "level": "beginner",
+      "minutes": 12,
+      "symbol": "NVDA",
+      "interval": "1day",
+      "start": "2023-01-03",
+      "end": "2023-12-29",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m2-l2",
+      "tags": ["trend", "patience", "daily"],
+      "objective": "Una fuerte tendencia alcista simulada con retrocesos (pullbacks) del 10 al 30 % en el camino. Compra temprano, aguanta los retrocesos y deja que la tendencia te pague. El ejercicio falla si operas demasiado: la lección es que la mayor parte del rendimiento en un año con tendencia viene de quedarse quieto.",
+      "hints": [
+        "Busca máximos más altos y mínimos más altos. Mientras los retrocesos se mantengan por encima del mínimo anterior, la tendencia sigue intacta.",
+        "Decide de antemano qué te haría vender, por ejemplo un cierre por debajo de la SMA de 50 días, e ignora todo lo demás.",
+        "Si sientes el impulso de tomar ganancias después de subir un 15 %, primero avanza diez velas y mira lo que ese impulso te habría costado.",
+        "Compara tu resultado con comprar y mantener (buy-and-hold) al final. Superarlo en una tendencia alcista limpia es difícil; igualarlo con menos caída es una victoria."
+      ],
+      "criteria": [
+        { "type": "max_trades", "value": 3, "text": "Tres operaciones de ida y vuelta o menos: mantén la posición, no sobreoperes" },
+        { "type": "min_return_pct", "value": 20, "text": "Captura al menos un +20 % del movimiento" },
+        { "type": "no_short" }
+      ]
+    },
+    {
+      "id": "crash-and-recovery-xom-2020",
+      "title": "Desplome y recuperación: AMZN, sep 2018 – abr 2019",
+      "level": "advanced",
+      "minutes": 12,
+      "symbol": "AMZN",
+      "interval": "1day",
+      "start": "2018-09-17",
+      "end": "2019-04-16",
+      "cash": 100000,
+      "ticks": true,
+      "lesson": "m4-l2",
+      "tags": ["volatility", "stops", "daily"],
+      "objective": "Un desplome simulado y rápido de alrededor del 40 % en seis semanas, que empieza unas semanas después de iniciada la sesión, seguido de una recuperación irregular que vuelve a probar el mínimo antes de subir más de un 50 % desde ahí. Comprar y mantener termina ligeramente en negativo. Opéralo con los ticks intravela activados, para que sientas cómo los gaps y los rangos amplios atraviesan los stops. Termina con un rendimiento positivo y una caída máxima (drawdown) por debajo del 20 %.",
+      "hints": [
+        "Con los ticks activados, cada vela revela apertura → primer extremo → segundo extremo → cierre. Un stop alcanzado por un gap se ejecuta en la apertura, no a tu precio: eso es lo que significa 'los stops no garantizan un precio'.",
+        "En un desplome, espera una vela que cierre por encima del máximo de la vela anterior antes de comprar. Atrapar el mínimo exacto es suerte, no habilidad, y esta serie vuelve a probar su mínimo meses después, así que un primer rebote no demuestra que el desplome terminó.",
+        "La volatilidad es alta, así que opera en pequeño: la regla del 1 % dice que el riesgo por operación = 1 % del capital ÷ (entrada − stop).",
+        "Una orden stop-limit puede salvarte de una ejecución terrible, y también puede dejarte atrapado en la operación. Prueba ambas y lee el registro de eventos."
+      ],
+      "criteria": [
+        { "type": "positive_return" },
+        { "type": "max_drawdown_pct", "value": 20 },
+        { "type": "used_stop", "value": 2, "text": "Usa al menos dos órdenes stop o stop-limit" }
+      ]
+    },
+    {
+      "id": "range-trading-spy-2018",
+      "title": "Operar el rango con RSI: SPY, abr – nov 2015",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "SPY",
+      "interval": "1day",
+      "start": "2015-04-15",
+      "end": "2015-11-10",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m3-l2",
+      "tags": ["mean-reversion", "rsi", "limit-orders", "daily"],
+      "objective": "Siete meses simulados que terminan más o menos donde empezaron: un rango tranquilo durante el verano, una sacudida fuerte en agosto y luego una segunda caída en octubre antes de la recuperación. Comprar y mantener gana alrededor de un 1 %; un trader de reversión a la media (mean reversion) puede hacerlo mejor. Compra cuando el RSI(14) baje de 30 y el precio esté cerca de la parte baja del rango (ocurre cuatro veces en esta ventana), vende cuando el RSI suba de 70 o el precio llegue a la parte alta del rango, y usa órdenes límite (limit orders) para conseguir tu precio en lugar de perseguirlo.",
+      "hints": [
+        "Activa el panel del RSI. Sobrevendido no significa 'compra ahora': espera el primer cierre al alza después de que el RSI baje de 30. La primera caída llega a principios de agosto; las demás se concentran en octubre.",
+        "Una orden límite de compra un poco por debajo del precio actual es la herramienta del trader de reversión a la media: te ejecutan en la debilidad o no te ejecutan.",
+        "Un rango se rompe tarde o temprano; la sacudida de agosto cae aquí casi un 20 % desde el máximo. Mantén un stop por debajo del mínimo del rango para que una ruptura no deshaga cinco buenas operaciones, y compra la caída solo cuando el RSI haya girado al alza.",
+        "En este estilo, la tasa de acierto importa más que las grandes ganancias; busca ganancias pequeñas y repetibles. El RSI solo llega a 70 una vez en estos siete meses, así que la mayoría de las salidas serán órdenes límite de venta cerca de la resistencia, más que señales del RSI."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 3 },
+        { "type": "used_limit", "value": 2, "text": "Entra o sal con al menos dos órdenes límite" },
+        { "type": "beat_buy_hold" },
+        { "type": "min_win_rate_pct", "value": 50 }
+      ]
+    },
+    {
+      "id": "short-selling-nvda-2022",
+      "title": "Práctica de venta en corto: NVDA 2022",
+      "level": "advanced",
+      "minutes": 15,
+      "symbol": "NVDA",
+      "interval": "1day",
+      "start": "2022-01-03",
+      "end": "2022-12-30",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l4",
+      "tags": ["short", "margin", "daily"],
+      "objective": "Un colapso simulado de aproximadamente el 75 %. Practica la venta en corto (short selling): abre al menos una posición corta, protégela con un stop de compra (buy stop) por encima de la entrada y ciérrala (cover) antes de que termine la sesión. Recuerda la regla de margen (la cuenta debe mantener en efectivo el 150 % de tu exposición en corto) y que la pérdida de una posición corta es ilimitada si te equivocas.",
+      "hints": [
+        "Vende en corto en la debilidad, después de un máximo más bajo, no en una caída brusca que ya está estirada: en los mercados bajistas hay rebotes del 20 %.",
+        "El stop de una posición corta es un stop de COMPRA por encima del mercado. Colócalo en el mismo paso que la entrada.",
+        "Vigila la cifra de margen en la barra de la cuenta. Si el efectivo cae por debajo del 150 % de tu exposición en corto, la barra muestra una advertencia; el simulador no te obliga a salir, así que cubre la posición o no agregues nada hasta que desaparezca.",
+        "Cubre por partes: cierra un tercio después de una caída del 15 %, baja el stop y conserva el resto."
+      ],
+      "criteria": [
+        { "type": "used_short", "value": 1 },
+        { "type": "used_stop", "value": 1, "text": "Protege la posición corta con un stop de compra" },
+        { "type": "positive_return" },
+        { "type": "flat_at_end", "text": "Cubre todas las posiciones antes de que termine la sesión" }
+      ]
+    },
+    {
+      "id": "stop-discipline-tsla-2024",
+      "title": "Disciplina con el stop loss: TSLA 2024",
+      "level": "intermediate",
+      "minutes": 15,
+      "symbol": "TSLA",
+      "interval": "1day",
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m4-l1",
+      "tags": ["risk", "position-sizing", "daily"],
+      "objective": "Un año simulado violento: la acción pierde más de la mitad de su valor en algún momento y aun así termina más arriba. Puedes operarla como quieras, con una sola regla: nunca arriesgues más del 1 % del capital en una operación. Calcula el tamaño de cada posición a partir de la distancia a tu stop (stop loss) y coloca el stop. El ejercicio evalúa tu caída máxima (drawdown), no tu rendimiento.",
+      "hints": [
+        "Acciones = (1 % del capital) ÷ (precio de entrada − precio del stop). Con $100,000 y una distancia al stop de $20, eso son 50 acciones, no 500.",
+        "Un stop más amplio significa menos acciones, no más riesgo. Las acciones volátiles necesitan stops amplios y posiciones pequeñas.",
+        "Sigue tu racha de pérdidas en el registro de eventos. Cinco pérdidas pequeñas seguidas cuestan un 5 %; una sola operación sin stop aquí habría costado un 30 %.",
+        "Si tomas una pérdida, avanza unas cuantas velas antes de volver a entrar: operar por venganza es el hábito más caro de este ejercicio."
+      ],
+      "criteria": [
+        { "type": "max_drawdown_pct", "value": 10, "text": "Caída máxima por debajo del 10 %: ese es todo el sentido de la regla del 1 %" },
+        { "type": "used_stop", "value": 3, "text": "Cada operación lleva su stop: al menos tres órdenes stop" },
+        { "type": "min_trades", "value": 3 }
+      ]
+    },
+    {
+      "id": "breakout-meta-2023",
+      "title": "Entradas por ruptura: META 2023",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "META",
+      "interval": "1day",
+      "start": "2023-01-03",
+      "end": "2023-12-29",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m2-l5",
+      "tags": ["breakout", "stop-orders", "daily"],
+      "objective": "Un año simulado que más que duplica su valor en una serie de bases y rupturas (breakouts). Entra con órdenes stop de compra (buy stop) colocadas justo por encima de la resistencia, para que el mercado te meta solo cuando rompe, y arrastra un stop de venta (trailing stop) por debajo de cada nueva base. Intenta capturar la mayor parte del movimiento con una caída máxima por debajo del 25 %.",
+      "hints": [
+        "Un stop de compra por encima del último máximo es la entrada del trader de rupturas: no estás en la operación a menos que el precio demuestre que tienes razón.",
+        "Después de una ruptura, la antigua resistencia suele convertirse en soporte. Arrastra tu stop de venta por debajo de ella.",
+        "Las rupturas falsas existen. Si la entrada se ejecuta y la vela cierra de vuelta dentro del rango, esa es tu señal de salida.",
+        "Resiste la tentación de comprar dentro de la base 'para conseguir mejor precio'. El ejercicio quiere que tus entradas sean rupturas."
+      ],
+      "criteria": [
+        { "type": "used_stop", "value": 2, "text": "Entra con stops de compra y protégete con stops de venta: al menos dos órdenes stop" },
+        { "type": "min_return_pct", "value": 30 },
+        { "type": "max_drawdown_pct", "value": 25 },
+        { "type": "no_short" }
+      ]
+    },
+    {
+      "id": "intraday-aapl-5min",
+      "title": "Sesión intradía: AAPL en el gráfico de 5 minutos",
+      "level": "advanced",
+      "minutes": 15,
+      "symbol": "AAPL",
+      "interval": "5min",
+      "start": "2024-03-15",
+      "end": "2024-03-15",
+      "cash": 100000,
+      "ticks": true,
+      "lesson": "m3-l4",
+      "tags": ["intraday", "vwap", "5min"],
+      "objective": "Un día de trading simulado, 78 velas de cinco minutos, ticks intravela activados. Opera con el VWAP: busca entradas largas cuando el precio retrocede hasta el VWAP en una mañana con tendencia alcista, o cortos cuando falla por debajo de él. Termina sin posiciones al cierre (los day traders no mantienen posiciones de un día para otro) y no hagas más de cuatro operaciones de ida y vuelta.",
+      "hints": [
+        "Activa la superposición del VWAP. Por encima del VWAP los compradores controlan el día; por debajo, controlan los vendedores.",
+        "Los primeros 30 minutos tienen los rangos más amplios. Muchos day traders esperan a la vela de las 10:00 antes de operar.",
+        "Usa la velocidad 1× o 2× para que cada tick se registre; la de 20× es para adelantar rápido una hora de almuerzo tranquila.",
+        "Las comisiones y los diferenciales (spreads) pesan más en el trading intradía; este simulador no cobra ninguno, así que trata un resultado ligeramente positivo como un empate."
+      ],
+      "criteria": [
+        { "type": "max_trades", "value": 4 },
+        { "type": "min_trades", "value": 1 },
+        { "type": "flat_at_end", "text": "Sin posiciones en la campana de cierre" },
+        { "type": "max_drawdown_pct", "value": 2, "text": "Caída intradía por debajo del 2 % del capital" }
+      ]
+    },
+    {
+      "id": "hourly-swing-msft-2024",
+      "title": "Swing trade de dos semanas: MSFT en el gráfico horario",
+      "level": "intermediate",
+      "minutes": 12,
+      "symbol": "MSFT",
+      "interval": "1h",
+      "start": "2024-06-03",
+      "end": "2024-06-14",
+      "cash": 100000,
+      "ticks": false,
+      "lesson": "m6-l1",
+      "tags": ["swing", "1h", "plan"],
+      "objective": "Diez sesiones simuladas de velas horarias. Antes de pulsar play, escribe en las notas tu regla de entrada, tu stop y tu objetivo, y luego sigue el plan al pie de la letra. El ejercicio se aprueba si completas una o dos operaciones planificadas, cada una protegida con un stop, y terminas con un factor de beneficio (profit factor) de al menos 1.",
+      "hints": [
+        "Las velas horarias muestran con claridad el gap de cada apertura a las 9:30. Decide de antemano si un gap puede alcanzar tu stop y dimensiona la posición en consecuencia.",
+        "Un plan con entrada, stop y objetivo antes de la operación es lo que separa el trading de las adivinanzas. Júzgate por si seguiste el plan, no por las ganancias o pérdidas.",
+        "Dos operaciones en dos semanas son más que suficientes. Si tu regla no da señal, no hacer nada es seguir el plan.",
+        "Después de la sesión, guarda el reporte de resultados en tu diario y anota si te desviaste del plan: ese es el verdadero resultado."
+      ],
+      "criteria": [
+        { "type": "min_trades", "value": 1 },
+        { "type": "max_trades", "value": 2 },
+        { "type": "used_stop", "value": 1 },
+        { "type": "min_profit_factor", "value": 1 }
+      ]
+    }
+  ]
+}

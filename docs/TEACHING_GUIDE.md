@@ -23,13 +23,16 @@ Nothing in this course involves real money. Students trade a simulated $100,000 
 7. [Replay drill schedule and pass criteria](#7-replay-drill-schedule-and-pass-criteria)
 8. [Grading](#8-grading)
 9. [Collecting student work](#9-collecting-student-work)
-10. [The certificate](#10-the-certificate)
-11. [Academic honesty and the hidden future](#11-academic-honesty-and-the-hidden-future)
-12. [Accessibility and accommodations](#12-accessibility-and-accommodations)
-13. [Instructor checklist](#13-instructor-checklist)
-14. [Appendix A — Deep links](#appendix-a--deep-links)
-15. [Appendix B — Suggested slide outline per week](#appendix-b--suggested-slide-outline-per-week)
-16. [Appendix C — Discussion prompts](#appendix-c--discussion-prompts)
+10. [The classroom code workflow](#10-the-classroom-code-workflow)
+11. [The certificate](#11-the-certificate)
+12. [Academic honesty and the hidden future](#12-academic-honesty-and-the-hidden-future)
+13. [Accessibility, language and accommodations](#13-accessibility-language-and-accommodations)
+14. [Instructor checklist](#14-instructor-checklist)
+15. [Appendix A — Deep links](#appendix-a--deep-links)
+16. [Appendix B — Suggested slide outline per week](#appendix-b--suggested-slide-outline-per-week)
+17. [Appendix C — Discussion prompts](#appendix-c--discussion-prompts)
+18. [Appendix D — The First Week assignment](#appendix-d--the-first-week-assignment)
+19. [Appendix E — Optional week: crypto and ETFs](#appendix-e--optional-week-crypto-and-etfs)
 
 ---
 
@@ -43,9 +46,10 @@ Nothing in this course involves real money. Students trade a simulated $100,000 
 | **Format** | Face-to-face, hybrid or fully online. Every exercise is done in the student's own browser. |
 | **Devices** | Phone is enough. A laptop helps for the backtester and the capstone write-up but is not required. |
 | **Cost** | $0. No textbook, no accounts, no API keys needed (demo mode). |
-| **App modules used** | All eight course modules (40 lessons), 10 Market Replay drills, journal, glossary, backtester, options lab, compare page |
+| **App modules used** | Course Modules 1 to 8 (40 lessons; Module 9 on crypto and ETFs is optional, Appendix E), 10 Market Replay drills, journal, glossary, backtester, options lab, compare page, the First Week path for beginners (Appendix D), Classroom codes (section 10) |
 | **Assessment** | Quizzes, replay drills, a graded journal, a trading-plan capstone, participation. P&L is never graded. |
-| **Credential** | The app's completion certificate (free), optionally server-verified if the school runs the backend |
+| **Credential** | The app's completion certificate (free, printable from `certificate.html`), optionally server-verified if the school runs the backend |
+| **Language** | The interface and the course are in English and Spanish (EN / ES toggle in the app); students may work in either. Quiz ids and answers are identical in both, so grading is unaffected. |
 
 Time budget per week for students: about 60 minutes of lessons (two modules in Week 1, one module in Weeks 2 to 6, plus Module 7 drills spread across weeks), 30 to 45 minutes of drills and paper trading, 20 minutes of journaling, 10 minutes of Daily 5 / flashcards.
 
@@ -73,16 +77,20 @@ Outcome 10 is not a footnote. It is the one that protects students once the cour
 1. Publish the site (GitHub Pages is free; `docs/DEPLOY.md`). Confirm it opens over `https://`. Write the address somewhere students will see every week.
 2. Install it on your own phone (`docs/MOBILE.md`) and work through Module 1 Lesson 1, one Replay drill (`ride-the-trend-nvda-2023`) and one journal entry, so you have seen every screen students will see.
 3. Decide whether to use live data. **Recommended: demo mode for the whole course.** Demo prices are deterministic, so every student sees the same chart and every drill is gradable. Live data is a good Week 6 "now look at the real thing" moment.
-4. Decide how students submit work (section 9). The simplest is the school LMS with three uploads: progress JSON, journal CSV, capstone document.
-5. Optional: if your school runs the membership backend (`docs/MEMBERSHIP_SETUP.md`), create a class code for the leaderboard and plan to issue verified certificates. Not needed for the course to work.
+4. Decide how students submit work (section 9). The simplest is **a class code** (section 10): students join once and you see the whole section's progress on one page, with no uploads. Keep the LMS for the capstone document and, if you grade the journal's reflection, the journal export.
+5. **Create your class code** on `instructor.html` (More → Instructor), five minutes; copy the invitation text into your syllabus and first slide. Full walkthrough in `docs/INSTRUCTOR_GUIDE.md`.
+6. Optional: if your school runs the membership backend (`docs/MEMBERSHIP_SETUP.md`), classroom snapshots sync automatically and you can issue verified certificates. Not needed for the course to work; share codes do the same job by hand.
+7. If several students are new to markets altogether, consider assigning the **First Week** (`start.html`) before Week 1 or alongside it (Appendix D).
 
 ### Students, Week 1 in class (15 minutes)
 
 1. Open the site on your phone and **add it to your home screen** (`docs/MOBILE.md`). Open it once from the icon.
 2. Open **Learn** and confirm Module 1 loads. Open **Replay** and confirm the drill list loads. Both prove the course files are cached for offline use.
-3. Open **Portfolio → settings** and confirm the starting cash is $100,000. Do not change commissions yet.
-4. Open **Learn → certificate** (bottom of the course home) and find the **Export JSON** button. You will use it every Friday.
-5. Open **Glossary → Daily 5** and do today's five questions.
+3. Scroll to the **Classroom** card on the course home, enter the class code and a first name or nickname, and tap **Join**. Read the two-sentence privacy line with the class (section 10).
+4. Open **Portfolio → settings** and confirm the starting cash is $100,000. Do not change commissions yet.
+5. Open **Learn → certificate** (bottom of the course home) and find the **Export JSON** button, the backup route if a share code ever fails.
+6. Open **Glossary → Daily 5** and do today's five questions.
+7. Students who prefer Spanish tap **ES** in the nav. Everything, including quizzes and the certificate, stays identical for grading.
 
 Students who prefer a laptop get exactly the same site; nothing changes.
 
@@ -96,8 +104,12 @@ Students who prefer a laptop get exactly the same site; nothing changes.
 | Separating practice from the "real" paper account | Replay trades go to a separate `replay` account; the main paper account stays clean for the forward test in Weeks 5 and 6. |
 | Reflection | Journal: every fill becomes an entry; setup / tags / emotion / confidence / rating; stats by group; weekly review checklist with four questions. |
 | Vocabulary | Glossary: 220 terms, flashcards with spaced repetition, Daily 5 quiz with streaks. `[[term]]` tooltips inside lessons. |
-| Evidence of work | Learn → certificate → Export JSON (progress and quiz scores); Journal → Export CSV; Replay → session history and scorecards. |
-| Honesty built in | Demo badge on simulated prices; hidden-future note in Replay; backtest page shows buy-and-hold next to every result; composite signal explains its points and says it is not a prediction. |
+| Evidence of work | **Classroom**: students join with your class code and their progress, quiz scores, drill scorecards, paper stats and journal counts appear on your roster (section 10). Fallbacks: Learn → certificate → Export JSON; Journal → Export CSV; Replay → session history. |
+| A gradebook that follows this guide | Instructor page → Gradebook: the weights in section 8, automatic scores for quizzes, drills, journal completeness and Daily 5, manual boxes for the forward test and capstone, CSV export. |
+| A gentle start for beginners | First Week (`start.html`): seven days × three tasks with checks that tick themselves (Appendix D). |
+| Spanish-speaking students | EN / ES toggle translates the interface and, where the files exist, the course; untranslated lessons show an "English only" badge and open in English. |
+| Printed hand-outs | Every lesson has Print / Save as PDF (one lesson or the whole module); quizzes print as worksheets without answers. `certificate.html` prints the certificate on one landscape sheet. |
+| Honesty built in | Demo badge on simulated prices; hidden-future note in Replay; backtest page shows buy-and-hold next to every result; composite signal explains its points and says it is not a prediction; the roster marks paper return "never graded". |
 
 ## 5. Weekly plan
 
@@ -225,7 +237,7 @@ Options are advanced; the goal is literacy, not trading. Students use the option
 | 40–65 | **Exercise 6.1 — Prove it.** Each student shows, on their own phone, the three pieces of evidence the plan rests on: the backtest result (with buy-and-hold next to it), one replay drill scorecard that used the same rule, and the forward-test journal stats by setup. |
 | 65–85 | **Exercise 6.2 — Live data, once.** Optional. Students who want to enter a free Twelve Data key do so now; others watch. Open the same chart in demo and live. Discussion: the demo was a random walk with realistic shape; what is different about the real one, and what is the same? Reinforce that the course's conclusions do not depend on demo vs live. |
 | 85–100 | **Graduation checklist** (m8-l5) together. Students check certificate eligibility in Learn → certificate. |
-| 100–110 | Issue certificates (section 10). Final exports. |
+| 100–110 | Issue certificates (section 11). Final exports. |
 
 **Drill:** `intraday-aapl-5min` (advanced, optional, extra credit): a single simulated session on 5-minute bars with ticks on. Good for students who think intraday is easy.
 
@@ -322,9 +334,54 @@ Grading the progress JSON quickly: open it in any text viewer; `quizScores` is a
 
 **Optional classroom leaderboard.** If the backend is running, students may opt in by nickname with your class code; it shows return, trades, win rate and max drawdown. Use it for discussion ("why does the top return have the worst drawdown?"), never for grades. It is anonymous and opt-in by design.
 
-## 10. The certificate
+Most sections will not need the three-files-a-week routine at all: the class code in section 10 replaces the progress JSON and the drill screenshots, and reduces the journal upload to the weeks you grade reflection.
 
-Students earn the app's completion certificate when **every lesson is marked done and quiz scores average 80 % or better**. The app checks this (`Learn → certificate` shows a checklist of what is missing). The student enters the name to print, taps **Issue certificate**, and gets a 1600 × 1130 PNG with a certificate id, downloadable or long-pressable to save.
+## 10. The classroom code workflow
+
+The Classroom feature turns the weekly collection above into one page. The mechanics (modes, roster columns, drawer, gradebook, exports, backups, privacy, troubleshooting) are documented in `docs/INSTRUCTOR_GUIDE.md`; this section is the week-by-week routine for this syllabus.
+
+### Before Week 1
+
+1. Open `instructor.html` (More → Instructor). Create one class per section: name ("FIN 1100 — Markets by Doing"), section, term. You get a six-character code such as `K7Q2MX` (never containing `0`, `O`, `1` or `I`).
+2. Tap **Copy invitation text** and paste it into the syllabus, the LMS announcement and the first slide.
+3. Open **Export & backup → Backup JSON** and save it in institutional storage. It is how you recover the class on another device.
+4. In the gradebook, check the weights match section 8 (they do by default) and that the **required drills** list matches section 7 (`ride-the-trend-nvda-2023`, `stop-discipline-tsla-2024`, one of the Week 3 options, `range-trading-spy-2018`, `sma-cross-msft-2024`, `breakout-meta-2023`). Edit if your section differs.
+
+### Week 1, in class (3 minutes)
+
+Students open Learn → **Classroom** card, type the code and a first name or nickname (tell them which: first name and last initial is usually right), tap **Join**. Read the privacy line aloud:
+
+> The app sends me your course statistics: lessons done, quiz scores, drill results, how much you journal, your paper-trading numbers. It does not send your email, your name unless you type one, your journal text, or your trades. Your paper-trading profit is never graded. You can leave the class at any time from this card.
+
+- **With the classroom server** (`server: connected` in the instructor page header): nothing else; snapshots arrive after every finished lesson or quiz.
+- **Without it** (`offline: share codes`): show students **Copy share code**. The code is one line starting with `BT1.`; they paste it into the LMS assignment box each Friday (the LMS timestamps it). Create six weekly "share code" assignments that accept text.
+
+### Every Friday (10 minutes)
+
+1. Paste the week's share codes into **Import share codes** (the box accepts a whole thread of pasted text and finds every code) or tap **Refresh from server**.
+2. Sort by **Last active**: anyone quiet for more than a week gets a message on Monday.
+3. Sort by **Progress** and compare with the week's reading (Modules 1 and 2 by Week 1, Module 3 by Week 2, Module 4 by Week 3, Module 5 by Week 4, Module 6 by Week 5, Module 8 by Week 6, Module 7 lessons spread across Weeks 2 to 6).
+4. Sort by **Quiz avg**; below 80 % is below the certificate threshold and students may retake. Open the drawer to see which module is dragging.
+5. From Week 2, sort by **Drills** and check the "required passed" count against the week's assignments.
+6. From Week 3, glance at **Journal** (entries, reviewed, weekly reviews). The count is a proxy; the reflection half of the journal rubric still needs you to read the export in Weeks 3 to 6.
+7. Never sort by **Paper return** except to pick a discussion prompt.
+
+### Grading weeks and the end of term
+
+- The gradebook computes quizzes, drills, journal completeness and participation automatically with the weights from section 8 and shows a dash where it needs you: forward test (Week 5 to 6 journal export: `followed-plan` share, a stop on every trade, risk within the plan) and the capstone (rubric in section 8). Type the points; clear a box to return to automatic.
+- Override the automatic journal score with your rubric score for Weeks 3 to 6; the export records which numbers were yours.
+- **Gradebook CSV** → paste into Sheets or Excel (Data → Split text to columns) and match rows by the label you gave each student. Keep the `student_id` column for students who re-joined from a new phone.
+- Back up again before entering final grades, then **Delete this class from this device** after grades are submitted. Server snapshots expire by themselves after 400 days.
+
+### What the code does not do
+
+It does not prove identity (a share code is editable text; pair it with in-class exercises and the peer-reviewed capstone), it does not carry journal text or the trade list (ask for the journal export when you grade reflection), and it does not rank anyone. Those are design decisions, not gaps; see `docs/INSTRUCTOR_GUIDE.md` section 10 before changing how you use it.
+
+## 11. The certificate
+
+Students earn the app's completion certificate when **every lesson is marked done and quiz scores average 80 % or better**. The app checks this (`Learn → certificate` shows a checklist of what is missing). The student enters the name to print, taps **Issue certificate**, and gets a 1600 × 1130 PNG with a certificate id, downloadable or long-pressable to save. A **Printable certificate** button then opens `certificate.html`, a single landscape sheet with the name, course, date, id, verification URL and a signature line for you; print it or save it as a PDF from the phone's share sheet.
+
+With Module 9 in the course, "every lesson" includes m9-l1 to m9-l5. If your section skips the crypto / ETF module (Appendix E), tell students that the certificate needs those five short lessons and quizzes too; most finish them in an hour, and the module stands on its own.
 
 Two kinds of id:
 
@@ -335,42 +392,48 @@ The certificate is **not** a licence, a qualification to trade for others, or a 
 
 For a course grade you do not need the certificate at all: the progress JSON carries the same data. The certificate is the student's.
 
-## 11. Academic honesty and the hidden future
+## 12. Academic honesty and the hidden future
 
 - **Replay hides the future.** The chart draws only revealed bars; indicators are computed from revealed bars only. Students cannot scroll ahead. They can, however, look up what the demo series did in a previous attempt, which is why drills grade rule-following (criteria) and not return.
 - **Demo data is deterministic and the same for everyone.** That makes drills fair and comparable. It also means a student who memorises a series gains nothing the criteria reward.
 - **A year in a drill title is a scenario label.** "NVDA 2023" is a simulated series shaped like a strong trend year, not the real 2023. Say this in Week 2 so nobody cites the drill as market history.
-- **Progress and journal files are editable text.** They are evidence of work, not proof. Combine them with in-class exercises and the peer-reviewed capstone; the capstone's evidence must match the journal.
+- **Progress files, share codes and journal exports are editable text.** They are evidence of work, not proof. Combine them with in-class exercises and the peer-reviewed capstone; the capstone's evidence must match the journal.
 - **Collaboration** on drills and journals is encouraged; the journal entries must be the student's own trades.
 - **No real-money advice.** Students must not present their plan to classmates as a recommendation. The disclaimer footer on every page applies to the classroom too.
 
-## 12. Accessibility and accommodations
+## 13. Accessibility, language and accommodations
 
 - The app is phone-first (390 px), with 44 px tap targets, collapsible panels, dark and light themes (More → theme), and system font scaling respected. Students who need larger text can use their phone's text-size setting; the layout reflows.
 - All course text is HTML; screen readers read lessons and quizzes. Charts are visual; for students who cannot see them, pair the chart exercises with the backtest tables and the signal panel's written reasons, which carry the same information in text. A text summary of charts is on the roadmap.
 - Everything works offline in demo mode once installed, so students without reliable data plans can do the full course; only the News page and live prices need a connection.
 - Time: lessons list their minutes; quizzes are untimed and repeatable. Replay drills can be paused indefinitely and resumed.
-- Language: the course is in English with a 220-term glossary; Spanish and Haitian Creole translations are planned (roadmap v0.4).
+- **Print**: any lesson or whole module prints (or saves as PDF) as clean pages with quizzes as worksheets, for students who read better on paper or need a copy for a reader.
+- **Language**: the interface is fully available in **Spanish** (EN / ES in the nav), and the course is translated module by module; a lesson without a Spanish file yet opens in English with an "English only" badge. Quiz ids and answers are identical in both languages, so a student may switch at any time and nothing about grading changes. The 220-term glossary is in both languages where translated. Haitian Creole is next on the roadmap; `docs/I18N.md` explains how a bilingual student or colleague can contribute a translation.
+- Students may write journal entries and the capstone in Spanish if you can read it; the journal export is plain text.
 
-## 13. Instructor checklist
+## 14. Instructor checklist
 
 Before Week 1
-- [ ] Site published over HTTPS; address shared
+- [ ] Site published over HTTPS; address shared (the public one is https://mfenickfau.github.io/broward-trading/)
 - [ ] Installed on your own phone; Module 1 Lesson 1, one drill and one journal entry done
 - [ ] Decision: demo mode for the course (recommended)
-- [ ] LMS assignments created: six weekly progress uploads, four journal uploads, capstone
-- [ ] Optional: backend deployed, class code chosen
+- [ ] Class code created on `instructor.html`; invitation text in the syllabus; backup JSON saved (section 10)
+- [ ] LMS assignments created: capstone, four journal uploads (Weeks 3 to 6), and six weekly "share code" text boxes if there is no classroom server
+- [ ] Decided whether to assign the First Week (Appendix D) and the crypto / ETF week (Appendix E)
+- [ ] Optional: backend deployed so snapshots sync automatically
 
 Every week
 - [ ] Open the week's deep links on your phone the night before (Appendix A)
 - [ ] Daily 5 together at the start of class
-- [ ] Collect progress JSON (and journal from Week 3)
+- [ ] Friday: import share codes or refresh the roster; sort by Last active, Progress, Quiz avg (section 10)
+- [ ] From Week 3: collect the journal export in grading weeks
 - [ ] Repeat once: demo prices are simulated; signals describe, they do not predict
 
 Week 6
 - [ ] Peer review sheets printed or shared
-- [ ] Certificate eligibility checked with each student
+- [ ] Certificate eligibility checked with each student; printable certificate shown
 - [ ] Students export journal and progress one last time (iOS can clear web-app storage after weeks of disuse)
+- [ ] Gradebook CSV exported and instructor backup saved before final grades
 
 ## Appendix A — Deep links
 
@@ -404,6 +467,12 @@ Strategies and params: `smaCross` (`fast`, `slow`), `rsiReversion` (`low`, `high
 
 **Course** `learn.html#/module/<moduleId>`, `learn.html#/lesson/<lessonId>`, `learn.html#/certificate`.
 
+**First Week** `start.html` (the day list; each task carries its own link into the app).
+
+**Instructor** `instructor.html` (classes, roster, gradebook, exports). **Printable certificate** `certificate.html` (opened from Learn once a certificate exists; accepts `?name=&id=&date=` for a reprint).
+
+**Crypto and ETFs** `index.html#symbol=BTC-USD&interval=1h&ov=sma20,sma50&pane=rsi,atr`, `index.html#symbol=SPY&interval=1day&ov=sma50,sma200`, `compare.html#SPY,QQQ,IWM,GLD,BTC-USD,ETH-USD`, `learn.html#/module/m9-crypto-etf`.
+
 ## Appendix B — Suggested slide outline per week
 
 Keep slides to five or six; the app is the slide deck.
@@ -426,3 +495,58 @@ Keep slides to five or six; the app is the slide deck.
 - The drill series is a simulated 2022. What can it teach you about a bear market, and what can it not?
 - Your plan's forward test is 11 trades. What can you conclude? What can't you?
 - Why does this course refuse to grade profit?
+- An ETF charges 0.03 % a year and another tracking the same index charges 0.95 %. Over thirty years, what is the difference on $10,000, and who received it?
+- Bitcoin trades on Sunday at 3 a.m. Your stop order is resting. What is different about that compared with a stock, and what does it mean for position size?
+
+## Appendix D — The First Week assignment
+
+`start.html` is a seven-day path (about twenty minutes a day, three tasks a day) for students who have never looked at a chart. Each task has a "why", step-by-step instructions, a button into the right screen, and a **check that ticks itself** from what the student has actually done in the app: a lesson read, a quiz scored 60 % or better, a market order filled, a stop resting under an open position, an alert set, a Replay drill finished, a journal entry saved, flashcards reviewed, the Daily 5 played. Two tasks per week are manual ticks. Days unlock in order but can be skipped, so nobody is blocked.
+
+| Day | Title | Tasks (check type) |
+|---|---|---|
+| 1 | Get your bearings | Dashboard tour (`tour`); read m1-l1 "What a stock actually is" (`lesson`); add three companies to the watchlist (`watchlist`) |
+| 2 | Read a chart | Read m1-l3 "Reading a quote" and m2-l1 "Anatomy of a candlestick" (`lesson`); look at one stock on three timeframes (`manual`) |
+| 3 | Your first paper trade | Read m1-l4 "Order types" (`lesson`); score 60 %+ on its quiz (`quiz`); buy 10 shares with a market order (`trade`) |
+| 4 | Risk before reward | Read m4-l1 "Position sizing and the 1 % rule" (`lesson`); place a stop under the open position (`trade`); set a price alert (`alert`) |
+| 5 | Indicators, honestly | Read m3-l1 "Moving averages and crossovers" (`lesson`); turn on SMA 20 / 50 and RSI and read the signal card's reasons (`manual`); review five flashcards (`glossary`) |
+| 6 | Travel back in time | Read m7-l1 "How to use Market Replay honestly" (`lesson`); finish a Replay drill, suggested `ride-the-trend-nvda-2023` (`replay`); write one lesson in the journal (`journal`) |
+| 7 | Make it a habit | Today's Daily 5 (`glossary`); read m4-l5 "Your trading plan, journal and using the paper account well" (`lesson`); save the first weekly review (`journal`) |
+
+**Three ways to use it**
+
+1. **Pre-course warm-up (recommended for open-enrolment sections).** Assign the First Week in the seven days before the first meeting. Students arrive having installed the app, placed a trade, set a stop and finished a drill, so Week 1's setup block shrinks to the class code and the Week 1 exercises go faster. Half of the First Week's lessons (m1-l1, m1-l3, m1-l4, m2-l1) are Week 1 reading anyway, and the rest (m3-l1, m4-l1, m4-l5, m7-l1) are previewed, not replaced.
+2. **Differentiated Week 1.** Students who already trade (or think they do) do the Week 1 reading; complete beginners do the First Week instead and catch up on Module 2 in Week 2. The checks keep both groups accountable without extra work for you.
+3. **Club or orientation version.** A six-week elective is too long for a club meeting series; the First Week on its own is a complete one-week unit with a visible finish line.
+
+**Grading (optional, 5 points, replaces or supplements Participation in section 8):** 5 = all 21 tasks ticked (the roster's progress and the share code show the lessons, quiz, drill and journal checks; the two manual ticks and the alert / watchlist checks are visible on the student's phone, so ask for a screenshot of Day 7 or trust it); 3 = at least five days complete; 1 = started. The First Week's quiz check is the Module 1 Lesson 4 quiz, which the gradebook already counts, so do not double-grade it.
+
+**What to say to students:** the page says it in its own words, and it is worth repeating. One week does not make a profitable trader. It makes the tools, the words and the two habits (stop at entry, journal after) familiar enough that the course can teach you something every time you open it.
+
+## Appendix E — Optional week: crypto and ETFs
+
+Module 9, *Crypto & ETFs: Different Markets, Same Discipline* (intermediate, 58 minutes, m9-l1 to m9-l5), is in the course because students ask about both in the first ten minutes of any section, and because the honest answer ("same risk rules, different clock and fee structure") is more useful than silence. It is **not** in the six-week plan by default. Three ways to fit it:
+
+- **Week 7** of a seven-week version (the cleanest).
+- **Replace Week 4 (options)** in a section where options are out of scope; the risk and sizing lessons in Module 9 carry the same expectancy and position-sizing ideas forward.
+- **Homework plus one 30-minute block** in Week 5 or 6, using Exercise E.1 and E.3 only.
+
+**Before class (about 60 minutes):** Module 9 (m9-l1 to m9-l5). The lessons use the demo universe's 17 ETFs (index, sector, international, bond, commodity; each carries its expense ratio, issuer, holdings and what it tracks) and three crypto pairs (BTC-USD, ETH-USD, SOL-USD) that trade 24/7 in the simulator.
+
+**In class (110 minutes)**
+
+| Min | Activity |
+|---|---|
+| 0–10 | Daily 5. Poll: "Which costs you more over a career: a 0.95 % expense ratio or a 0.03 % one, on $10,000, over 30 years at 7 % before fees?" Compute together: about $75,500 vs about $58,300 after fees; the difference is roughly $17,000, and the fund company received it. |
+| 10–35 | **Exercise E.1 — What an ETF is.** Open `compare.html#SPY,VOO,QQQ,IWM,GLD,XLE`. Read the correlation matrix: SPY and VOO are the same index with different fees (why own the dearer one?); QQQ and IWM diverge; GLD and XLE answer to different things. Then on the dashboard open `index.html#symbol=SPY&interval=1day&ov=sma50,sma200`: the same tools as a stock, a basket underneath. |
+| 35–55 | **Exercise E.2 — Leveraged and inverse decay.** Quick version on the board: an index goes +10 % then −10 %; a 3× daily fund goes +30 % then −30 %. Finish: index −1 %, fund −9 %. Then the m9-l2 exercise on phones: start both at 100 and apply +4 %, −4 % six times; the fund ends well below the index. Discuss who these products are for (not a buy-and-hold beginner) and why the course does not simulate leveraged trading. |
+| 55–80 | **Exercise E.3 — The clock changes, the rule does not.** `index.html#symbol=BTC-USD&interval=1h&ov=sma20,sma50&pane=rsi,atr`. Compare ATR as a % of price with AAPL's. Re-run the Week 3 sizing poll with the new stop distance: risking 1 % of $100,000 on a crypto position whose sensible stop is 8 % away is 125 "units" of a $100 asset, not 1,000. Place that paper trade **with its stop**. Notice `marketStatus` says open on a Saturday; ask what a stop resting overnight on a Sunday means for sleep. |
+| 80–100 | **Exercise E.4 — Same toolkit.** Run `backtest.html#sym=BTC-USD&tf=1day&strategy=smaCross&fast=20&slow=50&commission=0&slippageBps=25&run=1` and compare it with buy-and-hold on the same screen, then with AAPL on the same parameters. Slippage is higher on purpose. Discuss: what carries over (trend, drawdown, costs), what does not (hours, custody, no earnings, no circuit breakers). |
+| 100–110 | Risk and reality check (m9-l3 on custody, m9-l4 on sizing): a crypto balance at an exchange has no SIPC-style protection, self-custody means nobody can reset a lost key, and major coins have fallen by more than half in past drawdowns. The course teaches market structure and sizing; it does not recommend buying anything. |
+
+**Drill:** none is required. Optional: repeat `ride-the-trend-nvda-2023` and ask students to write in the journal what would have been different had the series been a 24/7 asset with triple the ATR.
+
+**Journal assignment:** one entry for the sized crypto paper trade (setup "Trend pullback" or "Range", the stop distance and the unit count in notes), one manual entry titled "ETF vs stock: what changed in my watchlist and why".
+
+**Deliverable:** Module 9 done and quizzes attempted (visible on the roster), the journal export if it is a graded week. If you run Week 7, add Module 9 to the gradebook's quiz component; it is included automatically because the gradebook sums over every lesson in the course.
+
+**Compliance note for instructors:** keep the framing educational. Do not name a coin or fund as a good buy, do not discuss where to open a crypto account, and repeat the disclaimer footer's line that nothing in the app is a recommendation. If a student asks whether they should buy, the answer the course gives is the one in m9-l4: decide the risk budget first, and know that no lesson here can tell you what a price will do.

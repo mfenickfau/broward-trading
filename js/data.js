@@ -1,15 +1,21 @@
-/* Broward Trading — js/data.js → BT.data (v0.2)
+/* Broward Trading — js/data.js → BT.data (v0.4)
  *
  * Market data layer for the dashboard, portfolio, backtester and course pages.
  *
  *   BT.data.candles(symbol, interval, limit)   bars oldest → newest, cached + rate-limited
  *   BT.data.quote(symbol)                      {price, time}
- *   BT.data.search(query)                      [{symbol, name, exchange}]
+ *   BT.data.search(query)                      [{symbol, name, exchange, kind}]
  *   BT.data.providers.{demo,twelvedata,finnhub,alphavantage}
  *   BT.data.getSettings() / setSettings({provider, keys})   persisted in localStorage 'bt.data'
  *   BT.data.demo(symbol, interval, limit) / BT.data.demoTick(bars)
- *   BT.data.marketStatus()                     {open, phase, nyTime, ...}
- *   BT.data.universe                           40+ well-known US tickers with names and sectors
+ *   BT.data.marketStatus()                     NYSE {open, phase, nyTime, ...}; marketStatus('BTC-USD') → open 24/7
+ *   BT.data.universe                           50+ US stocks, 17 ETFs (with expense ratios) and 3 crypto pairs
+ *   BT.data.kindOf(symbol)                     'stock' | 'etf' | 'crypto'   (BASE-USD pairs are crypto)
+ *   BT.data.providerSymbol(provider, symbol)   'BTC-USD' → 'BTC/USD' (Twelve Data) / 'BINANCE:BTCUSDT' (Finnhub) / 'BTC' (Alpha Vantage)
+ *
+ * Crypto trades 24/7: its demo generator uses one 1,440-minute session per UTC calendar day (no weekends, no
+ * holidays, no overnight gaps) and daily candles are stamped with the UTC date. Stocks and ETFs follow the NYSE
+ * calendar below.
  *
  * Bar shape: {time, open, high, low, close, volume}. `time` is 'YYYY-MM-DD' for daily bars
  * and unix seconds for intraday bars. Whenever live data is unavailable (no key, rate limit,
@@ -31,6 +37,7 @@
   const INTERVALS = ['1day', '1h', '15min', '5min', '1min'];
   const INTERVAL_SECONDS = { '1day': 86400, '1h': 3600, '15min': 900, '5min': 300, '1min': 60 };
   const SESSION_MINUTES = 390;                 // 9:30 → 16:00 ET
+  const CRYPTO_SESSION_MINUTES = 1440;         // crypto never closes: one "session" = one UTC calendar day
   const SESSION_OPEN_MIN = 9 * 60 + 30;        // minutes after midnight ET
   const SESSION_CLOSE_MIN = 16 * 60;
   const EARLY_CLOSE_MIN = 13 * 60;
@@ -75,7 +82,20 @@
     del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
 
-  function normSymbol(s) { return String(s || '').trim().toUpperCase(); }
+  /**
+   * Canonical symbol. Stocks/ETFs are plain upper-case tickers (BRK.B keeps its dot). Crypto is spelled
+   * BASE-QUOTE (BTC-USD, the Yahoo/Coinbase style); provider spellings such as 'BTC/USD' (Twelve Data),
+   * 'BINANCE:BTCUSDT' (Finnhub) or 'BTCUSD' are folded into that form so every cache key and portfolio
+   * position refers to the same thing.
+   */
+  function normSymbol(s) {
+    let sym = String(s || '').trim().toUpperCase();
+    if (!sym) return '';
+    let m;
+    if ((m = /^(?:[A-Z]+:)?([A-Z0-9]{2,10})[\/-](USD|USDT|USDC|EUR|GBP)$/.exec(sym))) sym = m[1] + '-' + (m[2] === 'USDT' || m[2] === 'USDC' ? 'USD' : m[2]);
+    else if ((m = /^[A-Z]+:([A-Z0-9]{2,10}?)(USDT|USDC|USD)$/.exec(sym))) sym = m[1] + '-USD';
+    return sym;
+  }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function round(v, dp) { const m = Math.pow(10, dp); return Math.round(v * m) / m; }
@@ -163,6 +183,14 @@
 
   /** Unix seconds → 'YYYY-MM-DD' in New York. */
   function unixToNyDate(sec) { return nyParts(sec * 1000).date; }
+  /** Unix seconds → 'YYYY-MM-DD' in UTC (crypto daily candles close at 00:00 UTC). */
+  function unixToUtcDate(sec) { return new Date(sec * 1000).toISOString().slice(0, 10); }
+  /** Parse 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM[:SS]' as UTC → unix seconds. */
+  function utcStringToUnix(str) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(String(str));
+    if (!m) return NaN;
+    return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) / 1000);
+  }
 
   /* ------------------------------------------------------------------ */
   /* Calendar: weekends, NYSE holidays, early closes                    */
@@ -305,7 +333,55 @@
    *  phase: 'pre' (4:00–9:30 ET), 'open' (9:30–16:00, or 13:00 on early-close days),
    *         'after' (16:00–20:00), 'closed' (overnight, weekends, holidays).
    */
-  function marketStatus(nowMs) {
+  /**
+   * marketStatus()                 → NYSE status now (stocks and ETFs)
+   * marketStatus(nowMs)            → NYSE status at that instant (legacy numeric form)
+   * marketStatus('BTC-USD')        → crypto: open 24/7, phase 'open', no holidays
+   * marketStatus(symbol, nowMs) / marketStatus({symbol, now})
+   * Every result carries `kind` ('stock' | 'etf' | 'crypto') and `always` (true when the market never closes).
+   */
+  function marketStatus(symbolOrNow, nowMs) {
+    let symbol = null;
+    if (symbolOrNow != null && typeof symbolOrNow === 'object') { symbol = symbolOrNow.symbol || null; nowMs = symbolOrNow.now != null ? symbolOrNow.now : nowMs; }
+    else if (typeof symbolOrNow === 'string') symbol = symbolOrNow;
+    else if (typeof symbolOrNow === 'number') nowMs = symbolOrNow;
+    const kind = symbol ? kindOf(symbol) : 'stock';
+    if (kind === 'crypto') return cryptoStatus(nowMs);
+    const st = nyseStatus(nowMs);
+    st.kind = kind;
+    st.always = false;
+    return st;
+  }
+
+  /** Crypto spot markets trade every minute of every day; the "session" is the UTC calendar day. */
+  function cryptoStatus(nowMs) {
+    const ms = nowMs == null ? Date.now() : nowMs;
+    const p = nyParts(ms);
+    const d = new Date(ms);
+    return {
+      open: true,
+      phase: 'open',
+      nyTime: pad2(p.h) + ':' + pad2(p.mi) + ' ET',
+      nyDate: p.date,
+      utcDate: d.toISOString().slice(0, 10),
+      utcTime: pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ' UTC',
+      weekday: WEEKDAYS[p.wd],
+      isTradingDay: true,
+      holiday: null,
+      earlyClose: false,
+      closesAt: null,
+      reason: null,
+      nextOpen: null,
+      nextOpenDate: null,
+      holidays: {},
+      earlyCloses: [],
+      kind: 'crypto',
+      always: true,
+      note: 'Crypto trades 24 hours a day, 7 days a week. Daily candles roll at 00:00 UTC.'
+    };
+  }
+
+  function nyseStatus(nowMs) {
     const ms = nowMs == null ? Date.now() : nowMs;
     const p = nyParts(ms);
     const today = p.date;
@@ -347,7 +423,11 @@
   /* ------------------------------------------------------------------ */
   /* Demo universe                                                      */
   /* ------------------------------------------------------------------ */
-  // base: plausible 2025 price level (USD), vol: annualised volatility, adv: average daily volume (shares).
+  // base: plausible mid-2025 price level (USD), vol: annualised volatility, adv: average daily volume
+  // (shares, or coins for crypto). `kind` is 'stock' (default), 'etf' or 'crypto'.
+  // ETF metadata: expenseRatio is the annual fee in percent (0.0945 = 0.0945 % a year, i.e. $0.95 per $1,000),
+  // approximate and as published by the issuer in 2025 — always check the fund page before relying on it.
+  // etfType: 'index' | 'sector' | 'bond' | 'commodity' | 'international' | 'thematic' | 'crypto' | 'leveraged'.
   const UNIVERSE = [
     { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology', exchange: 'NASDAQ', base: 255, vol: 0.28, adv: 55e6 },
     { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Technology', exchange: 'NASDAQ', base: 510, vol: 0.24, adv: 22e6 },
@@ -402,25 +482,89 @@
     { symbol: 'GM', name: 'General Motors', sector: 'Consumer Discretionary', exchange: 'NYSE', base: 60, vol: 0.32, adv: 10e6 },
     { symbol: 'T', name: 'AT&T Inc.', sector: 'Communication Services', exchange: 'NYSE', base: 27, vol: 0.18, adv: 35e6 },
     { symbol: 'VZ', name: 'Verizon Communications', sector: 'Communication Services', exchange: 'NYSE', base: 42, vol: 0.18, adv: 20e6 },
-    { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', sector: 'ETF — US large cap', exchange: 'NYSE Arca', base: 670, vol: 0.15, adv: 70e6 },
-    { symbol: 'QQQ', name: 'Invesco QQQ Trust (Nasdaq-100)', sector: 'ETF — US tech / growth', exchange: 'NASDAQ', base: 600, vol: 0.20, adv: 40e6 },
-    { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average ETF', sector: 'ETF — US blue chip', exchange: 'NYSE Arca', base: 470, vol: 0.14, adv: 3e6 },
-    { symbol: 'IWM', name: 'iShares Russell 2000 ETF', sector: 'ETF — US small cap', exchange: 'NYSE Arca', base: 245, vol: 0.22, adv: 30e6 },
-    { symbol: 'GLD', name: 'SPDR Gold Shares', sector: 'ETF — Gold', exchange: 'NYSE Arca', base: 370, vol: 0.15, adv: 8e6 },
-    { symbol: 'TLT', name: 'iShares 20+ Year Treasury Bond ETF', sector: 'ETF — Long bonds', exchange: 'NASDAQ', base: 90, vol: 0.15, adv: 35e6 },
-    { symbol: 'XLE', name: 'Energy Select Sector SPDR', sector: 'ETF — Energy', exchange: 'NYSE Arca', base: 90, vol: 0.22, adv: 15e6 },
-    { symbol: 'XLF', name: 'Financial Select Sector SPDR', sector: 'ETF — Financials', exchange: 'NYSE Arca', base: 52, vol: 0.17, adv: 40e6 }
+    // --- ETFs ---------------------------------------------------------------------------------------
+    { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', sector: 'ETF — US large cap', exchange: 'NYSE Arca', base: 620, vol: 0.15, adv: 70e6, kind: 'etf', etfType: 'index', expenseRatio: 0.0945, tracks: 'S&P 500', holdings: 503, issuer: 'State Street' },
+    { symbol: 'VOO', name: 'Vanguard S&P 500 ETF', sector: 'ETF — US large cap', exchange: 'NYSE Arca', base: 570, vol: 0.15, adv: 5e6, kind: 'etf', etfType: 'index', expenseRatio: 0.03, tracks: 'S&P 500', holdings: 505, issuer: 'Vanguard' },
+    { symbol: 'VTI', name: 'Vanguard Total Stock Market ETF', sector: 'ETF — US total market', exchange: 'NYSE Arca', base: 305, vol: 0.16, adv: 3.5e6, kind: 'etf', etfType: 'index', expenseRatio: 0.03, tracks: 'CRSP US Total Market', holdings: 3600, issuer: 'Vanguard' },
+    { symbol: 'QQQ', name: 'Invesco QQQ Trust (Nasdaq-100)', sector: 'ETF — US tech / growth', exchange: 'NASDAQ', base: 550, vol: 0.20, adv: 40e6, kind: 'etf', etfType: 'index', expenseRatio: 0.20, tracks: 'Nasdaq-100', holdings: 101, issuer: 'Invesco' },
+    { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average ETF', sector: 'ETF — US blue chip', exchange: 'NYSE Arca', base: 440, vol: 0.14, adv: 3e6, kind: 'etf', etfType: 'index', expenseRatio: 0.16, tracks: 'Dow Jones Industrial Average', holdings: 30, issuer: 'State Street' },
+    { symbol: 'IWM', name: 'iShares Russell 2000 ETF', sector: 'ETF — US small cap', exchange: 'NYSE Arca', base: 215, vol: 0.22, adv: 30e6, kind: 'etf', etfType: 'index', expenseRatio: 0.19, tracks: 'Russell 2000', holdings: 1960, issuer: 'iShares' },
+    { symbol: 'EFA', name: 'iShares MSCI EAFE ETF', sector: 'ETF — Developed markets ex-US', exchange: 'NYSE Arca', base: 88, vol: 0.16, adv: 15e6, kind: 'etf', etfType: 'international', expenseRatio: 0.33, tracks: 'MSCI EAFE', holdings: 700, issuer: 'iShares' },
+    { symbol: 'XLK', name: 'Technology Select Sector SPDR', sector: 'ETF — Technology', exchange: 'NYSE Arca', base: 250, vol: 0.24, adv: 6e6, kind: 'etf', etfType: 'sector', expenseRatio: 0.08, tracks: 'S&P 500 Technology sector', holdings: 70, issuer: 'State Street' },
+    { symbol: 'XLF', name: 'Financial Select Sector SPDR', sector: 'ETF — Financials', exchange: 'NYSE Arca', base: 52, vol: 0.17, adv: 40e6, kind: 'etf', etfType: 'sector', expenseRatio: 0.08, tracks: 'S&P 500 Financials sector', holdings: 73, issuer: 'State Street' },
+    { symbol: 'XLE', name: 'Energy Select Sector SPDR', sector: 'ETF — Energy', exchange: 'NYSE Arca', base: 86, vol: 0.22, adv: 15e6, kind: 'etf', etfType: 'sector', expenseRatio: 0.08, tracks: 'S&P 500 Energy sector', holdings: 23, issuer: 'State Street' },
+    { symbol: 'XLV', name: 'Health Care Select Sector SPDR', sector: 'ETF — Health care', exchange: 'NYSE Arca', base: 135, vol: 0.15, adv: 9e6, kind: 'etf', etfType: 'sector', expenseRatio: 0.08, tracks: 'S&P 500 Health Care sector', holdings: 60, issuer: 'State Street' },
+    { symbol: 'GLD', name: 'SPDR Gold Shares', sector: 'ETF — Gold', exchange: 'NYSE Arca', base: 305, vol: 0.15, adv: 8e6, kind: 'etf', etfType: 'commodity', expenseRatio: 0.40, tracks: 'Gold bullion (LBMA price)', holdings: 1, issuer: 'State Street' },
+    { symbol: 'TLT', name: 'iShares 20+ Year Treasury Bond ETF', sector: 'ETF — Long bonds', exchange: 'NASDAQ', base: 87, vol: 0.15, adv: 35e6, kind: 'etf', etfType: 'bond', expenseRatio: 0.15, tracks: 'ICE US Treasury 20+ Year', holdings: 40, issuer: 'iShares' },
+    { symbol: 'ARKK', name: 'ARK Innovation ETF (active)', sector: 'ETF — Thematic / active', exchange: 'NYSE Arca', base: 70, vol: 0.45, adv: 8e6, kind: 'etf', etfType: 'thematic', expenseRatio: 0.75, tracks: 'None — actively managed', holdings: 35, issuer: 'ARK Invest' },
+    { symbol: 'IBIT', name: 'iShares Bitcoin Trust ETF', sector: 'ETF — Spot bitcoin', exchange: 'NASDAQ', base: 61, vol: 0.55, adv: 40e6, kind: 'etf', etfType: 'crypto', expenseRatio: 0.25, tracks: 'Bitcoin (CME CF Bitcoin Reference Rate)', holdings: 1, issuer: 'iShares' },
+    { symbol: 'TQQQ', name: 'ProShares UltraPro QQQ (3× daily)', sector: 'ETF — Leveraged 3× Nasdaq-100', exchange: 'NASDAQ', base: 75, vol: 0.60, adv: 60e6, kind: 'etf', etfType: 'leveraged', leverage: 3, expenseRatio: 0.84, tracks: '3× the daily return of the Nasdaq-100', holdings: 101, issuer: 'ProShares' },
+    { symbol: 'SQQQ', name: 'ProShares UltraPro Short QQQ (−3× daily)', sector: 'ETF — Inverse 3× Nasdaq-100', exchange: 'NASDAQ', base: 25, vol: 0.60, adv: 100e6, kind: 'etf', etfType: 'leveraged', leverage: -3, expenseRatio: 0.95, tracks: '−3× the daily return of the Nasdaq-100', holdings: 101, issuer: 'ProShares' },
+    // --- Crypto (spot, quoted in USD, trades 24/7; volume is in coins) --------------------------------
+    { symbol: 'BTC-USD', name: 'Bitcoin', sector: 'Crypto — Layer 1', exchange: 'Crypto (24/7)', base: 107000, vol: 0.55, adv: 25e3, kind: 'crypto', baseAsset: 'BTC', quoteAsset: 'USD', launched: 2009, supplyCap: 21e6 },
+    { symbol: 'ETH-USD', name: 'Ether (Ethereum)', sector: 'Crypto — Smart contracts', exchange: 'Crypto (24/7)', base: 2500, vol: 0.75, adv: 400e3, kind: 'crypto', baseAsset: 'ETH', quoteAsset: 'USD', launched: 2015, supplyCap: null },
+    { symbol: 'SOL-USD', name: 'Solana', sector: 'Crypto — Smart contracts', exchange: 'Crypto (24/7)', base: 150, vol: 1.0, adv: 3e6, kind: 'crypto', baseAsset: 'SOL', quoteAsset: 'USD', launched: 2020, supplyCap: null }
   ];
+  UNIVERSE.forEach(u => { if (!u.kind) u.kind = 'stock'; });
   const UNIVERSE_BY_SYMBOL = {};
   UNIVERSE.forEach(u => { UNIVERSE_BY_SYMBOL[u.symbol] = u; });
+
+  const KIND_LABEL = { stock: 'Stock', etf: 'ETF', crypto: 'Crypto' };
+  const CRYPTO_RE = /^[A-Z0-9]{2,10}-(USD|EUR|GBP)$/;
+  const CRYPTO_QUOTE_RE = /^[A-Z0-9]{2,10}-(USD|EUR|GBP)$/;
+
+  /** 'stock' | 'etf' | 'crypto' for any symbol (unknown BASE-USD pairs count as crypto). */
+  function kindOf(symbol) {
+    symbol = normSymbol(symbol);
+    const u = UNIVERSE_BY_SYMBOL[symbol];
+    if (u) return u.kind;
+    return CRYPTO_RE.test(symbol) ? 'crypto' : 'stock';
+  }
+  function isCrypto(symbol) { return kindOf(symbol) === 'crypto'; }
+
+  /** Split a symbol into its parts: {symbol, kind, base, quote}. Stocks have quote 'USD' and base = ticker. */
+  function parseSymbol(symbol) {
+    symbol = normSymbol(symbol);
+    const kind = kindOf(symbol);
+    if (kind === 'crypto') {
+      const m = CRYPTO_QUOTE_RE.exec(symbol);
+      const base = symbol.slice(0, symbol.lastIndexOf('-'));
+      return { symbol, kind, base, quote: m ? m[1] : 'USD' };
+    }
+    return { symbol, kind, base: symbol, quote: 'USD' };
+  }
+
+  /**
+   * How each provider spells a symbol. Stocks: Twelve Data and Finnhub use the plain ticker, Alpha Vantage
+   * writes share classes with a dash (BRK-B). Crypto: Twelve Data 'BTC/USD', Finnhub 'BINANCE:BTCUSDT'
+   * (its free crypto feed is exchange-prefixed and quoted in the USDT stablecoin, which tracks USD closely),
+   * Alpha Vantage splits the pair into symbol 'BTC' + market 'USD' for DIGITAL_CURRENCY_DAILY.
+   */
+  function providerSymbol(provider, symbol) {
+    const p = parseSymbol(symbol);
+    if (p.kind === 'crypto') {
+      if (provider === 'twelvedata') return p.base + '/' + p.quote;
+      if (provider === 'finnhub') return 'BINANCE:' + p.base + (p.quote === 'USD' ? 'USDT' : p.quote);
+      if (provider === 'alphavantage') return p.base;             // + market=p.quote as a separate parameter
+      return p.symbol;
+    }
+    if (provider === 'alphavantage') return p.symbol.replace(/\./g, '-');
+    return p.symbol;
+  }
 
   /** Universe entry for a symbol, or a synthesized profile for unknown tickers (so any symbol charts). */
   function lookup(symbol) {
     symbol = normSymbol(symbol);
     if (UNIVERSE_BY_SYMBOL[symbol]) return UNIVERSE_BY_SYMBOL[symbol];
     const h = hash32(symbol);
+    const kind = kindOf(symbol);
+    if (kind === 'crypto') {
+      const p = parseSymbol(symbol);
+      const base = priceRound(0.05 + Math.pow(10, ((h % 1000) / 1000) * 4));   // 1 .. 10,000, log-distributed
+      return { symbol, name: p.base + ' (unknown coin — simulated)', sector: 'Crypto — Unknown', exchange: 'Crypto (24/7)', base, vol: 0.7 + ((h >>> 8) % 60) / 100, adv: 1e5 + ((h >>> 16) % 50) * 1e5, kind, baseAsset: p.base, quoteAsset: p.quote, synthetic: true };
+    }
     const base = priceRound(5 + Math.pow(10, 1 + ((h % 1000) / 1000) * 1.7));   // 15 .. 500, log-distributed
-    return { symbol, name: symbol + ' (unknown — simulated)', sector: 'Unknown', exchange: 'DEMO', base, vol: 0.25 + ((h >>> 8) % 40) / 100, adv: 3e6 + ((h >>> 16) % 30) * 1e6, synthetic: true };
+    return { symbol, name: symbol + ' (unknown — simulated)', sector: 'Unknown', exchange: 'DEMO', base, vol: 0.25 + ((h >>> 8) % 40) / 100, adv: 3e6 + ((h >>> 16) % 30) * 1e6, kind: 'stock', synthetic: true };
   }
 
   function universeSearch(query, max) {
@@ -430,9 +574,11 @@
     const scored = [];
     for (const u of UNIVERSE) {
       let score = 0;
-      if (u.symbol === q) score = 100;
+      if (u.symbol === q || normSymbol(q) === u.symbol) score = 100;
       else if (u.symbol.startsWith(q)) score = 60;
+      else if (u.kind === 'crypto' && u.baseAsset && u.baseAsset.startsWith(q)) score = 55;
       else if (u.name.toUpperCase().startsWith(q)) score = 50;
+      else if (u.kind.toUpperCase() === q || (KIND_LABEL[u.kind] || '').toUpperCase() === q) score = 40;   // "etf" lists the ETFs before Netflix
       else if (u.name.toUpperCase().includes(q)) score = 30;
       else if (u.sector.toUpperCase().includes(q)) score = 10;
       if (score) scored.push({ score, u });
@@ -440,7 +586,11 @@
     scored.sort((a, b) => b.score - a.score || a.u.symbol.localeCompare(b.u.symbol));
     return scored.slice(0, max).map(x => toSearchRow(x.u));
   }
-  function toSearchRow(u) { return { symbol: u.symbol, name: u.name, exchange: u.exchange, sector: u.sector }; }
+  function toSearchRow(u) {
+    const row = { symbol: u.symbol, name: u.name, exchange: u.exchange, sector: u.sector, kind: u.kind };
+    if (u.kind === 'etf') { row.expenseRatio = u.expenseRatio; row.etfType = u.etfType; }
+    return row;
+  }
 
   /* ------------------------------------------------------------------ */
   /* Demo data generator                                                */
@@ -485,34 +635,124 @@
     return { drift, volMult, kind: u < 0.38 ? 'bull' : u < 0.66 ? 'bear' : 'range' };
   }
 
-  /** Per-day core numbers, deterministic from (symbol, date). */
-  function dayCore(symbol, profile, date) {
+  /* ------------------------------------------------------------------ */
+  /* Trading calendars: NYSE sessions vs the 24/7 crypto day            */
+  /* ------------------------------------------------------------------ */
+  // The generator asks the calendar which days exist, how long a session is, when it opens (unix) and
+  // where "now" falls. Stocks and ETFs follow the NYSE calendar above; crypto has one 1,440-minute
+  // session per UTC calendar day, every day of the year, with no overnight gap and a flatter intraday
+  // volume curve (activity rises during US and European hours but never stops).
+
+  function calendarDays(endDate, n) {
+    const out = [];
+    for (let i = n - 1; i >= 0; i--) out.push(addDays(endDate, -i));
+    return out;
+  }
+  function calendarDaysBetween(startDate, endDate) {
+    const out = [];
+    let s = dateToSerial(startDate);
+    const e = dateToSerial(endDate);
+    while (s <= e) { out.push(serialToDate(s)); s++; }
+    return out;
+  }
+
+  const EQUITY_CAL = {
+    id: 'nyse',
+    always: false,
+    sqrtDays: Math.sqrt(252),                   // trading days per year, for daily volatility
+    volShape: 1.6,                              // U-shaped intraday volatility (busy bells, quiet lunch)
+    gapScale: 1,                                // overnight gaps happen
+    weekendVolume: 1,                           // (there are no weekend sessions)
+    maxSessionMinutes: SESSION_MINUTES,
+    sessionMinutes(date) { return sessionCloseMinutes(date) - SESSION_OPEN_MIN; },
+    isDay: isTradingDay,
+    prevDay: prevTradingDay,
+    nextDay: nextTradingDay,
+    days: tradingDays,
+    daysBetween: tradingDaysBetween,
+    openUnix(date) { return nyToUnix(+date.slice(0, 4), +date.slice(5, 7), +date.slice(8, 10), 9, 30, 0); },
+    /** Which session is current and how many minutes of it are complete. */
+    clock(nowMs) {
+      const st = nyseStatus(nowMs);
+      const p = nyParts(nowMs == null ? Date.now() : nowMs);
+      let date, elapsed;
+      if (st.isTradingDay && p.minutes >= SESSION_OPEN_MIN) {
+        date = p.date;
+        const closeMin = sessionCloseMinutes(date);
+        elapsed = clamp(p.minutes - SESSION_OPEN_MIN, 0, closeMin - SESSION_OPEN_MIN);
+      } else {
+        date = prevTradingDay(p.date);
+        elapsed = sessionCloseMinutes(date) - SESSION_OPEN_MIN;
+      }
+      return { date, elapsed, sessionMinutes: sessionCloseMinutes(date) - SESSION_OPEN_MIN, inProgress: st.open, calendar: 'nyse' };
+    }
+  };
+
+  const CRYPTO_CAL = {
+    id: 'crypto',
+    always: true,
+    sqrtDays: Math.sqrt(365),                   // crypto trades every day, so annual vol spreads over 365 days
+    volShape: 0.35,                             // gentle bump, never a closing bell
+    gapScale: 0,                                // continuous trading: today's open is yesterday's close
+    weekendVolume: 0.7,                         // weekends are real sessions but quieter
+    maxSessionMinutes: CRYPTO_SESSION_MINUTES,
+    sessionMinutes() { return CRYPTO_SESSION_MINUTES; },
+    isDay() { return true; },
+    prevDay(date) { return addDays(date, -1); },
+    nextDay(date) { return addDays(date, 1); },
+    days: calendarDays,
+    daysBetween: calendarDaysBetween,
+    openUnix(date) { return dateToSerial(date) * 86400; },           // 00:00 UTC
+    clock(nowMs) {
+      const ms = nowMs == null ? Date.now() : nowMs;
+      const d = new Date(ms);
+      const date = d.toISOString().slice(0, 10);
+      const elapsed = d.getUTCHours() * 60 + d.getUTCMinutes();
+      return { date, elapsed, sessionMinutes: CRYPTO_SESSION_MINUTES, inProgress: true, calendar: 'crypto' };
+    }
+  };
+
+  /** The calendar a symbol trades on. */
+  function calendarFor(symbol) { return isCrypto(symbol) ? CRYPTO_CAL : EQUITY_CAL; }
+
+  /* ------------------------------------------------------------------ */
+  /* Demo data generator (continued)                                    */
+  /* ------------------------------------------------------------------ */
+
+  /** Per-day core numbers, deterministic from (symbol, date). `cal` defaults to the NYSE calendar. */
+  function dayCore(symbol, profile, date, cal) {
+    cal = cal || EQUITY_CAL;
     const serial = dateToSerial(date);
     const r = mulberry32(hash32(symbol + '|d|' + date));
     const reg = regimeFor(symbol, serial);
-    const sigma = (profile.vol / Math.sqrt(252)) * reg.volMult;
-    // Overnight gap: usually small; ~3 % of days carry an "event" gap (earnings, news).
-    let gap = 0.35 * sigma * gauss(r), event = false, spike = 1;
+    const sigma = (profile.vol / cal.sqrtDays) * reg.volMult;
+    // Overnight gap: usually small; ~3 % of days carry an "event" gap (earnings, news). Crypto never closes,
+    // so its gapScale is 0 and the event move lands inside the day instead.
+    const gapNoise = gauss(r);                                        // always drawn, so the NYSE sequence is unchanged
+    let gap = cal.gapScale ? cal.gapScale * 0.35 * sigma * gapNoise : 0, event = false, spike = 1, eventMove = 0;
     if (r() < 0.03) {
       event = true;
       // Event size scales with how volatile the name is: ~1–3 % for KO, ~4–14 % for TSLA.
       const size = clamp((0.02 + r() * 0.05) * (profile.vol / 0.3), 0.012, 0.14);
-      gap += (r() < 0.5 ? -1 : 1) * size;
+      const signed = (r() < 0.5 ? -1 : 1) * size;
+      if (cal.gapScale) gap += signed; else eventMove = signed;
       spike = 2.5 + r() * 3.5;
     }
-    const intra = reg.drift + sigma * gauss(r);                       // open → close log return
+    const intra = reg.drift + sigma * gauss(r) + eventMove;           // open → close log return
     const wd = weekday(date);
-    const weekdayVol = wd === 1 || wd === 5 ? 0.95 : 1.05;            // Mondays/Fridays a little lighter
+    let weekdayVol = wd === 1 || wd === 5 ? 0.95 : 1.05;              // Mondays/Fridays a little lighter
+    if ((wd === 0 || wd === 6) && cal.weekendVolume !== 1) weekdayVol = cal.weekendVolume;
     const volume = profile.adv * weekdayVol * Math.exp(0.35 * gauss(r)) * (1 + 1.4 * Math.abs(gap + intra) / Math.max(sigma, 1e-6) * 0.25) * spike;
-    return { date, serial, gap, intra, sigma, volume: Math.max(1000, Math.round(volume)), event, regime: reg.kind };
+    return { date, serial, gap, intra, sigma, volume: Math.max(cal === CRYPTO_CAL ? 1 : 1000, Math.round(volume)), event, regime: reg.kind };
   }
 
   /**
    * Minute-resolution log-price path for one session: a Brownian bridge from logOpen to logClose with a
    * U-shaped volatility profile (busy open, quiet lunch, busy close). Returns `minutes + 1` points plus
-   * per-minute volume weights.
+   * per-minute volume weights. `shape` sets how pronounced the U is (0 = flat).
    */
-  function sessionPath(symbol, date, logOpen, logClose, sigmaDay, minutes) {
+  function sessionPath(symbol, date, logOpen, logClose, sigmaDay, minutes, shape) {
+    shape = shape == null ? EQUITY_CAL.volShape : shape;
     const r = mulberry32(hash32(symbol + '|m|' + date));
     const n = minutes;
     const z = new Array(n), w = new Array(n);
@@ -520,14 +760,15 @@
     const cumArr = new Array(n + 1); cumArr[0] = 0;
     for (let i = 0; i < n; i++) {
       const t = (i + 0.5) / n;
-      const u = 1 + 1.6 * Math.pow(2 * (t - 0.5), 2);        // U-shape: ~2.6× at the bells, 1× at lunch
+      const u = 1 + shape * Math.pow(2 * (t - 0.5), 2);     // U-shape: ~2.6× at the bells, 1× at lunch (shape 1.6)
       w[i] = u;
       z[i] = gauss(r) * Math.sqrt(u);
       cum += z[i];
       cumArr[i + 1] = cum;
     }
     const total = cumArr[n];
-    const scale = (sigmaDay * 0.85) / Math.sqrt(n * 1.53);   // 1.53 ≈ mean of u over the session
+    const meanU = round(1 + shape / 3, 2);                   // mean of u over the session (1.53 for the NYSE shape)
+    const scale = (sigmaDay * 0.85) / Math.sqrt(n * meanU);
     const path = new Array(n + 1);
     for (let i = 0; i <= n; i++) {
       const f = i / n;
@@ -536,31 +777,20 @@
     return { path, weights: w };
   }
 
-  /** Where "now" is for the demo clock: which session is current and how many minutes are complete. */
-  function demoClock(nowMs) {
-    const st = marketStatus(nowMs);
-    const p = nyParts(nowMs == null ? Date.now() : nowMs);
-    let date, elapsed;                           // elapsed minutes of the current/last session
-    if (st.isTradingDay && p.minutes >= SESSION_OPEN_MIN) {
-      date = p.date;
-      const closeMin = sessionCloseMinutes(date);
-      elapsed = clamp(p.minutes - SESSION_OPEN_MIN, 0, closeMin - SESSION_OPEN_MIN);
-    } else {
-      date = prevTradingDay(p.date);
-      elapsed = sessionCloseMinutes(date) - SESSION_OPEN_MIN;
-    }
-    return { date, elapsed, sessionMinutes: sessionCloseMinutes(date) - SESSION_OPEN_MIN, inProgress: st.open };
-  }
+  /** Where "now" is for the demo clock of a calendar (NYSE by default): current session + minutes complete. */
+  function demoClock(nowMs, cal) { return (cal || EQUITY_CAL).clock(nowMs); }
 
   // In-memory memo of generated daily series so the dashboard can re-request cheaply.
   const _demoMemo = new Map();
 
   /**
-   * Daily demo bars for `dates` (array of trading-day strings) plus the per-day log open/close needed by the
-   * intraday generator. Prices are anchored so the close on DEMO_ANCHOR_DATE equals the universe base price.
+   * Daily demo bars for `dates` (array of session-day strings on the symbol's calendar) plus the per-day log
+   * open/close needed by the intraday generator. Prices are anchored so the close on DEMO_ANCHOR_DATE equals
+   * the universe base price.
    */
-  function demoDailySeries(symbol, dates, clock) {
+  function demoDailySeries(symbol, dates, clock, cal) {
     const profile = lookup(symbol);
+    cal = cal || calendarFor(symbol);
     // Nothing exists before the generation start: clamp rather than move the start, so the path never shifts.
     if (dates.length && dateToSerial(dates[0]) < dateToSerial(DEMO_GEN_START)) dates = dates.filter(d => dateToSerial(d) >= dateToSerial(DEMO_GEN_START));
     if (!dates.length) dates = [DEMO_GEN_START];
@@ -572,8 +802,8 @@
     // `limit` the caller asks for. A gentle mean reversion keeps multi-year demo prices in a believable
     // band around the anchor level while still allowing months-long trends.
     const genStart = DEMO_GEN_START;
-    const allDates = tradingDaysBetween(genStart, last);
-    const cores = allDates.map(d => dayCore(symbol, profile, d));
+    const allDates = cal.daysBetween(genStart, last);
+    const cores = allDates.map(d => dayCore(symbol, profile, d, cal));
     const logC = new Array(cores.length), logO = new Array(cores.length);
     let lc = 0;
     for (let i = 0; i < cores.length; i++) {
@@ -594,8 +824,8 @@
       if (!wanted.has(d)) continue;
       const c = cores[i];
       const lo = logO[i] + shift, lcl = logC[i] + shift;
-      const sessionMin = sessionCloseMinutes(d) - SESSION_OPEN_MIN;
-      const sp = sessionPath(symbol, d, lo, lcl, c.sigma, sessionMin);
+      const sessionMin = cal.sessionMinutes(d);
+      const sp = sessionPath(symbol, d, lo, lcl, c.sigma, sessionMin, cal.volShape);
       const upto = (d === clock.date) ? Math.max(1, Math.min(sessionMin, clock.elapsed)) : sessionMin;
       let hi = -Infinity, low = Infinity, volW = 0, totW = 0;
       for (let k = 0; k <= upto; k++) { if (sp.path[k] > hi) hi = sp.path[k]; if (sp.path[k] < low) low = sp.path[k]; }
@@ -619,24 +849,25 @@
   }
 
   function demoDaily(symbol, limit, nowMs) {
-    const clock = demoClock(nowMs);
-    const dates = tradingDays(clock.date, limit);
-    return demoDailySeries(symbol, dates, clock).bars.map(b => Object.assign({}, b));
+    const cal = calendarFor(symbol);
+    const clock = cal.clock(nowMs);
+    const dates = cal.days(clock.date, limit);
+    return demoDailySeries(symbol, dates, clock, cal).bars.map(b => Object.assign({}, b));
   }
 
   function demoIntraday(symbol, interval, limit, nowMs) {
     const step = INTERVAL_SECONDS[interval] / 60;            // minutes per bar
-    const clock = demoClock(nowMs);
-    const perSession = Math.ceil(SESSION_MINUTES / step);
+    const cal = calendarFor(symbol);
+    const clock = cal.clock(nowMs);
+    const perSession = Math.ceil(cal.maxSessionMinutes / step);
     const sessions = Math.ceil(limit / perSession) + 1;
-    const dates = tradingDays(clock.date, sessions);
-    const daily = demoDailySeries(symbol, dates, clock);
+    const dates = cal.days(clock.date, sessions);
+    const daily = demoDailySeries(symbol, dates, clock, cal);
     const bars = [];
     for (const d of dates) {
       const m = daily.meta[d];
       if (!m) continue;
-      const y = +d.slice(0, 4), mo = +d.slice(5, 7), da = +d.slice(8, 10);
-      const sessionOpenUnix = nyToUnix(y, mo, da, 9, 30, 0);
+      const sessionOpenUnix = cal.openUnix(d);
       const upto = d === clock.date ? Math.max(1, Math.min(m.sessionMin, clock.elapsed)) : m.sessionMin;
       let totW = 0; for (let k = 0; k < m.sessionMin; k++) totW += m.path.weights[k];
       const noise = mulberry32(hash32(symbol + '|v|' + d + '|' + interval));
@@ -654,7 +885,7 @@
           high: priceRound(Math.max(open, close, Math.exp(hi) * wick)),
           low: priceRound(Math.min(open, close, Math.exp(lo) / wick)),
           close: priceRound(close),
-          volume: Math.max(100, Math.round(m.volume * (w / totW) * (0.8 + noise() * 0.4)))
+          volume: Math.max(cal === CRYPTO_CAL ? 1 : 100, Math.round(m.volume * (w / totW) * (0.8 + noise() * 0.4)))
         });
       }
     }
@@ -670,13 +901,14 @@
     bars.source = 'demo';
     bars.symbol = symbol;
     bars.interval = interval;
+    bars.kind = kindOf(symbol);
     return bars;
   }
 
   /**
    * Nudge the last bar as if a trade just printed (used for the "live-looking" demo ticker).
    * Mutates and returns `bars`. For intraday bars, rolls a new bar when the current one has elapsed
-   * and the market is open, so a chart left running behaves like a real one.
+   * and the market is open (always, for crypto), so a chart left running behaves like a real one.
    */
   function demoTick(bars) {
     if (!bars || !bars.length) return bars;
@@ -684,12 +916,14 @@
     const prev = bars.length > 1 ? bars[bars.length - 2] : null;
     const intraday = typeof last.time === 'number';
     const step = intraday && prev ? Math.max(60, last.time - prev.time) : 0;
-    const profile = lookup(bars.symbol || 'AAPL');
-    const tickSigma = (profile.vol / Math.sqrt(252)) / Math.sqrt(SESSION_MINUTES) * 0.6;   // ~ a 40-second move
+    const symbol = bars.symbol || 'AAPL';
+    const profile = lookup(symbol);
+    const cal = calendarFor(symbol);
+    const tickSigma = (profile.vol / cal.sqrtDays) / Math.sqrt(cal.maxSessionMinutes) * 0.6;   // ~ a 40-second move
     const r = Math.random;
     const g = Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
     const now = Math.floor(Date.now() / 1000);
-    const status = marketStatus();
+    const status = marketStatus(symbol);
     if (intraday && step && status.open && now >= last.time + step) {
       // Start a new bar aligned to the interval grid.
       const t = last.time + step * Math.floor((now - last.time) / step);
@@ -701,7 +935,7 @@
     last.close = c;
     if (c > last.high) last.high = c;
     if (c < last.low) last.low = c;
-    last.volume = (last.volume || 0) + Math.round(profile.adv / SESSION_MINUTES / 20 * (0.5 + r()));
+    last.volume = (last.volume || 0) + Math.round(profile.adv / cal.maxSessionMinutes / 20 * (0.5 + r()));
     return bars;
   }
 
@@ -914,6 +1148,18 @@
     }
     return j;
   }
+  /** Twelve Data /time_series body → bars. Exposed for tests. */
+  function parseTwelveData(j, interval, symbol, crypto) {
+    const values = Array.isArray(j && j.values) ? j.values : [];
+    if (!values.length) throw new DataError('Twelve Data returned no bars for ' + symbol, 'symbol');
+    const daily = interval === '1day';
+    const toUnix = crypto ? utcStringToUnix : nyStringToUnix;
+    const bars = values.map(v => cleanBar({
+      time: daily ? String(v.datetime).slice(0, 10) : toUnix(v.datetime),
+      open: +v.open, high: +v.high, low: +v.low, close: +v.close, volume: +v.volume || 0
+    })).filter(Boolean);
+    return sortBars(bars);
+  }
   const twelvedataProvider = {
     id: 'twelvedata',
     label: PROVIDER_LABEL.twelvedata,
@@ -921,21 +1167,16 @@
     async candles(symbol, interval, limit, key) {
       key = key || keyFor('twelvedata');
       if (!key) throw new DataError('No Twelve Data API key', 'nokey');
-      const url = TD_BASE + '/time_series?' + qs({ symbol, interval, outputsize: clamp(limit, 1, MAX_LIMIT), timezone: NY, order: 'ASC', apikey: key });
+      // Crypto pairs are spelled BTC/USD and their daily candles roll at 00:00 UTC, so ask for UTC timestamps.
+      const crypto = isCrypto(symbol);
+      const url = TD_BASE + '/time_series?' + qs({ symbol: providerSymbol('twelvedata', symbol), interval, outputsize: clamp(limit, 1, MAX_LIMIT), timezone: crypto ? 'UTC' : NY, order: 'ASC', apikey: key });
       const j = tdCheck(await getJSON(url, key));
-      const values = Array.isArray(j.values) ? j.values : [];
-      if (!values.length) throw new DataError('Twelve Data returned no bars for ' + symbol, 'symbol');
-      const daily = interval === '1day';
-      const bars = values.map(v => cleanBar({
-        time: daily ? String(v.datetime).slice(0, 10) : nyStringToUnix(v.datetime),
-        open: +v.open, high: +v.high, low: +v.low, close: +v.close, volume: +v.volume || 0
-      })).filter(Boolean);
-      return sortBars(bars);
+      return parseTwelveData(j, interval, symbol, crypto);
     },
     async quote(symbol, key) {
       key = key || keyFor('twelvedata');
       if (!key) throw new DataError('No Twelve Data API key', 'nokey');
-      const j = tdCheck(await getJSON(TD_BASE + '/price?' + qs({ symbol, apikey: key }), key));
+      const j = tdCheck(await getJSON(TD_BASE + '/price?' + qs({ symbol: providerSymbol('twelvedata', symbol), apikey: key }), key));
       const price = +j.price;
       if (!(price > 0)) throw new DataError('No price for ' + symbol, 'symbol');
       return { price, time: Math.floor(Date.now() / 1000), symbol: normSymbol(symbol), source: 'twelvedata' };
@@ -966,14 +1207,31 @@
    * time, so weekends, overnight gaps and NYSE holidays never shrink the result. Starts at 4:00 ET (pre-market)
    * on the first session and pads by one extra session for safety.
    */
-  function finnhubWindow(interval, limit, nowMs) {
+  function finnhubWindow(interval, limit, nowMs, symbol) {
     const now = nowMs == null ? Date.now() : nowMs;
     const step = INTERVAL_SECONDS[interval];
-    const perSession = interval === '1day' ? 1 : Math.ceil(SESSION_MINUTES / (step / 60));
+    const cal = calendarFor(symbol || 'AAPL');
+    const perSession = interval === '1day' ? 1 : Math.ceil(cal.maxSessionMinutes / (step / 60));
     const sessions = interval === '1day' ? limit : Math.ceil(limit / perSession) + 1;
+    if (cal.always) {
+      // Crypto: every calendar day is a session and the day starts at 00:00 UTC.
+      const firstDay = calendarDays(unixToUtcDate(Math.floor(now / 1000)), sessions + 1)[0];
+      return { from: dateToSerial(firstDay) * 86400, to: Math.floor(now / 1000) };
+    }
     const first = tradingDays(nyParts(now).date, sessions + 1)[0];
     const from = nyToUnix(+first.slice(0, 4), +first.slice(5, 7), +first.slice(8, 10), 4, 0, 0);
     return { from, to: Math.floor(now / 1000) };
+  }
+  /** Finnhub /stock/candle or /crypto/candle body ({t,o,h,l,c,v,s}) → bars. Exposed for tests. */
+  function parseFinnhubCandles(j, interval, crypto) {
+    if (!j || j.s === 'no_data' || !Array.isArray(j.t) || !j.t.length) return [];
+    const daily = interval === '1day';
+    const toDate = crypto ? unixToUtcDate : unixToNyDate;
+    const bars = j.t.map((t, i) => cleanBar({
+      time: daily ? toDate(+t) : +t,
+      open: j.o[i], high: j.h[i], low: j.l[i], close: j.c[i], volume: j.v ? j.v[i] : 0
+    })).filter(Boolean);
+    return sortBars(bars);
   }
   const finnhubProvider = {
     id: 'finnhub',
@@ -986,10 +1244,12 @@
         // This key was already refused on /stock/candle this session — do not burn another request on it.
         return finnhubDemoWithLiveQuote(symbol, interval, limit, key, FH_PAID_PLAN_REASON);
       }
-      const { from, to } = finnhubWindow(interval, limit);
+      const crypto = isCrypto(symbol);
+      const { from, to } = finnhubWindow(interval, limit, null, symbol);
+      const endpoint = crypto ? '/crypto/candle' : '/stock/candle';
       let j;
       try {
-        j = await getJSON(FH_BASE + '/stock/candle?' + qs({ symbol, resolution: FH_RESOLUTION[interval], from, to, token: key }), key);
+        j = await getJSON(FH_BASE + endpoint + '?' + qs({ symbol: providerSymbol('finnhub', symbol), resolution: FH_RESOLUTION[interval], from, to, token: key }), key);
       } catch (e) {
         if (e.code === 'auth' && e.status === 403) {
           _fhCandlesDeniedKey = key;
@@ -998,19 +1258,25 @@
         throw e;
       }
       if (j.error) throw new DataError(j.error, /key|auth|token/i.test(j.error) ? 'auth' : 'provider');
-      if (j.s === 'no_data' || !Array.isArray(j.t) || !j.t.length) {
+      const bars = parseFinnhubCandles(j, interval, crypto);
+      if (!bars.length) {
         return finnhubDemoWithLiveQuote(symbol, interval, limit, key, 'Finnhub returned no candles for ' + symbol + '. Showing simulated history anchored to the live quote.');
       }
-      const daily = interval === '1day';
-      const bars = j.t.map((t, i) => cleanBar({
-        time: daily ? unixToNyDate(t) : t,
-        open: j.o[i], high: j.h[i], low: j.l[i], close: j.c[i], volume: j.v ? j.v[i] : 0
-      })).filter(Boolean);
-      return sortBars(bars).slice(-limit);
+      return bars.slice(-limit);
     },
     async quote(symbol, key) {
       key = key || keyFor('finnhub');
       if (!key) throw new DataError('No Finnhub API key', 'nokey');
+      if (isCrypto(symbol)) {
+        // Finnhub's /quote endpoint is stocks-only; the latest 1-minute crypto candle is the live price.
+        const to = Math.floor(Date.now() / 1000);
+        const j = await getJSON(FH_BASE + '/crypto/candle?' + qs({ symbol: providerSymbol('finnhub', symbol), resolution: '1', from: to - 15 * 60, to, token: key }), key);
+        if (j.error) throw new DataError(j.error, 'auth');
+        const bars = parseFinnhubCandles(j, '1min', true);
+        if (!bars.length) throw new DataError('Finnhub has no recent trades for ' + symbol, 'symbol');
+        const last = bars[bars.length - 1];
+        return { price: last.close, time: last.time, symbol: normSymbol(symbol), source: 'finnhub', open: last.open, high: last.high, low: last.low, kind: 'crypto' };
+      }
       const j = await getJSON(FH_BASE + '/quote?' + qs({ symbol, token: key }), key);
       if (j.error) throw new DataError(j.error, 'auth');
       const price = +j.c;
@@ -1090,39 +1356,75 @@
     return j;
   }
   /** Alpha Vantage spells share classes with a dash (BRK-B), while the universe and other providers use BRK.B. */
-  function avSymbol(symbol) { return normSymbol(symbol).replace(/\./g, '-'); }
+  function avSymbol(symbol) { return providerSymbol('alphavantage', symbol); }
   function avSeries(j) {
     const k = Object.keys(j).find(x => /^Time Series/.test(x) || /^Weekly|^Monthly/.test(x));
     return k ? j[k] : null;
   }
+  /**
+   * Pick a field out of an Alpha Vantage OHLCV row by its number prefix. Stock rows are '1. open' … '5. volume'.
+   * DIGITAL_CURRENCY_DAILY rows have been published in two shapes: the current one ('1. open', '2. high', '3. low',
+   * '4. close', '5. volume') and the older one with a market suffix and a USD twin ('1a. open (USD)', '1b. open (USD)',
+   * …, '5. volume', '6. market cap (USD)'). We accept either, preferring the (USD)-suffixed twin when present.
+   */
+  function avField(row, n, name) {
+    const keys = Object.keys(row);
+    const re = new RegExp('^' + n + '[ab]?\\.\\s*' + name + '\\b', 'i');
+    const matches = keys.filter(k => re.test(k));
+    if (!matches.length) return NaN;
+    const usd = matches.find(k => /\(USD\)/i.test(k));
+    return +row[usd || matches[0]];
+  }
+  /**
+   * Alpha Vantage daily/intraday series (stocks) or DIGITAL_CURRENCY_DAILY (crypto) → bars. Intraday stock timestamps
+   * mark the END of each bar in US/Eastern, so they are shifted back one interval; daily keys are plain dates.
+   * Exposed for tests.
+   */
+  function parseAlphaVantage(j, interval, symbol) {
+    const series = avSeries(j);
+    if (!series) throw new DataError('Alpha Vantage returned no bars for ' + symbol, 'symbol');
+    const daily = interval === '1day';
+    const step = INTERVAL_SECONDS[interval];
+    const bars = Object.keys(series).map(ts => {
+      const v = series[ts];
+      return cleanBar({
+        time: daily ? ts.slice(0, 10) : nyStringToUnix(ts) - step,
+        open: avField(v, 1, 'open'), high: avField(v, 2, 'high'), low: avField(v, 3, 'low'), close: avField(v, 4, 'close'),
+        volume: avField(v, 5, 'volume') || avField(v, 6, 'volume') || 0
+      });
+    }).filter(Boolean);
+    return sortBars(bars);
+  }
   const alphavantageProvider = {
     id: 'alphavantage',
     label: PROVIDER_LABEL.alphavantage,
-    supports: { intervals: INTERVALS.slice(), realtime: false, search: true },
+    supports: { intervals: INTERVALS.slice(), realtime: false, search: true, cryptoIntervals: ['1day'] },
     async candles(symbol, interval, limit, key) {
       key = key || keyFor('alphavantage');
       if (!key) throw new DataError('No Alpha Vantage API key', 'nokey');
       const daily = interval === '1day';
+      if (isCrypto(symbol)) {
+        // Free plan: DIGITAL_CURRENCY_DAILY only. CRYPTO_INTRADAY is a premium endpoint, so say so instead of burning
+        // one of the 25 daily requests on a call that cannot succeed.
+        if (!daily) throw new DataError('Alpha Vantage only offers daily crypto candles on the free plan (CRYPTO_INTRADAY is a premium endpoint). Showing simulated ' + interval + ' bars.', 'plan');
+        const p = parseSymbol(symbol);
+        const j = avCheck(await getJSON(AV_BASE + '?' + qs({ function: 'DIGITAL_CURRENCY_DAILY', symbol: p.base, market: p.quote, apikey: key }), key));
+        return parseAlphaVantage(j, interval, symbol).slice(-limit);
+      }
       const params = daily
         ? { function: 'TIME_SERIES_DAILY', symbol: avSymbol(symbol), outputsize: limit > 100 ? 'full' : 'compact', apikey: key }
         : { function: 'TIME_SERIES_INTRADAY', symbol: avSymbol(symbol), interval: AV_INTERVAL[interval], outputsize: limit > 100 ? 'full' : 'compact', extended_hours: 'false', apikey: key };
       const j = avCheck(await getJSON(AV_BASE + '?' + qs(params), key));
-      const series = avSeries(j);
-      if (!series) throw new DataError('Alpha Vantage returned no bars for ' + symbol, 'symbol');
-      const step = INTERVAL_SECONDS[interval];
-      const bars = Object.keys(series).map(ts => {
-        const v = series[ts];
-        return cleanBar({
-          time: daily ? ts.slice(0, 10) : nyStringToUnix(ts) - step,
-          open: +v['1. open'], high: +v['2. high'], low: +v['3. low'], close: +v['4. close'],
-          volume: +(v['5. volume'] || v['6. volume'] || 0)
-        });
-      }).filter(Boolean);
-      return sortBars(bars).slice(-limit);
+      return parseAlphaVantage(j, interval, symbol).slice(-limit);
     },
     async quote(symbol, key) {
       key = key || keyFor('alphavantage');
       if (!key) throw new DataError('No Alpha Vantage API key', 'nokey');
+      if (isCrypto(symbol)) {
+        const p = parseSymbol(symbol);
+        const j = avCheck(await getJSON(AV_BASE + '?' + qs({ function: 'CURRENCY_EXCHANGE_RATE', from_currency: p.base, to_currency: p.quote, apikey: key }), key));
+        return parseAlphaVantageRate(j, symbol);
+      }
       const j = avCheck(await getJSON(AV_BASE + '?' + qs({ function: 'GLOBAL_QUOTE', symbol: avSymbol(symbol), apikey: key }), key));
       const g = j['Global Quote'] || {};
       const price = +g['05. price'];
@@ -1140,6 +1442,19 @@
         .slice(0, 15).map(r => ({ symbol: r['1. symbol'], name: r['2. name'], exchange: r['4. region'] === 'United States' ? 'US' : r['4. region'], type: r['3. type'] }));
     }
   };
+
+  /** CURRENCY_EXCHANGE_RATE body → quote. Exposed for tests. */
+  function parseAlphaVantageRate(j, symbol) {
+    const r = (j && j['Realtime Currency Exchange Rate']) || {};
+    const price = +r['5. Exchange Rate'];
+    if (!(price > 0)) throw new DataError('Alpha Vantage has no exchange rate for ' + symbol, 'symbol');
+    const ts = r['6. Last Refreshed'];
+    const time = ts ? (utcStringToUnix(ts) || Math.floor(Date.now() / 1000)) : Math.floor(Date.now() / 1000);
+    const out = { price, time, symbol: normSymbol(symbol), source: 'alphavantage', kind: 'crypto' };
+    if (+r['8. Bid Price'] > 0) out.bid = +r['8. Bid Price'];
+    if (+r['9. Ask Price'] > 0) out.ask = +r['9. Ask Price'];
+    return out;
+  }
 
   const providers = { demo: demoProvider, twelvedata: twelvedataProvider, finnhub: finnhubProvider, alphavantage: alphavantageProvider };
 
@@ -1179,6 +1494,11 @@
     if (ap.why) return fallbackBars(symbol, interval, limit, ap.why, { code: 'nokey' });
     if (!ap.provider.supports.intervals.includes(interval)) {
       return fallbackBars(symbol, interval, limit, PROVIDER_LABEL[ap.name] + ' does not offer ' + interval + ' bars on the free plan.', { code: 'interval' });
+    }
+    const cryptoIntervals = ap.provider.supports.cryptoIntervals;
+    if (isCrypto(symbol) && Array.isArray(cryptoIntervals) && !cryptoIntervals.includes(interval)) {
+      // e.g. Alpha Vantage: CRYPTO_INTRADAY is premium. Decide here so no rate-limit credit is spent on it.
+      return fallbackBars(symbol, interval, limit, PROVIDER_LABEL[ap.name] + ' only offers ' + cryptoIntervals.join('/') + ' crypto candles on the free plan; ' + interval + ' bars are simulated.', { code: 'interval' });
     }
 
     const ttl = interval === '1day' ? TTL.daily : TTL.intraday;
@@ -1306,9 +1626,18 @@
     INTERVAL_SECONDS,
     PROVIDER_LABEL,
     RATE_LIMITS,
+    KIND_LABEL,
     DataError,
     lookup,
     universeSearch,
+    // v0.4: asset kinds (stock | etf | crypto)
+    kindOf,
+    isCrypto,
+    parseSymbol,
+    providerSymbol,
+    normSymbol,
+    universeByKind(kind) { return UNIVERSE.filter(u => u.kind === kind); },
+    calendarFor,
     status,
     rateStatus,
     rateCheck,
@@ -1317,7 +1646,11 @@
     calendar: {
       holidays, earlyCloses, holidayName, isEarlyClose, isTradingDay, prevTradingDay, nextTradingDay, tradingDays, tradingDaysBetween, addDays, weekday
     },
-    time: { nyParts, nyToUnix, nyStringToUnix, unixToNyDate, NY },
-    _internal: { hash32, mulberry32, dayCore, sessionPath, demoClock, cacheGet, cacheSet, rateTake }
+    time: { nyParts, nyToUnix, nyStringToUnix, unixToNyDate, unixToUtcDate, utcStringToUnix, NY },
+    _internal: {
+      hash32, mulberry32, dayCore, sessionPath, demoClock, cacheGet, cacheSet, rateTake,
+      EQUITY_CAL, CRYPTO_CAL, finnhubWindow,
+      parseTwelveData, parseFinnhubCandles, parseAlphaVantage, parseAlphaVantageRate, avField
+    }
   };
 })();

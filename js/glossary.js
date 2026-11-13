@@ -26,6 +26,8 @@
   'use strict';
   var root = typeof window !== 'undefined' ? window : globalThis;
   var BT = root.BT = root.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (root.BT && root.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var TERMS_URL = 'course/glossary.json';
   var BANK_URL = 'course/questionbank.json';
@@ -313,11 +315,11 @@
     var n = nextState(c, grade, now);
     now = now == null ? Date.now() : +now;
     var ms = n.due - now;
-    if (ms < DAY_MS) return Math.round(ms / 60000) + ' min';
+    if (ms < DAY_MS) return T('{n} min', { n: Math.round(ms / 60000) });
     var d = Math.round(ms / DAY_MS);
-    if (d < 14) return d + (d === 1 ? ' day' : ' days');
-    if (d < 60) return Math.round(d / 7) + ' wk';
-    return Math.round(d / 30) + ' mo';
+    if (d < 14) return T(d === 1 ? '{n} day' : '{n} days', { n: d });
+    if (d < 60) return T('{n} wk', { n: Math.round(d / 7) });
+    return T('{n} mo', { n: Math.round(d / 30) });
   }
   function preview(id, now) {
     var c = card(id);

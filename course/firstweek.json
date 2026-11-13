@@ -1,0 +1,357 @@
+{
+  "version": "0.4.0",
+  "id": "firstweek",
+  "title": "Your First Week",
+  "summary": "Seven short days that take you from 'I have never looked at a chart' to your first planned paper trade, a replay drill and a written review. About twenty minutes a day. Everything is simulated, so the only thing you can lose is a habit you have not built yet.",
+  "minutesPerDay": 20,
+  "honesty": "This week will not make you a profitable trader. Nobody becomes one in seven days, and anyone who promises that is selling something. What it will do is make the tools, the words and the habits familiar, so the full course and your paper account teach you something every time you open them.",
+  "outcomes": [
+    "Read a candlestick chart and say, in plain words, what buyers and sellers did that day",
+    "Explain what a stock, a quote, the bid-ask spread and the three main order types are",
+    "Place a paper trade with a market order, protect it with a stop and know why the stop is there",
+    "Size a position so that one losing trade costs about 1% of the account, not 10%",
+    "Turn on a moving average and RSI and read what the signal card says, without treating it as a prediction",
+    "Trade a historical chart bar by bar in Market Replay and compare yourself with buy-and-hold",
+    "Keep a journal entry and a weekly review, the two habits that separate practice from gambling"
+  ],
+  "days": [
+    {
+      "day": 1,
+      "id": "d1",
+      "title": "Get your bearings",
+      "minutes": 20,
+      "intro": "No theory marathon today. You will open the simulator, let it show you around, read one short lesson and make the watchlist yours. If you finish in fifteen minutes, that is fine; the point is to come back tomorrow.",
+      "tasks": [
+        {
+          "id": "d1-tour",
+          "title": "Take the dashboard tour",
+          "minutes": 5,
+          "why": "The dashboard is where almost everything happens: the chart, the indicators, the watchlist and the paper trade ticket. Eight short steps now save you from hunting for buttons all week.",
+          "steps": [
+            "Open the Dashboard. On a first visit the tour starts by itself after a second.",
+            "Already closed it? Tap the Tour button in the header (on a keyboard, press ?).",
+            "Read each step and tap Next. Finish with 'Start trading'."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "tour" }
+        },
+        {
+          "id": "d1-lesson",
+          "title": "Read 'What a stock actually is'",
+          "minutes": 10,
+          "why": "Every price you will ever look at is a price for a slice of a real company. Starting from that keeps the rest of the course grounded when the lines and acronyms arrive.",
+          "steps": [
+            "Open the lesson and read it at your own pace.",
+            "Scroll to the quiz at the end and answer it. A low score is fine today; you can retake it any time.",
+            "Tap 'Mark lesson done' at the bottom of the lesson."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l1", "label": "Open lesson 1.1" },
+          "check": { "type": "lesson", "lessonId": "m1-l1" }
+        },
+        {
+          "id": "d1-watchlist",
+          "title": "Add three companies you know to your watchlist",
+          "minutes": 5,
+          "why": "You learn faster watching names you already have opinions about. The watchlist shows their last price and today's change every time you open the dashboard.",
+          "steps": [
+            "On the Dashboard, type a company or ticker in the search box (try DIS, NKE, KO, SBUX or your favourite brand).",
+            "Pick it from the list, then tap '+ Add' (or press W) to put it on the watchlist.",
+            "Repeat until you have added three of your own. Remove any defaults you do not care about with the x."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "watchlist", "added": 3 }
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "id": "d2",
+      "title": "Read a chart",
+      "minutes": 25,
+      "intro": "Today you learn to read the two things on every trading screen: the quote and the candlestick. By the end you will be able to look at a chart and describe who was in control.",
+      "tasks": [
+        {
+          "id": "d2-quote",
+          "title": "Read 'Reading a quote: bid, ask and the spread'",
+          "minutes": 10,
+          "why": "The spread is the first cost every trader pays and the one most beginners never notice. Knowing why the buy price and the sell price differ explains a lot of 'why am I already down?'.",
+          "steps": [
+            "Read the lesson and try the exercise on the dashboard.",
+            "Take the quiz, then mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l3", "label": "Open lesson 1.3" },
+          "check": { "type": "lesson", "lessonId": "m1-l3" }
+        },
+        {
+          "id": "d2-candles",
+          "title": "Read 'Anatomy of a candlestick and choosing a timeframe'",
+          "minutes": 10,
+          "why": "A candle is four numbers drawn as a shape: open, high, low, close. Once you can read one, a whole chart becomes a story instead of a pattern of colours.",
+          "steps": [
+            "Read the lesson. Pause on the diagram until you can name the body and both wicks.",
+            "Take the quiz and mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m2-l1", "label": "Open lesson 2.1" },
+          "check": { "type": "lesson", "lessonId": "m2-l1" }
+        },
+        {
+          "id": "d2-timeframes",
+          "title": "Look at one stock on three timeframes",
+          "minutes": 5,
+          "why": "The same stock can be in an uptrend on the daily chart and a downtrend on the 15-minute chart. Seeing that with your own eyes is the best protection against reading one chart too literally.",
+          "steps": [
+            "On the Dashboard, pick a watchlist symbol and look at the 1D chart. Is the price higher or lower than three months ago?",
+            "Switch to 1H, then to 15min. Does the direction look the same?",
+            "Say out loud (or write down) which direction each timeframe shows. Then tick the box here."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "manual" }
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "id": "d3",
+      "title": "Your first paper trade",
+      "minutes": 25,
+      "intro": "Orders are how an idea becomes a position. You will learn the three order types, then use the simplest one to buy ten shares with simulated money. No real order is ever placed here.",
+      "tasks": [
+        {
+          "id": "d3-orders",
+          "title": "Read 'Order types: market, limit and stop'",
+          "minutes": 12,
+          "why": "Market, limit and stop orders are the whole vocabulary of execution. Most expensive beginner mistakes are an order type used in the wrong situation.",
+          "steps": [
+            "Read the lesson; the comparison table is the part to remember.",
+            "Mark the lesson done. The quiz is the next task."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l4", "label": "Open lesson 1.4" },
+          "check": { "type": "lesson", "lessonId": "m1-l4" }
+        },
+        {
+          "id": "d3-quiz",
+          "title": "Score 60% or more on the order-types quiz",
+          "minutes": 5,
+          "why": "You are about to use these orders with your paper account. A quick check that market, limit and stop are clear in your head is worth five minutes.",
+          "steps": [
+            "Scroll to the quiz at the end of lesson 1.4.",
+            "Answer all five questions and tap Check. Read the explanations for any you missed.",
+            "Below 60%? Reread the table and try again; the best score is kept."
+          ],
+          "link": { "href": "learn.html#/lesson/m1-l4", "label": "Open the quiz" },
+          "check": { "type": "quiz", "lessonId": "m1-l4", "minPct": 60 }
+        },
+        {
+          "id": "d3-trade",
+          "title": "Buy 10 shares with a market order",
+          "minutes": 5,
+          "why": "A small market order is the simplest trade there is. Placing one shows you how a fill, a position and cash change together, before you add any strategy on top.",
+          "steps": [
+            "On the Dashboard, choose a symbol from your watchlist.",
+            "In the trade ticket set Side: Buy, Quantity: 10, Type: Market, then tap the buy button.",
+            "Look at the Paper account panel: your cash went down and a position appeared. That is the whole loop."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "trade", "account": "main", "side": "buy", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "id": "d4",
+      "title": "Risk before reward",
+      "minutes": 25,
+      "intro": "Most of trading is deciding how much you can afford to be wrong. Today you learn the 1% rule, protect yesterday's position with a stop and set an alert so the market can tap you on the shoulder instead of you staring at it.",
+      "tasks": [
+        {
+          "id": "d4-sizing",
+          "title": "Read 'Position sizing and the 1% rule'",
+          "minutes": 11,
+          "why": "Position size, not stock picking, decides whether a normal losing streak is survivable. This is the one lesson that most new traders skip and most experienced traders wish they had read first.",
+          "steps": [
+            "Read the lesson and work through the sizing example with your own numbers (a $100,000 paper account risking 1% is $1,000 per trade).",
+            "Take the quiz and mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m4-l1", "label": "Open lesson 4.1" },
+          "check": { "type": "lesson", "lessonId": "m4-l1" }
+        },
+        {
+          "id": "d4-stop",
+          "title": "Place a stop order under your open position",
+          "minutes": 7,
+          "why": "A stop decides your exit before emotion gets a vote. Placing one on a paper position teaches the mechanics while nothing is at stake.",
+          "steps": [
+            "On the Dashboard, open the symbol you bought yesterday.",
+            "In the trade ticket set Side: Sell, Quantity: 10, Type: Stop, and a stop price a few percent below the current price.",
+            "Tap the sell button. The order shows as open in the Orders list; it fills only if price falls to your level."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "trade", "account": "main", "orderType": ["stop", "stop_limit"], "min": 1 }
+        },
+        {
+          "id": "d4-alert",
+          "title": "Set a price alert",
+          "minutes": 5,
+          "why": "Alerts let you follow a plan without watching the screen, which is how most emotional trades start. In the simulator they also show you how often your levels actually get hit.",
+          "steps": [
+            "On the Dashboard, find the Alerts panel.",
+            "Choose a watchlist symbol, pick 'Price rises above' or 'Price falls below' and type a level near the current price.",
+            "Tap Add. The alert fires as a toast while the page is open (and a notification if you allow them)."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "alert", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "id": "d5",
+      "title": "Indicators, honestly",
+      "minutes": 25,
+      "intro": "Indicators are arithmetic on past prices, nothing more and nothing less. Today you learn the most used one, see how the dashboard combines several into a signal, and start building vocabulary with flashcards.",
+      "tasks": [
+        {
+          "id": "d5-ma",
+          "title": "Read 'Moving averages and crossovers'",
+          "minutes": 12,
+          "why": "A moving average is the simplest way to see the trend through the noise. Crossovers are the first 'system' most traders ever test, so it pays to understand exactly what they can and cannot tell you.",
+          "steps": [
+            "Read the lesson and study the chart with SMA 20 and SMA 50.",
+            "Take the quiz and mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m3-l1", "label": "Open lesson 3.1" },
+          "check": { "type": "lesson", "lessonId": "m3-l1" }
+        },
+        {
+          "id": "d5-signal",
+          "title": "Turn on SMA 20/50 and RSI, then read the signal card's reasons",
+          "minutes": 6,
+          "why": "The signal card describes what the indicators say right now; it does not predict what happens next. Reading its reasons line by line is how you learn to use it as a checklist instead of an oracle.",
+          "steps": [
+            "On the Dashboard, switch on the SMA 20 and SMA 50 overlays and the RSI pane.",
+            "Find the signal card (BUY / SELL / HOLD) and read every reason listed under it.",
+            "Ask yourself: which reason would change first if price fell 3% tomorrow? Then tick the box here."
+          ],
+          "link": { "href": "index.html", "label": "Open the dashboard" },
+          "check": { "type": "manual" }
+        },
+        {
+          "id": "d5-flashcards",
+          "title": "Review five glossary flashcards",
+          "minutes": 5,
+          "why": "Trading has a lot of jargon and every lesson gets easier when the words stop slowing you down. Five cards a day is enough; the spacing does the remembering for you.",
+          "steps": [
+            "Open the Glossary and switch to Flashcards.",
+            "Read the term, guess the definition, flip the card and grade yourself honestly: Again, Hard or Good.",
+            "Five cards is the goal. Stop there if you like; the app brings the hard ones back sooner."
+          ],
+          "link": { "href": "glossary.html#flashcards", "label": "Open flashcards" },
+          "check": { "type": "glossary", "mode": "flashcards", "min": 5 }
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "id": "d6",
+      "title": "Travel back in time",
+      "minutes": 30,
+      "intro": "Market Replay hides the future and lets you trade a real historical chart one bar at a time. It compresses months of experience into half an hour, and your mistakes are free. Today's drill is a beginner one on purpose.",
+      "tasks": [
+        {
+          "id": "d6-replay-lesson",
+          "title": "Read 'How to use Market Replay honestly'",
+          "minutes": 10,
+          "why": "Replay only teaches you if you refuse to peek. This short lesson explains the hidden-future rule, the scorecard and how to compare yourself with simply buying and holding.",
+          "steps": [
+            "Read the lesson and the honesty note about hidden future bars.",
+            "Mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m7-l1", "label": "Open lesson 7.1" },
+          "check": { "type": "lesson", "lessonId": "m7-l1" }
+        },
+        {
+          "id": "d6-drill",
+          "title": "Finish a Replay drill (try 'Ride the trend: NVDA 2023')",
+          "minutes": 15,
+          "why": "Doing beats reading. One finished drill gives you a scorecard: your return, buy-and-hold's return, your win rate and your worst drawdown. Whatever the numbers say, you will have felt what a trend does to a position.",
+          "steps": [
+            "Open Replay and choose the drill 'Ride the trend: NVDA 2023' (beginner). Any drill counts.",
+            "Step or play through the bars. Buy when your rule says so, sell when it says so, and do not jump ahead.",
+            "Reach the end and read the scorecard. It is saved to your Replay history automatically; also tap 'Save to journal' so the next task has something to work with."
+          ],
+          "link": { "href": "replay.html#drill=ride-the-trend-nvda-2023", "label": "Open the drill" },
+          "check": { "type": "replay", "drill": true, "completed": true, "min": 1 }
+        },
+        {
+          "id": "d6-journal",
+          "title": "Write one lesson in your journal",
+          "minutes": 5,
+          "why": "Your account records what happened; only a journal records why. One honest sentence after a replay session is worth more than the scorecard itself.",
+          "steps": [
+            "Open the Journal. If you saved the replay session from the scorecard it is already there; otherwise tap '+ New manual entry'.",
+            "Open the entry, choose how you felt (emotion) and write one sentence in the Lesson field: what you would do differently.",
+            "Save. That is a complete journal entry."
+          ],
+          "link": { "href": "journal.html", "label": "Open the journal" },
+          "check": { "type": "journal", "field": "lessons", "min": 1 }
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "id": "d7",
+      "title": "Make it a habit",
+      "minutes": 25,
+      "intro": "The last day is about what you keep doing after this week ends: a daily five-question quiz, a plan for using the paper account well, and the weekly review that turns trades into lessons.",
+      "tasks": [
+        {
+          "id": "d7-daily5",
+          "title": "Take today's Daily 5 quiz",
+          "minutes": 5,
+          "why": "Five questions drawn from the whole course, every day. It is the cheapest way to find out which ideas have stuck and which need another look.",
+          "steps": [
+            "Open the Glossary and switch to Daily 5.",
+            "Answer the five questions and read the explanations.",
+            "Come back tomorrow for a new set; the page tracks your streak."
+          ],
+          "link": { "href": "glossary.html#daily", "label": "Open the Daily 5" },
+          "check": { "type": "glossary", "mode": "daily5", "min": 1 }
+        },
+        {
+          "id": "d7-plan",
+          "title": "Read 'Your trading plan, journal and using the paper account well'",
+          "minutes": 12,
+          "why": "A paper account is only useful if you treat it like real money and review it like a scientist. This lesson gives you the rules for the weeks after this one.",
+          "steps": [
+            "Read the lesson and note the three rules for paper trading honestly.",
+            "Take the quiz and mark the lesson done."
+          ],
+          "link": { "href": "learn.html#/lesson/m4-l5", "label": "Open lesson 4.5" },
+          "check": { "type": "lesson", "lessonId": "m4-l5" }
+        },
+        {
+          "id": "d7-review",
+          "title": "Save your first weekly review",
+          "minutes": 8,
+          "why": "A weekly review is where you look at what you did, not just what the market did. Ten minutes every week compounds faster than any indicator.",
+          "steps": [
+            "Open the Journal and scroll to Weekly review.",
+            "Tick the checklist items you actually did this week and answer the four short questions. One honest line each is enough.",
+            "Tap 'Save review'."
+          ],
+          "link": { "href": "journal.html#review", "label": "Open the weekly review" },
+          "check": { "type": "journal", "review": true, "min": 1 }
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "title": "You finished your first week",
+    "body": "Twenty-one small tasks, done. You can read a chart, place and protect a paper trade, size it sensibly, run a replay drill and review your own decisions. That is more than most people who open a brokerage account ever learn. The full course goes deeper on every one of these, and finishing it earns a certificate you can verify online.",
+    "next": [
+      { "href": "learn.html", "label": "Continue with the full course" },
+      { "href": "learn.html#/certificate", "label": "See the certificate requirements" },
+      { "href": "replay.html", "label": "Run another Replay drill" }
+    ]
+  }
+}

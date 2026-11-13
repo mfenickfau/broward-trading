@@ -1,8 +1,10 @@
-/* Broward Trading — js/learn.js (UI for learn.html, v0.3)
+/* Broward Trading — js/learn.js (UI for learn.html, v0.4)
  *
  * Hash-routed single page:
- *   #/                      course home: progress ring, "continue where you left off",
- *                           module cards, certificate checklist, Pro card
+ *   #/                      course home: progress ring, 'Up next' recommendation
+ *                           (BT.course.recommend), 'Your first week' card (BT.onboarding),
+ *                           'Join a class' card (BT.classroom), module cards,
+ *                           certificate checklist, Pro card
  *   #/module/<moduleId>     jumps into the first unfinished lesson of that module
  *   #/lesson/<lessonId>     lesson reader: sidebar (a dropdown on phones), block
  *                           renderers, glossary tooltips, drills, quizzes, Pro lock
@@ -11,10 +13,16 @@
  *
  * Depends on: js/course.js (BT.course), js/data.js (BT.data), js/indicators.js (BT.ind)
  * and the lightweight-charts v4 UMD global for the 'chart' block. Optional:
- * js/nav.js (BT.nav: theme event, phone accordions), js/config.js + js/auth.js
- * (BT.auth: Pro gating, certificate ids) and js/replay.js (BT.replay.loadDrills) —
- * every use of them is guarded, the page works when they are absent.
+ * js/nav.js (BT.nav: theme event, phone accordions, toasts), js/config.js + js/auth.js
+ * (BT.auth: Pro gating, certificate ids), js/replay.js (BT.replay.loadDrills),
+ * js/i18n.js (BT.i18n / BT.t: language, re-render on 'bt:lang'), js/onboarding.js
+ * (BT.onboarding: first-week progress) and js/classroom.js (BT.classroom: class codes,
+ * share codes) — every use of them is guarded, the page works when they are absent.
  * Everything rendered from course JSON goes through BT.course.renderMd / escapeHtml.
+ *
+ * v0.4: language-aware course files with an 'English only' badge, re-render on language
+ * change, 'Your first week' and 'Join a class' cards, 'Up next' recommendation,
+ * 'Print / Save as PDF' (this lesson or the whole module) in the lesson reader.
  */
 (function () {
   'use strict';
@@ -24,6 +32,13 @@
   if (!C || !app) return;
 
   var esc = C.escapeHtml;
+  /** BT.t when js/i18n.js is present, plain {var} interpolation otherwise. */
+  function T(s, v) {
+    if (BT.t) { try { return BT.t(s, v); } catch (e) { /* fall through */ } }
+    return v ? String(s).replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s;
+  }
+  function curLang() { try { return C.lang ? C.lang() : 'en'; } catch (e) { return 'en'; } }
+  function enOnlyPill(title) { return '<span class="pill enonly" title="' + esc(title || T('This content has not been translated yet and is shown in English.')) + '">' + esc(T('English only')) + '</span>'; }
   var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
   var store = {
     get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -63,7 +78,8 @@
   var PAGE_LABEL = {
     'index.html': 'Open the dashboard', 'portfolio.html': 'Open your paper portfolio', 'backtest.html': 'Open the strategy lab',
     'replay.html': 'Open Market Replay', 'journal.html': 'Open your journal', 'news.html': 'Open company news', 'compare.html': 'Open Compare',
-    'glossary.html': 'Open the glossary', 'pricing.html': 'See Pro', 'verify.html': 'Verify a certificate', 'about.html': 'Read more', 'learn.html': 'Open'
+    'glossary.html': 'Open the glossary', 'pricing.html': 'See Pro', 'verify.html': 'Verify a certificate', 'about.html': 'Read more', 'learn.html': 'Open',
+    'start.html': 'Open your first week', 'instructor.html': 'Open the instructor page', 'certificate.html': 'Open the printable certificate'
   };
   var ALLOWED_PAGES = Object.keys(PAGE_LABEL);
 
@@ -190,24 +206,181 @@
   /* ------------------------------------------------------------------ */
   /* Home                                                                 */
   /* ------------------------------------------------------------------ */
-  function continueCard(ct, cp) {
-    if (!ct) {
-      return '<a class="card continue done" href="#/certificate"><div class="ctag">All lessons complete</div>' +
-        '<h3>You have finished every lesson</h3><p>Check the quiz requirements and render your certificate.</p>' +
-        '<span class="go">Go to certificate →</span></a>';
-    }
-    var m = C.moduleOfLesson(ct.lessonId), mp = m ? C.moduleProgress(m.id) : null, n = m ? moduleNumber(m.id) : 0;
-    var lm = lessonMeta(ct.lessonId), locked = lessonLocked(lm);
-    var lessonNo = 0; if (m) m.lessons.forEach(function (l, i) { if (l.id === ct.lessonId) lessonNo = i + 1; });
+  /**
+   * 'Up next' card, driven by BT.course.recommend(): the one thing most worth doing
+   * now (start / resume / next lesson / take a missing quiz / retake a low quiz /
+   * issue the certificate), with a one-line reason.
+   */
+  var REC_TAG = { start: 'Start here', resume: 'Continue where you left off', next: 'Up next', quiz: 'Up next: take the quiz', retake: 'Up next: retake a quiz', certificate: 'Up next', done: 'Course complete', none: 'Up next' };
+  var REC_LABEL = { start: 'Start the course', resume: 'Resume', next: 'Continue', quiz: 'Take the quiz', retake: 'Retake the quiz', certificate: 'Go to certificate', done: 'View certificate', none: 'Open' };
+  function upNextCard(rec, cp) {
+    rec = rec || { kind: 'none' };
+    var kind = REC_TAG[rec.kind] ? rec.kind : 'none';
     var left = C.timeRemaining ? C.timeRemaining() : { minutes: cp.minutesLeft || 0, lessons: cp.total - cp.done };
-    return '<a class="card continue" href="#/lesson/' + encodeURIComponent(ct.lessonId) + '" id="continueCard">' +
-      '<div class="cbody"><div class="ctag">' + (cp.startedAt ? (ct.resumed ? 'Continue where you left off' : 'Up next') : 'Start here') + '</div>' +
-      '<h3>' + esc(ct.title) + (locked ? ' ' + proPill() : '') + '</h3>' +
-      '<p>' + (m ? 'Module ' + n + ': ' + esc(m.title) + ' · lesson ' + lessonNo + ' of ' + m.lessons.length + (lm && lm.minutes ? ' · ~' + lm.minutes + ' min' : '') : '') + '</p>' +
-      '<div class="cmeta"><span>' + (mp ? '<b class="num">' + dur(mp.minutesLeft) + '</b> left in this module' : '') + '</span>' +
-      '<span><b class="num">' + dur(left.minutes) + '</b> left in the course (' + left.lessons + ' lesson' + (left.lessons === 1 ? '' : 's') + ')</span></div>' +
-      '<span class="go primary">' + esc(ct.label) + ' →</span></div>' +
+    var leftText = left.lessons ? T('{time} left in the course ({n} lessons)', { time: dur(left.minutes), n: left.lessons }) : T('Every lesson is done');
+    if (!rec.lessonId) {
+      var done = kind === 'done';
+      return '<a class="card continue' + (done ? ' done' : '') + '" href="#/certificate" id="upNextCard">' +
+        '<div class="cbody"><div class="ctag">' + esc(T(REC_TAG[kind])) + '</div>' +
+        '<h3>' + esc(T(rec.title || 'Certificate')) + '</h3><p>' + esc(T(rec.reason || '')) + '</p>' +
+        '<div class="cmeta"><span>' + esc(leftText) + '</span></div>' +
+        '<span class="go primary">' + esc(T(REC_LABEL[kind])) + ' →</span></div>' +
+        ring(cp.pct, 'big') + '</a>';
+    }
+    var m = C.moduleOfLesson(rec.lessonId), mp = m ? C.moduleProgress(m.id) : null, n = m ? moduleNumber(m.id) : 0;
+    var lm = lessonMeta(rec.lessonId), locked = lessonLocked(lm);
+    var lessonNo = 0; if (m) m.lessons.forEach(function (l, i) { if (l.id === rec.lessonId) lessonNo = i + 1; });
+    var where = m ? T('Module {n}: {title} · lesson {i} of {total}', { n: n, title: m.title, i: lessonNo, total: m.lessons.length }) + (lm && lm.minutes ? ' · ~' + lm.minutes + ' min' : '') : '';
+    var reason = rec.kind === 'retake' && rec.score != null
+      ? T('This quiz scored {score}%; the module needs an {pass}% average for the certificate. Your best score counts.', { score: rec.score, pass: C.PASS_PCT })
+      : T(rec.reason || '');
+    return '<a class="card continue' + (kind === 'retake' ? ' retake' : '') + '" href="#/lesson/' + encodeURIComponent(rec.lessonId) + '" id="upNextCard">' +
+      '<div class="cbody"><div class="ctag">' + esc(T(REC_TAG[kind])) + '</div>' +
+      '<h3>' + esc(rec.title) + (locked ? ' ' + proPill() : '') + (m && m.englishOnly && curLang() !== 'en' ? ' ' + enOnlyPill() : '') + '</h3>' +
+      '<p>' + esc(where) + '</p>' +
+      (reason ? '<p class="why">' + esc(reason) + '</p>' : '') +
+      '<div class="cmeta"><span>' + (mp ? '<b class="num">' + esc(dur(mp.minutesLeft)) + '</b> ' + esc(T('left in this module')) : '') + '</span>' +
+      '<span>' + esc(leftText) + '</span></div>' +
+      '<span class="go primary">' + esc(T(REC_LABEL[kind])) + ' →</span></div>' +
       (mp ? ring(mp.pct, 'big', mp.done + '/' + mp.total) : '') + '</a>';
+  }
+
+  /* ---- 'Your first week' card (BT.onboarding is optional; the card always links to start.html) ---- */
+  function firstWeekCard() {
+    var O = BT.onboarding;
+    return '<section class="card fw-card" id="firstWeekCard" aria-labelledby="fwTitle">' +
+      '<h2 id="fwTitle">' + esc(T('Your first week')) + '</h2>' +
+      '<div class="fw-body" data-role="body">' +
+      '<p class="lede">' + esc(T('New to all of this? Seven short days, about twenty minutes each: take the tour, read one lesson, build a watchlist, place and protect a paper trade, run a replay drill and write your first review.')) + '</p>' +
+      (O ? '<p class="fw-status" data-role="status"><span class="skeleton-line"></span></p>' : '') +
+      '</div>' +
+      '<a class="go" href="start.html" data-role="go">' + esc(T('Open your first week')) + ' →</a></section>';
+  }
+  function fillFirstWeek() {
+    var O = BT.onboarding, card = document.getElementById('firstWeekCard'); if (!O || !card) return;
+    var status = card.querySelector('[data-role=status]'), go = card.querySelector('[data-role=go]'), body = card.querySelector('[data-role=body]');
+    var render = function (s) {
+      if (!card.isConnected) return;
+      if (!s || !s.total) { if (status) status.remove(); return; }
+      var pct = Math.max(0, Math.min(100, Math.round(s.pct || 0)));
+      card.classList.toggle('started', !!s.started);
+      card.classList.toggle('complete', !!s.complete);
+      var line = s.complete ? T('Week complete — {done} of {total} tasks done.', { done: s.done, total: s.total })
+        : s.started ? T('Day {day} of 7 · {done} of {total} tasks done · about {time} left', { day: s.currentDay, done: s.done, total: s.total, time: dur(s.minutesLeft || 0) })
+          : T('Not started yet · {n} tasks · about {time} in all', { n: s.total, time: dur(s.minutesLeft || 0) });
+      body.innerHTML = '<div class="fw-live">' + ring(pct, '', s.complete ? '✓' : pct + '%') +
+        '<div><p class="fw-status">' + esc(line) + '</p>' +
+        '<p class="lede">' + esc(s.complete ? T('Nice work. The full course picks up where the week left off.') : s.started ? T('Tasks tick themselves as you use the site; manual ones have a checkbox.') : T('Seven short days, about twenty minutes each, for complete beginners.')) + '</p></div></div>';
+      if (go) go.textContent = (s.complete ? T('Review your first week') : s.started ? T('Continue day {day}', { day: s.currentDay }) : T('Start your first week')) + ' →';
+    };
+    var plan = typeof O.plan === 'function' ? O.plan() : null;
+    if (plan) { try { render(O.summary()); } catch (e) { if (status) status.remove(); } return; }
+    if (typeof O.load !== 'function') { if (status) status.remove(); return; }
+    O.load().then(function () { render(O.summary()); }, function () { if (status) status.remove(); });
+  }
+
+  /* ---- 'Join a class' card (BT.classroom is optional; without it the card explains how classes work) ---- */
+  function classCard() {
+    var K = BT.classroom;
+    var h = '<section class="card class-card" id="classCard" aria-labelledby="classTitle"><h2 id="classTitle">' + esc(T('Join a class')) + '</h2>';
+    if (!K) {
+      return h + '<p class="lede">' + esc(T('Instructors can hand out a 6-character class code so your progress shows on their roster. The classroom module is not loaded on this page; ask your instructor for the link they use.')) + '</p>' +
+        '<a class="go ghost" href="instructor.html">' + esc(T('Are you an instructor?')) + ' →</a></section>';
+    }
+    var st = K.status();
+    if (!st.joined) {
+      return h + '<p class="lede">' + esc(T('Have a class code from your instructor? Join and your lesson, quiz, drill and paper-trading progress can be shared with them — no email, no real name unless you type one.')) + '</p>' +
+        '<form class="class-join" data-role="join" novalidate>' +
+        '<label class="sr-only" for="classCode">' + esc(T('Class code')) + '</label>' +
+        '<input id="classCode" class="num" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="K7Q2MX" aria-describedby="classHelp">' +
+        '<label class="sr-only" for="className">' + esc(T('Display name (optional)')) + '</label>' +
+        '<input id="className" maxlength="40" autocomplete="nickname" placeholder="' + esc(T('Display name (optional)')) + '">' +
+        '<button type="submit" class="primary">' + esc(T('Join')) + '</button></form>' +
+        '<p class="msg" data-role="msg" role="status"></p>' +
+        '<p class="fine" id="classHelp">' + esc(T('Codes never contain 0, O, 1 or I. Your instructor only sees a pseudonymous id and the display name you choose.')) + '</p>' +
+        '<a class="go ghost" href="instructor.html">' + esc(T('Are you an instructor?')) + ' →</a></section>';
+    }
+    var sent = st.lastSentAt ? T('Last shared {when}', { when: fmtDateTime(st.lastSentAt) }) : (st.backend ? T('Not shared yet') : '');
+    return h + '<p class="class-status"><span>' + esc(T('Class')) + ' <b class="num">' + esc(st.code) + '</b>' + (st.className ? ' · ' + esc(st.className) : '') + '</span>' +
+      (st.displayName ? '<span>' + esc(T('as')) + ' <b>' + esc(st.displayName) + '</b></span>' : '<span class="muted">' + esc(T('no display name')) + '</span>') +
+      (sent ? '<span class="muted">' + esc(sent) + '</span>' : '') + '</p>' +
+      '<p class="lede">' + esc(st.backend
+        ? T('Your progress is sent to the classroom server automatically after each finished lesson or quiz (and at most every five minutes otherwise).')
+        : T('This site has no classroom server, so you hand your progress to the instructor yourself: copy a share code and paste it to them (chat, email, LMS — anything).')) + '</p>' +
+      '<div class="cactions">' +
+      (st.backend ? '<button type="button" class="primary" data-role="sync">' + esc(T('Send progress now')) + '</button>' : '') +
+      '<button type="button" class="' + (st.backend ? '' : 'primary') + '" data-role="share">' + esc(T('Copy share code')) + '</button>' +
+      '<button type="button" class="ghost" data-role="rename">' + esc(st.displayName ? T('Change name') : T('Add a display name')) + '</button>' +
+      '<button type="button" class="ghost" data-role="leave">' + esc(T('Leave class')) + '</button></div>' +
+      '<p class="msg" data-role="msg" role="status"></p>' +
+      '<textarea class="share-out num" data-role="shareout" readonly rows="3" hidden aria-label="' + esc(T('Share code')) + '"></textarea>' +
+      '</section>';
+  }
+  function fmtDateTime(iso) { try { return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+  function toast(msg, kind) { if (BT.nav && typeof BT.nav.toast === 'function') { try { BT.nav.toast(msg, kind); return; } catch (e) { /* fall through */ } } }
+  function copyText(text, out, btn, label) {
+    var done = function () { if (btn) { var old = label || btn.textContent; btn.textContent = T('Copied'); setTimeout(function () { btn.textContent = old; }, 1600); } };
+    var show = function () { if (out) { out.hidden = false; out.value = text; out.focus(); try { out.select(); } catch (e) { /* ignore */ } } };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(); show(); }, show);
+    else show();
+  }
+  function bindClassCard() {
+    var K = BT.classroom, card = document.getElementById('classCard'); if (!K || !card) return;
+    var msg = card.querySelector('[data-role=msg]');
+    var say = function (text, bad) { if (msg) { msg.textContent = text || ''; msg.className = 'msg' + (bad ? ' err' : text ? ' ok' : ''); } };
+    var rerender = function () { var fresh = document.createElement('div'); fresh.innerHTML = classCard(); card.replaceWith(fresh.firstElementChild); bindClassCard(); };
+    var form = card.querySelector('[data-role=join]');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var code = form.querySelector('#classCode').value, name = form.querySelector('#className').value;
+        var r = K.join(code, name);
+        if (!r.ok) { say(T(r.error || 'That code is not valid.'), true); form.querySelector('#classCode').focus(); return; }
+        rerender();
+        var c2 = document.getElementById('classCard'), m2 = c2 && c2.querySelector('[data-role=msg]');
+        if (K.status().backend && typeof K.sync === 'function') {
+          K.sync({ reason: 'join' }).then(function (s) {
+            if (!m2) return;
+            m2.textContent = s && s.sent ? T('Joined class {code}. Your progress was sent.', { code: r.code }) : T('Joined class {code}. {error}', { code: r.code, error: (s && s.error) || T('Progress will be sent when the server is reachable.') });
+            m2.className = 'msg ' + (s && s.sent ? 'ok' : 'err');
+          });
+        } else if (m2) { m2.textContent = T('Joined class {code}. Copy a share code and send it to your instructor.', { code: r.code }); m2.className = 'msg ok'; }
+      });
+      var codeEl = form.querySelector('#classCode');
+      codeEl.addEventListener('input', function () { var v = K.normalizeCode(codeEl.value); if (v !== codeEl.value) codeEl.value = v; });
+      return;
+    }
+    var share = card.querySelector('[data-role=share]'), out = card.querySelector('[data-role=shareout]');
+    if (share) share.onclick = function () {
+      share.disabled = true;
+      K.encodeShare().then(function (code) {
+        share.disabled = false;
+        copyText(code, out, share, T('Copy share code'));
+        say(T('Share code ready ({n} characters). Paste it to your instructor; it holds only your pseudonymous id and progress.', { n: code.length }));
+      }, function () { share.disabled = false; say(T('Could not build the share code.'), true); });
+    };
+    var sync = card.querySelector('[data-role=sync]');
+    if (sync) sync.onclick = function () {
+      sync.disabled = true; say(T('Sending…'));
+      K.sync({ reason: 'manual' }).then(function (s) {
+        sync.disabled = false;
+        if (s && s.removed) { say(T(s.error || 'You were removed from this class.'), true); setTimeout(rerender, 1200); return; }
+        say(s && s.sent ? T('Progress sent.') : T(s && s.error ? s.error : 'Nothing was sent.'), !(s && s.sent));
+      });
+    };
+    var rename = card.querySelector('[data-role=rename]');
+    if (rename) rename.onclick = function () {
+      var cur = K.status().displayName || '';
+      var name = window.prompt(T('Display name your instructor will see (leave empty for none):'), cur);
+      if (name == null) return;
+      K.setDisplayName(name); rerender(); toast(T('Display name saved.'));
+    };
+    var leave = card.querySelector('[data-role=leave]');
+    if (leave) leave.onclick = function () {
+      if (leave.dataset.arm) { K.leave(); rerender(); toast(T('You left the class. Your progress stays on this device.')); return; }
+      leave.textContent = T('Confirm leave'); leave.dataset.arm = '1';
+      setTimeout(function () { if (leave.isConnected) { leave.textContent = T('Leave class'); delete leave.dataset.arm; } }, 4000);
+    };
   }
 
   function proCard() {
@@ -224,55 +397,65 @@
 
   function showHome() {
     var idx = C.getIndex(), cp = C.courseProgress(), ct = continueTarget(), cert = C.certificateStatus();
+    var rec = typeof C.recommend === 'function' ? C.recommend() : null;
     var modCount = idx.modules.length, lessonCount = cp.total;
     var WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+    var foreign = curLang() !== 'en';
     var html = '<section class="learn-hero">' +
-      '<div><h1>' + esc(idx.title) + '</h1><p>' + esc(idx.summary) + '</p>' +
-      '<p style="margin-top:8px">' + (WORDS[modCount] ? WORDS[modCount].charAt(0).toUpperCase() + WORDS[modCount].slice(1) : modCount) + ' modules, ' + lessonCount + ' lessons, a quiz in every lesson, about ' + dur(cp.minutes) + ' in all. Finish them with an ' + C.PASS_PCT + '% quiz average and you can issue your completion certificate. Everything you learn can be practised immediately on the <a href="index.html">dashboard</a> and in <a href="replay.html">Market Replay</a> with a paper account.</p>' +
+      '<div><h1>' + esc(idx.title) + (foreign && idx.englishOnly ? ' ' + enOnlyPill(T('The course has not been translated into this language yet, so it is shown in English.')) : '') + '</h1><p>' + esc(idx.summary) + '</p>' +
+      '<p style="margin-top:8px">' + esc(T('{modules} modules, {lessons} lessons, a quiz in every lesson, about {time} in all. Finish them with an {pass}% quiz average and you can issue your completion certificate.', { modules: WORDS[modCount] ? T(WORDS[modCount].charAt(0).toUpperCase() + WORDS[modCount].slice(1)) : modCount, lessons: lessonCount, time: dur(cp.minutes), pass: C.PASS_PCT })) +
+      ' ' + T('Everything you learn can be practised immediately on the <a href="index.html">dashboard</a> and in <a href="replay.html">Market Replay</a> with a paper account.') + '</p>' +
       '<div class="actions">' +
-      (ct ? '<a href="#/lesson/' + encodeURIComponent(ct.lessonId) + '"><button class="primary">' + esc(ct.label) + '</button></a>' :
-        '<a href="#/certificate"><button class="primary">All lessons done — get your certificate</button></a>') +
-      '<a href="#/certificate"><button>Certificate' + (cert.eligible ? ' ✓' : '') + '</button></a>' +
-      '<a href="glossary.html"><button>Glossary</button></a>' +
+      (ct ? '<a href="#/lesson/' + encodeURIComponent(ct.lessonId) + '"><button class="primary">' + esc(T(ct.label)) + '</button></a>' :
+        '<a href="#/certificate"><button class="primary">' + esc(T('All lessons done — get your certificate')) + '</button></a>') +
+      '<a href="#/certificate"><button>' + esc(T('Certificate')) + (cert.eligible ? ' ✓' : '') + '</button></a>' +
+      '<a href="glossary.html"><button>' + esc(T('Glossary')) + '</button></a>' +
       '</div></div>' +
       '<div class="card herostat">' + ring(cp.pct, 'big') +
-      '<div class="stat"><span>Lessons done</span><span>' + cp.done + ' / ' + cp.total + '</span>' +
-      '<span>Time left</span><span>' + (cp.minutesLeft ? '~' + dur(cp.minutesLeft) : 'none') + '</span>' +
-      '<span>Quiz average</span><span>' + (cp.quizAvg == null ? '—' : cp.quizAvg + '%') + '</span>' +
-      '<span>Quizzes taken</span><span>' + cp.quizzes + '</span>' +
-      '<span>Started</span><span>' + (cp.startedAt ? esc(fmtDate(cp.startedAt)) : '—') + '</span></div></div>' +
+      '<div class="stat"><span>' + esc(T('Lessons done')) + '</span><span>' + cp.done + ' / ' + cp.total + '</span>' +
+      '<span>' + esc(T('Time left')) + '</span><span>' + (cp.minutesLeft ? '~' + esc(dur(cp.minutesLeft)) : esc(T('none'))) + '</span>' +
+      '<span>' + esc(T('Quiz average')) + '</span><span>' + (cp.quizAvg == null ? '—' : cp.quizAvg + '%') + '</span>' +
+      '<span>' + esc(T('Quizzes taken')) + '</span><span>' + cp.quizzes + '</span>' +
+      '<span>' + esc(T('Started')) + '</span><span>' + (cp.startedAt ? esc(fmtDate(cp.startedAt)) : '—') + '</span></div></div>' +
       '</section>';
 
-    html += continueCard(ct, cp);
+    html += upNextCard(rec, cp);
 
-    html += '<h2 class="sr-only">Modules</h2><div class="modgrid">' + idx.modules.map(function (m, i) {
+    // beginners' path and classroom, side by side on desktop, stacked on phones
+    html += '<div class="homegrid side">' + firstWeekCard() + classCard() + '</div>';
+
+    html += '<h2 class="sr-only">' + esc(T('Modules')) + '</h2><div class="modgrid">' + idx.modules.map(function (m, i) {
       var mp = C.moduleProgress(m.id);
       var lockedCount = gatingOn() && !isPro() ? m.lessons.filter(function (l) { return l.pro; }).length : 0;
+      var state = mp.pct >= 100 ? ' · ' + T('complete') : mp.done ? ' · ' + T('in progress') : '';
       return '<a class="card modcard' + (mp.pct >= 100 ? ' complete' : '') + '" href="#/module/' + encodeURIComponent(m.id) + '">' +
-        '<div><div class="idx">Module ' + (i + 1) + (mp.pct >= 100 ? ' · complete' : mp.done ? ' · in progress' : '') + '</div><h3>' + esc(m.title) + '</h3><p>' + esc(m.summary) + '</p>' +
-        '<div class="meta">' + levelPill(m.level) + '<span>' + esc(minutes(m.minutes)) + '</span><span>· ' + m.lessons.length + ' lessons</span>' +
-        (mp.done && mp.minutesLeft ? '<span>· <b class="num">' + dur(mp.minutesLeft) + '</b> left</span>' : '') +
-        (mp.quizAvg != null ? '<span>· quiz avg <b class="num">' + mp.quizAvg + '%</b></span>' : '') +
-        (lockedCount ? '<span class="lockmeta">' + LOCK_SVG + ' ' + lockedCount + ' Pro lesson' + (lockedCount === 1 ? '' : 's') + '</span>' : '') + '</div></div>' +
+        '<div><div class="idx">' + esc(T('Module {n}', { n: i + 1 }) + state) + '</div><h3>' + esc(m.title) + (foreign && m.englishOnly && !idx.englishOnly ? ' ' + enOnlyPill() : '') + '</h3><p>' + esc(m.summary) + '</p>' +
+        '<div class="meta">' + levelPill(m.level) + '<span>' + esc(minutes(m.minutes)) + '</span><span>· ' + esc(T('{n} lessons', { n: m.lessons.length })) + '</span>' +
+        (mp.done && mp.minutesLeft ? '<span>· <b class="num">' + esc(dur(mp.minutesLeft)) + '</b> ' + esc(T('left')) + '</span>' : '') +
+        (mp.quizAvg != null ? '<span>· ' + esc(T('quiz avg')) + ' <b class="num">' + mp.quizAvg + '%</b></span>' : '') +
+        (lockedCount ? '<span class="lockmeta">' + LOCK_SVG + ' ' + esc(T(lockedCount === 1 ? '{n} Pro lesson' : '{n} Pro lessons', { n: lockedCount })) + '</span>' : '') + '</div></div>' +
         ring(mp.pct, '', mp.done + '/' + mp.total) + '</a>';
     }).join('') + '</div>';
 
     html += '<div class="homegrid">' +
-      '<div class="card" data-acc><h2>How the course works</h2>' +
-      '<p style="margin:0 0 8px;color:var(--muted)">Each lesson mixes short reading, a live chart you can inspect, a hands-on exercise on the dashboard or in Market Replay, and a quiz with instant explanations. Your progress is saved in this browser only — no account needed.</p>' +
-      '<ul style="margin:0;padding-left:18px;color:var(--muted)"><li>Read in order; later modules assume the earlier ones.</li><li>Quizzes can be retaken — your best score counts.</li><li>Tap any <span class="gl-term on demo">underlined term</span> for a plain-English definition.</li><li>Do the exercises on your paper account. Mistakes are free here.</li></ul></div>' +
+      '<div class="card" data-acc><h2>' + esc(T('How the course works')) + '</h2>' +
+      '<p style="margin:0 0 8px;color:var(--muted)">' + esc(T('Each lesson mixes short reading, a live chart you can inspect, a hands-on exercise on the dashboard or in Market Replay, and a quiz with instant explanations. Your progress is saved in this browser only — no account needed.')) + '</p>' +
+      '<ul style="margin:0;padding-left:18px;color:var(--muted)"><li>' + esc(T('Read in order; later modules assume the earlier ones.')) + '</li><li>' + esc(T('Quizzes can be retaken — your best score counts.')) + '</li><li>' + T('Tap any <span class="gl-term on demo">underlined term</span> for a plain-English definition.') + '</li><li>' + esc(T('Do the exercises on your paper account. Mistakes are free here.')) + '</li><li>' + esc(T('Every lesson has a Print / Save as PDF button for offline reading or a classroom hand-out.')) + '</li></ul></div>' +
 
-      '<div class="card" data-acc><h2>Certificate of completion</h2>' +
-      '<p style="margin:0 0 8px;color:var(--muted)">' + (cert.eligible ? 'You have met every requirement. Add your name and issue your certificate.' :
-        'Complete all ' + cp.total + ' lessons and keep each module’s quiz average at ' + C.PASS_PCT + '% or better.') + '</p>' +
+      '<div class="card" data-acc><h2>' + esc(T('Certificate of completion')) + '</h2>' +
+      '<p style="margin:0 0 8px;color:var(--muted)">' + esc(cert.eligible ? T('You have met every requirement. Add your name and issue your certificate.') :
+        T('Complete all {n} lessons and keep each module’s quiz average at {pass}% or better.', { n: cp.total, pass: C.PASS_PCT })) + '</p>' +
       '<ul class="checklist" style="margin-bottom:10px">' + cert.modules.map(function (r) {
-        return '<li><span class="' + (r.ok ? 'ok' : 'no') + '">' + (r.ok ? '✓' : '○') + '</span><span>' + esc(r.title) + '</span><span class="num" style="color:var(--muted)">' + (r.ok ? 'passed' : esc(r.reason)) + '</span></li>';
+        return '<li><span class="' + (r.ok ? 'ok' : 'no') + '">' + (r.ok ? '✓' : '○') + '</span><span>' + esc(r.title) + '</span><span class="num" style="color:var(--muted)">' + (r.ok ? esc(T('passed')) : esc(T(r.reason))) + '</span></li>';
       }).join('') + '</ul>' +
-      '<a href="#/certificate"><button class="' + (cert.eligible ? 'primary' : '') + '">' + (cert.eligible ? 'Get your certificate' : 'View requirements') + '</button></a></div>' +
+      '<div class="srow"><a href="#/certificate"><button class="' + (cert.eligible ? 'primary' : '') + '">' + esc(cert.eligible ? T('Get your certificate') : T('View requirements')) + '</button></a>' +
+      (C.certificateRecord && C.certificateRecord() ? '<a href="certificate.html"><button>' + esc(T('Printable certificate')) + '</button></a>' : '') + '</div></div>' +
       proCard() +
       '</div>';
 
     setApp(html);
+    fillFirstWeek();
+    bindClassCard();
   }
 
   /* ------------------------------------------------------------------ */
@@ -365,12 +548,84 @@
     var idx = C.getIndex(), modIndex = idx.modules.findIndex(function (m) { return m.id === mod.id; });
     var lessonIndex = mod.lessons.findIndex(function (l) { return l.id === lesson.id; });
     var hasQuiz = C.lessonHasQuiz(lesson), mp = C.moduleProgress(mod.id);
-    return '<div class="crumbs"><a href="#/">Course</a><span>›</span><a href="#/module/' + encodeURIComponent(mod.id) + '">Module ' + (modIndex + 1) + ': ' + esc(mod.title) + '</a><span>›</span><span>Lesson ' + (lessonIndex + 1) + ' of ' + mod.lessons.length + '</span></div>' +
+    var enOnly = mod.englishOnly && curLang() !== 'en';
+    return '<div class="crumbs"><a href="#/">' + esc(T('Course')) + '</a><span>›</span><a href="#/module/' + encodeURIComponent(mod.id) + '">' + esc(T('Module {n}', { n: modIndex + 1 })) + ': ' + esc(mod.title) + '</a><span>›</span><span>' + esc(T('Lesson {i} of {total}', { i: lessonIndex + 1, total: mod.lessons.length })) + '</span></div>' +
       '<h1>' + esc(lesson.title) + '</h1>' +
-      '<div class="lmeta">' + levelPill(mod.level) + (lesson.pro && gatingOn() ? proPill() : '') + '<span>' + esc(minutes(lesson.minutes)) + '</span>' +
-      (hasQuiz ? '<span>· quiz' + (C.quizScore(lesson.id) != null ? ' best ' + C.quizScore(lesson.id) + '%' : '') + '</span>' : '') +
-      (C.isDone(lesson.id) ? '<span style="color:var(--up)">· completed</span>' : (mp.minutesLeft ? '<span>· ~' + dur(mp.minutesLeft) + ' left in module</span>' : '')) +
-      (extra || '') + '</div>';
+      '<div class="lmeta">' + levelPill(mod.level) + (lesson.pro && gatingOn() ? proPill() : '') + (enOnly ? enOnlyPill() : '') + '<span>' + esc(minutes(lesson.minutes)) + '</span>' +
+      (hasQuiz ? '<span>· ' + esc(T('quiz')) + (C.quizScore(lesson.id) != null ? ' ' + esc(T('best {pct}%', { pct: C.quizScore(lesson.id) })) : '') + '</span>' : '') +
+      (C.isDone(lesson.id) ? '<span style="color:var(--up)">· ' + esc(T('completed')) + '</span>' : (mp.minutesLeft ? '<span>· ~' + esc(dur(mp.minutesLeft)) + ' ' + esc(T('left in module')) + '</span>' : '')) +
+      (extra || '') + '</div>' + printBarHtml();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Print / Save as PDF (hidden when printing is unavailable or framed)   */
+  /* ------------------------------------------------------------------ */
+  function canPrint() {
+    if (typeof window.print !== 'function') return false;
+    try { if (window.top !== window.self) return false; } catch (e) { return false; }   // cross-origin frame
+    return true;
+  }
+  function printBarHtml() {
+    if (!canPrint()) return '';
+    return '<div class="printbar" role="group" aria-label="' + esc(T('Print')) + '">' +
+      '<button type="button" class="toolbtn" id="printLesson" title="' + esc(T('Opens your browser’s print dialog; choose “Save as PDF” as the destination to keep a copy.')) + '">' + esc(T('Print / Save as PDF')) + '</button>' +
+      '<button type="button" class="toolbtn ghost" id="printModuleBtn" title="' + esc(T('Every lesson of this module, one per page, quizzes as a worksheet.')) + '">' + esc(T('Print whole module')) + '</button></div>';
+  }
+  function bindPrintBar(mod) {
+    var a = document.getElementById('printLesson'), b = document.getElementById('printModuleBtn');
+    if (a) a.onclick = function () { try { window.print(); } catch (e) { /* ignore */ } };
+    if (b) b.onclick = function () { printModule(mod); };
+  }
+  /** Static (print-only) markup of one block: no charts, quizzes as a worksheet without answers. */
+  function printBlockHtml(b, i) {
+    switch (b.type) {
+      case 'text': return '<div class="block-text">' + C.renderMd(b.md) + '</div>';
+      case 'callout': { var tone = TONE[b.tone] ? b.tone : 'key'; return '<aside class="callout ' + tone + '"><div class="ctitle">' + esc(b.title || T(TONE[tone])) + '</div>' + C.renderMd(b.md) + '</aside>'; }
+      case 'chart': return '<figure class="chartblock card"><div class="chead"><b>' + esc(String(b.symbol || 'AAPL').toUpperCase()) + '</b><span>' + esc(String(b.interval || '1day')) + '</span>' + (Array.isArray(b.overlays) && b.overlays.length ? '<span>· ' + esc(b.overlays.map(String).join(', ')) + '</span>' : '') + '</div>' + (b.caption ? '<figcaption class="caption">' + C.renderMd(b.caption) + '</figcaption>' : '') + '</figure>';
+      case 'exercise': { var href = actionHref(b.action); return '<section class="exercise"' + (href ? ' data-print-href="' + esc(absoluteUrl(href)) + '"' : '') + '><div class="etitle">' + esc(T('Hands-on exercise')) + '</div>' + C.renderMd(b.md) + '</section>'; }
+      case 'drill': return '<section class="drill card"><div class="dtitle">' + esc(T('Practice drill')) + '</div>' + (b.md ? C.renderMd(b.md) : '') + '<p class="dnote">' + esc(T('Drill id: {id}. Open Market Replay on the site to run it.', { id: String(b.drillId || b.id || '') })) + '</p></section>';
+      case 'image': { var src = String(b.src || ''); return /^(course|img|assets|icons)\/[\w./-]+$/.test(src) ? '<figure class="chartblock card"><img src="' + esc(src) + '" alt="' + esc(b.alt || '') + '" style="display:block;max-width:100%">' + (b.caption ? '<figcaption class="caption">' + C.renderMd(b.caption) + '</figcaption>' : '') + '</figure>' : ''; }
+      case 'quiz': {
+        var qs = (Array.isArray(b.questions) ? b.questions : []).filter(function (q) { return q && Array.isArray(q.choices) && q.choices.length > 1; });
+        if (!qs.length) return '';
+        return '<section class="quiz"><div class="qtitle"><span>' + esc(T('Quiz · {n} questions', { n: qs.length })) + '</span></div>' + qs.map(function (q, qi) {
+          return '<div class="q"><p class="stem">' + (qi + 1) + '. ' + esc(q.q) + '</p><div class="choices">' + q.choices.map(function (ch, ci) {
+            return '<div class="choice"><span class="k">' + String.fromCharCode(65 + ci) + '</span><span>' + esc(ch) + '</span></div>';
+          }).join('') + '</div></div>';
+        }).join('') + '</section>';
+      }
+      default: return '';
+    }
+  }
+  function absoluteUrl(rel) { try { return new URL(rel, location.href.split('#')[0]).href; } catch (e) { return rel; } }
+  var printCleanupTimer = null;
+  function cleanupPrint() {
+    var pm = document.getElementById('printModule'); if (pm) pm.remove();
+    document.body.classList.remove('printing-module');
+    if (printCleanupTimer) { clearTimeout(printCleanupTimer); printCleanupTimer = null; }
+  }
+  /** Render every lesson of the module into a print-only container (one lesson per page) and print. */
+  function printModule(mod) {
+    if (!canPrint() || !mod) return;
+    cleanupPrint();
+    var idx = C.getIndex(), n = moduleNumber(mod.id);
+    var html = '<section class="print-cover"><div class="crumbs">' + esc(idx ? idx.title : 'Broward Trading') + '</div><h1>' + esc(T('Module {n}', { n: n })) + ': ' + esc(mod.title) + '</h1>' +
+      '<p class="lede">' + esc(mod.summary) + '</p>' +
+      '<ol>' + mod.lessons.map(function (l) { return '<li>' + esc(l.title) + (l.minutes ? ' <span class="num">(~' + l.minutes + ' min)</span>' : '') + '</li>'; }).join('') + '</ol>' +
+      '<p class="fine">' + esc(T('Printed from Broward Trading, a free educational paper-trading simulator ({url}). Charts are interactive on the site and are replaced here by their captions. Quizzes are printed without answers; take them online to record a score. Nothing here is investment advice.', { url: absoluteUrl('learn.html') })) + '</p></section>';
+    mod.lessons.forEach(function (l, i) {
+      html += '<article class="print-lesson"><div class="crumbs">' + esc(T('Module {n}', { n: n })) + ': ' + esc(mod.title) + ' · ' + esc(T('Lesson {i} of {total}', { i: i + 1, total: mod.lessons.length })) + '</div>' +
+        '<h1>' + esc(l.title) + '</h1><div class="lmeta">' + esc(LEVEL_LABEL[mod.level] || mod.level) + (l.minutes ? ' · ~' + l.minutes + ' min' : '') + '</div>' +
+        '<div class="blocks">' + l.blocks.map(printBlockHtml).join('') + '</div>' +
+        '<div class="print-foot">' + esc(absoluteUrl('learn.html#/lesson/' + encodeURIComponent(l.id))) + '</div></article>';
+    });
+    var box = document.createElement('div'); box.id = 'printModule'; box.innerHTML = html; box.hidden = false;
+    app.appendChild(box);
+    document.body.classList.add('printing-module');
+    window.addEventListener('afterprint', cleanupPrint, { once: true });
+    // Browsers without a reliable afterprint still get cleaned up once the dialog closes.
+    printCleanupTimer = setTimeout(cleanupPrint, 60000);
+    try { window.print(); } catch (e) { cleanupPrint(); }
   }
 
   function lessonNavHtml(nb) {
@@ -394,6 +649,7 @@
     });
     renderDoneArea(lesson, nb, hasQuiz);
     enhanceTerms(blocks, lesson.id);
+    bindPrintBar(mod);
   }
 
   /** Locked preview: title, the first paragraphs of the first text block, then the Pro card. */
@@ -421,8 +677,9 @@
       (nb.next ? '<a class="btn ghost" href="#/lesson/' + encodeURIComponent(nb.next.lessonId) + '">Skip to the next lesson →</a>' : '') + '</div>' +
       '</section></div>' + lessonNavHtml(nb);
     var area = document.getElementById('doneArea');
-    if (area) area.innerHTML = '<span class="done-note" style="color:var(--muted)">Pro lesson</span>';
+    if (area) area.innerHTML = '<span class="done-note" style="color:var(--muted)">' + esc(T('Pro lesson')) + '</span>';
     enhanceTerms(reader.querySelector('.locked-preview'), lesson.id);
+    var pb = reader.querySelector('.printbar'); if (pb) pb.remove();   // nothing printable in a locked preview
   }
 
   function renderDoneArea(lesson, nb, hasQuiz) {
@@ -536,18 +793,26 @@
   }
   function renderExercise(b) {
     var a = b.action || {}, href = actionHref(a), page = href ? href.split('#')[0] : null;
-    return el('section', 'exercise', '<div class="etitle">Hands-on exercise</div>' + C.renderMd(b.md) +
-      (href ? '<a class="go" href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(a.label || PAGE_LABEL[page] || 'Open') + ' ↗</a>' : ''));
+    var sec = el('section', 'exercise', '<div class="etitle">' + esc(T('Hands-on exercise')) + '</div>' + C.renderMd(b.md) +
+      (href ? '<a class="go" href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(a.label || T(PAGE_LABEL[page] || 'Open')) + ' ↗</a>' : ''));
+    if (href) sec.setAttribute('data-print-href', absoluteUrl(href));   // css/print.css prints the destination since the button is hidden
+    return sec;
   }
 
   /* --- drill block: {type:'drill', drillId, md?} → details from course/drills.json + 'Practice in Replay' --- */
-  var drillsPromise = null;
+  var drillsPromise = null, drillsLang = null;
+  function fetchDrills(file) {
+    return fetch(file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { return Array.isArray(j) ? j : (j && Array.isArray(j.drills) ? j.drills : []); });
+  }
   function loadDrills() {
-    if (drillsPromise) return drillsPromise;
+    var lang = curLang();
+    if (drillsPromise && drillsLang === lang) return drillsPromise;
+    drillsLang = lang;
     var p;
     if (BT.replay && typeof BT.replay.loadDrills === 'function') p = BT.replay.loadDrills();
-    else p = fetch('course/drills.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { return Array.isArray(j) ? j : (j && Array.isArray(j.drills) ? j.drills : []); });
+    else if (lang !== 'en' && C.fileFor) p = fetchDrills(C.fileFor('drills.json', lang)).catch(function () { return fetchDrills('course/drills.json'); });
+    else p = fetchDrills('course/drills.json');
     drillsPromise = p.then(function (list) { return Array.isArray(list) ? list : []; }).catch(function () { drillsPromise = null; return []; });
     return drillsPromise;
   }
@@ -936,10 +1201,11 @@
         (preview ? '' :
           '<div class="certid"><div><div class="k">Certificate id</div><div class="v num">' + esc(issued.id) + '</div></div>' +
           '<div><div class="k">Status</div><div class="v">' + (issued.verified ? '<span style="color:var(--up)">Verified · stored on the server</span>' : 'Self-issued · stored in this browser') + '</div></div>' +
-          '<div class="certlinks"><a class="btn" href="' + esc(verifyHref(issued.id)) + '" target="_blank" rel="noopener">Verify this certificate ↗</a><button type="button" id="copyVerify">Copy link</button></div></div>') +
-        '<div class="srow" style="margin-top:10px"><a href="' + url + '" download="' + file + '"><button class="primary">Download PNG</button></a><button id="certPrint">Print</button>' +
+          '<div class="certlinks"><a class="btn" href="' + esc(verifyHref(issued.id)) + '" target="_blank" rel="noopener">Verify this certificate ↗</a><button type="button" id="copyVerify">Copy link</button>' +
+          '<a class="btn" href="certificate.html" target="_blank" rel="noopener">' + esc(T('Printable certificate (PDF)')) + ' ↗</a></div></div>') +
+        '<div class="srow" style="margin-top:10px"><a href="' + url + '" download="' + file + '"><button class="primary">Download PNG</button></a>' + (canPrint() ? '<button id="certPrint">Print</button>' : '') +
         '<span style="font-size:12px;color:var(--muted)">If the download is blocked in this viewer, right-click / long-press the image and choose “Save image”.</span></div>';
-      document.getElementById('certPrint').onclick = function () { window.print(); };
+      var cpBtn = document.getElementById('certPrint'); if (cpBtn) cpBtn.onclick = function () { window.print(); };
       var cp = document.getElementById('copyVerify');
       if (cp) cp.onclick = function () {
         var link = issued.url || absoluteVerifyUrl(issued.id);
@@ -999,20 +1265,47 @@
   /* Boot                                                                 */
   /* ------------------------------------------------------------------ */
   window.addEventListener('hashchange', route);
-  // Pro status can change while the page is open (sign-in in another tab).
-  window.addEventListener('storage', function (e) { if (e && e.key === 'bt.auth' && booted) { keepScroll = true; try { route(); } finally { keepScroll = false; } } });
-  C.loadIndex().then(function () {
-    route(); booted = true;
-    // Pull every module in the background so sidebars and cards show the real
-    // lesson titles / minutes instead of the index placeholders.
-    C.loadAll().then(function () {
+  function rerender() { keepScroll = true; try { route(); } finally { keepScroll = false; } }
+  // Pro status, first-week progress and class membership can change in another tab.
+  window.addEventListener('storage', function (e) {
+    if (!e || !booted) return;
+    if (e.key === 'bt.auth') rerender();
+    else if ((e.key === 'bt.onboarding' || e.key === 'bt.classroom') && parseHash().view === 'home') rerender();
+  });
+
+  /** Background pull of every module: real titles / minutes / language flags for cards and sidebars. */
+  function warmModules() {
+    return C.loadAll().then(function () {
       var r = parseHash();
       if (r.view === 'lesson' && r.id) refreshSidebar(r.id);
       else if (r.view === 'home') { keepScroll = true; try { showHome(); } finally { keepScroll = false; } }
     }).catch(function () { /* individual module errors surface when opened */ });
+  }
+
+  // Language switch (js/i18n.js fires 'bt:lang'; the contract also names 'bt:langchange'):
+  // course.js drops its caches, we re-fetch course/<lang>/… and redraw the current view.
+  var langToken = 0;
+  function onLangChange(e) {
+    var code = (e && e.detail && e.detail.lang) || (BT.i18n && BT.i18n.lang ? BT.i18n.lang() : 'en');
+    if (C.setLang) C.setLang(code);
+    drillsPromise = null;
+    if (!booted) return;
+    var my = ++langToken;
+    C.loadIndex().then(function () {
+      if (my !== langToken) return;
+      rerender();
+      warmModules();
+    }, function (err) { if (my === langToken) showError(T('Could not load the course'), err && err.message ? err.message : String(err)); });
+  }
+  window.addEventListener('bt:lang', onLangChange);
+  window.addEventListener('bt:langchange', onLangChange);
+
+  C.loadIndex().then(function () {
+    route(); booted = true;
+    warmModules();
   }, function (e) {
     showError('Could not load the course', e && e.message ? e.message : String(e));
   });
 
-  BT.learnPage = { route: route, lessonLocked: lessonLocked, issueId: issueId, version: '0.3.0' };
+  BT.learnPage = { route: route, lessonLocked: lessonLocked, issueId: issueId, printModule: printModule, canPrint: canPrint, version: '0.4.0' };
 })();

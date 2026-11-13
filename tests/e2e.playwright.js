@@ -1,21 +1,24 @@
-// End-to-end smoke test for every page (v0.3). Serve the site first:
+// End-to-end smoke test for every page (v0.4). Serve the site first:
 //   python3 -m http.server 8765
 // then: node tests/e2e.playwright.js
 // Needs the playwright npm package with Chromium installed. Not run by the unit-test files.
 //
-// What it checks, for all 12 pages at 1280x900 (desktop) and 390x844 (phone), dark theme:
+// What it checks, for all 15 pages at 1280x900 (desktop) and 390x844 (phone), dark theme:
 //   - no console errors, page errors, failed same-origin requests or HTTP >= 400 on localhost
-//   - the shared shell is mounted (top nav links, footer disclaimer, manifest link)
+//   - the shared shell is mounted (top nav links, footer disclaimer, manifest link, EN/ES toggle, BT.i18n present)
 //   - no horizontal overflow; the bottom tab bar is visible on phone and hidden on desktop
 //   - screenshots to docs/screenshots/<page>-<desktop|phone>.png (deviceScaleFactor 1)
-// then exercises the main flows: dashboard buy, alerts, replay drill + scorecard, journal,
-// glossary (search, flashcards, Daily 5), compare, pricing, verify, learn (m7 drill, m8 exam, quiz),
-// portfolio position and a backtest run.
+// then exercises the main flows: language toggle to Spanish and back (>= 90 % of visible text
+// nodes change on index/learn/portfolio/pricing, English restored), Spanish lesson m3-l2 with a
+// working quiz, m9 in both languages, lesson print button, First Week (7 days, Day 1 auto-ticks),
+// instructor class + share-code import, certificate from query params, dashboard buy, alerts,
+// replay drill + scorecard, journal, glossary (search, flashcards, Daily 5), compare, pricing,
+// verify, learn (m7 drill, m8 exam, quiz), portfolio position and a backtest run.
 const { chromium } = require('playwright');
 const BASE = process.env.BT_BASE_URL || 'http://localhost:8765/';
 const OUT = require('path').join(__dirname, '..', 'docs', 'screenshots') + '/';
-const PAGES = ['index.html', 'learn.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
-  'news.html', 'compare.html', 'glossary.html', 'pricing.html', 'verify.html', 'about.html'];
+const PAGES = ['index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
+  'news.html', 'compare.html', 'glossary.html', 'instructor.html', 'pricing.html', 'verify.html', 'certificate.html', 'about.html'];
 const VIEWPORTS = { desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 } };
 const issues = [];
 function note(s) { issues.push(s); console.log('  ISSUE', s); }
@@ -84,9 +87,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       if (p === 'pricing.html') { await expect('#planFree', 'free plan card'); await expect('#planPro', 'pro plan card'); }
       if (p === 'verify.html') { await expect('#certId', 'verify input'); }
       if (p === 'about.html') { await expect('h1', 'about h1'); await expect('h2', 'about h2 headings', 3); }
+      if (p === 'start.html') { await expect('#days .day-head', 'first-week day headers', 7); await expect('#days .task', 'first-week tasks (only the open day lists its tasks)', 3); }
+      if (p === 'instructor.html') { await expect('#createForm, #newClassBtn', 'instructor create class'); await expect('#importIn', 'share-code import box'); await expect('#privacyCard', 'privacy notice'); }
+      if (p === 'certificate.html') { await expect('#sheet', 'certificate sheet'); await expect('#printBtn', 'certificate print button'); }
       // shared shell
+      await expect('#nav [data-bt-lang-toggle]', 'language toggle in the shell');
+      const i18nUp = await page.evaluate(() => !!(window.BT && BT.i18n && typeof BT.i18n.setLang === 'function') && document.documentElement.lang === 'en');
+      if (!i18nUp) note(p + ': BT.i18n missing or <html lang> is not en'); else ok('BT.i18n loaded, lang=en');
       await expect('#nav nav.topnav .links a', 'nav links', 10);
-      await expect('#nav nav.topnav a.active, #nav nav.topnav a[aria-current="page"]', 'active nav link');
+      // certificate.html is deliberately hidden from the nav (linked from Learn), so it has no active link.
+      if (p !== 'certificate.html') await expect('#nav nav.topnav a.active, #nav nav.topnav a[aria-current="page"]', 'active nav link');
       await expect('#footer footer.footer', 'footer disclaimer');
       await expect('link[rel="manifest"]', 'manifest link');
       await expect('meta[name="viewport"][content="width=device-width,initial-scale=1,viewport-fit=cover"]', 'viewport meta');
@@ -123,6 +133,196 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   } else note('phone: #btMore tab missing');
 
   await page.setViewportSize(VIEWPORTS.desktop);
+
+  // ---------------------------------------------------------------- i18n: nav toggle → Spanish → back to English
+  console.log('\n== language toggle flow');
+  // Visible text nodes that carry translatable prose: at least one run of three lowercase letters
+  // (so tickers, prices, "RSI" and percentages are not counted), outside <script>/<style>/<code>/.no-i18n.
+  const textSnapshot = () => page.evaluate(() => {
+    const out = [];
+    const skip = el => !el || el.closest('script,style,code,pre,.no-i18n,[translate="no"],noscript,template');
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker.nextNode())) {
+      const t = n.nodeValue.replace(/\s+/g, ' ').trim();
+      if (!/[a-záéíóúñ]{3}/i.test(t) || !/[a-z]{3}/.test(t)) continue;
+      const el = n.parentElement; if (skip(el)) continue;
+      const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
+      out.push(t);
+    }
+    return out;
+  });
+  const changedShare = (a, b) => { const n = Math.min(a.length, b.length); let c = 0; for (let i = 0; i < n; i++) if (a[i] !== b[i]) c++; return n ? c / n : 0; };
+  async function clickLangToggle() {
+    const btn = page.locator('#nav nav.topnav [data-bt-lang-toggle]').first();
+    if (!await btn.count()) { note('language toggle missing in top nav'); return; }
+    await btn.click();
+    await page.waitForFunction(() => window.BT && BT.i18n && BT.i18n.ready, null, { timeout: 5000 }).catch(() => null);
+    await page.evaluate(() => BT.i18n.ready).catch(() => null);
+    await sleep(1200);
+  }
+  for (const p of ['index.html', 'learn.html', 'portfolio.html', 'pricing.html']) {
+    await goto(p, p === 'index.html' ? 3000 : 1800);
+    if (await page.locator('#tour:not([hidden])').count()) { await page.click('#tourSkip'); await sleep(300); }
+    const en = await textSnapshot();
+    await clickLangToggle();
+    const lang = await page.evaluate(() => [BT.i18n.lang(), document.documentElement.lang, localStorage.getItem('bt.lang')]);
+    if (lang[0] !== 'es' || lang[1] !== 'es') note(p + ': toggle did not switch to Spanish ' + JSON.stringify(lang));
+    const es = await textSnapshot();
+    const share = changedShare(en, es);
+    console.log('  ' + p + ': ' + en.length + ' text nodes, ' + Math.round(share * 100) + '% changed');
+    if (share < 0.9) {
+      const same = en.filter((t, i) => es[i] === t).slice(0, 25);
+      note(p + ': only ' + Math.round(share * 100) + '% of visible text nodes changed to Spanish; untranslated e.g. ' + JSON.stringify(same));
+    } else ok(p + ' translated to Spanish (' + Math.round(share * 100) + '%)');
+    if (p === 'index.html' || p === 'learn.html') {
+      await shot('es-' + p.replace('.html', '') + '-desktop');
+      await page.setViewportSize(VIEWPORTS.phone); await sleep(600);
+      await shot('es-' + p.replace('.html', '') + '-phone');
+      await page.setViewportSize(VIEWPORTS.desktop); await sleep(400);
+    }
+    await clickLangToggle();
+    const back = await textSnapshot();
+    const langBack = await page.evaluate(() => [BT.i18n.lang(), document.documentElement.lang]);
+    if (langBack[0] !== 'en' || langBack[1] !== 'en') note(p + ': toggle back did not restore English ' + JSON.stringify(langBack));
+    // A node is "stuck in Spanish" when it still reads exactly as it did in Spanish although that text differed
+    // from the English original. Clock pills and mark counters legitimately change between the two snapshots.
+    const stuck = en.map((t, i) => (back[i] !== t && back[i] === es[i] && es[i] !== t) ? back[i] : null).filter(Boolean);
+    const restored = en.filter((t, i) => back[i] === t).length / (en.length || 1);
+    if (stuck.length || back.length !== en.length) {
+      note(p + ': switching back left ' + stuck.length + ' node(s) in Spanish (' + en.length + ' vs ' + back.length + ' nodes) e.g. ' + JSON.stringify(stuck.slice(0, 10)));
+    } else ok(p + ' English restored (' + Math.round(restored * 100) + '% identical, rest are live clocks/counters)');
+  }
+
+  // ---------------------------------------------------------------- Spanish course content: m3-l2 title + quiz, m9 both languages, print button
+  console.log('\n== Spanish lesson flow');
+  const enTitles = { 'm3-l2': 'Momentum oscillators: RSI and stochastic', 'm9-l1': 'What an ETF is and what the expense ratio costs you' };
+  const esTitles = { 'm3-l2': 'Osciladores de momentum: RSI y estocástico', 'm9-l1': 'Qué es un ETF y cuánto te cuesta el ratio de gastos' };
+  await goto('learn.html#/lesson/m3-l2', 1500);
+  await expect('#printLesson', 'Print / Save as PDF button in the lesson reader');
+  await expect('.printbar', 'print bar in the lesson reader');
+  const enH1 = (await page.locator('h1').first().textContent()).trim();
+  if (enH1 !== enTitles['m3-l2']) note('m3-l2 English title: ' + enH1);
+  await clickLangToggle();
+  await sleep(800);
+  const esH1 = (await page.locator('h1').first().textContent()).trim();
+  if (esH1 !== esTitles['m3-l2']) note('m3-l2 Spanish title expected "' + esTitles['m3-l2'] + '", got "' + esH1 + '"'); else ok('m3-l2 shows the Spanish title');
+  if (await page.locator('.pill.enonly').count()) note('m3-l2 shows an "English only" badge although course/es/m3-indicators.json exists');
+  const esChoices = await page.locator('.q .choice').count();
+  if (esChoices < 2) note('m3-l2 Spanish quiz has no choices');
+  else {
+    const q1 = page.locator('.q').first();
+    const firstChoice = (await q1.locator('.choice').first().textContent()).trim();
+    await q1.locator('.choice').first().click(); await sleep(400);
+    const graded = await q1.locator('.choice.correct, .choice.wrong').count();
+    if (!graded) note('Spanish quiz answer did not grade'); else ok('Spanish quiz graded (choice "' + firstChoice.slice(0, 40) + '")');
+    const explain = (await q1.textContent()).trim();
+    if (!/[áéíóúñ¿¡]/.test(explain)) note('Spanish quiz text shows no Spanish characters: ' + explain.slice(0, 80));
+  }
+  await shot('es-learn-lesson-quiz');
+  await goto('learn.html#/lesson/m9-l1', 1500);
+  const m9es = (await page.locator('h1').first().textContent()).trim();
+  if (m9es !== esTitles['m9-l1']) note('m9-l1 Spanish title: "' + m9es + '"'); else ok('m9-l1 opens in Spanish');
+  await expect('.q .choice', 'm9-l1 Spanish quiz choices', 2);
+  await clickLangToggle();
+  await sleep(800);
+  const m9en = (await page.locator('h1').first().textContent()).trim();
+  if (m9en !== enTitles['m9-l1']) note('m9-l1 English title: "' + m9en + '"'); else ok('m9-l1 opens in English');
+  await expect('.q .choice', 'm9-l1 English quiz choices', 2);
+  await expect('#printLesson', 'print button on m9-l1');
+  await shot('learn-m9-lesson');
+  const langNow = await page.evaluate(() => BT.i18n.lang());
+  if (langNow !== 'en') { note('language left as ' + langNow + ' after the Spanish flow'); await page.evaluate(() => BT.i18n.setLang('en')); }
+
+  // ---------------------------------------------------------------- First Week: 7 days; Day 1 auto-ticks after the dashboard + lesson
+  console.log('\n== first week flow');
+  await goto('start.html', 1500);
+  const dayN = await page.locator('#days .day-head').count();
+  if (dayN !== 7) note('start.html shows ' + dayN + ' days, expected 7'); else ok('start.html shows 7 days');
+  const doneBefore = await page.locator('#days .task.done').count();
+  console.log('  tasks done before:', doneBefore);
+  // Day 1: finish the tour (skipped = done), read lesson m1-l1, add 3 symbols of your own to the watchlist.
+  await goto('index.html', 3000);
+  if (await page.locator('#tour:not([hidden])').count()) { await page.click('#tourSkip'); await sleep(300); }
+  const wlBefore = await page.locator('#wlList li').count();
+  await page.evaluate(() => { ['GOOGL', 'META', 'JPM'].forEach(s => BT.app.addToWatchlist(s)); });
+  await sleep(600);
+  const wlAfter = await page.locator('#wlList li').count();
+  const wlStored = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('bt.watchlist')); } catch (e) { return null; } });
+  if (!Array.isArray(wlStored) || !['GOOGL', 'META', 'JPM'].every(s => wlStored.includes(s))) note('watchlist symbols were not persisted: ' + JSON.stringify(wlStored));
+  else ok('watchlist: ' + wlBefore + ' -> ' + wlAfter + ' rows, stored ' + wlStored.length);
+  await goto('learn.html#/lesson/m1-l1', 1500);
+  if (await page.locator('#markDone').count()) { await page.click('#markDone'); await sleep(500); ok('m1-l1 marked complete'); }
+  else {
+    const done = await page.evaluate(() => { try { return !!JSON.parse(localStorage.getItem('bt.course')).lessonsDone['m1-l1']; } catch (e) { return false; } });
+    if (!done) note('m1-l1 has no Mark complete button and is not done');
+  }
+  await goto('start.html', 1500);
+  const d1 = await page.evaluate(() => Array.from(document.querySelectorAll('#days .task[id^="task-d1-"]')).map(li => ({ id: li.id, done: li.classList.contains('done'), state: (li.querySelector('.state') || {}).textContent })));
+  console.log('  day 1 tasks:', JSON.stringify(d1));
+  if (d1.length !== 3) note('Day 1 should list 3 tasks, found ' + d1.length);
+  d1.forEach(t => { if (!t.done) note('Day 1 task did not auto-tick: ' + t.id + ' (' + (t.state || '').trim() + ')'); });
+  if (d1.length === 3 && d1.every(t => t.done)) ok('Day 1 tasks auto-ticked');
+  const d2open = await page.evaluate(() => { const b = document.querySelector('#days .day-head[data-toggle="2"]'); return b ? b.getAttribute('aria-expanded') : null; });
+  console.log('  day 2 expanded:', d2open);
+  await shot('start-day1-done', true);
+
+  // ---------------------------------------------------------------- Instructor: create a class, student share code, import → roster row
+  console.log('\n== instructor flow');
+  await goto('instructor.html', 1500);
+  if (await page.locator('#createForm:not([hidden])').count() === 0 && await page.locator('#newClassBtn').count()) { await page.click('#newClassBtn'); await sleep(300); }
+  await page.fill('#cName', 'FIN 1100 Markets by Doing');
+  await page.fill('#cSection', 'Tue 6pm');
+  await page.fill('#cTerm', 'Spring 2027');
+  await page.click('#createBtn'); await sleep(800);
+  const classCode = (await page.locator('#codeBig').textContent().catch(() => '')).replace(/\s+/g, '').trim();
+  console.log('  class code:', classCode);
+  if (!/^[A-Z0-9]{6}$/.test(classCode)) note('instructor: class code not shown after create: "' + classCode + '" ' + (await page.locator('#createMsg').textContent().catch(() => '')));
+  else ok('class created with code ' + classCode);
+  const rosterEmpty = await page.locator('#rosterBody tr[data-id]').count();
+  if (rosterEmpty) note('instructor: roster should be empty right after creating a class (' + rosterEmpty + ' rows)');
+  // student context: join the class on learn.html and produce a share code (offline path, no backend)
+  await goto('learn.html', 1500);
+  const shareCode = await page.evaluate(async (code) => {
+    const r = BT.classroom.join(code, 'Ada');
+    if (!r || r.ok === false) return 'JOIN-FAILED ' + JSON.stringify(r);
+    const snap = BT.classroom.snapshot();
+    return BT.classroom.encodeShare(snap);
+  }, classCode);
+  console.log('  share code:', String(shareCode).slice(0, 40) + '…');
+  if (!/^BT1\./.test(shareCode)) note('student share code not generated: ' + shareCode); else ok('student share code generated');
+  await expect('#classCard', 'classroom card on learn.html');
+  await goto('instructor.html', 1500);
+  await page.fill('#importIn', 'Ada sent ' + shareCode + '\n');
+  await page.click('#importBtn'); await sleep(1200);
+  const importMsg = (await page.locator('#importMsg').textContent().catch(() => '')).trim();
+  console.log('  import message:', importMsg);
+  const rosterRows = await page.locator('#rosterBody tr[data-id]').count();
+  if (rosterRows !== 1) note('instructor roster should show exactly one student after import, found ' + rosterRows + ' (' + importMsg + ')');
+  else ok('roster shows one student row');
+  const rosterName = (await page.locator('#rosterBody tr[data-id]').first().textContent()).trim();
+  if (!/Ada/.test(rosterName)) note('roster row does not carry the display name Ada: ' + rosterName.slice(0, 80));
+  await shot('instructor-roster', true);
+  await page.locator('#rosterBody tr[data-id]').first().click(); await sleep(500);
+  if (!await page.locator('#drawer:not([hidden])').count()) note('instructor: student drawer did not open from the roster row'); else { ok('student drawer opens'); await expect('#dModules *', 'module breakdown in drawer', 3); }
+  await page.setViewportSize(VIEWPORTS.phone); await sleep(500);
+  await shot('instructor-roster-phone');
+  await page.setViewportSize(VIEWPORTS.desktop);
+
+  // ---------------------------------------------------------------- Certificate from query params
+  console.log('\n== certificate flow');
+  await goto('certificate.html?name=Ada%20Lovelace&id=BT-2026-ABC123&date=2026-11-12&course=Technical%20Analysis%20%26%20Paper%20Trading', 1500);
+  const sheet = (await page.locator('#sheet').textContent()).replace(/\s+/g, ' ');
+  if (!/Ada Lovelace/.test(sheet)) note('certificate: name from params missing');
+  if (!/BT-2026-ABC123/.test(sheet)) note('certificate: id from params missing');
+  if (!/2026|November|noviembre/.test(sheet)) note('certificate: date from params missing');
+  if (!/Broward Trading/.test(sheet)) note('certificate: Broward Trading mark missing');
+  if (/Ada Lovelace/.test(sheet) && /BT-2026-ABC123/.test(sheet)) ok('certificate renders name, id and date from params');
+  const verifyHref = await page.locator('#verifyLink').getAttribute('href').catch(() => null);
+  if (!verifyHref || !/verify\.html/.test(verifyHref)) note('certificate: verify link missing (' + verifyHref + ')');
+  await expect('#printBtn', 'certificate print button');
+  await shot('certificate-params');
 
   // ---------------------------------------------------------------- Learn: m7 lesson with drill, m8 exam, quiz grading
   console.log('\n== learn flow');

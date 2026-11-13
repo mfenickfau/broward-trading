@@ -7,7 +7,7 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
 ## Design
 
 - **No framework, no npm dependencies.** Plain `fetch` handler, WebCrypto for every signature, Stripe and Resend called over REST with `fetch`. Nothing to build; `wrangler deploy` uploads the one file.
-- **Four KV namespaces**
+- **Five KV namespaces** (the fifth, `CLASSES`, is optional and only needed for Classroom sync)
 
   | Binding | Keys | Value |
   |---|---|---|
@@ -15,6 +15,7 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
   | `CERTS` | `cert:<id>` · `by:<sha256(email)>` | `{id, name, issuedAt, modules, scorePct, course, pro, emailHash}` · `[ids]` |
   | `TOKENS` | `magic:<jti>` (15 min TTL) · `magic-used:<jti>` (15 min TTL) · `code:<code>` (60 s TTL) · `session:<sha256(id)>` (30 d TTL) · `rl:<bucket>:<hash>:<window>:<shard>` · `stripe:evt:<id>` | one-time magic payload · claim marker `{claim, ipHash, at}` · `{sessionId, email, at}` · `{email, expires}` · sharded counters · dedupe |
   | `LEADERBOARD` | `class:<CODE>` (180 d TTL) | `[{nickname, stats, owner, updatedAt}]` |
+  | `CLASSES` | `class:<CODE>` · `student:<CODE>:<studentId>` · `removed:<CODE>:<studentId>` (all 400 d TTL) | `{code, name, section, term, createdAt, ownerKind, owner, tokenHash}` · sanitized snapshot · `'1'` |
 
 - **Magic links**: `POST /auth/magic-link` signs a JWT-like token (`header.payload.sig`, HS256 with `HMAC_SECRET`, `exp` = 15 min, random `jti`) and stores the `jti` in `TOKENS`. `GET /auth/callback?token=` verifies the signature and expiry, then *claims* the `jti` so a link works exactly once: with the optional `MAGIC_LOCK` Durable Object binding the first claim wins atomically; without it a random claim marker is written to `magic-used:<jti>` (a KV write error counts as losing the race), `magic:<jti>` is deleted and the callback proceeds only if its own marker is what KV holds. It then creates a session and redirects to `SITE_URL/pricing.html#code=<one-time code>`. The session id never appears in a URL: the client (`js/auth.js`) scrubs the fragment, posts the code to `POST /auth/exchange` (browser-only, `Origin` required, code deleted on first use, 60 s TTL), confirms the resulting email against the sign-in it started (or asks the student), and only then stores the id as a bearer token and calls `GET /me`. Legacy `#session=<id>` fragments are still understood by the client during a rolling deploy.
 - **Sessions**: 32 random bytes, base64url. Only `sha256(id)` is stored, with a 30-day TTL. `POST /auth/signout` deletes it.
@@ -40,8 +41,23 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
 | GET | `/verify/:id` | – | – | `{found, record}` or `404 {found:false}` |
 | GET | `/leaderboard` | – | `?code=` | `{code, entries:[{rank, nickname, stats, updatedAt}]}` |
 | POST | `/leaderboard` | optional Bearer | `{classCode, nickname, stats:{returnPct, trades, winRate, maxDrawdownPct}, ownerToken?}` | `{ok, code, entries, ownerToken?}` (`ownerToken` only for anonymous submits; `409` when the nickname belongs to someone else) |
+| POST | `/classes` | Bearer (any signed-in member) **or** `X-Instructor-Secret` / `{instructorSecret}` | `{name, section?, term?}` | `201 {code, name, section, term, createdAt, instructorToken, ownerKind}`; `401 {requiresInstructor, canSignIn}`; `503 {notConfigured}` without the `CLASSES` binding |
+| GET | `/classes/:code` | – | – | `{found, code, name, section, term, createdAt}` or `404 {found:false}` (a student checks the code before joining) |
+| POST | `/classes/:code/snapshots` | – | the `BT.classroom.snapshot()` object (≤ 64 KB) | `{ok, code, className, receivedAt}`; `404` unknown code; `410 {removed:true}` after the instructor deleted this student; `413` too large |
+| GET | `/classes/:code/roster` | instructor: creator's Bearer, `X-Class-Token`, or `X-Instructor-Secret` | – | `{ok, class, students:[snapshots], count, via}`; `403` otherwise |
+| DELETE | `/classes/:code/students/:id` | instructor (same three ways) | – | `{ok, removed:true}`; the id is remembered for 400 days so the device's next snapshot gets `410` and `js/classroom.js` leaves the class |
 
 Errors are `{error: "message"}` with 4xx/5xx; `notConfigured:true` marks a missing secret so the client can show a friendly state.
+
+### Classroom (v0.4)
+
+- **KV `CLASSES`**: `class:<CODE>` → `{code, name, section, term, createdAt, ownerKind:'email'|'secret', owner, tokenHash}`; `student:<CODE>:<studentId>` → sanitized snapshot + `receivedAt` (400-day TTL); `removed:<CODE>:<studentId>` → `'1'` (400-day TTL). Create it with `npx wrangler kv namespace create CLASSES` and add a `[[kv_namespaces]]` block with `binding = "CLASSES"` to `wrangler.toml`. Without the binding every `/classes` route answers `503 {notConfigured:true}` and the instructor page keeps working from pasted share codes.
+- **Class codes** are six characters from the certificate alphabet (no `0/1/O/I`), minted server-side with collision retry. Codes made offline by the instructor page use the same alphabet, so a class can start offline and never needs the server.
+- **Who is the instructor**: `POST /classes` needs either a Bearer session (any member who can sign in may create classes; the class owner is `HMAC(secret,'lb|class|<email>')`, never the email) or the optional `INSTRUCTOR_SECRET` (`npx wrangler secret put INSTRUCTOR_SECRET`) for schools that do not run magic-link sign-in. The response carries a per-class `instructorToken` exactly once; only `sha256(token)` is stored. Roster reads and deletes accept the creator's session, the token (`X-Class-Token`), or the secret (`X-Instructor-Secret`), all compared in constant time.
+- **Snapshots are whitelisted**, not stored as sent: `sanitizeSnapshot()` keeps `studentId` (`^[A-Za-z0-9_-]{4,40}$`), `displayName` (≤ 40 chars), lesson ids, quiz percentages (clamped 0–100), up to 40 drill rows, paper stats, journal counts, Daily 5 counts and ISO dates. No journal text, trade list, email, IP or user agent is ever written. Body limit 64 KB.
+- **Rate limits**: class creation 5/min per IP, snapshots 30/min per IP (fail closed), class lookup 60/min (fail open), roster and delete 60/min.
+- **CORS** now allows `DELETE` and the `X-Class-Token` / `X-Instructor-Secret` headers for the listed origins.
+- Tests: `tests/classroom.test.js` drives `route()` end to end against an in-memory KV (secret and session ownership, token access, delete → 410, rate limit, sanitizer).
 
 ## Configuration
 
@@ -54,6 +70,7 @@ STRIPE_SECRET_KEY      sk_test_… / sk_live_…
 STRIPE_WEBHOOK_SECRET  whsec_…
 STRIPE_PRICE_MONTHLY   price_…
 STRIPE_PRICE_ANNUAL    price_…
+INSTRUCTOR_SECRET      optional; openssl rand -hex 16 — lets teaching staff create classes without sign-in
 ```
 
 ## Local development
@@ -61,7 +78,7 @@ STRIPE_PRICE_ANNUAL    price_…
 ```bash
 cd server
 npx wrangler login
-npx wrangler kv namespace create MEMBERS      # repeat for CERTS, TOKENS, LEADERBOARD; paste ids into wrangler.toml
+npx wrangler kv namespace create MEMBERS      # repeat for CERTS, TOKENS, LEADERBOARD and (for Classroom) CLASSES; paste ids into wrangler.toml
 npx wrangler dev                              # http://localhost:8787
 ```
 
@@ -94,7 +111,8 @@ The pure parts (token sign/verify, certificate id derivation, Stripe signature c
 
 ## Privacy & data retention
 
-- Stored: email, Pro status, Stripe customer/subscription ids, certificate names and course scores, leaderboard nicknames and stats. No passwords exist.
+- Stored: email, Pro status, Stripe customer/subscription ids, certificate names and course scores, leaderboard nicknames and stats, classroom snapshots (random student id, optional display name, course statistics; see **Classroom** above). No passwords exist.
+- Delete a classroom student: `DELETE /classes/:code/students/:id` from the instructor page, or `npx wrangler kv key delete --binding CLASSES "student:<CODE>:<id>"`. Delete a whole class by removing its `class:<CODE>` key and the `student:<CODE>:*` keys; everything expires on its own after 400 days.
 - Delete a member: `npx wrangler kv key delete --binding MEMBERS "member:<email>"` (and the matching `customer:` key); certificates stay valid unless you delete `cert:<id>` too.
 - Sessions, magic tokens, claim markers and login codes expire on their own via KV TTL.
 - Leaderboard rows written before v0.3's HMAC owners (plain sha256 / IP hashes) can no longer be updated by their owners (`409`). Fine before launch; otherwise wipe the `class:*` keys in `LEADERBOARD` once.

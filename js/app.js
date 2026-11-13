@@ -18,6 +18,8 @@
   'use strict';
   window.BT = window.BT || {};
   var BT = window.BT;
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
   var LW = window.LightweightCharts;
   var ind = BT.ind, data = BT.data, paper = BT.paper;
   var alerts = BT.alerts || null;                       // js/alerts.js (v0.3); the dashboard still works without it
@@ -57,7 +59,7 @@
     var host = $('toasts'); if (!host) return;
     var el = document.createElement('div');
     el.className = 'toast ' + (kind || '');
-    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div><button class="close" aria-label="Dismiss">✕</button>';
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(T(title)) + '</b>' : '') + esc(T(msg)) + '</div><button class="close" aria-label="' + esc(T('Dismiss')) + '">✕</button>';
     var kill = function () { el.classList.add('leaving'); setTimeout(function () { el.remove(); }, 220); };
     el.querySelector('.close').onclick = kill;
     host.appendChild(el);
@@ -422,7 +424,7 @@
     drawPts.sort(function (a, b) { return indexOfTime(a.time) - indexOfTime(b.time); });
     var k = lineKey(); savedLines[k] = (savedLines[k] || []).concat([drawPts.slice()]); store.set('bt.lines', savedLines);
     var a = drawPts[0], b = drawPts[1], slope = b.value - a.value;
-    toast(slope > 0 ? 'Rising line: connects higher points, the market is making higher lows/highs along it.' : 'Falling line: connects lower points, a down-sloping resistance or trend.', 'ok', 'Trend line saved for ' + symbol);
+    toast(slope > 0 ? 'Rising line: connects higher points, the market is making higher lows/highs along it.' : 'Falling line: connects lower points, a down-sloping resistance or trend.', 'ok', T('Trend line saved for {symbol}', { symbol: symbol }));
     renderTrendLines(); setDrawing(false);
   }
   chP.subscribeClick(onChartClick);
@@ -432,7 +434,7 @@
   $('clearlines').onclick = function () {
     var k = lineKey(), n = (savedLines[k] || []).length;
     delete savedLines[k]; store.set('bt.lines', savedLines); renderTrendLines();
-    toast(n ? 'Removed ' + n + ' line' + (n > 1 ? 's' : '') + ' on ' + symbol + ' ' + tfLabel(tf) + '.' : 'No trend lines on this chart yet. Click ✎ Trend line, then two points.', n ? 'ok' : 'warn');
+    toast(n ? T(n > 1 ? 'Removed {n} lines on {symbol} {tf}.' : 'Removed {n} line on {symbol} {tf}.', { n: n, symbol: symbol, tf: tfLabel(tf) }) : T('No trend lines on this chart yet. Click ✎ Trend line, then two points.'), n ? 'ok' : 'warn');
   };
 
   /* ---- crosshair: show OHLC + pane values for the hovered bar ---- */
@@ -466,7 +468,7 @@
     $('chg').textContent = (d >= 0 ? '+' : '−') + fmt(Math.abs(d)) + ' (' + pct(d / pc * 100) + ')';
     $('chg').className = 'num chg ' + cls(d);
     var u = data.lookup(symbol);
-    $('symName').textContent = (u.synthetic ? symbol + ' — not in the demo universe; prices are simulated' : u.name + ' · ' + u.exchange + ' · ' + u.sector) + (typeof last.time === 'string' ? '' : ' · vs prior close');
+    $('symName').textContent = (u.synthetic ? T('{symbol} — not in the demo universe; prices are simulated', { symbol: symbol }) : u.name + ' · ' + u.exchange + ' · ' + u.sector) + (typeof last.time === 'string' ? '' : ' · vs prior close');
     document.title = symbol + ' ' + fmt(last.close) + ' · Broward Trading';
     $('ticketSym').textContent = symbol;
     var tags = [];
@@ -486,8 +488,8 @@
       pill.title = dataInfo.reason || 'Simulated prices: deterministic per symbol so every student sees the same chart. Add a free API key under Live data for real prices.';
     }
     var msg = $('msg');
-    if (!live && dataInfo.fallback && dataInfo.reason) { msg.className = 'msg'; msg.textContent = 'Showing simulated prices. ' + dataInfo.reason; }
-    else if (live && dataInfo.stale) { msg.className = 'msg'; msg.textContent = 'Live refresh failed, showing the last download. ' + (dataInfo.reason || ''); }
+    if (!live && dataInfo.fallback && dataInfo.reason) { msg.className = 'msg'; msg.textContent = T('Showing simulated prices. {reason}', { reason: dataInfo.reason }); }
+    else if (live && dataInfo.stale) { msg.className = 'msg'; msg.textContent = T('Live refresh failed, showing the last download. {reason}', { reason: dataInfo.reason || '' }); }
     else { msg.textContent = ''; }
   }
 
@@ -504,7 +506,7 @@
     }).join('');
     var n = bars.length, from = Math.max(0, n - 20), buys = 0, sells = 0;
     for (var i = from; i < n; i++) { if (sigSeries[i] === 'BUY') buys++; else if (sigSeries[i] === 'SELL') sells++; }
-    $('sigTrend').textContent = 'Last 20 bars: ' + buys + ' BUY · ' + sells + ' SELL · ' + (n - from - buys - sells) + ' HOLD';
+    $('sigTrend').textContent = T('Last 20 bars: {buys} BUY · {sells} SELL · {holds} HOLD', { buys: buys, sells: sells, holds: n - from - buys - sells });
   }
   $('whyBtn').onclick = function () {
     var card = $('panel-signal'), on = card.classList.toggle('show-why');
@@ -528,7 +530,7 @@
     side = s; $('tmsg').dataset.kind = '';
     $$('.side').forEach(function (b) { b.classList.toggle('on', b.dataset.side === s); b.setAttribute('aria-checked', String(b.dataset.side === s)); });
     var btn = $('review'); btn.className = 'submit ' + (s === 'buy' || s === 'cover' ? 'buy' : 'sell');
-    btn.textContent = 'Review ' + s + ' order';
+    btn.textContent = T('Review ' + s + ' order');
     hideConfirm(); renderTicket();
   }
   $$('.side').forEach(function (b) { b.onclick = function () { setSide(b.dataset.side); }; });
@@ -603,13 +605,13 @@
     var o = paper.placeOrder(t.order, lastPrice());
     var tm = $('tmsg'); tm.dataset.kind = 'result';
     if (o.status === 'filled') {
-      tm.className = 'msg ok'; tm.textContent = 'Filled: ' + (o.side === 'buy' ? 'bought ' : 'sold ') + o.qty + ' ' + o.symbol + ' @ ' + money(o.fillPrice) + (o.commission ? ' (commission ' + money(o.commission) + ')' : '') + '.';
-      toast((o.side === 'buy' ? 'Bought ' : 'Sold ') + o.qty + ' ' + o.symbol + ' @ ' + money(o.fillPrice), 'ok', 'Order filled');
+      tm.className = 'msg ok'; tm.textContent = T(o.side === 'buy' ? 'Filled: bought {qty} {symbol} @ {price}{commission}.' : 'Filled: sold {qty} {symbol} @ {price}{commission}.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), commission: o.commission ? ' (' + T('commission {fee}', { fee: money(o.commission) }) + ')' : '' });
+      toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price}' : 'Sold {qty} {symbol} @ {price}', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice) }), 'ok', 'Order filled');
     } else if (o.status === 'open') {
-      tm.className = 'msg ok'; tm.textContent = 'Working order placed. ' + o.reason;
+      tm.className = 'msg ok'; tm.textContent = T('Working order placed. {reason}', { reason: o.reason });
       toast(paper.describeOrder(o), 'ok', 'Order is working');
     } else {
-      tm.className = 'msg err'; tm.textContent = 'Rejected: ' + o.reason;
+      tm.className = 'msg err'; tm.textContent = T('Rejected: {reason}', { reason: o.reason });
       toast(o.reason, 'err', 'Order rejected', 7000);
     }
     renderAccount(); renderOrders();
@@ -620,7 +622,7 @@
    * ------------------------------------------------------------------ */
   function renderOrders() {
     var open = paper.openOrders();
-    $('ordersCount').textContent = open.length ? open.length + ' working' : '';
+    $('ordersCount').textContent = open.length ? T('{n} working', { n: open.length }) : '';
     $('orders').innerHTML = open.length ? open.slice().reverse().map(function (o) {
       var trig = o.type === 'limit' ? money(o.limitPrice) : o.type === 'stop' ? money(o.stopPrice) : money(o.stopPrice) + ' / ' + money(o.limitPrice);
       return '<tr><td><span class="' + (o.side === 'buy' ? 'up' : 'down') + '">' + (o.side === 'buy' ? 'BUY' : 'SELL') + '</span> <b>' + esc(o.symbol) + '</b><span class="type">' + esc(o.type.replace('_', '-')) + ' · ' + esc(o.tif.toUpperCase()) + (o.triggered ? ' · triggered' : '') + '</span></td><td class="num">' + o.qty + '</td><td class="num">' + esc(trig) + '</td><td><button class="sm ghost" data-cancel="' + o.id + '" title="Cancel this order">✕</button></td></tr>';
@@ -648,7 +650,7 @@
       row.hidden = false;
       row.innerHTML = '<span>' + (pos.qty > 0 ? 'Long' : 'Short') + ' <b class="num">' + Math.abs(pos.qty) + '</b> ' + esc(symbol) + ' @ <span class="num">' + money(pos.avg) + '</span></span><span class="num ' + cls(upl) + '">' + signed(upl) + ' (' + pct((px - pos.avg) / pos.avg * 100 * (pos.qty > 0 ? 1 : -1)) + ')</span><button class="sm" id="closePos" type="button">Close</button>';
       $('closePos').onclick = function () {
-        if (this.dataset.arm) { var o = paper.closePosition(symbol, lastPrice()); toast(o.status === 'filled' ? o.reason : 'Could not close: ' + o.reason, o.status === 'filled' ? 'ok' : 'err'); renderAccount(); renderOrders(); }
+        if (this.dataset.arm) { var o = paper.closePosition(symbol, lastPrice()); toast(o.status === 'filled' ? o.reason : T('Could not close: {reason}', { reason: o.reason }), o.status === 'filled' ? 'ok' : 'err'); renderAccount(); renderOrders(); }
         else { this.dataset.arm = '1'; this.textContent = 'Confirm close'; var self = this; setTimeout(function () { self.textContent = 'Close'; delete self.dataset.arm; }, 4000); }
       };
     } else row.hidden = true;
@@ -671,7 +673,7 @@
     var fills = paper.processOrders(sym, bar) || [];
     fills.forEach(function (f) {
       var o = f.order;
-      toast((o.side === 'buy' ? 'Bought ' : 'Sold ') + o.qty + ' ' + o.symbol + ' @ ' + money(o.fillPrice) + ' — your ' + o.type.replace('_', '-') + ' price was reached.', 'ok', 'Order filled');
+      toast(T(o.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — your {type} price was reached.' : 'Sold {qty} {symbol} @ {price} — your {type} price was reached.', { qty: o.qty, symbol: o.symbol, price: money(o.fillPrice), type: o.type.replace('_', '-') }), 'ok', 'Order filled');
     });
     // Orders that were rejected at fill time (e.g. cash ran out) or expired (day orders) are not fills, but the student should hear about them.
     var changed = fills.length > 0;
@@ -679,7 +681,7 @@
       if (o.status === 'open' || o.status === 'filled') return;
       changed = true;
       if (o.status === 'rejected') toast(o.reason, 'err', 'Order could not fill', 7000);
-      else if (o.status === 'expired') toast(paper.describeOrder(o) + ' The day order expired unfilled.', 'warn', 'Order expired');
+      else if (o.status === 'expired') toast(paper.describeOrder(o) + ' ' + T('The day order expired unfilled.'), 'warn', 'Order expired');
     });
     if (changed) { renderOrders(); renderAccount(); }
     return fills;
@@ -712,7 +714,7 @@
     $('alertValueLabel').textContent = f.label;
     $('alertValue').placeholder = f.placeholder();
     $('alertValue').setAttribute('inputmode', f.mode);
-    $('alertHelp').textContent = def.help + (kind === 'price_above' || kind === 'price_below' ? ' Current price: ' + (bars.length ? money(lastPrice()) : '—') + '.' : kind === 'rsi_above' || kind === 'rsi_below' ? ' Current RSI: ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—') + '.' : kind === 'signal_change' && sig ? ' Current signal: ' + sig.state + '.' : '');
+    $('alertHelp').textContent = T(def.help) + (kind === 'price_above' || kind === 'price_below' ? ' ' + T('Current price:') + ' ' + (bars.length ? money(lastPrice()) : '—') + '.' : kind === 'rsi_above' || kind === 'rsi_below' ? ' ' + T('Current RSI:') + ' ' + (I && I.rsi && I.rsi[I.rsi.length - 1] != null ? I.rsi[I.rsi.length - 1].toFixed(1) : '—') + '.' : kind === 'signal_change' && sig ? ' ' + T('Current signal:') + ' ' + sig.state + '.' : '');
   }
   function renderNotifButton() {
     if (!alerts || !$('notifBtn')) return;
@@ -731,7 +733,7 @@
   function renderAlerts() {
     if (!alerts || !$('alertList')) return;
     var all = alerts.list(), live_ = all.filter(function (a) { return a.enabled && !a.firedAt; });
-    $('alertsCount').textContent = all.length ? live_.length + ' active' + (all.length - live_.length ? ' · ' + (all.length - live_.length) + ' fired' : '') : '';
+    $('alertsCount').textContent = all.length ? T('{n} active', { n: live_.length }) + (all.length - live_.length ? ' · ' + T('{n} fired', { n: all.length - live_.length }) : '') : '';
     // Current symbol first, then live before fired, newest first.
     var rows = all.slice().sort(function (a, b) {
       var sa = (a.symbol === symbol ? 0 : 1) - (b.symbol === symbol ? 0 : 1); if (sa) return sa;
@@ -838,10 +840,10 @@
   }
   function addToWatchlist(s) {
     s = cleanSym(s); if (!s) return;
-    if (watchlist.indexOf(s) >= 0) { toast(s + ' is already on your watchlist.', 'warn'); return; }
-    if (watchlist.length >= MAX_WATCHLIST) { toast('Watchlists are capped at ' + MAX_WATCHLIST + ' symbols to stay inside free data quotas. Remove one first.', 'warn'); return; }
+    if (watchlist.indexOf(s) >= 0) { toast(T('{symbol} is already on your watchlist.', { symbol: s }), 'warn'); return; }
+    if (watchlist.length >= MAX_WATCHLIST) { toast(T('Watchlists are capped at {max} symbols to stay inside free data quotas. Remove one first.', { max: MAX_WATCHLIST }), 'warn'); return; }
     watchlist.push(s); saveWatchlist(); renderWatchlist(); refreshWatchlist(true);
-    toast(s + ' added. Its price refreshes with the market.', 'ok');
+    toast(T('{symbol} added. Its price refreshes with the market.', { symbol: s }), 'ok');
   }
   function removeFromWatchlist(s) {
     watchlist = watchlist.filter(function (x) { return x !== s; }); saveWatchlist(); renderWatchlist();
@@ -950,7 +952,7 @@
   async function load() {
     var seq = ++loadSeq;
     stopTimers(); hideConfirm(); setDrawing(false);
-    $('loading').hidden = false; $('loading').textContent = 'Loading ' + symbol + ' ' + tfLabel(tf) + '…';
+    $('loading').hidden = false; $('loading').textContent = T('Loading {symbol} {tf}…', { symbol: symbol, tf: tfLabel(tf) });
     var res;
     try { res = await data.candles(symbol, tf, LIMIT[tf]); }
     catch (e) { res = data.demo(symbol, tf, LIMIT[tf]); res.fallback = true; res.reason = (e && e.message) || 'Data error'; }
@@ -1000,7 +1002,7 @@
       last.close = q.price; if (q.price > last.high) last.high = q.price; if (q.price < last.low) last.low = q.price;
       dataInfo.stale = false; renderMode();
       afterTick();
-    } catch (e) { $('msg').textContent = 'Quote refresh failed: ' + (e && e.message); }
+    } catch (e) { $('msg').textContent = T('Quote refresh failed: {error}', { error: e && e.message }); }
   }
 
   /* Ticker whitelist: uppercase letters, digits, dot and dash (BRK.B, BF-B), 12 chars max.
@@ -1086,7 +1088,7 @@
     }
     t.textContent = 'NYSE ' + st.nyTime + ' · ' + label + extra;
     el.className = 'clock ' + st.phase;
-    el.title = st.holiday ? 'Market holiday: ' + st.holiday : st.earlyClose ? 'Early close today at ' + st.closesAt : 'New York Stock Exchange regular session is 9:30–16:00 ET, Monday to Friday except holidays.';
+    el.title = st.holiday ? T('Market holiday: {holiday}', { holiday: st.holiday }) : st.earlyClose ? T('Early close today at {time}', { time: st.closesAt }) : T('New York Stock Exchange regular session is 9:30–16:00 ET, Monday to Friday except holidays.');
   }
   setInterval(tickClock, 1000); tickClock();
 
@@ -1123,11 +1125,11 @@
     var p = $('provider').value, out = $('testOut'), btn = this;
     if (p === 'demo') { out.className = 'test-out ok'; out.textContent = 'Demo needs no key: prices are generated locally.'; return; }
     var key = $('key-' + p).value.trim();
-    if (!key) { out.className = 'test-out err'; out.textContent = 'Paste your ' + data.PROVIDER_LABEL[p] + ' key first.'; return; }
-    btn.disabled = true; out.className = 'test-out muted'; out.textContent = 'Asking ' + data.PROVIDER_LABEL[p] + ' for an AAPL quote…';
+    if (!key) { out.className = 'test-out err'; out.textContent = T('Paste your {provider} key first.', { provider: data.PROVIDER_LABEL[p] }); return; }
+    btn.disabled = true; out.className = 'test-out muted'; out.textContent = T('Asking {provider} for an AAPL quote…', { provider: data.PROVIDER_LABEL[p] });
     try {
       var q = await data.providers[p].quote('AAPL', key);
-      out.className = 'test-out up'; out.textContent = 'Success: AAPL ' + money(q.price) + ' from ' + data.PROVIDER_LABEL[p] + '. Save to switch the dashboard to live prices.';
+      out.className = 'test-out up'; out.textContent = T('Success: AAPL {price} from {provider}. Save to switch the dashboard to live prices.', { price: money(q.price), provider: data.PROVIDER_LABEL[p] });
     } catch (e) {
       out.className = 'test-out down';
       out.textContent = 'Failed: ' + (data.explainError ? data.explainError(e, p) : (e && e.message)) + (e instanceof TypeError ? ' If you are viewing this inside an embedded preview, open the page directly in your browser.' : '');
@@ -1140,7 +1142,7 @@
     if (provider !== 'demo' && !keys[provider]) { $('testOut').className = 'test-out down'; $('testOut').textContent = 'That provider needs a key. Paste one or choose Demo.'; return; }
     data.setSettings({ provider: provider, keys: keys });
     closeSettings();
-    toast(provider === 'demo' ? 'Running on simulated prices.' : 'Switching to ' + data.PROVIDER_LABEL[provider] + ' live data.', 'ok', 'Settings saved');
+    toast(provider === 'demo' ? T('Running on simulated prices.') : T('Switching to {provider} live data.', { provider: data.PROVIDER_LABEL[provider] }), 'ok', 'Settings saved');
     wlPrev = {}; load();
   };
 
@@ -1164,7 +1166,7 @@
     tourStep = i;
     var step = TOUR[i], el = $(step.target);
     if (el) { el.classList.add('tour-target'); try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); } }
-    $('tourStep').textContent = 'Step ' + (i + 1) + ' of ' + TOUR.length;
+    $('tourStep').textContent = T('Step {i} of {n}', { i: i + 1, n: TOUR.length });
     $('tourTitle').textContent = step.title; $('tourBody').textContent = step.body;
     $('tourDots').innerHTML = TOUR.map(function (_, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('');
     $('tourPrev').disabled = i === 0;

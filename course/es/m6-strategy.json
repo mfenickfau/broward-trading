@@ -1,0 +1,482 @@
+{
+  "id": "m6-strategy",
+  "title": "Estrategia y backtesting",
+  "level": "advanced",
+  "minutes": 57,
+  "summary": "Convertir una idea de trading en reglas escritas de entrada y salida, probar esas reglas con honestidad sobre datos pasados, leer las métricas que importan (CAGR, tasa de acierto, factor de beneficio, Sharpe, drawdown máximo), detectar el sesgo de anticipación, el sesgo de supervivencia y el sobreajuste antes de que te engañen, pagar costos realistas y llevar una estrategia del backtester a tu cuenta de paper trading en un proyecto final.",
+  "lessons": [
+    {
+      "id": "m6-l1",
+      "title": "Qué es una estrategia: reglas de entrada y salida",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Una idea no es una estrategia\n\n\"Comprar acciones fuertes en las caídas\" es una idea. \"Comprar cuando la SMA de 20 días cruza por encima de la SMA de 50 días, arriesgar el 1% del capital con un stop 2 ATR por debajo de la entrada, salir cuando la de 20 vuelve a cruzar por debajo de la de 50\" es una estrategia. La diferencia es que la segunda se le puede entregar a un desconocido, o a una computadora, y tomarían exactamente las mismas operaciones que tú. Esa propiedad tiene nombre: la estrategia está **completamente especificada**.\n\n¿Por qué importa tanto? Por tres razones.\n\n- **Puedes probarla.** Una regla que se puede escribir se puede ejecutar sobre cinco años de precios pasados en un segundo. Una idea no se puede probar, solo discutir.\n- **Puedes seguirla.** Bajo presión, con dinero en juego, la discrecionalidad se derrumba en emoción. Una regla escrita es algo que puedes obedecer cuando no tienes ganas de hacerlo.\n- **Puedes mejorarla.** Si la regla pierde dinero, puedes preguntar *qué parte* falló. Si una idea vaga pierde dinero, no aprendes nada.\n\nToda estrategia completa responde cinco preguntas, y si tu regla se salta una de ellas, todavía no está terminada:\n\n1. **Universo**: ¿qué opero? (¿Una sola acción? ¿Los 40 nombres de la lista de seguimiento del panel? ¿Solo acciones por encima de $10 con volumen promedio superior a un millón de acciones?)\n2. **Entrada**: ¿exactamente qué condición dispara una compra (o una venta en corto), y a qué precio espero que se ejecute?\n3. **Salida**: ¿cómo salgo cuando estoy equivocado (stop), cuando tengo razón (objetivo o regla de seguimiento) y cuando no pasa nada (stop de tiempo)?\n4. **Tamaño**: cuántas acciones, decidido con la regla de tamaño de posición del Módulo 4, no por intuición.\n5. **Marco temporal**: ¿en qué velas leo las reglas: diarias, de una hora o de 5 minutos?\n\nLas estrategias integradas en el laboratorio (cruce de SMA, reversión de RSI, cruce de MACD, rebote de Bollinger, ruptura de canal, señal compuesta) responden las cinco. Abre el laboratorio y lee la descripción debajo de cada una: son cortas porque una buena regla *es* corta."
+        },
+        {
+          "type": "text",
+          "md": "### Dos familias: seguimiento de tendencia y reversión a la media\n\nCasi toda estrategia basada en reglas pertenece a una de dos familias, y saber en cuál estás te dice qué esperar de los resultados antes de correr una sola prueba.\n\nEl **seguimiento de tendencia** (trend following) apuesta a que un movimiento que ya empezó va a continuar. El cruce de SMA, el cruce de MACD y la ruptura de canal son seguidores de tendencia: compran *después* de que el precio ya subió y venden después de que ya cayó. El perfil típico es una **tasa de acierto baja con ganadoras grandes**. Muchas entradas son falsos arranques que se detienen con pérdidas pequeñas; unas pocas atrapan un movimiento largo y pagan por todas las demás. Tasas de acierto del 30% al 45% son normales en estos sistemas, y si una estrategia de tendencia muestra un 70% de acierto en un backtest, tu primera reacción debería ser sospecha, no alegría.\n\nLa **reversión a la media** (mean reversion) apuesta a que un movimiento estirado va a volver. La reversión de RSI (comprar cuando el RSI baja de 30, vender cuando sube de 70) y el rebote de Bollinger (comprar cuando el precio cierra de nuevo dentro de las bandas tras un cierre por debajo de la banda inferior, vender cuando cierra de nuevo dentro tras un cierre por encima de la banda superior) son reglas de reversión a la media. El perfil es la imagen en espejo: una **tasa de acierto alta con ganadoras pequeñas y perdedoras grandes ocasionales**. La acción que está \"sobrevendida\" con RSI en 28 puede seguir cayendo hasta RSI 15 mientras la tienes, y una sola de esas operaciones puede devolver diez ganancias pequeñas. Los sistemas de reversión a la media viven o mueren por su regla de stop.\n\nNinguna familia es mejor. Funcionan bien en regímenes de mercado distintos: las reglas de tendencia brillan cuando una acción recorre un largo camino en una sola dirección y sangran en mercados laterales y erráticos; la reversión a la media hace lo contrario. Por eso también un backtest sobre una sola acción en un solo período te dice muy poco. Si AAPL pasó 2023 en una fuerte tendencia alcista, toda regla de tendencia se ve brillante sobre ella; prueba la misma regla en una acción que se movió de lado y el panorama cambia.\n\nEn el laboratorio puedes verificar en qué familia estás mirando dos números lado a lado: la tasa de acierto y la relación entre ganancia promedio y pérdida promedio. Las reglas de tendencia tienen un primer número bajo y un segundo número alto; la reversión a la media, al revés."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Una estrategia es un conjunto completo de reglas que cubre universo, entrada, salida, tamaño y marco temporal, escrito con tanta precisión que otra persona tomaría operaciones idénticas.** Si cualquiera de las cinco se deja al criterio del día, el backtest que corras no describirá el trading que realmente haces."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "Velas diarias con las SMA de 20 días (dorada) y 50 días (azul): la materia prima de la clásica estrategia de cruce. Encuentra cada punto donde la de 20 cruza la de 50. Cada cruce al alza es una entrada y cada cruce a la baja es una salida. Observa cuántos cruces ocurren en tramos laterales, donde las líneas se trenzan entre sí, y qué pocos atrapan un movimiento limpio y largo. Esa proporción es toda la historia del seguimiento de tendencia."
+        },
+        {
+          "type": "text",
+          "md": "### Escribir reglas de salida (la parte que todos se saltan)\n\nLos principiantes dedican el 90% de su esfuerzo a las entradas y el 10% a las salidas. Los traders sistemáticos con experiencia dicen que la proporción contraria se acerca más a lo correcto, porque la salida, no la entrada, decide el tamaño de cada ganancia y cada pérdida. Una estrategia normalmente necesita tres salidas; un backtester completo aplica la que se dispare primero (las reglas integradas del laboratorio usan solo la salida por señal):\n\n**1. El stop loss: ¿dónde estoy equivocado?** Un stop fijo (\"2 ATR por debajo de la entrada\") o uno estructural (\"por debajo del mínimo del swing\"). Esta es la regla que limita el daño de una mala entrada. El Módulo 4 explicó cómo dimensionar la posición en función de él.\n\n**2. La salida con ganancia: ¿cuándo se cumplió la idea?** Las opciones incluyen un objetivo fijo (\"vender en 2R\"), un stop de seguimiento (trailing stop) (\"salir cuando el precio cierre por debajo de la SMA de 20 días\") o una reversión de indicador (\"salir cuando el RSI supere 70\"). Un objetivo asegura ganancias pero corta las tendencias grandes; un trailing stop acompaña las tendencias pero devuelve parte de la ganancia abierta al final. Aquí no hay almuerzo gratis, solo una elección sobre qué tipo de arrepentimiento prefieres.\n\n**3. El stop de tiempo: ¿y si no pasa nada?** \"Si la operación no está arriba al menos 1R después de 10 velas, salir.\" El capital estancado en una operación que no va a ninguna parte es capital que no está disponible para la próxima señal. Los stops de tiempo no tienen glamour y son sorprendentemente efectivos en los backtests de reglas de reversión a la media, donde un rebote que no llegó en pocos días normalmente ya no va a llegar.\n\nUn ejemplo concreto en dólares. Compras 200 acciones a $50 con un stop en $47 (riesgo $600, que es 1R) y una salida de seguimiento cuando el precio cierre por debajo de la SMA de 20 días. Tres desenlaces: el stop se dispara en $47 para −$600 (−1R); la acción flota hasta $52 y cierra bajo la SMA en $51.50, +$300 (+0.5R); o sube en tendencia hasta $62 y finalmente cierra por debajo de la SMA en $59, +$1,800 (+3R). No puedes saber de antemano cuál te tocará. Lo que *sí* puedes saber es que los tres fueron decididos por reglas escritas antes de la entrada.\n\nCuando miras la lista de operaciones en el laboratorio, cada fila muestra una entrada y una salida con el P&L en dólares y en porcentaje. Leer esa lista, operación por operación, te enseña más sobre una estrategia que cualquier número resumen."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Escribe la regla y después intenta romperla.** Tras redactar una estrategia, pregúntate: en el gráfico de arriba, ¿hay alguna vela donde dos lectores podrían discrepar sobre si comprar? Si la respuesta es sí, la regla no es lo bastante específica. \"Comprar cuando el RSI está bajo\" no pasa esta prueba. \"Comprar en la siguiente apertura después de un cierre diario con RSI(14) por debajo de 30\" sí la pasa."
+        },
+        {
+          "type": "exercise",
+          "md": "Compara una regla de tendencia con una regla de reversión a la media sobre los mismos datos. En el laboratorio de estrategias:\n\n- Corre el **cruce de SMA (20/50)** sobre AAPL diario con el período de datos predeterminado y anota la tasa de acierto, el número de operaciones y la ganancia promedio frente a la pérdida promedio del resumen de operaciones.\n- Cambia la estrategia a **reversión de RSI (30/70)** y córrela de nuevo sobre el mismo símbolo y el mismo período. Anota los mismos tres números.\n- ¿Qué regla tuvo la tasa de acierto más alta? ¿Cuál tuvo la ganadora promedio más grande en relación con su perdedora promedio? ¿Cada una coincide con el perfil de familia descrito en esta lección (tendencia: acierto bajo, ganadoras grandes; reversión a la media: acierto alto, ganadoras pequeñas)?\n- Por último, abre la tabla de operaciones de la regla de RSI y encuentra su peor operación individual. ¿Cuántas de sus ganadoras promedio harían falta para pagar esa única pérdida?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Correr el cruce de SMA en el laboratorio" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál de estas es una estrategia completamente especificada y no una idea?",
+              "choices": [
+                "Comprar buenas empresas cuando están baratas",
+                "Comprar en la siguiente apertura después de un cierre diario con RSI(14) por debajo de 30; stop 2 ATR por debajo de la entrada; salir en la siguiente apertura después de que el RSI cierre por encima de 70",
+                "Comprar acciones con fuerte momentum y mantenerlas mientras sigan subiendo",
+                "Comprar cuando el gráfico se ve sobrevendido"
+              ],
+              "answer": 1,
+              "explain": "Solo la segunda opción te dice exactamente cuándo entrar, a qué precio, dónde está el stop y cuándo salir. Dos personas que la sigan tomarían las mismas operaciones. Las demás dependen del criterio personal (\"buenas\", \"baratas\", \"fuerte\", \"se ve sobrevendido\")."
+            },
+            {
+              "q": "Un backtest muestra una tasa de acierto del 38% pero una ganancia en total. ¿A qué familia pertenece más probablemente esta estrategia?",
+              "choices": ["Reversión a la media", "Seguimiento de tendencia", "Arbitraje", "Debe ser un error; una estrategia no puede ganar con una tasa de acierto menor al 50%"],
+              "answer": 1,
+              "explain": "Las reglas de seguimiento de tendencia normalmente ganan menos de la mitad de las veces, pero sus ganadoras son mucho más grandes que sus perdedoras. Una estrategia es rentable siempre que tasa de acierto × ganancia promedio supere a tasa de pérdida × pérdida promedio, así que un 38% de acierto está bien si las ganadoras son lo bastante grandes."
+            },
+            {
+              "q": "¿Cuál de las cinco partes de una estrategia completa falta en esta regla: \"Comprar AAPL en velas diarias cuando la SMA de 20 cruza por encima de la SMA de 50, arriesgando el 1% del capital con un stop 2 ATR por debajo de la entrada\"?",
+              "choices": ["Universo", "Entrada", "Salida cuando la operación tiene razón", "Marco temporal"],
+              "answer": 2,
+              "explain": "La regla nombra su universo (AAPL), la entrada (el cruce), el stop (2 ATR), el tamaño (1%) y el marco temporal (diario). Nunca dice cómo termina una operación ganadora. Sin una salida con ganancia o una regla de seguimiento, la estrategia está incompleta."
+            },
+            {
+              "q": "¿Qué es un stop de tiempo?",
+              "choices": [
+                "Un stop loss que se acerca al precio cada día",
+                "Una regla que cierra una operación si no ha avanzado dentro de un número fijo de velas",
+                "Una regla que deja de operar después de un número fijo de pérdidas",
+                "Una orden que se ejecuta al cierre del mercado"
+              ],
+              "answer": 1,
+              "explain": "Un stop de tiempo libera capital de operaciones que no van a ninguna parte, por ejemplo \"salir si la operación no está arriba al menos 1R después de 10 velas\". Es un tercer tipo de salida junto al stop loss y la salida con ganancia."
+            },
+            {
+              "q": "Un backtest de seguimiento de tendencia reporta una tasa de acierto del 72%. ¿Cuál es la primera reacción más sensata?",
+              "choices": [
+                "Celebrar; el seguimiento de tendencia suele ganar alrededor del 70% de las veces",
+                "Sospechar y revisar las reglas en busca de errores, porque los sistemas de tendencia normalmente ganan mucho menos de la mitad de las veces",
+                "Aumentar el tamaño de posición para aprovechar la ventaja",
+                "Ignorar la tasa de acierto; nunca importa"
+              ],
+              "answer": 1,
+              "explain": "Las reglas de seguimiento de tendencia compran después de que un movimiento empezó y se detienen por stop con frecuencia, así que tasas de acierto del 30% al 45% son típicas. Un 72% de acierto en una regla así es una señal de alerta de un error de anticipación (look-ahead) o de una muestra muy pequeña y afortunada, ambos temas que se cubren más adelante en este módulo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l2",
+      "title": "Fundamentos del backtesting y las métricas que importan",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Qué hace realmente un backtest\n\nUn backtest reproduce la historia vela por vela y simula operar con tus reglas. En cada vela, el motor mira únicamente las velas hasta esa inclusive, le pregunta a tu estrategia \"¿comprar, vender o nada?\" y registra la respuesta. Cuando se dispara una señal, el laboratorio ejecuta la orden en la **apertura de la siguiente vela**, no en el cierre de la vela que produjo la señal. Ese detalle importa: cuando la vela diaria cierra a las 4:00 pm y tu regla dice comprar, ya no puedes comprar a ese precio. La ejecución realista más temprana es la apertura de mañana. La Lección 3 explica por qué saltarse este paso es el error de novato más común.\n\nEl resultado son tres cosas:\n\n- Una **lista de operaciones**: cada entrada y salida con su fecha, precio, tamaño y P&L. Esta es la verdad en bruto del backtest; todo lo demás es un resumen de ella.\n- Una **curva de capital** (equity curve): el valor de la cuenta después de cada vela, incluida la ganancia o pérdida abierta de cualquier posición mantenida. Grafícala y verás la forma de la vida de la estrategia: suave y ascendente, dentada, o un largo deslizamiento.\n- Un conjunto de **estadísticas** que comprimen la curva y la lista de operaciones en un puñado de números. El laboratorio reporta rendimiento total, rendimiento de comprar y mantener, CAGR, tasa de acierto, factor de beneficio, drawdown máximo, ratio de Sharpe, exposición y número de operaciones.\n\nEl laboratorio también corre una **referencia de comprar y mantener** (buy and hold) sobre las mismas velas. Esta es la comparación más honesta que enfrenta una estrategia: si simplemente comprar el primer día y nunca vender hubiera ganado más, con menos trabajo, tu regla no se ha ganado su complejidad. Muchas estrategias de tendencia rinden menos que comprar y mantener en un mercado alcista fuerte y solo muestran su valor perdiendo menos en un mercado bajista. Ese es un beneficio legítimo (los drawdowns más pequeños son más fáciles de sobrellevar), pero debes saber qué tipo de ventaja tienes.\n\nUna advertencia honesta más antes de los números. Un backtest muestra lo que las reglas habrían hecho en *esas* velas. Es evidencia sobre las reglas, no un pronóstico. Los datos de demostración de esta aplicación son un paseo aleatorio con semilla fija, así que sobre datos demo un backtest te enseña la mecánica y las estadísticas a la perfección, pero no te dice nada sobre cómo se comportó ninguna empresa real. Con una clave de API gratuita en el panel, el laboratorio usa el historial real en su lugar."
+        },
+        {
+          "type": "text",
+          "md": "### Métricas de rendimiento: rendimiento total y CAGR\n\nEl **rendimiento total** es el número más simple: (capital final − capital inicial) ÷ capital inicial. Una cuenta de $100,000 que termina en $150,000 obtuvo un rendimiento total del 50%. El problema es que 50% significa algo completamente distinto en un año que en diez. Para comparar estrategias probadas en períodos de distinta duración necesitas una cifra anualizada.\n\nEl **CAGR**, la tasa de crecimiento anual compuesta, es la tasa anual constante que convertiría el inicio en el final a lo largo del tiempo calendario real:\n\nCAGR = (final ÷ inicio)^(1 ÷ años) − 1\n\n- $100,000 → $150,000 en **3 años**: 1.5^(1/3) − 1 = 1.1447 − 1 ≈ **14.5% anual**\n- $100,000 → $150,000 en **5 años**: 1.5^(1/5) − 1 = 1.0845 − 1 ≈ **8.4% anual**\n- $100,000 → $150,000 en **1 año**: 50% (el CAGR es igual al rendimiento total en exactamente un año)\n\nMismo rendimiento total, ritmo anual muy distinto. Observa que el CAGR *no* es el rendimiento total dividido entre los años: 50% ÷ 3 = 16.7% está mal porque ignora el interés compuesto. El laboratorio calcula el CAGR a partir de las fechas reales de la primera y la última vela, así que una prueba sobre 500 velas diarias (unos dos años) y una prueba sobre 2,000 velas de cinco minutos (alrededor de un mes) reportan cifras anuales comparables. Para períodos muy cortos (menos de una semana) el laboratorio no muestra CAGR en absoluto, porque anualizar unos pocos días de resultados produce números absurdos.\n\n¿Qué es un buen CAGR? El contexto lo es todo. El promedio de largo plazo del mercado accionario de EE. UU. en conjunto, con dividendos reinvertidos, ha estado históricamente entre un dígito alto y alrededor del 10% anual nominal, aunque ese número cambia según las fechas de inicio y fin que elijas. Una estrategia que reporta un CAGR del 60% sobre 500 velas en un backtest sin costos casi con seguridad fue favorecida por la suerte, un mercado alcista, el sobreajuste o un error. Las estrategias que sobreviven en el mundo real tienden a ganarse su lugar con rendimientos modestos y drawdowns modestos, no espectaculares."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**CAGR = (final ÷ inicio)^(1 ÷ años) − 1.** Compara siempre las estrategias por CAGR (o por rendimiento anual), nunca por rendimiento total en bruto, a menos que hayan sido probadas exactamente en las mismas fechas. Duplicar tu dinero en dos años es alrededor del 41% anual; duplicarlo en diez años es alrededor del 7.2% anual."
+        },
+        {
+          "type": "text",
+          "md": "### Métricas de operaciones: tasa de acierto, factor de beneficio y expectativa\n\nEstas tres salen directamente de la lista de operaciones.\n\nLa **tasa de acierto** (win rate) es la proporción de operaciones que cerraron con ganancia. 16 ganadoras de 40 operaciones = 40%. Por sí sola no dice nada sobre la rentabilidad; la Lección 1 explicó por qué una regla del 40% puede superar a una del 70%.\n\nEl **factor de beneficio** (profit factor) es ganancia bruta ÷ pérdida bruta: la suma de todas las operaciones ganadoras dividida entre la suma de todas las perdedoras (como número positivo). Responde \"por cada dólar que perdí, ¿cuántos gané?\". Por debajo de 1.0 la estrategia pierde dinero. Exactamente 1.0 es el punto de equilibrio antes de costos. Muchos profesionales consideran respetable cualquier valor por encima de 1.5 sobre una muestra decente, y cualquier valor por encima de 3 en una prueba corta como señal de alerta de sobreajuste, pero son reglas empíricas, no umbrales con teoría detrás.\n\nUn ejemplo resuelto. En 40 operaciones una estrategia tuvo 16 ganadoras con un promedio de +$1,500 y 24 perdedoras con un promedio de −$750:\n\n- Ganancia bruta = 16 × $1,500 = $24,000\n- Pérdida bruta = 24 × $750 = $18,000\n- Factor de beneficio = 24,000 ÷ 18,000 = **1.33**\n- Ganancia neta = $6,000; **expectativa** = $6,000 ÷ 40 = **+$150 por operación**\n\nLa expectativa (P&L promedio por operación, que el Módulo 4 presentó) es el número que une la tasa de acierto con el pago: expectativa = (tasa de acierto × ganancia promedio) − (tasa de pérdida × pérdida promedio) = 0.40 × 1,500 − 0.60 × 750 = 600 − 450 = $150. Si conoces tu expectativa y cuántas operaciones genera la regla por año, puedes estimar la ganancia anual: 20 operaciones al año × $150 = $3,000, o 3% sobre una cuenta de $100,000 antes de costos. Es un cálculo que pone los pies en la tierra, y deberías hacerlo con cada estrategia que pruebes.\n\nEl **número de operaciones** es la métrica que la gente olvida. Toda otra estadística es una estimación a partir de una muestra, y una muestra de 8 operaciones no estima nada. Una regla empírica común es exigir al menos 30 operaciones antes de tomar en serio la tasa de acierto o el factor de beneficio de un backtest, y más bien 100 antes de confiar en ellos. Los estadísticos te dirán que 30 es una tradición arbitraria y no un umbral mágico, y tienen razón; la afirmación honesta es simplemente que menos operaciones significan mayor incertidumbre alrededor de cada número en la pantalla."
+        },
+        {
+          "type": "text",
+          "md": "### Métricas de riesgo: drawdown máximo y ratio de Sharpe\n\nEl rendimiento te dice cuánto ganaste. Las métricas de riesgo te dicen cuánto tuviste que soportar para ganarlo.\n\nEl **drawdown máximo** es la mayor caída de pico a valle en la curva de capital, como porcentaje del pico. Si el capital subió hasta $120,000 y luego cayó a $96,000 antes de recuperarse, el drawdown fue (120,000 − 96,000) ÷ 120,000 = **20%**. Los drawdowns terminan carreras de trading por dos razones. Primero, la recuperación es asimétrica: una pérdida del 20% necesita una ganancia del 25% para volver al pico, una pérdida del 33% necesita 50% y una pérdida del 50% necesita 100%. Segundo, nadie sabe durante un drawdown si es el dolor normal de una estrategia que funciona o el comienzo de una estrategia que dejó de funcionar, y esa incertidumbre es lo que hace que la gente abandone buenas reglas en el fondo. Una suposición de planificación realista es que tu drawdown real será *más profundo* que el peor del backtest, porque el backtest solo vio un camino a través de la historia.\n\nEl **ratio de Sharpe** mide el rendimiento por unidad de volatilidad. El laboratorio lo calcula como el rendimiento promedio por vela dividido entre la desviación estándar de los rendimientos por vela, anualizado multiplicando por la raíz cuadrada del número de velas por año (√252 para velas diarias), con la tasa libre de riesgo tomada como cero por simplicidad. Ejemplo: una estrategia cuyos rendimientos diarios promedian 0.05% con una desviación estándar de 1.0% tiene Sharpe = (0.0005 ÷ 0.01) × √252 = 0.05 × 15.87 ≈ **0.79**.\n\nCómo leerlo: un Sharpe por debajo de 0.5 significa un camino lleno de baches para el rendimiento obtenido; alrededor de 1 es bueno para una estrategia sobre una sola acción; por encima de 2 en un backtest corto es más a menudo una señal de anticipación o sobreajuste que de genialidad. Comprar y mantener un índice amplio de acciones de EE. UU. ha producido históricamente un Sharpe de largo plazo de alrededor de 0.4 a 0.6 según el período, lo que te da una idea de cómo se ve lo \"normal\". El Sharpe tiene debilidades reales (castiga la volatilidad al alza igual que la volatilidad a la baja, y supone rendimientos aproximadamente normales, algo que los gaps violan), así que el laboratorio también muestra el **Sortino**, que cuenta solo la volatilidad a la baja.\n\nLa **exposición** es la proporción de velas en las que se mantuvo una posición. Dos estrategias con el mismo 12% de rendimiento no son iguales si una estuvo en el mercado el 95% del tiempo y la otra el 40%: la segunda asumió mucho menos riesgo de mercado por el mismo dinero."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sma50", "rsi"],
+
+          "caption": "Velas diarias con la SMA de 50 días y un panel de RSI(14). La regla de ruptura de canal que correrás en el ejercicio compra cuando el precio cierra por encima del máximo más alto de las últimas 20 velas y sale cuando cierra por debajo del mínimo más bajo de las últimas 20. Recorre el gráfico buscando tramos donde el precio se arrastra de lado: cada ruptura falsa allí se convierte en una pequeña operación perdedora en la lista, y el drawdown que suman es lo que mide la cifra de drawdown máximo."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Ninguna métrica por sí sola es suficiente.** Un rendimiento alto con un drawdown del 45% es insoportable. Un Sharpe de 2.5 a partir de 9 operaciones es ruido. Un factor de beneficio de 1.8 en una regla que opera dos veces al año casi no gana nada en dólares. Lee rendimiento, drawdown, Sharpe, factor de beneficio y número de operaciones *en conjunto*, y después lee la lista de operaciones para ver si la historia que cuentan es real."
+        },
+        {
+          "type": "exercise",
+          "md": "Lee un conjunto completo de estadísticas y verifícalas a mano. En el laboratorio de estrategias, corre la **ruptura de canal de 20 velas** sobre MSFT diario con el período de datos predeterminado, y luego:\n\n- Anota rendimiento total, rendimiento de comprar y mantener, CAGR, tasa de acierto, factor de beneficio, drawdown máximo, Sharpe y el número de operaciones.\n- Del resumen de operaciones, toma el número de ganadoras, la ganancia promedio y la pérdida promedio. Recalcula tú mismo el factor de beneficio (ganadoras × ganancia promedio) ÷ (perdedoras × pérdida promedio) y compáralo con la cifra del laboratorio.\n- Calcula la expectativa por operación y multiplícala por el número de operaciones por año que produjo la regla (operaciones ÷ años de datos). ¿La cifra anual en dólares vale el esfuerzo de seguir la regla?\n- ¿La estrategia superó a comprar y mantener? Si no, ¿al menos tuvo un drawdown máximo menor? Decide cuál de las dos habrías preferido vivir, y escribe una oración explicando por qué.",
+          "action": { "page": "backtest.html", "hash": "sym=MSFT&tf=1day&strategy=breakout&n=20&run=1", "label": "Correr la ruptura de canal en MSFT" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una cuenta crece de $100,000 a $150,000 en 3 años. ¿Cuál es el CAGR, aproximadamente?",
+              "choices": ["16.7%", "14.5%", "50%", "8.4%"],
+              "answer": 1,
+              "explain": "CAGR = 1.5^(1/3) − 1 ≈ 0.145, es decir 14.5% anual. Dividir 50% entre 3 para obtener 16.7% ignora el interés compuesto; 8.4% sería la respuesta en 5 años."
+            },
+            {
+              "q": "Una estrategia tiene 16 ganadoras con un promedio de +$1,500 y 24 perdedoras con un promedio de −$750. ¿Cuál es su factor de beneficio?",
+              "choices": ["0.75", "1.33", "2.00", "0.40"],
+              "answer": 1,
+              "explain": "La ganancia bruta es 16 × 1,500 = $24,000; la pérdida bruta es 24 × 750 = $18,000. Factor de beneficio = 24,000 ÷ 18,000 = 1.33. (0.40 es la tasa de acierto, no el factor de beneficio.)"
+            },
+            {
+              "q": "El capital llega a un pico de $120,000 y cae a $96,000 antes de recuperarse. ¿Cuál es el drawdown máximo y qué ganancia se necesita para recuperarlo?",
+              "choices": ["Drawdown del 20%; ganancia del 20% para recuperar", "Drawdown del 20%; ganancia del 25% para recuperar", "Drawdown del 25%; ganancia del 25% para recuperar", "Drawdown del 24%; ganancia del 24% para recuperar"],
+              "answer": 1,
+              "explain": "Drawdown = (120,000 − 96,000) ÷ 120,000 = 20%. Subir de $96,000 de vuelta a $120,000 requiere 24,000 ÷ 96,000 = 25%. Las pérdidas siempre necesitan una ganancia porcentual mayor para deshacerse."
+            },
+            {
+              "q": "Los rendimientos diarios promedian 0.05% con una desviación estándar de 1.0%. Con el método del laboratorio (tasa libre de riesgo cero, anualización por √252), el ratio de Sharpe es aproximadamente:",
+              "choices": ["0.05", "0.79", "12.6", "2.0"],
+              "answer": 1,
+              "explain": "Sharpe = (0.0005 ÷ 0.01) × √252 = 0.05 × 15.87 ≈ 0.79. Es una cifra perfectamente normal, más o menos en el rango de comprar y mantener un índice accionario a largo plazo."
+            },
+            {
+              "q": "¿Por qué el laboratorio ejecuta una señal en la apertura de la siguiente vela y no en el cierre de la vela que la generó?",
+              "choices": [
+                "Porque la apertura siempre es un mejor precio",
+                "Porque el cierre no se conoce hasta que la vela terminó, así que no puedes operar a ese precio después de decidir con base en él",
+                "Porque los brokers solo aceptan órdenes en la apertura",
+                "Porque hace que los resultados del backtest se vean mejor"
+              ],
+              "answer": 1,
+              "explain": "Una regla que lee el precio de cierre tiene que esperar a que el cierre exista. Para entonces ese precio ya desapareció. La siguiente ejecución realista es la apertura de la vela siguiente. Ejecutar al cierre de la vela de la señal es una forma de sesgo de anticipación (look-ahead bias), que se cubre en la Lección 3."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l3",
+      "title": "Por qué los backtests mienten: anticipación, supervivencia y sobreajuste",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Sesgo de anticipación: usar el periódico de mañana\n\nUn backtest es honesto solo si, en cada vela, la estrategia no ve nada más que la información que realmente estaba disponible en ese momento. El **sesgo de anticipación** (look-ahead bias) es cualquier filtración de información futura hacia una decisión pasada, y es la razón más común por la que un backtest brillante se convierte en una estrategia perdedora en vivo. También es traicionero, porque el código normalmente se ve perfectamente razonable.\n\nLas formas clásicas:\n\n- **Operar al cierre de la vela de la señal.** Tu regla dice \"comprar cuando el cierre de hoy está por encima de la SMA de 20 días\". El cierre de hoy se conoce a las 4:00 pm. Si el backtest te ejecuta *a* ese cierre, te ha dado un precio que ya no existía cuando supiste que debías comprar. En una acción en tendencia esto favorece sistemáticamente los resultados, porque la vela que dispara una compra suele ser una vela alcista fuerte. El laboratorio ejecuta en la siguiente apertura para evitar exactamente esto.\n- **Indicadores calculados sobre toda la serie.** Supón que \"normalizas\" un precio restando el promedio de todo el período de prueba. En la vela 50 de 500, ese promedio ya contiene las velas 51 a 500. Cualquier indicador que use una media, un máximo, un mínimo o una desviación estándar de la muestra completa filtra el futuro. Las ventanas móviles que solo miran hacia atrás (como todos los indicadores de esta aplicación) son seguras.\n- **Pivotes y patrones que necesitan confirmación.** Un mínimo de swing solo se confirma una vez que varias velas han cerrado *después* de él. Si tu backtest compra \"en el mínimo del swing\", está comprando en un punto que no podía identificarse hasta días después. El detector de pivotes del laboratorio exige velas a la derecha antes de marcar un pivote, de modo que el marcador aparece solo cuando era conocible.\n- **Datos diarios con supuestos intradía.** Un stop en $47 sobre velas diarias: el backtest ve que el mínimo fue $46.80 y el cierre $48, y supone que el stop se ejecutó en $47. Bien. Pero si tanto el stop como el objetivo fueron tocados dentro de la misma vela, ¿cuál se ejecutó primero? Los datos diarios no pueden decírtelo, y un motor optimista supone el objetivo. El laboratorio evita el problema saliendo solo por señales en la siguiente apertura, y por eso sus reglas integradas no llevan stops fijos; cuando agregues stops por tu cuenta, resuelve los empates de forma pesimista.\n\nEl síntoma delator de la anticipación es un resultado que simplemente es *demasiado bueno*: un Sharpe por encima de 3, una tasa de acierto cercana al 80% en una regla de tendencia, una curva de capital que es casi una línea recta. Cuando veas eso, tu trabajo no es admirarlo sino encontrar la filtración."
+        },
+        {
+          "type": "text",
+          "md": "### Sesgo de supervivencia: probar solo con los ganadores\n\nAbre la lista de seguimiento del panel. Apple, Microsoft, Nvidia, Amazon: cada nombre que aparece es una empresa grande, famosa y que sigue cotizando *hoy*. Ese es exactamente el problema. Un universo elegido ahora contiene solo a los sobrevivientes. Las empresas que quebraron, fueron retiradas de la bolsa o se encogieron hasta el olvido durante el período de prueba no están, y son precisamente las acciones en las que una estrategia de comprar en la caída habría sido destruida.\n\nEsto es el **sesgo de supervivencia** (survivorship bias), e infla casi todo backtest hecho sobre \"las acciones que conozco\". Considera una regla de reversión a la media que compra tras una caída brusca del 20%. Córrela sobre las megacapitalizaciones de hoy y se ve maravillosa, porque por construcción cada una de esas acciones se recuperó de cada caída que tuvo; de lo contrario no sería una megacapitalización hoy. Córrela sobre la lista completa de acciones que existían hace diez años, incluidas las que cayeron un 20% en su camino hacia cero, y el panorama es distinto. La misma lógica aplica a la pertenencia a un índice: hacer un backtest sobre los integrantes actuales del S&P 500 durante la última década significa probar con 500 empresas que fueron lo bastante buenas para estar en el índice al final, no las que estaban al principio.\n\nLas soluciones honestas son costosas, y por eso los aficionados rara vez las aplican: usar universos punto en el tiempo (la lista de acciones tal como estaba en cada fecha histórica) y datos que incluyan a las empresas retiradas de la bolsa. Las fuentes de datos gratuitas, incluidas las que esta aplicación puede conectar, en general no ofrecen ninguna de las dos.\n\nLo que *sí* puedes hacer gratis es ser consciente de la dirección del sesgo y compensarla. Trata los resultados sobre grandes capitalizaciones famosas como un límite superior, no como una estimación central. Prueba la misma regla en varios símbolos no relacionados y en más de un período, y dale más peso a los peores resultados que a los mejores. Prefiere estrategias cuya ventaja no dependa de que \"siempre vuelve a subir\". Y recuerda que en esta aplicación el universo de demostración es en sí mismo una lista de sobrevivientes, elegidos por ser reconocibles para los estudiantes, así que sobre datos demo el efecto del universo ya viene incorporado antes de que empieces."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Si un backtest se ve increíble, asume que hay un error hasta que se demuestre lo contrario.** Las filtraciones rara vez están en la idea de la estrategia; están en la tubería: ejecutar al cierre de la señal, indicadores que espían la muestra completa, pivotes usados antes de confirmarse, o un universo hecho de sobrevivientes. Encontrarlas no es pesimismo; es el trabajo."
+        },
+        {
+          "type": "text",
+          "md": "### Sobreajuste: cuando las reglas aprenden el ruido\n\nToma el cruce de SMA y deja que el optimizador del laboratorio pruebe longitudes rápidas de 5, 10, 20 y 50 contra longitudes lentas de 50, 100 y 200: doce combinaciones. Una de ellas será la mejor sobre tus datos. Aquí viene la pregunta incómoda: *¿habría sido la mejor por casualidad?* Entre doce estrategias aleatorias de lanzar una moneda, una también se verá como la mejor. Elige al mejor de entre suficientes candidatos y se verá bien incluso cuando ninguno tenga ventaja alguna. Esto es el **sobreajuste** (overfitting, también llamado curve fitting o minería de datos), y el optimizador es su hábitat natural.\n\nLa mecánica es estadística. Con un umbral de significancia del 5%, alrededor de una de cada veinte estrategias sin ventaja real mostrará de todos modos un resultado \"significativo\" en cualquier muestra dada. Prueba 100 conjuntos de parámetros y deberías *esperar* alrededor de cinco falsos positivos aunque todos sean inservibles. Cuantas más perillas tenga una estrategia y más valores pruebes, más libertad tiene para memorizar los baches específicos de los datos pasados en lugar de aprender un patrón que se repite.\n\nSíntomas que puedes ver con tus propios ojos en la tabla del optimizador:\n\n- **Superficie de parámetros dentada.** Si 10/50 gana 40%, 20/50 pierde 5% y 20/100 gana 35%, el rendimiento está saltando con cambios diminutos de parámetros. Una ventaja real suele ser una *meseta*: los parámetros vecinos dan resultados parecidos, porque al mercado no le importa si tu promedio es de 19 o 21 días.\n- **Una o dos operaciones cargan con todo.** Abre la lista de operaciones del conjunto de parámetros ganador. Si una operación afortunada explica la mayor parte de la ganancia, la regla no encontró una ventaja; encontró una operación.\n- **Muy pocas operaciones.** Una combinación que se disparó 7 veces no puede distinguirse de la suerte por buenos que sean sus números.\n- **Resultados que se derrumban fuera de muestra.** Esta es la prueba definitiva, y el siguiente bloque trata de ella.\n\nNada de esto significa que nunca debas optimizar. Significa que la salida del optimizador es una *hipótesis*, no un resultado. Su trabajo es mostrarte la forma del espacio de parámetros (¿hay una meseta? ¿la regla es robusta a sus propios ajustes?), no entregarte el número mágico."
+        },
+        {
+          "type": "text",
+          "md": "### Pruebas fuera de muestra y análisis walk-forward\n\nLa defensa contra el sobreajuste es fácil de enunciar: **juzga la regla sobre datos que nunca vio mientras la ajustabas.** El método tiene tres niveles.\n\n**1. Una sola reserva (división dentro de muestra / fuera de muestra).** Corta los datos en dos. Optimiza sobre la primera parte, el período *dentro de muestra* (in-sample), y luego corre los parámetros ganadores una sola vez, sin tocarlos, sobre la segunda parte, el período *fuera de muestra* (out-of-sample). Una división común es 70/30: con 500 velas diarias, ajusta sobre las primeras 350 y verifica sobre las últimas 150. El optimizador del laboratorio tiene un ajuste de reserva (hold-out) que hace exactamente esto y muestra los resultados dentro y fuera de muestra lado a lado, con una columna de brecha. Si el mejor Sharpe dentro de muestra de 1.8 se convierte en 0.3 fuera de muestra, el optimizador encontró el ruido. Si se convierte en 1.4, tienes una pieza de evidencia de que la regla generaliza. Una pieza, no una prueba.\n\n**2. Análisis walk-forward.** Una sola división sigue siendo un solo experimento, y puedes tener suerte o mala suerte con dónde cae el corte. El walk-forward repite el proceso de forma rodante: optimiza sobre las velas 1 a 250, prueba sobre 251 a 300; luego optimiza sobre 51 a 300, prueba sobre 301 a 350; y así hasta el final. Une todos los segmentos fuera de muestra y obtienes una curva de capital que *nunca* fue ajustada sobre sí misma. Esto se parece más a cómo operarías realmente un sistema (reajustando periódicamente con datos recientes y luego operando hacia adelante), y por eso muchos traders sistemáticos profesionales consideran que los resultados walk-forward son los únicos números de backtest que vale la pena citar.\n\n**3. Verificaciones entre símbolos y entre períodos.** Corre los mismos parámetros fijos sobre varias acciones no relacionadas y en una época distinta. Una regla que funciona en AAPL, MSFT y una aburrida empresa de servicios públicos tanto en un año alcista como en uno lateral tiene algo; una regla que solo funciona en una acción en un año tiene una anécdota.\n\nDos advertencias honestas. Primero, el período fuera de muestra solo es verdaderamente fuera de muestra *una vez*. Si miras el resultado de la reserva, vuelves a retocar la regla y pruebas de nuevo, la reserva se ha convertido silenciosamente en dentro de muestra, porque ahora tus decisiones están informadas por ella. Segundo, una estrategia con pocas operaciones tendrá aún menos en una reserva del 30%, así que sus estadísticas fuera de muestra son en sí mismas ruidosas. Las pruebas fuera de muestra reducen el autoengaño; no eliminan la incertidumbre."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50", "bb"],
+          "caption": "NVDA diario con las SMA de 20/50 y Bandas de Bollinger(20, 2). Una acción que ha tenido una tendencia fuerte es el lugar más fácil para sobreajustar: casi cualquier regla de tendencia ajustada sobre un largo rally se ve soberbia, porque el rally hizo el trabajo. Pregúntate qué tramos de aquí habrían sido despedazados por cruces falsos y toques falsos de las bandas, y si una regla ajustada en las partes suaves sobreviviría las erráticas."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Los resultados dentro de muestra son una hipótesis. Los resultados fuera de muestra son evidencia.** Fija una reserva *antes* de optimizar, mira la columna fuera de muestra, y no vuelvas a reajustar con base en lo que viste ahí. Una regla que se sostiene fuera de muestra y se asienta en una meseta de parámetros vecinos merece hacerse en paper trading. Una regla que solo funciona con un ajuste mágico es una coincidencia con una hoja de cálculo."
+        },
+        {
+          "type": "exercise",
+          "md": "Atrapa el sobreajuste en el acto. En el laboratorio de estrategias sobre AAPL diario:\n\n- Elige el **cruce de SMA** y abre el panel **Optimizar**. Primero corre la cuadrícula con la reserva en **0%** (sin fuera de muestra). Anota el mejor conjunto de parámetros y su Sharpe.\n- Pon la reserva en **30%** y corre de nuevo. Compara las columnas dentro y fuera de muestra de las tres primeras filas. ¿Qué tan grande es la brecha? ¿El laboratorio muestra una advertencia de sobreajuste?\n- Recorre la tabla buscando una *meseta*: ¿los parámetros vecinos (p. ej. 10/100, 20/100, 20/200) rinden de forma parecida, o el rendimiento salta de un lado a otro? Escribe una oración sobre si esta regla parece robusta a sus ajustes.\n- Cambia el símbolo a otra acción y corre sobre ella los mejores parámetros dentro de muestra de AAPL. ¿La ventaja viajó?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Abrir el optimizador en AAPL" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál de las siguientes es un ejemplo de sesgo de anticipación (look-ahead)?",
+              "choices": [
+                "Ejecutar una señal de compra calculada con el cierre de hoy en la apertura de mañana",
+                "Normalizar los precios restando el precio promedio de todo el período de prueba antes de calcular una señal",
+                "Usar una SMA móvil de 20 días",
+                "Cobrar comisión en cada operación"
+              ],
+              "answer": 1,
+              "explain": "Un promedio de la muestra completa en la vela 50 ya incluye las velas 51 en adelante, así que la estrategia está usando precios futuros para decidir una operación pasada. Las ventanas móviles que miran hacia atrás y las ejecuciones en la siguiente apertura son ambas legítimas."
+            },
+            {
+              "q": "¿Por qué hacer un backtest de una estrategia de comprar en la caída sobre las empresas más grandes de hoy exagera sus resultados?",
+              "choices": [
+                "Las empresas grandes tienen comisiones más altas",
+                "Porque toda acción de ese universo se recuperó de cada caída por definición, mientras que las que no se recuperaron no están",
+                "Porque las empresas grandes nunca caen un 20%",
+                "No lo hace; los resultados sobre grandes capitalizaciones son los más confiables"
+              ],
+              "answer": 1,
+              "explain": "Esto es el sesgo de supervivencia. Un universo elegido hoy excluye a las empresas que colapsaron o fueron retiradas de la bolsa, que son exactamente las acciones donde comprar en la caída habría fallado."
+            },
+            {
+              "q": "Un optimizador prueba 100 combinaciones de parámetros para una estrategia sin ventaja real. Con un umbral de significancia del 5%, ¿aproximadamente cuántas esperarías que se vieran significativas por casualidad?",
+              "choices": ["0", "1", "5", "50"],
+              "answer": 2,
+              "explain": "Un umbral del 5% significa que alrededor de 1 de cada 20 estrategias inservibles pasa por suerte, así que unas 5 de 100 se verán bien. Este efecto de comparaciones múltiples es el corazón estadístico del sobreajuste."
+            },
+            {
+              "q": "El mejor Sharpe dentro de muestra de una estrategia es 1.9. En la reserva del 30% cae a 0.2. La conclusión más razonable es:",
+              "choices": [
+                "El período de reserva fue inusual; confía en el número dentro de muestra",
+                "El optimizador ajustó el ruido de los datos dentro de muestra; los parámetros no son confiables",
+                "La estrategia debería operarse con mayor tamaño para recuperarse",
+                "Los ratios de Sharpe no significan nada"
+              ],
+              "answer": 1,
+              "explain": "Un gran derrumbe de dentro de muestra a fuera de muestra es la firma del curve fitting. Los parámetros fueron elegidos para coincidir con las velas pasadas, no con un patrón que se repite."
+            },
+            {
+              "q": "¿Qué aporta el análisis walk-forward frente a una sola división dentro de muestra / fuera de muestra?",
+              "choices": [
+                "Usa más parámetros",
+                "Repite el ciclo de optimizar y luego probar sobre ventanas rodantes, de modo que la curva fuera de muestra unida nunca fue ajustada sobre sí misma y el resultado no depende de un único punto de corte afortunado",
+                "Elimina la necesidad de un stop loss",
+                "Garantiza que la estrategia será rentable en vivo"
+              ],
+              "answer": 1,
+              "explain": "El walk-forward desplaza la ventana dentro de muestra hacia adelante, reoptimiza y prueba sobre el segmento siguiente cada vez. La curva fuera de muestra combinada imita cómo se reajustaría y operaría realmente un sistema. Es evidencia más fuerte que una sola división, pero sigue sin ser una garantía."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l4",
+      "title": "Costos de transacción y el camino al paper trading",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Los costos no son una nota al pie\n\nTodos los backtests que has corrido hasta ahora en el laboratorio usaron los ajustes predeterminados: cero comisión y cero deslizamiento. Eso es una ficción, y para las estrategias que operan con frecuencia es la ficción que más importa. El trading real tiene cuatro tipos de costo, y solo uno aparece en el estado de cuenta del broker.\n\nLa **comisión** es la tarifa explícita por orden. Muchos brokers de EE. UU. ahora cobran $0 por operaciones con acciones, aunque quedan pequeñas tarifas regulatorias y tarifas por contrato en opciones. Incluso a $1 por ejecución, la comisión sobre una posición de $20,000 es $2 por viaje redondo, o 0.01%: insignificante para un swing trader, significativa para una regla que opera velas de 5 minutos veinte veces al día.\n\nEl **diferencial entre compra y venta** (bid-ask spread) es la brecha entre el precio al que puedes comprar (el ask) y el precio al que puedes vender (el bid). Si una acción muestra bid $50.00 / ask $50.02, comprar a mercado te cuesta $50.02 y vender de inmediato te da $50.00. Perdiste 2 centavos por acción, 0.04%, por no hacer nada. En una megacapitalización líquida el spread es de uno o dos centavos; en una small-cap poco líquida puede ser del 0.5% o más, lo que por sí solo borraría la mayoría de las estrategias de corto plazo.\n\nEl **deslizamiento** (slippage) es la diferencia entre el precio que esperabas y el precio que obtuviste. Viste $50.02 e hiciste clic, pero para cuando la orden llegó a la bolsa el ask se había movido a $50.05. Las órdenes a mercado en la apertura, las órdenes grandes, los mercados rápidos y las acciones ilíquidas se deslizan más. El deslizamiento es impredecible pero *no* simétrico: tiende a perjudicar, porque normalmente estás comprando cuando los demás también están comprando.\n\nEl **impacto de mercado** es el deslizamiento que tú mismo causas: una orden grande mueve el precio en tu contra mientras se ejecuta. Una cuenta de paper trading que opera 200 acciones no tiene ninguno; un fondo que opera 2 millones de acciones tiene muchísimo.\n\nEl laboratorio modela los primeros tres con dos números: una **comisión** por ejecución en dólares y una cifra de **deslizamiento** en **puntos básicos** (1 pb = 0.01%) aplicada en tu contra en cada ejecución. Poner el deslizamiento en 10 pb significa que cada compra se ejecuta 0.10% por encima de la apertura y cada venta 0.10% por debajo. El viaje redondo cuesta por lo tanto 0.20% del valor de la posición antes de comisión, que es un sustituto razonable y ligeramente conservador del spread más el deslizamiento en una acción líquida de gran capitalización. Para small-caps o trading intradía, de 20 a 30 pb es más honesto."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo los costos devoran una ventaja: la aritmética\n\nLos costos son un impuesto fijo sobre cada operación, así que perjudican mucho más a las estrategias frecuentes de ventaja pequeña que a las infrecuentes de ventaja grande. Trabaja dos reglas sobre una cuenta de $100,000 que opera posiciones de tamaño completo.\n\n**Regla A: una estrategia de swing.** 20 viajes redondos al año, ganancia bruta promedio del 1.5% por operación. Rendimiento bruto anual ≈ 20 × 1.5% = 30%. Costos a 0.20% por viaje redondo: 20 × 0.20% = 4%. Neto ≈ 26%. Los costos se llevaron alrededor del 13% de la ventaja. Doloroso pero sobrevivible.\n\n**Regla B: una estrategia intradía activa.** 300 viajes redondos al año, ganancia bruta promedio del 0.25% por operación. Bruto ≈ 300 × 0.25% = 75%, que se ve espectacular en un backtest sin costos. Costos: 300 × 0.20% = 60%. Neto ≈ 15%, y eso es antes de comisiones y antes del deslizamiento de un mal día. Los costos se llevaron el 80% de la ventaja, y si el deslizamiento real es de 15 pb en lugar de 10, la estrategia pierde dinero.\n\nLa lección se generaliza: **la ganancia promedio por operación de una estrategia debe ser un múltiplo cómodo de su costo de viaje redondo**, o el supuesto de costos decide si es rentable, y tú no controlas el supuesto de costos. Muchas reglas que se ven bien a costo cero en el laboratorio simplemente operan demasiado a menudo para sobrevivir.\n\nHay tres formas prácticas de hacer una estrategia más resistente a los costos, y todas se pueden probar en el laboratorio:\n\n- **Operar menos.** Alarga las medias móviles, amplía las bandas de Bollinger o sube el umbral de la señal compuesta para que la regla se dispare solo en movimientos más grandes. Menos operaciones significan menos peajes.\n- **Mantener más tiempo.** El costo de un viaje redondo es el mismo si mantienes dos horas o dos meses, así que un período de tenencia promedio más largo lo reparte sobre un movimiento esperado mayor.\n- **Evitar los nombres ilíquidos y los primeros minutos.** Los spreads y el deslizamiento son más amplios en acciones poco líquidas y justo a las 9:30 am. Una regla limitada a grandes capitalizaciones en velas diarias enfrenta costos mucho menores que la misma regla en una small-cap en velas de 1 minuto.\n\nDe ahora en adelante, nunca reportes un resultado de backtest sin decir qué supuesto de costos usó. \"+22% a costo cero\" y \"+22% con $1 y 10 pb\" son afirmaciones distintas."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Costo de viaje redondo ≈ 2 × deslizamiento (pb) + spread + 2 × comisión ÷ valor de la posición.** Con 10 pb de deslizamiento y cero comisión eso es 0.20% de la posición por operación. Una regla con una ganancia bruta promedio del 0.3% por operación está entregando dos tercios de su ventaja a los costos; una regla con 2% por operación entrega una décima parte. Antes de confiar en cualquier resultado, vuelve a correrlo con costos realistas y observa cuánto sobrevive."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "5min",
+          "overlays": ["vwap", "ema9"],
+          "caption": "TSLA en velas de 5 minutos con VWAP (rosa) y una EMA de 9 períodos. Las reglas intradía sobre velas tan cortas generan docenas de señales por semana, y cada una paga el spread y el deslizamiento. Imagina un peaje de 10 pb en cada flecha que dibujarías aquí, tanto de entrada como de salida, y observa qué pequeño es el movimiento típico de 5 minutos junto a ese peaje. Por eso las reglas intradía frecuentes son las más difíciles de hacer funcionar netas de costos."
+        },
+        {
+          "type": "text",
+          "md": "### Del backtest al paper trading: la prueba hacia adelante\n\nSupón que una regla ha pasado todas las pruebas hasta ahora: una ventaja plausible, una meseta de parámetros, resultados fuera de muestra aceptables, y todavía gana dinero con costos realistas. El siguiente paso no es dinero real. Es la **prueba hacia adelante** (forward testing) en la cuenta de paper trading: operar la regla en tiempo real con precios en vivo (o demo) sin ningún conocimiento de lo que traerá la siguiente vela.\n\nLa prueba hacia adelante detecta tres cosas que los backtests no pueden.\n\n**1. La realidad de la ejecución.** Un backtest ejecuta cada orden al instante en la siguiente apertura. En paper trading tienes que estar realmente ahí cuando la señal se dispara, colocar la orden y vivir con la ejecución. Si la regla se dispara a las 9:31 am y estás en clase, esa es una restricción real, mejor descubierta con dinero de juguete.\n\n**2. El cambio de régimen.** El backtest cubrió el pasado; el mercado por delante puede ser distinto. La prueba hacia adelante es la prueba fuera de muestra definitiva, porque nadie ha ajustado nada sobre velas que todavía no han ocurrido.\n\n**3. Tú.** La parte más difícil del trading sistemático es seguir el sistema durante la inevitable racha perdedora. Un backtest muestra un drawdown del 15% como un bache en una línea; la prueba hacia adelante te hace verlo un día rojo a la vez mientras la regla sigue diciendo \"toma la siguiente operación\". Descubrir que no puedes seguir tus propias reglas es valioso, y el paper trading es el lugar más barato para aprenderlo.\n\nUn protocolo práctico de prueba hacia adelante:\n\n- Escribe la regla completa, con los parámetros exactos, los costos y el tamaño de posición, *antes* de la primera operación. No la cambies durante la prueba.\n- Decide la duración de la prueba de antemano, en operaciones y no en días: suficientes operaciones para comparar con el backtest, lo que para la mayoría de las reglas de swing significa varios meses.\n- Registra cada señal, incluidas las que te perdiste o anulaste. Una señal perdida sigue siendo un dato sobre la viabilidad de la estrategia.\n- Al final, compara la tasa de acierto, la ganancia promedio, la pérdida promedio y el drawdown con el backtest. Espera que los números en vivo sean algo peores. Si son *dramáticamente* peores, el backtest tenía un problema y acabas de encontrarlo gratis.\n\nSolo una regla que ha sobrevivido las tres etapas, backtest con costos, fuera de muestra y una prueba hacia adelante que realmente seguiste, se ha ganado ser considerada para dinero real. La mayoría de las reglas no llegan ahí, y eso es el sistema funcionando."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Espera que los resultados en vivo sean peores que el backtest, y planifica para eso.** Los profesionales suelen asumir un Sharpe en vivo significativamente por debajo del del backtest y un drawdown en vivo más profundo que el máximo histórico. El recorte exacto se debate y depende de cuánta optimización se le hizo a la regla, pero la dirección no: si una estrategia solo funciona cuando el backtest se toma al pie de la letra, no funciona."
+        },
+        {
+          "type": "exercise",
+          "md": "Mide lo que los costos le hacen a una estrategia. En el laboratorio de estrategias, corre la **reversión de RSI (30/70)** sobre AAPL diario con el costo cero predeterminado y anota el rendimiento total, el factor de beneficio y el número de operaciones. Luego, usando el enlace de abajo o el botón **Costos realistas**, vuelve a correr con **$1 de comisión y 10 pb de deslizamiento**:\n\n- ¿Cuánto del rendimiento sobrevivió? Divide el rendimiento ajustado por costos entre el rendimiento a costo cero.\n- Calcula el costo de viaje redondo por operación (alrededor del 0.20% de la posición más $2) y multiplícalo por el número de operaciones. ¿Coincide aproximadamente con la caída de la ganancia?\n- Prueba con 20 pb de deslizamiento, que es más honesto para una acción menos líquida. ¿La estrategia sigue siendo rentable?\n- Por último, haz que la regla opere con menos frecuencia cambiando los umbrales a 25/75 y vuelve a correr con costos. ¿Menos operaciones, pero más grandes, mejoraron el resultado neto?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=rsiReversion&low=30&high=70&commission=1&slippageBps=10&run=1", "label": "Correr la reversión de RSI con costos realistas" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción cotiza bid $50.00 / ask $50.02. Compras a mercado e inmediatamente vendes a mercado. Ignorando comisión y deslizamiento, ¿cuánto costó el viaje redondo por acción?",
+              "choices": ["$0.00", "$0.01", "$0.02", "$0.04"],
+              "answer": 2,
+              "explain": "Pagaste el ask ($50.02) y recibiste el bid ($50.00). El spread de 2 centavos, 0.04% del precio, es el costo del viaje redondo. Se paga en cada operación, aparezca o no en un estado de cuenta."
+            },
+            {
+              "q": "El deslizamiento está configurado en 10 puntos básicos en el laboratorio. ¿Qué le hace eso a una ejecución de compra?",
+              "choices": [
+                "Nada; solo afecta las ventas",
+                "La compra se ejecuta 0.10% por encima de la apertura de la vela",
+                "La compra se ejecuta 10% por encima de la apertura de la vela",
+                "La compra se retrasa 10 velas"
+              ],
+              "answer": 1,
+              "explain": "Un punto básico es 0.01%, así que 10 pb son 0.10%. El laboratorio ejecuta las compras 0.10% por encima de la siguiente apertura y las ventas 0.10% por debajo, con lo que el viaje redondo cuesta alrededor del 0.20% de la posición."
+            },
+            {
+              "q": "La Regla B hace 300 viajes redondos al año con una ganancia bruta promedio del 0.25% por operación. Con un costo de viaje redondo del 0.20%, ¿aproximadamente qué parte de su ventaja bruta se va en costos?",
+              "choices": ["10%", "20%", "50%", "80%"],
+              "answer": 3,
+              "explain": "Los costos son 0.20 ÷ 0.25 = 80% de la ganancia bruta promedio, dejando solo 0.05% neto por operación. Las estrategias frecuentes de ventaja pequeña son las más vulnerables a los supuestos de costos."
+            },
+            {
+              "q": "¿Qué cambio haría más directamente que una estrategia sea más resistente a los costos de transacción?",
+              "choices": [
+                "Operar con más frecuencia para promediar los costos",
+                "Cambiar a small-caps poco negociadas para movimientos más grandes",
+                "Operar con menos frecuencia y mantener más tiempo para que cada viaje redondo cubra un movimiento esperado mayor",
+                "Quitar el stop loss"
+              ],
+              "answer": 2,
+              "explain": "El costo de un viaje redondo es aproximadamente fijo, así que repartirlo sobre un movimiento esperado mayor (menos operaciones, tenencias más largas, acciones líquidas) es la palanca que funciona. Más operaciones y acciones menos líquidas empeoran los costos."
+            },
+            {
+              "q": "¿Qué revela la prueba hacia adelante en una cuenta de paper trading que un backtest no puede?",
+              "choices": [
+                "El CAGR de la estrategia en los últimos cinco años",
+                "Si realmente puedes ejecutar y seguir las reglas en tiempo real, sobre datos que nadie ha ajustado",
+                "Los valores óptimos de los parámetros",
+                "El drawdown histórico máximo"
+              ],
+              "answer": 1,
+              "explain": "La prueba hacia adelante expone las restricciones de ejecución, el comportamiento genuinamente fuera de muestra del mercado y, sobre todo, tu propia capacidad de seguir el sistema durante las pérdidas. El backtest ya te dio las estadísticas históricas."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6-l5",
+      "title": "Proyecto final: construye, prueba y opera en paper tu propia estrategia",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Qué vas a construir\n\nEsta lección es un proyecto, no una clase. Al terminarla tendrás una estrategia escrita de una página, un backtest de ella con costos realistas y una verificación fuera de muestra, un registro de prueba hacia adelante en tu cuenta de paper trading y una breve revisión escrita. Ese paquete es lo que todo trader sistemático produce para cada idea, y producir uno de principio a fin es el objetivo de todo el curso. Es también exactamente el tipo de trabajo que demuestra a cualquiera, incluido tú mismo, que entiendes el trading como un proceso y no como una serie de presentimientos.\n\nEl proyecto tiene seis pasos. Hazlos en orden, y no te saltes la escritura: las partes escritas son donde realmente ocurre el aprendizaje.\n\n1. **Elige una regla** de las integradas en el laboratorio y decide sus parámetros, universo y marco temporal.\n2. **Escribe el documento de estrategia**: los cinco elementos de la Lección 1 más los supuestos de costos y la regla de tamaño de posición del Módulo 4.\n3. **Haz el backtest con honestidad**: costos realistas, una reserva, más de un símbolo.\n4. **Decide seguir / no seguir** (go / no-go) según criterios que fijes *antes* de mirar los resultados.\n5. **Haz la prueba hacia adelante** en la cuenta de paper trading durante un número fijo de operaciones.\n6. **Revisa** los resultados en vivo frente al backtest y escribe lo que aprendiste.\n\nUna palabra sobre la ambición. El objetivo no es encontrar una estrategia que gane dinero; sería un buen bono, pero no está bajo tu control. El objetivo es ejecutar el proceso correctamente. Un estudiante que prueba una regla como corresponde, concluye que no tiene ventaja y escribe una revisión clara explicando por qué ha hecho un trabajo *mejor* que uno que tropieza con un backtest afortunado y declara la victoria. Rechazar ideas es la mayor parte de lo que consiste la investigación profesional de estrategias.\n\nPresupuesta unas dos horas para los pasos de backtesting y luego unos minutos al día para la prueba hacia adelante durante varias semanas. Mantén todo en un solo documento (un archivo de notas o una hoja de cálculo está bien) para que puedas volver a verlo más adelante."
+        },
+        {
+          "type": "text",
+          "md": "### Pasos 1 y 2: elige una regla y escríbela\n\nParte de una de las estrategias del laboratorio en lugar de inventar una desde cero. Son simples, bien entendidas y no tienen anticipación oculta, lo que significa que tus errores serán tuyos y no del motor. Elige la que pertenezca a la *familia* con la que prefieras convivir: seguimiento de tendencia si puedes tolerar equivocarte a menudo a cambio de grandes ganancias ocasionales, reversión a la media si prefieres ganancias pequeñas y frecuentes y puedes obedecer un stop estricto cuando el rebote falla.\n\nLuego escribe el documento de estrategia. Que ocupe una página y que cada línea sea algo que un desconocido pueda seguir. Una plantilla:\n\n**Nombre:** Cruce de SMA 20/50, diario, grandes capitalizaciones.\n\n**Universo:** AAPL, MSFT y otra gran capitalización líquida de EE. UU. que elijo antes de probar (escribe el ticker ahora).\n\n**Marco temporal:** velas diarias; decisiones tomadas después del cierre, órdenes colocadas para la siguiente apertura.\n\n**Entrada:** comprar en la siguiente apertura después de que la SMA de 20 días cierre por encima de la SMA de 50 días.\n\n**Salida (con razón):** vender en la siguiente apertura después de que la SMA de 20 días cierre por debajo de la SMA de 50 días.\n\n**Salida (equivocado):** un stop 2 ATR(14) por debajo del precio de entrada, colocado como orden stop el día de la entrada y nunca ampliado.\n\n**Tamaño:** arriesgar el 1% del capital de la cuenta por operación: acciones = (capital × 1%) ÷ (2 × ATR), redondeado hacia abajo.\n\n**Costos asumidos:** $1 de comisión por ejecución, 10 pb de deslizamiento.\n\n**Criterios de seguir / no seguir (fijados antes de probar):** al menos 30 operaciones entre los tres símbolos combinados; factor de beneficio por encima de 1.3 con costos; drawdown máximo por debajo del 20%; factor de beneficio fuera de muestra (reserva del 30%) todavía por encima de 1.0 en al menos dos de los tres símbolos.\n\nFíjate en ese último bloque. Estás escribiendo lo que significa \"suficientemente bueno\" *antes* de ver cualquier número. Esta es la defensa más efectiva contra el autoengaño, porque una vez que los resultados están en la pantalla es muy fácil decidir que un factor de beneficio de 1.15 es \"básicamente 1.3\". Tus umbrales pueden ser distintos de estos; lo que importa es que existan por escrito primero. Si la regla no los cumple, la respuesta es no seguir, y el proyecto continúa hasta el paso 6 con una conclusión diferente."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Fija los criterios de aprobado/reprobado antes de correr la prueba.** Número mínimo de operaciones, factor de beneficio mínimo con costos, drawdown máximo y la exigencia de que la regla sobreviva fuera de muestra en más de un símbolo. Escríbelos. Un resultado juzgado contra criterios elegidos después no es una prueba; es una racionalización."
+        },
+        {
+          "type": "text",
+          "md": "### Pasos 3 y 4: haz el backtest con honestidad y decide\n\nAhora corre las pruebas, en este orden, registrando cada resultado en tu documento.\n\n**a. Línea base con costos.** Para cada símbolo de tu universo, corre la regla en el laboratorio con la comisión y el deslizamiento que declaraste y el período diario más largo disponible. Registra operaciones, rendimiento total, rendimiento de comprar y mantener, CAGR, tasa de acierto, factor de beneficio, drawdown máximo y Sharpe. Tres símbolos, una tabla. El laboratorio no puede aplicar tu stop de 2 ATR, así que el backtest prueba únicamente las salidas por señal; anótalo en tu documento y aplica el stop manualmente en la prueba hacia adelante.\n\n**b. Verificación fuera de muestra.** Abre el optimizador, pon la reserva en 30% y corre la cuadrícula predeterminada para tu estrategia. *No* estás tratando de encontrar mejores parámetros; estás mirando dos cosas. Primero, si los parámetros que elegiste se asientan en una meseta (los ajustes vecinos se comportan de forma parecida) o en un pico. Segundo, si la columna fuera de muestra de tus parámetros está en el mismo vecindario que la de dentro de muestra. Registra el factor de beneficio dentro y fuera de muestra de tu conjunto de parámetros en cada símbolo.\n\n**c. Comparación con la referencia.** Usa el panel **Comparar** para ver cómo se ubica tu regla frente a las demás integradas y frente a comprar y mantener sobre las mismas velas. Si comprar y mantener te superó en rendimiento *y* tuvo un drawdown menor, tu regla no se ha justificado en ese símbolo.\n\n**d. Lee la lista de operaciones.** Abre la tabla de operaciones del peor símbolo. Encuentra la mayor ganancia y la mayor pérdida. ¿Una sola operación explica la mayor parte de la ganancia? ¿La mayor pérdida supera por mucho tu riesgo previsto del 1% (una señal de un gap a través del stop)? Anota cualquier cosa que te sorprenda.\n\n**e. Decide.** Pon los resultados junto a los criterios de seguir / no seguir que escribiste en el paso 2 y responde cada criterio con un simple sí o no. Si todas las respuestas son sí, la estrategia pasa a la prueba hacia adelante. Si alguna respuesta es no, escribe un párrafo sobre *qué* criterio falló y cuál crees que fue la razón: muy pocas operaciones, los costos devoraron la ventaja, firma de sobreajuste, un solo símbolo cargando con los resultados. Luego detente y ve al paso 6.\n\nEs completamente normal, y completamente aceptable, que una primera estrategia falle en el paso 4. Muchos estudiantes descubren que las reglas simples integradas sobre una sola acción no superan un factor de beneficio de 1.3 con costos. Eso no es un fracaso del proyecto; es el proyecto funcionando. Un no seguir con una razón clara es un proyecto final completo y calificable."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["ema9", "ema21", "macd"],
+          "caption": "AMZN diario con las EMA de 9/21 y un panel de MACD: una segunda gran capitalización, no relacionada, para probar tu regla. Una estrategia que solo funciona en el símbolo que probaste primero ha encontrado una anécdota sobre esa acción, no una ventaja. Probar en al menos tres nombres no relacionados es la verificación cruzada mínima para el proyecto final."
+        },
+        {
+          "type": "text",
+          "md": "### Pasos 5 y 6: prueba hacia adelante y revisión\n\nSi la estrategia pasó el paso 4, opérala en la cuenta de paper trading exactamente como está escrita, durante un número fijo de operaciones decidido ahora (diez es un mínimo práctico para una regla de swing; tomará semanas). Cada día de mercado después del cierre, abre el panel con tu símbolo y tus indicadores, verifica si la regla se disparó y, si lo hizo, coloca la orden en la página del portafolio para la siguiente sesión junto con su stop. Dimensiónala con la fórmula de tu documento, no por intuición.\n\nLleva un registro de prueba hacia adelante con una fila por señal: fecha, símbolo, señal (entrada o salida), el precio que implicaba la regla, el precio que realmente obtuviste, las acciones y un sí/no sobre si seguiste la regla. Registra también las señales que te *perdiste*, con la razón. El registro es el dato para tu revisión.\n\nCuando alcances el número de operaciones, escribe la revisión. Tiene cuatro partes, cada una un párrafo corto:\n\n**1. Backtest vs. en vivo.** Pon la tasa de acierto, la ganancia promedio, la pérdida promedio y el peor drawdown de la prueba hacia adelante junto a las cifras del backtest para los mismos símbolos. ¿Cuáles se parecieron y cuáles no? Que los resultados en vivo sean un poco peores es lo esperado; dramáticamente peores significa que el backtest tenía fallas y deberías decir cuáles.\n\n**2. Ejecución.** ¿Cuánto difirieron tus ejecuciones reales del supuesto de siguiente apertura? ¿El supuesto de 10 pb de deslizamiento fue demasiado generoso o demasiado severo? ¿Te perdiste señales, y por qué?\n\n**3. Tú.** ¿Seguiste cada señal? Si no, ¿qué te hizo anular la regla, y habrías estado mejor o peor si la hubieras obedecido? Sé honesto; este párrafo es para ti.\n\n**4. Veredicto y siguiente paso.** Uno de estos: continuar la prueba hacia adelante con la misma regla; modificar la regla (di exactamente qué, y ten en cuenta que la regla modificada vuelve a empezar todo el proceso desde el paso 2); o retirar la regla y explicar lo que aprendiste de ella.\n\nEse documento, la página de estrategia, la tabla de backtest, el registro y la revisión, es tu proyecto final. Guárdalo. Dentro de unos meses te dirá más sobre cuánto has crecido como trader que cualquier cifra de P&L, y es un trabajo que puedes mostrarle a cualquiera que te pregunte si sabes lo que estás haciendo."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Registra las señales perdidas.** Las filas más útiles de un registro de prueba hacia adelante son las señales que no tomaste. Revelan si la estrategia encaja con tu horario y tu temperamento. Una regla que se dispara a las 9:31 am en días en que no puedes mirar el mercado no es una regla que puedas operar, por bueno que sea su backtest."
+        },
+        {
+          "type": "exercise",
+          "md": "Empieza el proyecto final ahora. En esta sesión, completa los pasos 1 a 4:\n\n- Escribe tu documento de estrategia de una página, incluidos los criterios de seguir / no seguir, *antes* de abrir el laboratorio.\n- En el laboratorio de estrategias, corre tu regla con $1 de comisión y 10 pb de deslizamiento sobre cada uno de tus tres símbolos y completa la tabla de resultados.\n- Abre el optimizador con una reserva del 30% y registra el factor de beneficio dentro y fuera de muestra de tus parámetros en cada símbolo. Usa el panel Comparar para contrastar la regla con comprar y mantener.\n- Escribe tu decisión de seguir / no seguir con un párrafo de razonamiento.\n\nSi la decisión es seguir, abre tu portafolio de paper trading, confirma que el efectivo inicial y los ajustes de comisión coincidan con tu documento, y ponte un recordatorio para revisar la regla después de cada cierre. Coloca tu primera orden solo cuando la regla realmente se dispare. Si la decisión es no seguir, escribe la revisión (paso 6) ahora y elige una segunda regla para llevarla por el proceso.",
+          "action": { "page": "portfolio.html", "hash": "positions", "label": "Abrir tu portafolio de paper trading" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuándo deben escribirse los criterios de seguir / no seguir de una estrategia?",
+              "choices": [
+                "Después del backtest, para que puedan fijarse de forma realista",
+                "Antes de correr cualquier prueba, para que los resultados se juzguen contra estándares no influidos por ellos",
+                "Solo si el backtest es rentable",
+                "Son innecesarios si el ratio de Sharpe está por encima de 1"
+              ],
+              "answer": 1,
+              "explain": "Los criterios fijados después de ver los resultados son racionalizaciones. Escribir de antemano el número mínimo de operaciones, el factor de beneficio mínimo con costos, el drawdown máximo y una exigencia fuera de muestra es la defensa más fuerte contra el autoengaño."
+            },
+            {
+              "q": "Tu regla cumple todos los criterios en AAPL pero falla en MSFT y AMZN. ¿Cuál es la conclusión más defendible?",
+              "choices": [
+                "Operarla solo en AAPL; ahí es donde está la ventaja",
+                "La regla probablemente encontró algo específico de la trayectoria pasada del precio de AAPL y no una ventaja general, así que es un no seguir o necesita más evidencia",
+                "Promediar los tres resultados y seguir si el promedio aprueba",
+                "Quitar MSFT y AMZN del universo de forma retroactiva"
+              ],
+              "answer": 1,
+              "explain": "Una ventaja que aparece en un símbolo y se desvanece en dos no relacionados es la firma de una anécdota sobre esa acción, no de un patrón repetible. Descartar los símbolos que fallan después del hecho es una forma de sobreajustar el universo."
+            },
+            {
+              "q": "Una primera estrategia del proyecto final falla el criterio de factor de beneficio con costos. ¿Qué debería hacer el estudiante?",
+              "choices": [
+                "Bajar el criterio para que coincida con el resultado",
+                "Quitar los costos; la regla aprueba a costo cero",
+                "Registrar el no seguir, escribir un párrafo sobre qué criterio falló y por qué, y completar la revisión; este es un proyecto completo",
+                "Aumentar el tamaño de posición para compensar"
+              ],
+              "answer": 2,
+              "explain": "Rechazar una regla con una razón clara y escrita es el proceso correcto y la mayor parte de lo que consiste la investigación real de estrategias. Cambiar los criterios o los supuestos de costos para rescatar un resultado es exactamente el autoengaño que el proyecto está diseñado para prevenir."
+            },
+            {
+              "q": "¿Por qué el proyecto final te pide registrar las señales que no tomaste?",
+              "choices": [
+                "Para que la tasa de acierto se vea mejor",
+                "Porque las señales perdidas revelan si la estrategia encaja con tu horario y tu temperamento, algo que el backtest no puede mostrar",
+                "Porque el laboratorio lo exige",
+                "Las señales perdidas no necesitan registrarse"
+              ],
+              "answer": 1,
+              "explain": "La viabilidad es parte de una estrategia. Una regla que no puedes seguir en la práctica, ya sea por horario o por nervios, no es una regla que puedas operar, y la única forma de descubrirlo es registrar las señales perdidas con honestidad."
+            },
+            {
+              "q": "Si los resultados de la prueba hacia adelante son dramáticamente peores que el backtest, la explicación más probable es:",
+              "choices": [
+                "El paper trading no tiene relación con el backtesting",
+                "El backtest tenía una falla como anticipación, costos irreales o sesgo de supervivencia, que la prueba hacia adelante acaba de exponer",
+                "La estrategia necesita una cuenta más grande",
+                "El mercado estuvo cerrado en días clave"
+              ],
+              "answer": 1,
+              "explain": "Los resultados en vivo suelen ser algo peores que los backtests, pero una brecha dramática apunta a un problema en el backtest mismo. Descubrirlo con dinero de juguete, antes que con dinero real, es todo el propósito de la prueba hacia adelante."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

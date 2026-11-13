@@ -50,7 +50,7 @@ const GLOSSARY = {
 
   await test('public surface includes the v0.3 additions', () => {
     ['renderMd', 'termsIn', 'glossary', 'timeRemaining', 'formatDuration', 'localCertId', 'isLocalCertId', 'certificate', 'moduleProgress', 'courseProgress'].forEach(k => assert.ok(k in C, 'missing ' + k));
-    assert.strictEqual(C.version, '0.3.0');
+    assert.ok(/^0\.[3-9]\.\d+$/.test(C.version), 'version ' + C.version);
   });
 
   /* ---- renderMd + [[terms]] ---- */
@@ -235,10 +235,10 @@ const GLOSSARY = {
   });
 
   /* ---- the real course files ---- */
-  await test('course/index.json lists eight modules with five lessons each, including m7-replay and m8-capstone', () => {
+  await test('course/index.json lists nine modules with five lessons each, including m7-replay, m8-capstone and m9-crypto-etf', () => {
     const idx = JSON.parse(require('fs').readFileSync(path.join(__dirname, '..', 'course', 'index.json'), 'utf8'));
     const ids = idx.modules.map(m => m.id);
-    assert.deepStrictEqual(ids, ['m1-foundations', 'm2-charts', 'm3-indicators', 'm4-risk', 'm5-options', 'm6-strategy', 'm7-replay', 'm8-capstone']);
+    assert.deepStrictEqual(ids, ['m1-foundations', 'm2-charts', 'm3-indicators', 'm4-risk', 'm5-options', 'm6-strategy', 'm7-replay', 'm8-capstone', 'm9-crypto-etf']);
     idx.modules.forEach(m => {
       assert.strictEqual(m.lessons.length, 5, m.id + ' lessons');
       assert.ok(/^(beginner|intermediate|advanced)$/.test(m.level), m.id + ' level');
@@ -248,6 +248,9 @@ const GLOSSARY = {
     const m7 = idx.modules[6], m8 = idx.modules[7];
     assert.strictEqual(m7.title, 'Practice Drills: Market Replay'); assert.strictEqual(m7.level, 'intermediate');
     assert.strictEqual(m8.title, 'Capstone: Your Trading Plan'); assert.strictEqual(m8.level, 'advanced');
+    const m9 = idx.modules[8];
+    assert.strictEqual(m9.title, 'Crypto & ETFs: Different Markets, Same Discipline'); assert.strictEqual(m9.level, 'intermediate');
+    assert.deepStrictEqual(m9.lessons.map(l => l.id), ['m9-l1', 'm9-l2', 'm9-l3', 'm9-l4', 'm9-l5']);
     const allIds = idx.modules.flatMap(m => m.lessons.map(l => l.id));
     assert.strictEqual(new Set(allIds).size, allIds.length, 'lesson ids unique');
   });

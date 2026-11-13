@@ -56,6 +56,8 @@
   'use strict';
   var root = typeof window !== 'undefined' ? window : globalThis;
   var BT = root.BT = root.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (root.BT && root.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var STORAGE_KEY = 'bt.journal';
   var VERSION = 1;
@@ -524,8 +526,8 @@
   function labelOf(key, by) {
     if (key === '') return '(not set)';
     if (by === 'emotion') { var em = EMOTIONS.filter(function (x) { return x.id === key; })[0]; return em ? em.label : key; }
-    if (by === 'rating') return key + ' star' + (key === '1' ? '' : 's');
-    if (by === 'confidence') return 'confidence ' + key;
+    if (by === 'rating') return T(key === '1' ? '{n} star' : '{n} stars', { n: key });
+    if (by === 'confidence') return T('confidence {n}', { n: key });
     return key;
   }
   function groupStats(list, by) {
@@ -732,7 +734,7 @@
     if (opts.mode === 'replace') state = freshState();
     list.forEach(function (raw, idx) {
       var n = normalizeEntry(raw);
-      if (!n) { result.skipped++; if (result.errors.length < 10) result.errors.push('Entry ' + (idx + 1) + ' skipped: no symbol, notes or trade.'); return; }
+      if (!n) { result.skipped++; if (result.errors.length < 10) result.errors.push(T('Entry {n} skipped: no symbol, notes or trade.', { n: idx + 1 })); return; }
       var i = findIndex(n.id);
       if (i === -1) { state.entries.push(n); result.added++; }
       else if (n.updatedAt >= state.entries[i].updatedAt) { state.entries[i] = n; result.updated++; }

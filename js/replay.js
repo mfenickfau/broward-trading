@@ -39,6 +39,8 @@
   'use strict';
   window.BT = window.BT || {};
   var BT = window.BT;
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var ACCOUNT = 'replay';
   var SESSIONS_KEY = 'bt.replay.sessions';
@@ -376,7 +378,7 @@
       c.reason = reason; c._replayLogged = true;
       if (typeof paper.save === 'function') paper.save();
       counters.ocoCancels += 1;
-      addLog('info', 'Order #' + c.id + ' cancelled — ' + reason, { orderId: c.id, oco: kind || 'oco' });
+      addLog('info', T('Order #{id} cancelled — {reason}', { id: c.id, reason: reason }), { orderId: c.id, oco: kind || 'oco' });
       emit('order', c);
       return c;
     }
@@ -440,7 +442,7 @@
         }
         if (allowed < o.qty) {
           o.qty = allowed;
-          o.reason = 'Reduce-only: size cut to the ' + allowed + ' shares still open.';
+          o.reason = T('Reduce-only: size cut to the {n} shares still open.', { n: allowed });
           addLog('info', 'Order #' + o.id + ' reduced to ' + allowed + ' shares — only ' + allowed + ' remain to close.', { orderId: o.id, oco: 'clamp' });
         }
         closedDir = signOf(q); closedSize = Math.abs(q);
@@ -482,7 +484,7 @@
       if (fills.length) noteShort(qtyBefore);
       for (var i = 0; i < fills.length; i++) {
         var f = fills[i];
-        addLog('fill', (f.order.side === 'buy' ? 'Bought ' : 'Sold ') + f.trade.qty + ' ' + symbol + ' @ ' + money(f.trade.price) + ' — ' + (f.order.reason || 'order filled'), { orderId: f.order.id, tradeId: f.trade.id, side: f.order.side, qty: f.trade.qty, price: f.trade.price, realized: f.trade.realized });
+        addLog('fill', T(f.order.side === 'buy' ? 'Bought {qty} {symbol} @ {price} — {reason}' : 'Sold {qty} {symbol} @ {price} — {reason}', { qty: f.trade.qty, symbol: symbol, price: money(f.trade.price), reason: f.order.reason || T('order filled') }), { orderId: f.order.id, tradeId: f.trade.id, side: f.order.side, qty: f.trade.qty, price: f.trade.price, realized: f.trade.realized });
         emit('fill', f);
       }
       if (fills.length) reconcile(qtyBefore, fills);
@@ -492,9 +494,9 @@
         var o = st.orders[j];
         if (o.status === 'rejected' && o.symbol === symbol && !o._replayLogged) {
           o._replayLogged = true;
-          addLog('reject', 'Order #' + o.id + ' could not fill: ' + o.reason, { orderId: o.id });
+          addLog('reject', T('Order #{id} could not fill: {reason}', { id: o.id, reason: o.reason }), { orderId: o.id });
         }
-        if (o.status === 'expired' && o.symbol === symbol && !o._replayLogged) { o._replayLogged = true; addLog('info', 'Order #' + o.id + ' expired: ' + o.reason, { orderId: o.id }); }
+        if (o.status === 'expired' && o.symbol === symbol && !o._replayLogged) { o._replayLogged = true; addLog('info', T('Order #{id} expired: {reason}', { id: o.id, reason: o.reason }), { orderId: o.id }); }
       }
       return fills;
     }
@@ -655,7 +657,7 @@
         addLog('order', 'Working: ' + (paper.describeOrder ? paper.describeOrder(placed) : placed.type + ' order #' + placed.id) + (placed.reduceOnly ? ' (reduce-only: it can only close your position, and is cancelled if another order closes it first)' : ''), { orderId: placed.id, reduceOnly: !!placed.reduceOnly });
       } else {
         placed._replayLogged = true;
-        addLog('reject', 'Rejected: ' + placed.reason, { orderId: placed.id });
+        addLog('reject', T('Rejected: {reason}', { reason: placed.reason }), { orderId: placed.id });
       }
       if (placed.status === 'filled') reconcile(qtyBefore, []);
       emit('order', placed);
@@ -684,7 +686,7 @@
         o._replayLogged = true;
         addLog('fill', (pos.qty > 0 ? 'Closed long ' : 'Covered short ') + Math.abs(pos.qty) + ' ' + symbol + ' @ ' + money(o.fillPrice) + (tr ? ' (realized ' + money(tr.realized) + ')' : ''), { orderId: o.id, tradeId: tr ? tr.id : null, side: o.side, qty: o.qty, price: o.fillPrice, realized: tr ? tr.realized : 0 });
         emit('fill', { order: o, trade: tr });
-      } else { o._replayLogged = true; addLog('reject', 'Close rejected: ' + o.reason); }
+      } else { o._replayLogged = true; addLog('reject', T('Close rejected: {reason}', { reason: o.reason })); }
       if (o.status === 'filled') reconcile(pos.qty, []);
       emit('order', o);
       mark();
@@ -839,19 +841,19 @@
       var v = isNum(+k.value) ? +k.value : null;
       var r = { type: k.type, target: v, text: k.text || '', pass: false, actual: null };
       switch (k.type) {
-        case 'min_trades': r.actual = c.trades; r.pass = c.trades >= (v == null ? 1 : v); r.text = r.text || 'Complete at least ' + (v == null ? 1 : v) + ' round trip' + ((v == null ? 1 : v) === 1 ? '' : 's') + ' (a position opened and closed)'; r.actualText = c.trades + ' closed'; break;
-        case 'max_trades': r.actual = c.trades; r.pass = c.trades <= (v == null ? 999 : v); r.text = r.text || 'Make no more than ' + v + ' round trips — patience over activity'; r.actualText = c.trades + ' closed'; break;
-        case 'min_return_pct': r.actual = c.returnPct; r.pass = c.returnPct >= (v == null ? 0 : v); r.text = r.text || 'Finish with a return of at least ' + pct(v == null ? 0 : v); r.actualText = pct(c.returnPct); break;
-        case 'positive_return': r.actual = c.returnPct; r.pass = c.returnPct > 0; r.text = r.text || 'Finish the session with a positive return'; r.actualText = pct(c.returnPct); break;
-        case 'beat_buy_hold': r.actual = c.alphaPct; r.pass = c.returnPct > c.buyHoldPct; r.text = r.text || 'Beat buy-and-hold over the same period'; r.actualText = pct(c.returnPct) + ' vs ' + pct(c.buyHoldPct); break;
-        case 'max_drawdown_pct': r.actual = c.maxDrawdownPct; r.pass = c.maxDrawdownPct <= (v == null ? 100 : v); r.text = r.text || 'Keep your max drawdown under ' + (v == null ? 100 : v) + ' %'; r.actualText = c.maxDrawdownPct.toFixed(2) + ' %'; break;
-        case 'min_win_rate_pct': r.actual = c.winRate; r.pass = c.winRate != null && c.winRate >= (v == null ? 50 : v); r.text = r.text || 'Win at least ' + (v == null ? 50 : v) + ' % of your closed trades'; r.actualText = c.winRate == null ? 'no closed trades' : c.winRate.toFixed(0) + ' %'; break;
-        case 'min_profit_factor': r.actual = c.profitFactor; r.pass = (c.profitFactor == null && c.wins > 0 && c.losses === 0) || (c.profitFactor != null && c.profitFactor >= (v == null ? 1 : v)); r.text = r.text || 'Profit factor of at least ' + (v == null ? 1 : v); r.actualText = c.profitFactor == null ? (c.wins > 0 ? 'no losing trades' : 'n/a') : c.profitFactor.toFixed(2); break;
-        case 'flat_at_end': r.actual = c.openPosition ? c.openPosition.qty : 0; r.pass = !c.openPosition; r.text = r.text || 'Be flat (no open position) when the session ends'; r.actualText = c.openPosition ? c.openPosition.qty + ' shares open' : 'flat'; break;
-        case 'used_stop': r.actual = c.stopsUsed; r.pass = c.stopsUsed >= (v == null ? 1 : v); r.text = r.text || 'Protect at least ' + (v == null ? 'one' : v) + ' position' + (v != null && v > 1 ? 's' : '') + ' with a stop order'; r.actualText = c.stopsUsed + ' stop order' + (c.stopsUsed === 1 ? '' : 's'); break;
-        case 'used_limit': r.actual = c.limitsUsed; r.pass = c.limitsUsed >= (v == null ? 1 : v); r.text = r.text || 'Enter or exit with at least ' + (v == null ? 'one' : v) + ' limit order'; r.actualText = c.limitsUsed + ' limit order' + (c.limitsUsed === 1 ? '' : 's'); break;
-        case 'used_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened >= (v == null ? 1 : v); r.text = r.text || 'Open at least ' + (v == null ? 'one' : v) + ' short position'; r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
-        case 'no_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened === 0; r.text = r.text || 'Stay long-only: no short sales'; r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
+        case 'min_trades': r.actual = c.trades; r.pass = c.trades >= (v == null ? 1 : v); r.text = r.text || T((v == null ? 1 : v) === 1 ? 'Complete at least {n} round trip (a position opened and closed)' : 'Complete at least {n} round trips (a position opened and closed)', { n: v == null ? 1 : v }); r.actualText = T('{n} closed', { n: c.trades }); break;
+        case 'max_trades': r.actual = c.trades; r.pass = c.trades <= (v == null ? 999 : v); r.text = r.text || T('Make no more than {n} round trips — patience over activity', { n: v }); r.actualText = T('{n} closed', { n: c.trades }); break;
+        case 'min_return_pct': r.actual = c.returnPct; r.pass = c.returnPct >= (v == null ? 0 : v); r.text = r.text || T('Finish with a return of at least {pct}', { pct: pct(v == null ? 0 : v) }); r.actualText = pct(c.returnPct); break;
+        case 'positive_return': r.actual = c.returnPct; r.pass = c.returnPct > 0; r.text = r.text || T('Finish the session with a positive return'); r.actualText = pct(c.returnPct); break;
+        case 'beat_buy_hold': r.actual = c.alphaPct; r.pass = c.returnPct > c.buyHoldPct; r.text = r.text || T('Beat buy-and-hold over the same period'); r.actualText = pct(c.returnPct) + ' vs ' + pct(c.buyHoldPct); break;
+        case 'max_drawdown_pct': r.actual = c.maxDrawdownPct; r.pass = c.maxDrawdownPct <= (v == null ? 100 : v); r.text = r.text || T('Keep your max drawdown under {n} %', { n: v == null ? 100 : v }); r.actualText = c.maxDrawdownPct.toFixed(2) + ' %'; break;
+        case 'min_win_rate_pct': r.actual = c.winRate; r.pass = c.winRate != null && c.winRate >= (v == null ? 50 : v); r.text = r.text || T('Win at least {n} % of your closed trades', { n: v == null ? 50 : v }); r.actualText = c.winRate == null ? T('no closed trades') : c.winRate.toFixed(0) + ' %'; break;
+        case 'min_profit_factor': r.actual = c.profitFactor; r.pass = (c.profitFactor == null && c.wins > 0 && c.losses === 0) || (c.profitFactor != null && c.profitFactor >= (v == null ? 1 : v)); r.text = r.text || T('Profit factor of at least {n}', { n: v == null ? 1 : v }); r.actualText = c.profitFactor == null ? (c.wins > 0 ? T('no losing trades') : 'n/a') : c.profitFactor.toFixed(2); break;
+        case 'flat_at_end': r.actual = c.openPosition ? c.openPosition.qty : 0; r.pass = !c.openPosition; r.text = r.text || T('Be flat (no open position) when the session ends'); r.actualText = c.openPosition ? T('{n} shares open', { n: c.openPosition.qty }) : T('flat'); break;
+        case 'used_stop': r.actual = c.stopsUsed; r.pass = c.stopsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Protect at least one position with a stop order') : T(v > 1 ? 'Protect at least {n} positions with a stop order' : 'Protect at least {n} position with a stop order', { n: v })); r.actualText = c.stopsUsed + ' stop order' + (c.stopsUsed === 1 ? '' : 's'); break;
+        case 'used_limit': r.actual = c.limitsUsed; r.pass = c.limitsUsed >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Enter or exit with at least one limit order') : T('Enter or exit with at least {n} limit order', { n: v })); r.actualText = c.limitsUsed + ' limit order' + (c.limitsUsed === 1 ? '' : 's'); break;
+        case 'used_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened >= (v == null ? 1 : v); r.text = r.text || (v == null ? T('Open at least one short position') : T('Open at least {n} short position', { n: v })); r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
+        case 'no_short': r.actual = c.shortsOpened; r.pass = c.shortsOpened === 0; r.text = r.text || T('Stay long-only: no short sales'); r.actualText = c.shortsOpened + ' short' + (c.shortsOpened === 1 ? '' : 's'); break;
         default: return; // unknown criterion: ignored rather than failed
       }
       out.push(r);
@@ -889,7 +891,7 @@
       'Closed trades ' + card.trades + (card.winRate == null ? '' : ', win rate ' + card.winRate.toFixed(0) + ' %') + (card.profitFactor == null ? '' : ', profit factor ' + card.profitFactor.toFixed(2)) + ', max drawdown ' + card.maxDrawdownPct.toFixed(2) + ' %',
       'Equity ' + money(card.equity) + ' from ' + money(card.startingCash) + (card.openPosition ? ' with ' + card.openPosition.qty + ' shares still open' : ', flat at the end')
     ];
-    if (card.drill) lines.push('Drill "' + card.drill.title + '": ' + (card.drill.passed ? 'passed' : 'not passed') + ' — ' + card.drill.results.map(function (r) { return (r.pass ? '✓ ' : '✕ ') + r.text + ' (' + r.actualText + ')'; }).join('; '));
+    if (card.drill) lines.push(T('Drill "{title}":', { title: card.drill.title }) + ' ' + (card.drill.passed ? T('passed') : T('not passed')) + ' — ' + card.drill.results.map(function (r) { return (r.pass ? '✓ ' : '✕ ') + r.text + ' (' + r.actualText + ')'; }).join('; '));
     return lines.join('\n');
   }
   /**
@@ -911,7 +913,7 @@
       sessionId: card.id,
       symbol: card.symbol,
       date: todayStr(),
-      setup: extra.setup || (card.drill ? 'Replay drill: ' + card.drill.title : 'Market Replay: ' + card.symbol + ' ' + card.interval),
+      setup: extra.setup || (card.drill ? T('Replay drill: {title}', { title: card.drill.title }) : T('Market Replay: {symbol} {interval}', { symbol: card.symbol, interval: card.interval })),
       tags: tags,
       emotion: typeof extra.emotion === 'string' ? extra.emotion : '',
       confidence: clamp5(extra.confidence, 3),
@@ -1018,7 +1020,7 @@
       if (startIndex < 0 || startIndex >= kept.length - 1) throw new Error('No bars after the start date ' + start + ' for ' + symbol + ' ' + interval + '. Pick an earlier start or a later end.');
       var notes = [];
       if (note) notes.push(note);
-      if (budget.truncated) notes.push('That span needs ' + budget.wanted.toLocaleString() + ' bars; the engine loads at most ' + MAX_LIMIT.toLocaleString() + ', so the session starts at ' + fmtTime(kept[startIndex].time) + '.');
+      if (budget.truncated) notes.push(T('That span needs {wanted} bars; the engine loads at most {max}, so the session starts at {time}.', { wanted: budget.wanted.toLocaleString(), max: MAX_LIMIT.toLocaleString(), time: fmtTime(kept[startIndex].time) }));
       if (startIndex === 0) notes.push('No warm-up history before the start date: indicators such as SMA 50 appear once enough bars are revealed.');
       kept.symbol = symbol; kept.interval = interval; kept.source = source;
       return { bars: kept, startIndex: startIndex, source: source, note: notes.join(' ') || null, truncated: budget.truncated, start: start, end: end, symbol: symbol, interval: interval };

@@ -294,14 +294,17 @@
   }
   /** Run bytes through a web stream transformer (CompressionStream / DecompressionStream). */
   function pipeThrough(bytes, stream) {
-    var writer = stream.writable.getWriter();
-    var reader = stream.readable.getReader();
-    var chunks = [];
-    var pump = function () {
-      return reader.read().then(function (r) { if (r.done) return concat(chunks); chunks.push(r.value); return pump(); });
-    };
-    var done = pump();
-    return writer.write(bytes).then(function () { return writer.close(); }).then(function () { return done; });
+    // Both ends reject on a corrupt input; funnel them into one promise so no rejection goes unhandled.
+    return new Promise(function (resolve, reject) {
+      var writer = stream.writable.getWriter();
+      var reader = stream.readable.getReader();
+      var chunks = [];
+      var pump = function () {
+        reader.read().then(function (r) { if (r.done) { resolve(concat(chunks)); return; } chunks.push(r.value); pump(); }, reject);
+      };
+      pump();
+      writer.write(bytes).then(function () { return writer.close(); }).catch(reject);
+    });
   }
   var nativeCodec = {
     available: function () { return typeof glob('CompressionStream') === 'function' && typeof glob('DecompressionStream') === 'function'; },
@@ -350,7 +353,7 @@
     // Plain JSON begins with '{'. Deflate-raw output beginning with 0x7B is possible but then JSON.parse fails and we inflate.
     if (bytes.length && bytes[0] === 0x7B) {
       var direct = finish(bytes, false);
-      if (direct.ok) return Promise.resolve(direct);
+      if (direct.ok || direct.reason === 'invalid') return Promise.resolve(direct);   // parsed as JSON: that is the answer
     }
     if (!codec.available()) return Promise.resolve({ ok: false, reason: 'no-codec', error: 'This share code is compressed and this browser cannot decompress it. Open the instructor page in a current Chrome, Edge, Safari or Firefox.' });
     return codec.inflate(bytes).then(function (out) { return finish(out, true); }, function () {

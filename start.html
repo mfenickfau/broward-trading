@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Your First Week: seven days of guided first steps for complete beginners. About twenty minutes a day: take the tour, read one lesson, build a watchlist, place and protect a paper trade, run a Market Replay drill and write your first review. Free and educational.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>First Week — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .fw{max-width:900px}
+  .fw-hero{display:grid;grid-template-columns:1fr auto;gap:var(--sp-3) var(--sp-4);align-items:center;padding-block:var(--sp-5) var(--sp-3)}
+  .fw-hero h1{margin:0 0 6px;font-size:clamp(24px,5vw,34px);line-height:1.15}
+  .fw-hero .lede{margin:0;color:var(--muted);font-size:var(--fs-md);line-height:1.55;max-width:60ch}
+  .fw-hero .ring{--size:96px;justify-self:end}
+  .fw-hero .meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:var(--sp-3);color:var(--muted);font-size:var(--fs-sm)}
+  .fw-hero .meta b{color:var(--fg);font-weight:500;font-family:var(--mono)}
+  .fw-cta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+  .fw-cta .btn,.fw-cta button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .fw-cta .primary{flex:1 1 220px}
+  @media (max-width:520px){.fw-hero{grid-template-columns:1fr}.fw-hero .ring{--size:80px;justify-self:start;order:-1}}
+
+  .fw .callout{margin-top:var(--sp-2)}
+  .outcomes{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 16px}
+  .outcomes li{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;padding:6px 0;line-height:1.5;font-size:var(--fs)}
+  .outcomes li::before{content:"✓";color:var(--up);font-family:var(--mono);font-weight:600;line-height:1.5}
+
+  /* days */
+  .days{display:flex;flex-direction:column;gap:var(--sp-3)}
+  .day{padding:0;overflow:hidden}
+  .day.locked{opacity:.78}
+  .day.current{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .day.complete{border-color:var(--up)}
+  .day-head{display:grid;grid-template-columns:auto 1fr auto;gap:var(--sp-3);align-items:center;width:100%;padding:12px 14px;background:transparent;border:0;border-radius:0;text-align:left;color:inherit;cursor:pointer;min-height:64px}
+  .day-head:hover{background:var(--panel2)}
+  .day-head .ring{--size:48px}
+  .day-head .ring.flat::before{background:var(--panel)}
+  .day-head:hover .ring::before{background:var(--panel2)}
+  .day-head .ttl{min-width:0}
+  .day-head .ttl small{display:block;color:var(--muted);font-size:var(--fs-xs);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px}
+  .day-head .ttl b{display:block;font-size:var(--fs-md);font-weight:600;line-height:1.3}
+  .day-head .ttl .sub{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-top:4px;color:var(--muted);font-size:var(--fs-xs)}
+  .day-head .chev{color:var(--muted);transition:transform var(--dur) var(--ease);flex:0 0 auto}
+  .day-head[aria-expanded="true"] .chev{transform:rotate(180deg)}
+  .day-body{padding:0 14px 14px;border-top:1px solid var(--line)}
+  .day-body[hidden]{display:none}
+  .day-body .intro{margin:12px 0 0;color:var(--muted);line-height:1.6;font-size:var(--fs)}
+  .day-body .donebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:var(--r);background:var(--up-soft);color:var(--fg);font-size:var(--fs-sm);line-height:1.5}
+  .day-body .donebar .btn{margin-left:auto;min-height:40px;display:inline-flex;align-items:center}
+  .lockbox{margin-top:12px;padding:12px;border:1px dashed var(--line2);border-radius:var(--r-md);color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .lockbox button{margin-top:8px;min-height:44px}
+
+  /* tasks */
+  .tasks{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .task{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
+  .task.done{border-color:var(--up)}
+  .task .mark{width:28px;height:28px;border-radius:50%;border:2px solid var(--line2);display:grid;place-items:center;font-family:var(--mono);font-size:13px;color:var(--muted);background:var(--panel);margin-top:2px}
+  .task.done .mark{background:var(--up);border-color:var(--up);color:#fff}
+  .task .t-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+  .task .t-top h3{margin:0;font-size:var(--fs-md);font-weight:600;line-height:1.35}
+  .task .t-top .min{color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);white-space:nowrap}
+  .task .why{margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .task details{margin-top:8px;background:transparent;border:0;padding:0}
+  .task details summary{cursor:pointer;color:var(--accent);font-size:var(--fs-sm);min-height:32px;display:inline-flex;align-items:center;padding:4px 0}
+  .task ol{margin:6px 0 0;padding-left:20px;color:var(--fg);font-size:var(--fs-sm);line-height:1.6}
+  .task ol li{margin-bottom:4px}
+  .task .t-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .task .t-foot .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;flex:1 1 160px}
+  .task .state{font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono);flex:1 1 140px;line-height:1.5}
+  .task.done .state{color:var(--up)}
+  .task .manual{display:inline-flex;gap:10px;align-items:center;min-height:44px;cursor:pointer;font-size:var(--fs);flex:1 1 160px}
+  .task .manual input{width:22px;height:22px;margin:0;accent-color:var(--up)}
+  .task .ghost.sm{min-height:36px;font-size:var(--fs-xs);color:var(--muted);padding:4px 8px}
+  @media (max-width:760px){.task .ghost.sm{min-height:44px}}
+
+  /* completion */
+  .finish{display:none}
+  .finish.show{display:block}
+  .finish h2{color:var(--up)}
+  .finish .big{font-size:clamp(22px,5vw,30px);font-weight:600;margin:4px 0 8px;line-height:1.2}
+  .finish p{line-height:1.6;max-width:65ch;margin:0}
+  .finish .links{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3)}
+  .finish .links .btn{min-height:44px;display:inline-flex;align-items:center;flex:1 1 200px;justify-content:center}
+  .finish .cert{margin-top:var(--sp-3);padding:12px;border:1px dashed var(--line2);border-radius:var(--r-md);font-size:var(--fs-sm);color:var(--muted);line-height:1.55}
+
+  .fw-foot{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;justify-content:space-between;margin-top:var(--sp-4);color:var(--muted);font-size:var(--fs-xs)}
+  .fw-foot button{min-height:44px}
+  .fw .skeleton{display:block;height:120px}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page fw">
+  <header class="fw-hero" id="hero">
+    <div>
+      <h1 id="planTitle">Your First Week</h1>
+      <p class="lede" id="planSummary">Seven short days that take you from your first chart to your first planned paper trade. About twenty minutes a day.</p>
+      <div class="meta" id="heroMeta" aria-live="polite"></div>
+    </div>
+    <div class="ring flat" id="heroRing" style="--pct:0" role="img" aria-label="0% of the week done"><span>0</span></div>
+    <div class="fw-cta" id="heroCta"></div>
+  </header>
+
+  <main class="stack">
+    <div class="callout warn compact" id="honesty" hidden><span class="title">Honest expectations</span><span id="honestyText"></span></div>
+
+    <section class="card" id="outcomesCard" aria-labelledby="outcomesTitle" hidden>
+      <h2 id="outcomesTitle">What you'll be able to do after this week</h2>
+      <ul class="outcomes" id="outcomes"></ul>
+    </section>
+
+    <div class="days" id="days" aria-live="polite"><div class="skeleton" aria-hidden="true"></div></div>
+
+    <section class="card finish" id="finish" aria-labelledby="finishTitle">
+      <h2 id="finishTitle">Week complete</h2>
+      <div class="big" id="finishHead"></div>
+      <p id="finishBody"></p>
+      <div class="links" id="finishLinks"></div>
+      <div class="cert" id="finishCert">The full course has nine modules. Finish every lesson with an 80% quiz average and you earn a Broward Trading certificate with a verifiable id. <a href="learn.html#/certificate">See where you stand</a>.</div>
+    </section>
+
+    <div class="fw-foot">
+      <span id="footNote">Progress is saved in this browser only. Clearing site data clears it too.</span>
+      <button type="button" class="ghost" id="resetBtn">Reset my first-week progress</button>
+    </div>
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/onboarding.js"></script>
+<script>
+/* Broward Trading — start.html page script (UI only; the engine is js/onboarding.js → BT.onboarding) */
+(function () {
+  'use strict';
+  var BT = window.BT || {};
+  var O = BT.onboarding;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var T = function (s, v) { return BT.t ? BT.t(s, v) : (v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s); };
+  // Only same-origin relative pages may be linked from the plan JSON (defence in depth against a bad data file).
+  var safeHref = function (h) { h = String(h == null ? '' : h); return /^[a-z0-9_-]+\.html(#[^\s"']*)?$/i.test(h) ? h : '#'; };
+
+  if (!O) {
+    $('days').innerHTML = '<div class="callout danger">The First Week could not start: js/onboarding.js did not load. Reload the page.</div>';
+    return;
+  }
+
+  function toast(msg, kind, title) {
+    if (BT.nav && BT.nav.toast) return BT.nav.toast(msg, kind, title);
+    var host = $('toasts'); if (!host) return;
+    var el = document.createElement('div'); el.className = 'toast ' + (kind || '');
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div>';
+    host.appendChild(el); setTimeout(function () { el.remove(); }, 4500);
+  }
+
+  var expanded = {};          // day → true/false (session only; the current day starts open)
+  var lastDayDone = null;     // to toast when a day flips to complete
+  var lastComplete = null;
+
+  function ring(pct, cls, label) {
+    pct = Math.max(0, Math.min(100, Math.round(pct || 0)));
+    return '<div class="ring ' + (cls || '') + (pct >= 100 ? ' done' : '') + '" style="--pct:' + pct + '" role="img" aria-label="' + esc(label || (pct + '% done')) + '"><span>' + pct + '</span></div>';
+  }
+  function minutesLabel(m) { return m == null ? '' : T('{n} min', { n: m }); }
+
+  /* ---------------- header ---------------- */
+  function renderHero(st) {
+    var p = st.plan;
+    $('planTitle').textContent = p.title;
+    $('planSummary').textContent = p.summary;
+    $('honestyText').textContent = p.honesty;
+    $('honesty').hidden = !p.honesty;
+    var r = $('heroRing'); r.style.setProperty('--pct', st.pct); r.classList.toggle('done', st.complete);
+    r.setAttribute('aria-label', T('{pct}% of the week done', { pct: st.pct })); r.querySelector('span').textContent = st.pct;
+    var meta = [];
+    meta.push('<span><b>' + st.done + '</b> / ' + st.total + ' ' + esc(T('tasks done')) + '</span>');
+    if (!st.complete) meta.push('<span>' + esc(T('Day')) + ' <b>' + st.currentDay + '</b> ' + esc(T('of {n}', { n: st.days.length })) + '</span>');
+    if (!st.complete && st.minutesLeft) meta.push('<span>' + esc(T('about {n} min left', { n: st.minutesLeft })) + '</span>');
+    if (p.englishOnly) meta.push('<span class="pill demo">' + esc(T('English only')) + '</span>');
+    $('heroMeta').innerHTML = meta.join('');
+    var cta = $('heroCta');
+    if (st.complete) {
+      cta.innerHTML = '<a class="btn primary" href="learn.html">' + esc(T('Continue with the full course')) + '</a><a class="btn" href="#finish">' + esc(T('See your completion card')) + '</a>';
+    } else {
+      var cur = st.days.filter(function (d) { return d.current; })[0];
+      var started = st.done > 0;
+      cta.innerHTML = '<a class="btn primary" href="#day-' + (cur ? cur.day : 1) + '" data-goto="' + (cur ? cur.day : 1) + '">' +
+        esc(started ? T('Continue day {n}', { n: cur ? cur.day : 1 }) : T('Start day 1 (about {n} minutes)', { n: (cur && cur.minutes) || p.minutesPerDay })) + '</a>' +
+        (started ? '' : '<span class="muted">' + esc(T('No account, no sign-up. Progress is saved in this browser.')) + '</span>');
+    }
+    $('outcomes').innerHTML = p.outcomes.map(function (o) { return '<li>' + esc(o) + '</li>'; }).join('');
+    $('outcomesCard').hidden = !p.outcomes.length;
+  }
+
+  /* ---------------- days ---------------- */
+  function taskHtml(t, day) {
+    var stepsHtml = t.steps.length ? '<details' + (day.current && !t.done ? ' open' : '') + '><summary>' + esc(T('How to do it')) + '</summary><ol>' + t.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></details>' : '';
+    var foot = '';
+    if (t.link) foot += '<a class="btn' + (t.done ? '' : ' primary') + '" href="' + esc(safeHref(t.link.href)) + '">' + esc(t.link.label) + (t.done ? '' : ' ▸') + '</a>';
+    if (t.auto) {
+      foot += '<span class="state">' + (t.done ? '✓ ' : '') + esc(t.overridden ? T('Marked done by you') : t.detail) + '</span>';
+      if (!t.done) foot += '<button type="button" class="ghost sm" data-override="' + esc(t.id) + '" title="' + esc(T('Use this if you did the task on another device or before starting the week')) + '">' + esc(T('I did this already')) + '</button>';
+      else if (t.overridden) foot += '<button type="button" class="ghost sm" data-unoverride="' + esc(t.id) + '">' + esc(T('Undo')) + '</button>';
+    } else {
+      foot += '<label class="manual"><input type="checkbox" data-manual="' + esc(t.id) + '"' + (t.done ? ' checked' : '') + '> ' + esc(t.done ? T('Done') : T('I did this')) + '</label>';
+    }
+    return '<li class="task' + (t.done ? ' done' : '') + '" id="task-' + esc(t.id) + '">' +
+      '<div class="mark" aria-hidden="true">' + (t.done ? '✓' : '') + '</div>' +
+      '<div>' +
+      '<div class="t-top"><h3>' + esc(t.title) + '</h3>' + (t.minutes != null ? '<span class="min">' + esc(minutesLabel(t.minutes)) + '</span>' : '') + '</div>' +
+      (t.why ? '<p class="why">' + esc(t.why) + '</p>' : '') +
+      stepsHtml +
+      '<div class="t-foot">' + foot + '</div>' +
+      '</div></li>';
+  }
+  function dayHtml(d, st) {
+    var open = Object.prototype.hasOwnProperty.call(expanded, d.day) ? expanded[d.day] : d.current;
+    var state = d.complete ? '<span class="pill up">' + esc(T('Done')) + '</span>'
+      : !d.unlocked ? '<span class="pill">' + esc(T('Locked')) + '</span>'
+      : d.current ? '<span class="pill accent">' + esc(T('Up next')) + '</span>'
+      : d.done ? '<span class="pill demo">' + esc(T('In progress')) + '</span>' : '';
+    var body;
+    if (!d.unlocked) {
+      var prev = st.days.filter(function (x) { return x.day === d.day - 1; })[0];
+      body = '<div class="lockbox">' + esc(T('Unlocks when day {n} is finished. One day at a time works best, but if you already know this material you can start now.', { n: d.day - 1 })) +
+        (prev ? '<br><span class="muted">' + esc(T('Day {n}: {done} of {total} tasks done.', { n: prev.day, done: prev.done, total: prev.total })) + '</span>' : '') +
+        '<br><button type="button" data-unlock="' + d.day + '">' + esc(T('Start day {n} anyway', { n: d.day })) + '</button></div>';
+    } else {
+      body = (d.intro ? '<p class="intro">' + esc(d.intro) + '</p>' : '') +
+        (d.complete ? '<div class="donebar">✓ ' + esc(d.day < st.days.length ? T('Day {n} done. Come back tomorrow for day {next}, or carry on if you have the energy.', { n: d.day, next: d.day + 1 }) : T('Day {n} done. That was the last one.', { n: d.day })) +
+          (d.day < st.days.length ? '<a class="btn" href="#day-' + (d.day + 1) + '" data-goto="' + (d.day + 1) + '">' + esc(T('Go to day {n}', { n: d.day + 1 })) + '</a>' : '') + '</div>' : '') +
+        '<ol class="tasks">' + d.tasks.map(function (t) { return taskHtml(t, d); }).join('') + '</ol>';
+    }
+    return '<section class="card day' + (d.current ? ' current' : '') + (d.complete ? ' complete' : '') + (!d.unlocked ? ' locked' : '') + '" id="day-' + d.day + '" aria-labelledby="dayTitle-' + d.day + '">' +
+      '<button type="button" class="day-head" data-toggle="' + d.day + '" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="dayBody-' + d.day + '">' +
+      ring(d.pct, 'flat', T('Day {n}: {pct}% done', { n: d.day, pct: d.pct })) +
+      '<span class="ttl"><small>' + esc(T('Day {n}', { n: d.day })) + '</small><b id="dayTitle-' + d.day + '">' + esc(d.title) + '</b>' +
+      '<span class="sub">' + (d.minutes != null ? '<span>' + esc(minutesLabel(d.minutes)) + '</span>' : '') + '<span>' + esc(T('{done}/{total} tasks', { done: d.done, total: d.total })) + '</span>' + state + '</span></span>' +
+      '<svg class="chev" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' +
+      '</button>' +
+      '<div class="day-body" id="dayBody-' + d.day + '"' + (open ? '' : ' hidden') + '>' + body + '</div>' +
+      '</section>';
+  }
+  function renderDays(st) {
+    $('days').innerHTML = st.days.length ? st.days.map(function (d) { return dayHtml(d, st); }).join('')
+      : '<div class="empty"><b>' + esc(T('No days in this plan')) + '</b>' + esc(T('course/firstweek.json has no days. Check the file.')) + '</div>';
+  }
+  function renderFinish(st) {
+    var f = $('finish'), c = st.plan.completion;
+    f.classList.toggle('show', st.complete);
+    if (!st.complete) return;
+    $('finishHead').textContent = c.title;
+    $('finishBody').textContent = c.body;
+    $('finishLinks').innerHTML = c.next.map(function (n, i) { return '<a class="btn' + (i === 0 ? ' primary' : '') + '" href="' + esc(safeHref(n.href)) + '">' + esc(n.label) + ' ▸</a>'; }).join('');
+  }
+
+  function render() {
+    var st = O.status();
+    if (!st.plan) return;
+    renderHero(st); renderDays(st); renderFinish(st);
+    var daysDone = st.days.filter(function (d) { return d.complete; }).length;
+    if (lastDayDone != null && daysDone > lastDayDone) {
+      var just = st.days.filter(function (d) { return d.complete; }).pop();
+      if (just && !st.complete) toast(T('Day {n} complete. Tomorrow is a good time for day {next}; today was enough.', { n: just.day, next: Math.min(just.day + 1, st.days.length) }), 'ok', T('Nice work'));
+    }
+    if (lastComplete === false && st.complete) toast(T('All twenty-one tasks done. Your completion card is at the bottom of the page.'), 'ok', T('Week complete'));
+    lastDayDone = daysDone; lastComplete = st.complete;
+    O.setLastSeen(st.currentDay);
+    return st;
+  }
+
+  /* ---------------- events ---------------- */
+  $('days').addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-toggle],[data-unlock],[data-override],[data-unoverride],[data-goto]');
+    if (!t) return;
+    if (t.hasAttribute('data-toggle')) {
+      var day = +t.getAttribute('data-toggle');
+      expanded[day] = t.getAttribute('aria-expanded') !== 'true';
+      render(); return;
+    }
+    if (t.hasAttribute('data-unlock')) { var d = +t.getAttribute('data-unlock'); O.unlock(d); expanded[d] = true; render(); toast(T('Day {n} unlocked. Skipping is fine; nothing here is graded.', { n: d })); return; }
+    if (t.hasAttribute('data-override')) { O.setOverride(t.getAttribute('data-override'), true); render(); return; }
+    if (t.hasAttribute('data-unoverride')) { O.setOverride(t.getAttribute('data-unoverride'), false); render(); return; }
+    if (t.hasAttribute('data-goto')) { var g = +t.getAttribute('data-goto'); expanded[g] = true; render(); }
+  });
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('#heroCta [data-goto]');
+    if (a) { var g = +a.getAttribute('data-goto'); expanded[g] = true; render(); }
+  });
+  $('days').addEventListener('change', function (ev) {
+    var cb = ev.target.closest('input[data-manual]');
+    if (!cb) return;
+    O.setManual(cb.getAttribute('data-manual'), cb.checked);
+    render();
+  });
+  $('resetBtn').addEventListener('click', function () {
+    if (!window.confirm(T('Reset your First Week progress? Lessons, trades, journal entries and everything else stay; only the ticks and unlocked days on this page are cleared.'))) return;
+    O.reset(); expanded = {}; lastDayDone = null; lastComplete = null; render();
+    toast(T('First Week progress reset.'));
+  });
+
+  // Re-evaluate whenever the student comes back from another page or tab.
+  var reRender = function () { if (O.plan()) render(); };
+  window.addEventListener('focus', reRender);
+  window.addEventListener('pageshow', reRender);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) reRender(); });
+  window.addEventListener('storage', function (e) { if (!e.key || /^bt\./.test(e.key)) reRender(); });
+  window.addEventListener('bt:lang', function () { O.load(true).then(render, function () { /* keep the current plan */ }); });
+
+  /* ---------------- boot ---------------- */
+  O.load().then(function () {
+    var st = render();
+    // #day-N in the URL opens that day; otherwise the current day is open.
+    var m = /^#day-(\d+)$/.exec(location.hash || '');
+    if (m && st) { expanded[+m[1]] = true; render(); var el = $('day-' + m[1]); if (el) el.scrollIntoView({ block: 'start' }); }
+  }).catch(function (e) {
+    $('days').innerHTML = '<div class="callout danger"><span class="title">' + esc(T('Could not load the plan')) + '</span>' +
+      esc(T('course/firstweek.json did not load ({err}). If you opened this page as a local file, serve the folder with a tiny web server or use the hosted version.', { err: e && e.message ? e.message : String(e) })) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

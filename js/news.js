@@ -27,6 +27,8 @@
   'use strict';
   var root = typeof window !== 'undefined' ? window : globalThis;
   var BT = root.BT = root.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (root.BT && root.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   /* ------------------------------------------------------------------ */
   /* Constants                                                          */
@@ -123,13 +125,13 @@
       var ms = unixSec * 1000, diff = (nowMs == null ? now() : nowMs) - ms;
       if (diff < 0) diff = 0;
       var m = Math.floor(diff / 60000);
-      if (m < 1) return 'just now';
-      if (m < 60) return m + ' min ago';
+      if (m < 1) return T('just now');
+      if (m < 60) return T('{n} min ago', { n: m });
       var h = Math.floor(m / 60);
-      if (h < 24) return h + ' h ago';
+      if (h < 24) return T('{n} h ago', { n: h });
       var d = Math.floor(h / 24);
-      if (d === 1) return 'Yesterday';
-      if (d < 7) return d + ' days ago';
+      if (d === 1) return T('Yesterday');
+      if (d < 7) return T('{n} days ago', { n: d });
       var dt = new Date(ms);
       return MONTHS[dt.getMonth()] + ' ' + dt.getDate() + (dt.getFullYear() !== new Date(nowMs == null ? now() : nowMs).getFullYear() ? ', ' + dt.getFullYear() : '');
     },
@@ -266,7 +268,7 @@
     }
     return {
       provider: pick, key: String(keys[pick]).trim(), label: PROVIDER_LABEL[pick], live: true, configured: s.provider,
-      reason: pick === s.provider ? '' : 'Using your saved ' + PROVIDER_LABEL[pick] + ' key for company data (charts stay on ' + (PROVIDER_LABEL[s.provider] || s.provider) + ').',
+      reason: pick === s.provider ? '' : T('Using your saved {provider} key for company data (charts stay on {chartProvider}).', { provider: PROVIDER_LABEL[pick], chartProvider: PROVIDER_LABEL[s.provider] || s.provider }),
       canNews: true, canEarnings: true,
       budget: pick === 'alphavantage' ? { perDay: 25, note: 'Alpha Vantage allows 25 requests a day. The profile costs 1; headlines and earnings are loaded only when you ask.' } : { perDay: Infinity, note: 'Finnhub allows 60 requests a minute with no daily cap.' }
     };
@@ -290,8 +292,8 @@
       var lim = LOCAL_LIMITS[provider]; if (!lim) return { ok: true };
       var e = localRateEntry(localRateLoad(), provider, nowMs);
       var label = PROVIDER_LABEL[provider] || provider;
-      if (e.count >= lim.perDay) return { ok: false, code: 'rate_limit', reason: label + ' daily free-tier limit (' + lim.perDay + ' requests) reached. Try again tomorrow.', retryInMs: 3600000 };
-      if (e.stamps.length >= lim.perMinute) { var r = 60000 - (nowMs - e.stamps[0]) + 250; return { ok: false, code: 'rate_limit', reason: label + ' per-minute limit (' + lim.perMinute + '/min) reached. Try again in ' + Math.ceil(r / 1000) + ' s.', retryInMs: r }; }
+      if (e.count >= lim.perDay) return { ok: false, code: 'rate_limit', reason: T('{provider} daily free-tier limit ({n} requests) reached. Try again tomorrow.', { provider: label, n: lim.perDay }), retryInMs: 3600000 };
+      if (e.stamps.length >= lim.perMinute) { var r = 60000 - (nowMs - e.stamps[0]) + 250; return { ok: false, code: 'rate_limit', reason: T('{provider} per-minute limit ({n}/min) reached. Try again in {s} s.', { provider: label, n: lim.perMinute, s: Math.ceil(r / 1000) }), retryInMs: r }; }
       return { ok: true };
     },
     take: function (provider, nowMs) {
@@ -382,14 +384,14 @@
   /** Plain-English explanation of a failure for the page. */
   function explainError(e, provider) {
     var label = PROVIDER_LABEL[provider] || 'the data provider';
-    if (!e) return 'Unknown error.';
-    if (e instanceof TypeError || e.code === 'network') return 'The request to ' + label + ' was blocked (offline, CORS/CSP, or an embedded preview). Open the site directly in your browser and try again.';
+    if (!e) return T('Unknown error.');
+    if (e instanceof TypeError || e.code === 'network') return T('The request to {provider} was blocked (offline, CORS/CSP, or an embedded preview). Open the site directly in your browser and try again.', { provider: label });
     if (e.code === 'rate_limit') return e.message;
-    if (e.code === 'auth') return label + ' rejected the API key. Check it in the dashboard\'s Live data settings.';
+    if (e.code === 'auth') return T('{provider} rejected the API key. Check it in the dashboard\'s Live data settings.', { provider: label });
     if (e.code === 'plan') return e.message;
     if (e.code === 'symbol') return e.message;
-    if (e.code === 'timeout') return label + ' did not answer in time.';
-    if (e.code === 'http') return label + ' answered HTTP ' + e.status + '.';
+    if (e.code === 'timeout') return T('{provider} did not answer in time.', { provider: label });
+    if (e.code === 'http') return T('{provider} answered HTTP {status}.', { provider: label, status: e.status });
     return e.message || String(e);
   }
 
@@ -608,7 +610,7 @@
       var d = fmt.daysUntil(earn.next.date, nowMs);
       out.push({
         kind: 'upcoming', date: earn.next.date,
-        title: 'Next earnings in ' + (d === 0 ? 'less than a day' : d === 1 ? '1 day' : d + ' days') + ' (' + fmt.dateLabel(earn.next.date, nowMs) + (earn.next.hour === 'amc' ? ', after the close' : earn.next.hour === 'bmo' ? ', before the open' : '') + ')',
+        title: T('Next earnings in {when}', { when: d === 0 ? T('less than a day') : d === 1 ? T('1 day') : T('{n} days', { n: d }) }) + ' (' + fmt.dateLabel(earn.next.date, nowMs) + (earn.next.hour === 'amc' ? ', ' + T('after the close') : earn.next.hour === 'bmo' ? ', ' + T('before the open') : '') + ')',
         text: 'A stop-loss cannot protect a position through an overnight gap. Before the date, decide: hold full size, reduce, or step aside. Write the plan in your Journal before the report, not after.'
       });
     }
@@ -627,7 +629,7 @@
       var newest = news[0].time ? fmt.relTime(news[0].time, nowMs) : '';
       out.push({
         kind: 'coverage',
-        title: news.length + ' headline' + (news.length > 1 ? 's' : '') + ' in the last ' + NEWS_DAYS + ' days' + (newest ? ', newest ' + newest : ''),
+        title: T(news.length > 1 ? '{n} headlines in the last {days} days' : '{n} headline in the last {days} days', { n: news.length, days: NEWS_DAYS }) + (newest ? ', ' + T('newest {date}', { date: newest }) : ''),
         text: news.length >= 20 ? 'Heavy coverage usually means the stock is in play: expect wider ranges and more gaps than usual.' : 'Light coverage is normal for most companies most of the time. Quiet periods are when technical levels tend to work best.'
       });
     }
@@ -674,12 +676,12 @@
       var raw = await cached('profile', 'finnhub', symbol, TTL.profile, force, function () { return metered('finnhub', FH_BASE + '/stock/profile2?' + qs({ symbol: symbol, token: src.key }), src.key); }, result);
       if (raw && raw.error) throw NewsError(raw.error, /key|auth|token/i.test(raw.error) ? 'auth' : 'provider');
       var p = normalizeProfile('finnhub', raw);
-      if (!p) throw NewsError('Finnhub has no company profile for ' + symbol + '. Check the ticker (US stocks only on the free plan).', 'symbol');
+      if (!p) throw NewsError(T('Finnhub has no company profile for {symbol}. Check the ticker (US stocks only on the free plan).', { symbol: symbol }), 'symbol');
       return p;
     }
     var j = avCheck(await cached('profile', 'alphavantage', symbol, TTL.profile, force, function () { return metered('alphavantage', AV_BASE + '?' + qs({ function: 'OVERVIEW', symbol: avSymbol(symbol), apikey: src.key }), src.key); }, result));
     var pa = normalizeProfile('alphavantage', j);
-    if (!pa) throw NewsError('Alpha Vantage has no company overview for ' + symbol + '. Check the ticker.', 'symbol');
+    if (!pa) throw NewsError(T('Alpha Vantage has no company overview for {symbol}. Check the ticker.', { symbol: symbol }), 'symbol');
     return pa;
   }
   async function loadStats(symbol, src, result, force) {

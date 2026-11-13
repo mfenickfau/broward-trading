@@ -1,7 +1,7 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "title": "Broward Trading Course",
-  "summary": "Eight modules that take you from 'what is a stock?' to a backtested, replay-practised, written trading plan, with the paper-trading dashboard and Market Replay as your lab.",
+  "summary": "Nine modules that take you from 'what is a stock?' to a backtested, replay-practised, written trading plan, then show how the same discipline carries over to crypto and ETFs, with the paper-trading dashboard and Market Replay as your lab.",
   "modules": [
     {
       "id": "m1-foundations",
@@ -272,6 +272,40 @@
           "id": "m8-l5",
           "title": "Review cadence, journal metrics, the written plan and the final exam",
           "minutes": 14
+        }
+      ]
+    },
+    {
+      "id": "m9-crypto-etf",
+      "title": "Crypto & ETFs: Different Markets, Same Discipline",
+      "level": "intermediate",
+      "minutes": 57,
+      "summary": "How crypto trades around the clock, what an ETF actually holds and costs, why volatility changes your position size, and how every chart, risk and journal habit from the course applies unchanged to BTC-USD and SPY.",
+      "lessons": [
+        {
+          "id": "m9-l1",
+          "title": "Crypto basics: coins, exchanges and a market that never closes",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l2",
+          "title": "ETFs: baskets, index tracking and expense ratios",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l3",
+          "title": "Volatility and position sizing across markets",
+          "minutes": 12
+        },
+        {
+          "id": "m9-l4",
+          "title": "Reading BTC-USD and SPY with the same chart toolkit",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l5",
+          "title": "Fees, custody, taxes and adding a new market to your plan",
+          "minutes": 12
         }
       ]
     }

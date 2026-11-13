@@ -152,10 +152,10 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-bt-theme-toggle]'), function (b) {
       b.setAttribute('data-mode', t);
       b.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
-      b.setAttribute('aria-label', 'Switch to ' + next + ' theme');
-      b.title = 'Theme: ' + t + '. Switch to ' + next + '.';
+      b.setAttribute('aria-label', T('Switch to {next} theme', { next: T(next) }));
+      b.title = T('Theme: {theme}. Switch to {next}.', { theme: T(t), next: T(next) });
       var lbl = b.querySelector('.theme-label');
-      if (lbl) lbl.textContent = 'Theme: ' + (t === 'dark' ? 'Dark' : 'Light') + ' · switch to ' + next;
+      if (lbl) lbl.textContent = T('Theme: {theme} · switch to {next}', { theme: T(t === 'dark' ? 'Dark' : 'Light'), next: T(next) });
     });
     var meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
@@ -241,7 +241,7 @@
     if (BT.i18n && BT.i18n.setLang) {
       BT.i18n.setLang(next.code).then(function (ok) {
         syncLangUi();
-        if (!ok && next.code !== 'en' && BT.nav.toast) BT.nav.toast('The ' + next.label + ' translation could not be loaded. Check your connection and try again.', 'warn', 'Language');
+        if (!ok && next.code !== 'en' && BT.nav.toast) BT.nav.toast(T('The {next} translation could not be loaded. Check your connection and try again.', { next: next.label }), 'warn', T('Language'));
       });
     } else {
       // i18n.js did not load (very old browser / blocked): save the choice and reload.
@@ -365,9 +365,9 @@
     if (!host) { host = document.createElement('div'); host.className = 'toasts'; host.id = 'toasts'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
     var el = document.createElement('div');
     el.className = 'toast ' + (kind || '');
-    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(title) + '</b>' : '') + esc(msg) + '</div>' +
-      (action ? '<button class="sm primary t-action" type="button">' + esc(action.label) + '</button>' : '') +
-      '<button class="close" type="button" aria-label="Dismiss">✕</button>';
+    el.innerHTML = '<div class="t-body">' + (title ? '<b>' + esc(T(title)) + '</b>' : '') + esc(T(msg)) + '</div>' +
+      (action ? '<button class="sm primary t-action" type="button">' + esc(T(action.label)) + '</button>' : '') +
+      '<button class="close" type="button" aria-label="' + esc(T('Dismiss')) + '">✕</button>';
     var kill = function () { el.classList.add('leaving'); setTimeout(function () { el.remove(); }, 220); };
     el.querySelector('.close').onclick = kill;
     if (action) el.querySelector('.t-action').onclick = function () { kill(); action.run(); };
@@ -505,7 +505,7 @@
     //     loads (its boot path + MutationObserver); when it is already present, do it now.
     Array.prototype.forEach.call(navHost.querySelectorAll('[data-bt-lang-toggle]'), function (b) { b.addEventListener('click', onLangClick); });
     syncLangUi();
-    root.addEventListener('bt:lang', syncLangUi);
+    root.addEventListener('bt:lang', function () { syncLangUi(); syncThemeUi(false); });
     if (BT.i18n && BT.i18n.lang() !== 'en' && BT.i18n.hasDict(BT.i18n.lang())) { try { BT.i18n.translatePage(navHost); } catch (e) { /* ignore */ } }
 
     // 5. Phone shell: body.has-tabbar adds bottom padding for the fixed tab bar.

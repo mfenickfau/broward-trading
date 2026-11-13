@@ -6,8 +6,56 @@ The project's forward-looking plan is in `ROADMAP.md`; module interfaces are in 
 
 ## [Unreleased]
 
-- Update the roadmap section of `about.html` to match `docs/ROADMAP.md`.
-- First publish to GitHub Pages and install test on real phones.
+- Spanish course files `course/es/*.json` are added module by module; modules without one show the "English only" badge until they land.
+- Extend `tests/e2e.playwright.js` to `start.html`, `instructor.html` and `certificate.html` and refresh `docs/screenshots/`.
+- Update the roadmap section of `about.html` to match `docs/ROADMAP.md` (it still describes v0.2 as current).
+- Bump `VERSION` in `sw.js` and add the new pages, `css/print.css`, `i18n/es.json`, `course/firstweek.json` and `course/m9-crypto-etf.json` to the precache list.
+- v0.5 feature backlog from `docs/COMPETITIVE_ANALYSIS.md`: leagues, screener, strategy builder, gamification, options analyzer, coach.
+
+## [0.4.0] - 2026-11-12
+
+Theme: classroom tools, Spanish, a guided first week, crypto and ETFs, and the first public deployment.
+
+The site is live at <https://mfenickfau.github.io/broward-trading/>, deployed by `.github/workflows/pages.yml`, which runs every unit test on each push to `main` and deploys only when they all pass.
+
+### Added
+
+- **Spanish** (`js/i18n.js`, `BT.i18n`, `BT.t`, `i18n/es.json`): DOM-based translation of the whole interface from a dictionary of exact English strings (2,700+ `ui` entries plus `attrs` for `placeholder`, `title`, `aria-label` and `alt`); a MutationObserver translates content inserted later (toasts, rendered tables, lesson blocks) and skips `<script>`, `<style>`, `<code>`, `<pre>`, `<textarea>`, `<svg>`, `.no-i18n` and input values; originals are remembered on each node so switching back restores English. `BT.t(str, vars)` for JavaScript-built strings with `{name}` interpolation; `fmtNumber` / `fmtMoney` / `fmtPercent` / `fmtDate` via `Intl` for the active locale (`en-US`, `es-419`). Language persisted in `bt.lang`, applied to `<html lang>`, announced with the `bt:lang` event; dictionaries cached in `bt.i18n.<code>` so JS strings translate from the first render. The language list is extensible with `addLang()`. **EN / ES toggle** in the top nav and the More sheet (`js/nav.js`).
+- **Language-aware course loading** (`js/course.js`): `lang()` / `setLang()`, `fileFor(name, lang)` → `course/<lang>/<name>`, English fallback per file with an `englishOnly` flag that `learn.js` shows as an "English only" badge on the index, module and lesson; caches drop on `bt:lang`; a switch during an in-flight load never leaves stale data. Same mechanism for `glossary.json`, `drills.json`, `questionbank.json` and `index.json`.
+- **Up next** recommendation on the course home (`BT.course.recommend()`): start, resume, next lesson, take the missing quiz, retake the lowest quiz below 80 %, claim the certificate, done. `certificateRecord()` persists the issued certificate (`bt.cert`) for the printable page.
+- **Classroom, student side** (`js/classroom.js`, `BT.classroom`): join a class with a six-character code (alphabet without `0`, `O`, `1`, `I`) and an optional display name; pseudonymous `studentId` generated on the device; `snapshot()` built only from localStorage (lessons done, quiz scores, drill scorecards, paper stats, journal counts, Daily 5 streak); **share codes** `BT1.` + base64url of deflate-raw JSON when `CompressionStream` exists, plain base64url JSON otherwise, decodable either way; `parseShareCodes()` finds every code in pasted text; `sync()` posts to `/classes/:code/snapshots` when `apiBase` is set, throttled to once per five minutes except right after a finished lesson or quiz; a **Classroom card** on `learn.html`. State in `bt.classroom`.
+- **Instructor page** (`instructor.html`, `js/instructor.js`): create classes (name, section, term) and get a code plus invitation text; import many share codes from one paste; refresh from the server with the per-class instructor token or the instructor secret; sortable roster (label, progress %, quiz average, drills passed and required passed, paper return marked "never graded", journal counts, Daily 5, last active with a stale marker); per-student drawer with module breakdown, drill history, grade sheet and private note; **gradebook** with the Teaching Guide's weights (quizzes 20, drills 20, journal 20, forward test 10, capstone 25, participation 5), editable weights and required-drill list, automatic scores and manual overrides, letters with an incomplete marker; roster CSV, gradebook CSV (with `_source` columns), backup and restore JSON; privacy notice. Formula-leading cells are quoted in CSV. State in `bt.instructor` and `bt.instructor.ui`.
+- **Worker classroom routes** (`server/worker.js`): `POST /classes` (instructor session or `INSTRUCTOR_SECRET`) → `{code, instructorToken}`, `GET /classes/:code`, `POST /classes/:code/snapshots` (whitelisted and clamped by `sanitizeSnapshot`, 410 after removal), `GET /classes/:code/roster` (creator session, `X-Class-Token`, or secret), `DELETE /classes/:code/students/:id`; KV namespace `CLASSES` with 400-day expiry; per-IP rate limits; CORS extended for `DELETE` and the classroom headers. Only `sha256(instructorToken)` is stored.
+- **First Week** (`start.html`, `js/onboarding.js`, `BT.onboarding`, `course/firstweek.json`): seven days × three tasks for complete beginners with a "why", steps, a deep link and a check (`tour`, `lesson`, `quiz`, `trade`, `replay`, `journal`, `alert`, `watchlist`, `glossary`, `manual`); `status()` evaluates checks against `bt.course`, `bt.portfolio`, `bt.replay.sessions`, `bt.journal`, `bt.alerts`, `bt.flashcards`, `bt.daily5`, `bt.watchlist` and `bt.tour.done` so most tasks tick themselves; days unlock in order and can be skipped; progress in `bt.onboarding`; "Your first week" card on the course home.
+- **Dashboard tour** (`js/app.js`): eight-step first-run tour of the chart, indicators, signal, watchlist and trade ticket; re-openable from the Tour button or `?`; completion in `bt.tour.done`.
+- **Crypto and ETFs** (`js/data.js`): universe now 50+ US stocks, **17 ETFs** (`kind:'etf'`, `etfType`, `expenseRatio`, `tracks`, `holdings`, `issuer`) and **BTC-USD, ETH-USD, SOL-USD** (`kind:'crypto'`); the demo generator runs a 24/7 calendar for crypto; `marketStatus(symbol)` reports crypto open around the clock; `providerSymbol()` maps `BTC-USD` to `BTC/USD` (Twelve Data), `BINANCE:BTCUSDT` (Finnhub) and the `DIGITAL_CURRENCY_DAILY` function (Alpha Vantage); provider spellings are folded back to `BASE-QUOTE` so cache keys and positions stay consistent. `tests/data.test.js` added.
+- **Course module 9** `course/m9-crypto-etf.json`, *Crypto & ETFs: Different Markets, Same Discipline* (intermediate, 58 min, m9-l1 to m9-l5): what an ETF is and what the expense ratio costs; index, sector, bond, commodity and leveraged ETFs; what crypto is and how it trades 24/7; volatility and position sizing; the same toolkit on a different clock. 45 lessons in total; `course/index.json` version 0.4.0.
+- **Printing** (`css/print.css`): media-print stylesheet linked from `learn.html` and `certificate.html`; forces the light palette, hides the shell and every button, prints prose on a 65ch measure, replaces live charts with their caption, prints quizzes as worksheets without answers unless already answered, page break between lessons when printing a whole module. **Print / Save as PDF** button in the lesson reader (this lesson or the whole module), hidden when `window.print` is unavailable or the page is framed.
+- **Printable certificate** `certificate.html`: landscape sheet with name, course, date, certificate id, verify URL, signature line and the Broward Trading mark, filled from the saved certificate record or `?name=&id=&date=` query parameters; linked from Learn once a certificate exists; hidden from the nav.
+- **Shell**: `start.html` (First Week) and `instructor.html` (Instructor) in the More sheet with icons and descriptions; `js/nav.js` injects `js/i18n.js` before a page's own scripts when the page does not include it, so `BT.t` exists everywhere.
+- **Tests**: `tests/i18n.test.js`, `classroom.test.js`, `course-v04.test.js`, `data.test.js`, `onboarding.test.js`; `tests/course.test.js` extended. Nineteen unit-test files, more than 500 tests. `tests/course-v04.test.js` validates that every `course/es/*.json` present mirrors its English file (ids, lesson order, quiz answer indexes); `tests/i18n.test.js` validates the dictionary (normalised keys, no empty values, placeholders preserved, brand name never translated).
+- **Deployment**: `.github/workflows/pages.yml` (test job, then `actions/deploy-pages`), the live URL and a workflow badge in the README.
+- **Docs**: `I18N.md` (translation mechanics, adding a language, keeping Spanish current, the validator), `INSTRUCTOR_GUIDE.md` (Classroom tooling end to end), `MARKETING.md` (landing copy, personas, free-to-Pro email sequence, social posts, compliance checklist), `COMPETITIVE_ANALYSIS.md` (what similar products do and the v0.5 backlog derived from them); `TEACHING_GUIDE.md` gains the classroom code workflow, a First Week assignment and an optional crypto / ETF week; README, ROADMAP and CONTRACTS (v0.4 additions) updated.
+
+### Changed
+
+- `course/index.json` lists nine modules and carries version `0.4.0`; `learn.js` shows the First Week and Classroom cards side by side on desktop and stacked on phones, the Up next card, "English only" badges and the print bar.
+- Every UI module (`app.js`, `learn.js`, `portfolio.js`, `backtest-ui.js`, `replay.js`, `journal.js`, `glossary.js`, `news.js`, `compare.js`, `alerts.js`) wraps user-visible strings in `BT.t()` so toasts, table headers and signal reasons translate; English output is byte-identical to v0.3.
+- `BT.data.marketStatus()` accepts an optional symbol; with no argument it still describes NYSE.
+- `server/README.md` documents the classroom routes, the `CLASSES` namespace and the `INSTRUCTOR_SECRET`.
+- Disclaimer copy mentions ETFs and crypto explicitly.
+
+### Security and privacy
+
+- Classroom snapshots never contain emails, real names (unless typed), IP addresses, journal text or trade lists; the Worker whitelists and clamps every field and does not log the sender.
+- Instructor authority is the creator's session, a per-class token stored only as a SHA-256 hash, or the deployment's `INSTRUCTOR_SECRET`; roster reads and deletes require one of them.
+- CSV exports quote cells that start with `=`, `+`, `-` or `@` so a nickname cannot run as a spreadsheet formula.
+- The translation layer never writes into form values and skips `<script>` and `<style>`, so a dictionary entry cannot inject markup or change what a student submits.
+
+### Known issues
+
+- `course/es/` is empty at the time of this entry; Spanish course content shows the "English only" badge until each file lands. The UI dictionary is complete.
+- Three assertions in `tests/classroom.test.js` were written against an eight-module course and must be updated for module 9 before the next push (they currently fail locally; see the ROADMAP's release checklist).
 
 ## [0.3.0] - 2026-11-12
 
@@ -70,6 +118,7 @@ Theme: from a single-file prototype to a modular app with a course.
 - Single-file prototype `index.html`: candlestick chart, RSI, MACD, Bollinger Bands, a composite signal, a basic paper account and Twelve Data live quotes. Established the tone and the "explain the why" approach.
 
 [Unreleased]: ROADMAP.md
-[0.3.0]: ROADMAP.md#v03--learning-loop-and-phone-app-current
+[0.4.0]: ROADMAP.md#v04--classroom-tools-spanish-and-first-week-current
+[0.3.0]: ROADMAP.md#v03--learning-loop-and-phone-app-done
 [0.2.0]: ROADMAP.md#v02--modular-app-done
 [0.1.0]: ROADMAP.md#v01--single-file-prototype-done

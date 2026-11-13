@@ -1,0 +1,591 @@
+{
+  "id": "m7-replay",
+  "title": "Ejercicios prácticos: Market Replay",
+  "level": "intermediate",
+  "minutes": 57,
+  "summary": "Reproduce velas históricas con el futuro oculto y completa ejercicios calificados sobre tendencias, reversiones, gaps, mercados bajistas, stops y tamaño de posición; después revisa cada sesión en el diario.",
+  "lessons": [
+    {
+      "id": "m7-l1",
+      "title": "Cómo usar Market Replay con honestidad",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Por qué un gráfico estático enseña la lección equivocada\n\nAbre cualquier gráfico diario y las operaciones parecen obvias. El piso de la primavera está ahí mismo; el techo del verano está ahí mismo; claro que habrías comprado uno y vendido el otro. Esa sensación tiene nombre, **sesgo retrospectivo** (hindsight bias), y es la razón principal por la que gente que ha leído mucho sobre trading sigue perdiendo dinero cuando empieza a operar. En un gráfico terminado puedes ver el lado derecho. Un trader nunca puede.\n\n[[Market replay]] (reproducción de mercado) corrige eso escondiendo el futuro. Eliges un símbolo, un intervalo y una fecha de inicio; el motor carga la serie completa pero solo te muestra las velas hasta un cursor que avanza. Decides con exactamente la misma información que tenía un trader ese día, pulsas *avanzar* y descubres qué pasó después. Los indicadores se calculan solo con las velas reveladas, así que un cruce ([[Crossover|crossover]]) o una lectura de sobreventa ([[Oversold|oversold]]) aparece en el gráfico en el mismo momento en que la habría visto un trader real, ni un instante antes.\n\nEste módulo es un conjunto de **ejercicios** (drills): sesiones cortas de replay con un objetivo declarado y criterios de aprobado o reprobado, cada una vinculada a una lección que ya tomaste. Piensa en ellos como el simulador de vuelo del resto del curso. Los Módulos 2 a 4 te explicaron qué es una tendencia, un stop y un tamaño de posición. Aquí descubres qué haces de verdad cuando la vela cierra en tu contra."
+        },
+        {
+          "type": "text",
+          "md": "### Qué te ofrece la página de replay\n\n- **Avanzar, reproducir, pausar.** *Avanzar* (step) revela una vela. *Reproducir* (play) revela velas a la velocidad que elijas. Puedes pausar en cualquier momento para pensar, trazar una línea o colocar una orden.\n- **Ticks intrabarra.** Con los ticks activados, cada vela se revela en cuatro subpasos (apertura, primer extremo, segundo extremo, cierre), de modo que un stop ([[Stop order (stop-loss)|stop]]) o una orden límite ([[Limit order|limit order]]) se ejecuta *dentro* de la vela, tal como habría ocurrido en una sesión en vivo. Con los ticks desactivados, la vela completa aparece de golpe y las órdenes pendientes se cotejan contra ella.\n- **Una cuenta de paper trading separada.** Las operaciones de replay pasan por el mismo motor de paper trading que el panel, pero van a una cuenta llamada *replay* que empieza con el efectivo del ejercicio (normalmente $100,000) y se reinicia en cada sesión. Tu portafolio de práctica principal nunca se toca.\n- **Órdenes pendientes.** Las órdenes de mercado se ejecutan al precio visible en ese momento. Las órdenes límite, stop y stop-límite esperan y se procesan en cada avance, exactamente igual que en el panel.\n- **Una tarjeta de resultados (scorecard).** Al terminar la sesión ves tu rendimiento frente a comprar y mantener ([[Buy and hold|buy-and-hold]]) sobre las mismas velas, el número de operaciones, la tasa de acierto ([[Win rate|win rate]]), el factor de beneficio ([[Profit factor|profit factor]]) y el drawdown máximo ([[Maximum drawdown|maximum drawdown]]), además de un aprobado o reprobado según los criterios del ejercicio.\n- **Un historial de sesiones y un enlace al diario.** Cada sesión terminada se guarda en el historial de replay, y con un toque la escribes en tu diario de trading con etiquetas y notas. La Lección 5 trata de cómo aprovechar eso bien.\n\nLas fechas que ves en los títulos de los ejercicios son etiquetas de *escenarios*. En modo demo la serie de precios es simulada y determinista: todos los estudiantes reproducen las mismas velas, así que puedes comparar notas con un compañero de clase. Si conectaste una clave de datos de mercado, el motor reproduce en cambio las velas históricas reales del proveedor para ese rango, y las formas serán distintas de las descripciones del ejercicio. En cualquier caso, las reglas del ejercicio son las mismas."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El futuro está oculto para el gráfico, no para ti.** El replay solo funciona si te niegas a averiguar qué hizo la acción. No abras el panel con el mismo símbolo, no busques el gráfico real de ese año y no repitas una sesión para \"arreglar\" el resultado a menos que hayas cambiado una regla escrita. El motor no puede impedir que hagas trampa. Solo tú puedes, y esa es la primera disciplina que ponen a prueba los ejercicios.",
+          "title": "La única regla"
+        },
+        {
+          "type": "text",
+          "md": "### Seis hábitos que hacen honesto el replay\n\n1. **Decide antes de avanzar.** Antes de cada paso, di (o escribe) qué harás si la próxima vela cierra al alza, a la baja o atraviesa un nivel. Luego avanza. Decidir después de que la vela se imprime es solo una forma más lenta de leer un gráfico terminado.\n2. **Escribe la regla primero.** Cada ejercicio nombra su regla: un cruce, un nivel de RSI, un stop por encima de la resistencia. Anótala en las notas de la sesión antes de pulsar reproducir. Una regla que puedes enunciar es una regla que te pueden sorprender rompiendo.\n3. **Ejecuta al precio visible y acéptalo.** Una orden de mercado se ejecuta al último precio revelado; con los ticks desactivados eso es el cierre de la última vela, que un trader real solo podría conseguir en la *siguiente* apertura. Si eso te incomoda, avanza una vela después de la señal antes de entrar. No finjas que compraste el mínimo de una vela que no podías haber visto.\n4. **Usa órdenes pendientes para los stops.** Coloca el stop como una orden, no como una intención. La tarjeta de resultados cuenta las órdenes stop porque un stop que está en tu cabeza es un stop que se mueve.\n5. **Termina la sesión.** Abandonar a mitad de un ejercicio perdedor borra la lección. La tarjeta de resultados solo existe para sesiones terminadas, y el drawdown que estabas evitando es justo el número que más necesitas ver.\n6. **Repite con un motivo.** Repetir el mismo ejercicio es útil cuando cambiaste una sola cosa: un stop más amplio, una media móvil más lenta, un tamaño más pequeño. Repetir para borrar una pérdida te enseña que las pérdidas se pueden borrar, que es lo contrario de lo que te enseñará una cuenta real."
+        },
+        {
+          "type": "text",
+          "md": "### Ticks, gaps y la velocidad que eliges\n\nEn un gráfico diario con los ticks desactivados, cada paso es un día de operaciones y tu stop se compara con el máximo y el mínimo de ese día. Si el mínimo queda por debajo de tu stop, te ejecutan al precio del stop, salvo que la vela haya *abierto* por debajo de él, en cuyo caso te ejecutan en la apertura. Ese es el tratamiento honesto de un gap ([[Gap|gap]]): un stop no puede ejecutarse a un precio que el mercado se saltó.\n\nCon los ticks activados, la misma vela se revela como cuatro precios en orden, y tu stop se ejecuta cuando la trayectoria lo cruza. Como la trayectoria de una vela es una aproximación (apertura, luego el extremo más cercano a la apertura, luego el otro extremo, luego el cierre), es un modelo, no una cinta de precios. Es lo bastante fiel para demostrar lo que ha dicho cada lección de riesgo: los stops te protegen de la mayoría de los desenlaces, no de todos, y los que se les escapan son los que duelen.\n\nLa velocidad es una herramienta, no una carrera. Avanza despacio cerca de tus niveles y deja que el gráfico corra más rápido por el tramo intermedio sin novedades. Varios ejercicios duran un año; a una vela por segundo son unos cuatro minutos de reproducción, lo que deja tiempo para pensar de verdad cuando importa."
+        },
+        {
+          "type": "drill",
+          "drillId": "sma-cross-msft-2024",
+          "md": "**Calentamiento.** Reproduce MSFT durante un año en el gráfico diario con una sola regla: largo cuando la SMA de 20 días cruza por encima de la de 50, fuera del mercado cuando vuelve a cruzar por debajo. Activa las dos superposiciones antes de pulsar reproducir, escribe la regla en las notas y actúa en cada cruce en la siguiente apertura. Terminarás con entre dos y ocho operaciones completas (round trips). El objetivo del calentamiento no es el rendimiento; es sentir cuánto dura un mes tranquilo cuando esperas que una regla se dispare, y qué tentador es \"ayudarla\"."
+        },
+        {
+          "type": "exercise",
+          "md": "Completa tu primera sesión honesta y lee la tarjeta de resultados.\n\n- Abre Market Replay, elige el ejercicio de calentamiento de arriba y, antes de pulsar reproducir, escribe una frase en las notas: la regla de entrada, la regla de salida y el tamaño (usa el 50% del efectivo por entrada para que una sola regla determine el resultado).\n- Reproduce a velocidad lenta. Pausa en cada cruce, avanza una vela más y luego coloca una orden de **mercado** en esa apertura. No coloques ninguna orden que la regla no haya pedido.\n- Termina el año, cierra cualquier posición abierta cuando el motor te indique que la sesión terminó y lee la tarjeta de resultados: tu rendimiento, el rendimiento de buy-and-hold, tus operaciones y tu drawdown máximo.\n- Guarda la sesión en el diario y etiquétala con `replay`, `trend`. Escribe una línea honesta bajo *lecciones*: el momento en que más quisiste romper la regla, y qué hiciste.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=sma-cross-msft-2024",
+            "label": "Abrir el ejercicio de calentamiento en Market Replay"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Qué es lo principal que hace Market Replay y que un gráfico normal no puede hacer?",
+              "choices": [
+                "Muestra más indicadores a la vez",
+                "Oculta las velas a la derecha del cursor para que decidas sin retrospectiva",
+                "Usa datos más rápidos que el panel",
+                "Garantiza que las órdenes stop se ejecuten a su precio"
+              ],
+              "answer": 1,
+              "explain": "Un gráfico terminado muestra el futuro; el replay revela una vela a la vez, así que tus decisiones se toman solo con la información que tenía un trader ese día. Los indicadores se calculan únicamente con las velas reveladas, por la misma razón."
+            },
+            {
+              "q": "¿A qué cuenta van las operaciones de replay?",
+              "choices": [
+                "A tu portafolio de práctica principal, el mismo que el panel",
+                "A una cuenta de paper trading separada llamada 'replay' que se reinicia en cada sesión",
+                "A una cuenta real de corretaje",
+                "A ninguna cuenta; el replay solo dibuja las operaciones en el gráfico"
+              ],
+              "answer": 1,
+              "explain": "El replay usa el mismo motor de paper trading pero una cuenta separada llamada 'replay', así que los ejercicios nunca alteran el historial que estás construyendo en tu portafolio de práctica principal."
+            },
+            {
+              "q": "Con los ticks intrabarra desactivados, una vela diaria abre por debajo de tu stop de venta pendiente. ¿Dónde se ejecuta el stop?",
+              "choices": [
+                "Al precio del stop",
+                "En la apertura de la vela, porque el mercado se saltó el precio del stop",
+                "En el mínimo de la vela",
+                "No se ejecuta; los stops solo funcionan con los ticks activados"
+              ],
+              "answer": 1,
+              "explain": "Un stop se convierte en orden de mercado cuando el precio lo atraviesa. Si la vela abre con gap más allá del stop, el primer precio disponible es la apertura, que es el tratamiento honesto de un gap y la razón por la que los stops no son garantías."
+            },
+            {
+              "q": "Terminas un ejercicio con una tarjeta de resultados perdedora. Según la lección, ¿cuándo es buena idea repetir el mismo ejercicio?",
+              "choices": [
+                "Siempre que pierdas; el objetivo es una tarjeta ganadora",
+                "Nunca; cada ejercicio solo se puede correr una vez",
+                "Cuando hayas cambiado una regla escrita, para que la segunda corrida ponga a prueba el cambio",
+                "Solo si antes consultas el gráfico real para ver qué salió mal"
+              ],
+              "answer": 2,
+              "explain": "Repetir con una regla cambiada es un experimento. Repetir para borrar una pérdida te enseña que las pérdidas se pueden deshacer, algo que una cuenta real nunca hará, y mirar el gráfico real anula el propósito de ocultar el futuro."
+            },
+            {
+              "q": "¿A qué se refieren los años en los títulos de los ejercicios, como 'MSFT 2024', en modo demo?",
+              "choices": [
+                "A los precios reales exactos de ese año calendario",
+                "A etiquetas de escenario para una serie de precios simulada y determinista que todos los estudiantes ven idéntica",
+                "A precios aleatorios generados de nuevo cada vez que abres el ejercicio",
+                "A precios en vivo con un año de retraso"
+              ],
+              "answer": 1,
+              "explain": "Los datos demo son simulados y deterministas, así que todos los estudiantes reproducen las mismas velas y pueden comparar resultados. Con una clave de datos de mercado conectada, el motor reproduce en cambio velas históricas reales del rango."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l2",
+      "title": "Ejercicios de tendencia: aguantar y seguir la regla",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Seguir la tendencia es un problema de paciencia, no de predicción\n\nEl Módulo 2 definió una tendencia alcista ([[Uptrend|uptrend]]) como una secuencia de máximos y mínimos crecientes, y el Módulo 3 mostró las herramientas de medias móviles que te mantienen del lado correcto. Ninguno de los dos módulos podía enseñarte la parte difícil, porque la parte difícil no está en el gráfico. Son las ocho semanas a mitad de un año de tendencia en las que la acción cae un 20%, tu ganancia abierta se reduce a la mitad, los indicadores se ven cansados y todos tus instintos dicen *tómala mientras puedas*.\n\nEn la mayoría de los años de tendencia, casi todo el rendimiento llega en un puñado de velas, y nadie sabe de antemano cuáles. El trader que vende en cada retroceso que da miedo y recompra después de la recuperación captura el vaivén y se pierde el movimiento. Por eso el seguimiento de tendencia ([[Trend following]]) tiene una tasa de acierto baja y una relación de pago alta: muchas pérdidas pequeñas por arranques falsos, unas pocas ganancias grandes de las tendencias que sí corren. Si no puedes aguantar los drawdowns dentro de las operaciones ganadoras, nunca cobras las ganancias, y la matemática de la estrategia deja de funcionar para ti aunque funcione en el papel.\n\nLos tres ejercicios de esta lección atacan eso desde tres ángulos: mantener una posición a través de los retrocesos, obedecer una regla mecánica de cruce a través de las sacudidas (whipsaws) y entrar en rupturas con órdenes en lugar de nervios."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Nvidia, velas diarias con SMA de 20 y 50 días. En un gráfico terminado la tendencia es obvia y los retrocesos parecen inofensivos. En replay te enfrentas a cada retroceso sin saber si es el que termina la tendencia. Esa incertidumbre, no el gráfico, es lo que entrena el ejercicio."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio uno: montar la tendencia\n\nEl primer ejercicio es una fuerte tendencia alcista simulada con retrocesos de entre 10% y 30% en el camino. Los criterios son deliberadamente estrictos con la *actividad*: tres operaciones completas o menos, nada de cortos, y capturar al menos el 20% del movimiento. Sobreoperar reprueba el ejercicio aunque gane dinero.\n\nUn plan que aprueba se ve así:\n\n- **Entrada.** Compra en el primer cierre por encima de la SMA de 50 días con la de 20 por encima de la de 50, o en el primer mínimo creciente ([[Higher high / higher low|higher low]]) que puedas identificar. No esperes certeza; un seguidor de tendencia siempre llega temprano o tarde, y elige llegar temprano.\n- **Stop.** Un stop de venta pendiente bajo el mínimo de oscilación (swing low) más reciente, o bajo la SMA de 50 días. Decide cuál *antes* de entrar, porque después elegirás el que te mantenga dentro.\n- **Seguimiento.** Cuando cada retroceso se resuelva en un nuevo máximo, sube el stop bajo el nuevo mínimo de oscilación. Nunca lo bajes. Un stop dinámico ([[Trailing stop|trailing stop]]) es la forma en que una operación de tendencia sale sin que tengas que adivinar el techo.\n- **Agrega una vez, como máximo.** Si debes hacer algo durante un retroceso, el único acto constructivo es agregar una cantidad pequeña en el primer mínimo creciente posterior, nunca vender.\n\nEspera que el stop se dispare una vez, probablemente en el retroceso más profundo. Volver a entrar en el siguiente máximo creciente cuesta una de tus tres operaciones completas. Por eso existe el límite: te obliga a dimensionar el stop de modo que los retrocesos normales no te saquen."
+        },
+        {
+          "type": "drill",
+          "drillId": "ride-the-trend-nvda-2023",
+          "md": "**Aguanta los retrocesos.** Entra temprano con un stop claro bajo el último mínimo de oscilación, súbelo bajo cada nueva base y, por lo demás, no hagas nada. Tres operaciones completas o menos, nada de cortos, captura al menos el 20% del movimiento. Antes de empezar, anota el tamaño de retroceso que te haría *querer* vender, y luego observa qué haces de verdad cuando llega."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio dos: la regla de cruce y el impuesto de las sacudidas\n\nEl calentamiento de la Lección 1 era también el segundo ejercicio de tendencia, y ahora sabes qué estaba poniendo a prueba. El cruce de SMA ([[SMA crossover strategy|SMA crossover]]) es la regla de tendencia más simple que existe y tiene un costo bien conocido: en mercados laterales las medias se entrelazan y cada cruce se revierte unas velas después. Cada uno de esos es una sacudida ([[Whipsaw|whipsaw]]), una pérdida pequeña más el spread, y llegan en racimos.\n\nLos criterios del ejercicio (entre dos y ocho operaciones completas, sin posición al final, nada de cortos) te obligan a tomar *todos* los cruces, que es la única forma de aprender la distribución real de los resultados. Tomada de forma selectiva, la regla no es una regla; eres tú, con un gráfico como coartada. Tomada mecánicamente, verás un patrón que se repite en todos los backtests del Módulo 6: unas cuantas sacudidas y luego un cruce que atrapa un movimiento largo y paga por todas ellas. Si te saltaste ese porque los tres anteriores habían fallado, el sistema funcionó igual y tú no.\n\nVale la pena probar dos refinamientos en una segunda corrida, uno a la vez: exigir un cierre *más allá* de la media lenta antes de actuar sobre un cruce, o usar un par más lento (50/200). Ambos reducen las sacudidas y ambos retrasan las entradas. No hay ajuste que evite las dos cosas, y esa es la disyuntiva que este ejercicio existe para hacerte sentir."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio tres: rupturas con órdenes, no con nervios\n\nUna ruptura ([[Breakout|breakout]]) es un cierre más allá de un nivel que aguantó varias veces. El Módulo 2 mostró los patrones (bases o rangos de consolidación ([[Range (consolidation)|bases]]), banderas, triángulos) y el Módulo 3 agregó la confirmación por volumen. El problema de ejecución es psicológico: para cuando una ruptura es obvia la acción ya subió, y el instinto es perseguirla o esperar un retroceso que quizá nunca llegue.\n\nEl ejercicio resuelve esto con la colocación de órdenes. Identifica la resistencia de la base actual y coloca un **stop de compra** (buy stop) un poco por encima. Si la acción rompe, el mercado te mete a un precio cercano al de la ruptura mientras tú no haces nada. Si nunca rompe, nunca la tienes. Luego protege la posición con un **stop de venta** bajo la base de la que acabas de salir comprando, y a medida que se forme cada nueva base más arriba, sube el stop de venta por debajo de ella.\n\nEspera una o dos rupturas falsas ([[False breakout|false breakout]]): el precio asoma por encima de la resistencia, activa tu stop de compra y vuelve a caer dentro de la base, llevándose tu stop de venta. Esa es la sacudida del trader de rupturas, y cuesta más o menos la altura de la base. El objetivo de rendimiento del ejercicio (+30%) y el límite de drawdown (menos de 25%) solo son alcanzables si mantienes pequeñas las rupturas falsas y dejas correr las verdaderas, que es exactamente la forma de pago del seguidor de tendencia, otra vez, con una entrada distinta."
+        },
+        {
+          "type": "drill",
+          "drillId": "breakout-meta-2023",
+          "md": "**Deja que el mercado te meta.** Entra con órdenes stop de compra un poco por encima de la resistencia de cada base y protege cada entrada con un stop de venta bajo la base; sube ese stop bajo cada nueva base. Al menos dos órdenes stop, nada de cortos, +30% o mejor con un drawdown menor al 25%. Si una ruptura falla y te saca, anótalo y coloca el siguiente stop de compra por encima de la siguiente base. Una ruptura falsa es el precio de la entrada, no una razón para cambiar la regla."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Bajar un stop es el único acto imperdonable en un ejercicio de tendencia.** Un stop que se aleja del precio mientras la operación va en tu contra no es un stop; es una decisión de asumir una pérdida mayor más tarde. El motor te permitirá cancelar una orden y volver a colocarla más abajo. El número de drawdown de la tarjeta de resultados recordará que lo hiciste.",
+          "title": "Cuidado con esto"
+        },
+        {
+          "type": "exercise",
+          "md": "Completa los tres ejercicios de tendencia y compara sus formas.\n\n- Corre primero **Montar la tendencia**. Antes de cada avance a través de un retroceso, di en voz alta cuál es tu stop y si lo vas a mover. Termina y guarda la sesión en el diario con las etiquetas `replay`, `trend`, `hold`.\n- Corre otra vez el ejercicio de **cruce de SMA** si hiciste el calentamiento de la Lección 1, esta vez exigiendo un cierre más allá de la media lenta antes de actuar. Anota cuántas operaciones tomaste en comparación con la primera corrida.\n- Corre **Entradas en ruptura**. Cuenta tus rupturas falsas y anota cuánto costó cada una como porcentaje de la cuenta.\n- En el historial de replay, pon las tres tarjetas de resultados una junto a otra. ¿Qué ejercicio tuvo la tasa de acierto más alta? ¿Cuál tuvo el rendimiento más alto? Escribe una frase sobre por qué no son el mismo ejercicio.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=ride-the-trend-nvda-2023",
+            "label": "Empezar con Montar la tendencia"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "El ejercicio 'Montar la tendencia' reprueba si haces más de tres operaciones completas, incluso si la sesión es rentable. ¿Qué enseña ese límite?",
+              "choices": [
+                "Que los costos de operar son el problema principal",
+                "Que la mayor parte del rendimiento de un año de tendencia viene de aguantar, así que sobreoperar en los retrocesos es el error incluso cuando por casualidad funciona",
+                "Que el motor no puede procesar más de tres operaciones",
+                "Que siempre deberías usar buy-and-hold"
+              ],
+              "answer": 1,
+              "explain": "El seguimiento de tendencia gana su rendimiento en un puñado de velas que nadie puede elegir de antemano. Vender en cada retroceso que da miedo captura el vaivén y se pierde el movimiento; el límite de actividad te obliga, en cambio, a dimensionar un stop que sobreviva a los retrocesos normales."
+            },
+            {
+              "q": "En un ejercicio de tendencia, ¿qué acción llama la lección el único acto imperdonable?",
+              "choices": [
+                "Agregar una cantidad pequeña en un mínimo creciente",
+                "Subir el stop bajo un nuevo mínimo de oscilación",
+                "Bajar un stop, alejándolo del precio, mientras la operación va en tu contra",
+                "Dejar correr la tendencia sin tomar ganancias"
+              ],
+              "answer": 2,
+              "explain": "Un stop que se aleja del precio es una decisión de asumir una pérdida mayor más tarde. Subir un stop asegura ganancias; agregar en un mínimo creciente es constructivo. Bajar un stop socava el único control de riesgo que siempre funciona."
+            },
+            {
+              "q": "¿Por qué el ejercicio de cruce de SMA te exige tomar todos los cruces, incluidos los que vienen después de tres perdedores?",
+              "choices": [
+                "Porque tomar todas las señales es la única forma de aprender la distribución real de resultados de la regla, y el gran ganador que paga por las sacudidas suele venir después de un racimo de pérdidas",
+                "Porque los cruces siempre son rentables a largo plazo",
+                "Porque el motor no te deja saltarte una señal",
+                "Porque saltarse señales aumenta la tasa de acierto"
+              ],
+              "answer": 0,
+              "explain": "Tomada de forma selectiva, una regla no es una regla. La ejecución mecánica muestra el patrón que muestra todo backtest: varias sacudidas y luego un cruce que atrapa un movimiento largo. Saltarse ese significa que el sistema funcionó y tú no."
+            },
+            {
+              "q": "¿Cómo te pide el ejercicio de rupturas que entres en una posición?",
+              "choices": [
+                "Con una orden de mercado en cuanto la ruptura sea obvia",
+                "Con una orden límite por debajo de la base, esperando un retroceso",
+                "Con un stop de compra colocado un poco por encima de la resistencia de la base, para que el mercado te meta solo si rompe",
+                "Vendiendo en corto el nivel de resistencia"
+              ],
+              "answer": 2,
+              "explain": "Un stop de compra por encima de la resistencia elimina el dilema de perseguir o esperar: te ejecutan a un precio cercano al de la ruptura sin hacer nada, y nunca tienes la acción si no logra romper. Un stop de venta bajo la base protege luego la entrada."
+            },
+            {
+              "q": "¿Cuánto le cuesta normalmente una ruptura falsa a un trader que usa el método de stop de compra sobre la resistencia y stop de venta bajo la base?",
+              "choices": [
+                "Nada, porque el stop de compra nunca se ejecuta",
+                "Aproximadamente la altura de la base, ya que el stop de compra se ejecuta sobre la resistencia y el stop de venta bajo la base",
+                "Toda la posición, porque no hay salida",
+                "La mitad de la cuenta, por el apalancamiento"
+              ],
+              "answer": 1,
+              "explain": "La entrada queda justo por encima del techo de la base y el stop de protección justo por debajo de su piso, así que una ruptura fallida pierde más o menos la altura de la base más el deslizamiento (slippage). Mantener esas pérdidas pequeñas mientras dejas correr las rupturas verdaderas es todo el método."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l3",
+      "title": "Ejercicios de reversión y rango: reversión a la media, gaps e intradía",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### La otra mitad del mercado\n\nLos mercados están en tendencia quizá un tercio del tiempo. El resto del tiempo se mueven en rango, y una regla de tendencia aplicada a un mercado en rango no produce más que sacudidas. La reversión a la media ([[Mean reversion]]) es la apuesta opuesta: que una acción muy alejada de su promedio reciente volverá hacia él. También tiene la forma estadística opuesta. Las tasas de acierto son altas, porque los precios normalmente sí rebotan un poco; los pagos son pequeños, porque estás vendiendo contra un movimiento en lugar de montarlo; y las pérdidas, cuando llegan, son aquellas en las que el estiramiento siguió estirándose, que es como se ve una nueva tendencia desde dentro.\n\nPor eso operar reversiones exige dos cosas que operar tendencias no exige: una entrada precisa (toda la ventaja está en comprar un poco más abajo y vender un poco más arriba que la multitud) y un stop de hierro (la única operación que no revierte puede borrar diez que sí lo hicieron). Los ejercicios de aquí entrenan ambas, y luego agregan las dos condiciones que más a menudo rompen los stops: los gaps y el ruido intradía."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio uno: operar el rango con RSI y órdenes límite\n\nEl primer ejercicio son siete meses simulados que terminan más o menos donde empezaron. Buy-and-hold no gana nada, y por eso los criterios te piden superarlo, ganar al menos la mitad de tus operaciones y usar al menos dos órdenes límite.\n\nLa regla viene del Módulo 3: compra cuando el RSI(14) ([[Relative Strength Index (RSI)|RSI(14)]]) cae por debajo de 30 con el precio cerca del piso del rango, vende cuando sube por encima de 70. El tipo de orden es la lección. Un trader de reversiones que entra con órdenes de mercado paga el spread y persigue; la ventaja es de unos pocos puntos porcentuales por operación y perseguir regala la mitad. En cambio, cuando el RSI se acerca a 30, coloca una **orden límite de compra** en el soporte del rango o justo por encima. O el mercado viene a tu precio o no viene, y si no viene, no había operación. A la salida, coloca una **orden límite de venta** cerca de la resistencia antes de que el RSI llegue a 70, para que la salida esté esperando cuando la multitud por fin se entusiasme.\n\nEl modo de fallo que debes vigilar es la ruptura del rango. Tres o cuatro oscilaciones te enseñan que el rango es confiable; la quinta vez el precio rompe por debajo del soporte, el RSI marca 25 y tu regla dice compra. Tu stop, un poco por debajo del mínimo más bajo del rango, dice lo contrario. Colócalo como orden cada vez, y cuando se dispare, no vuelvas a comprar de inmediato más abajo porque el RSI está \"todavía más sobrevendido\". Sobrevendido ([[Oversold]]) es una descripción, no un piso."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sr"
+          ],
+          "caption": "ETF del S&P 500, velas diarias con niveles de soporte y resistencia trazados a partir de puntos de oscilación. Un rango son dos de esos niveles aguantando varias veces cada uno. La reversión a la media opera el interior de la caja con órdenes límite; el stop va justo por fuera."
+        },
+        {
+          "type": "drill",
+          "drillId": "range-trading-spy-2018",
+          "md": "**Compra el miedo, vende la codicia, con órdenes límite.** Coloca límites de compra cerca del soporte cuando el RSI(14) baje hacia 30 y límites de venta cerca de la resistencia antes de que el RSI llegue a 70. Pon un stop pendiente un poco por debajo del mínimo del rango cada vez que estés largo. Al menos tres operaciones, al menos dos ejecuciones límite, una tasa de acierto del 50% o mejor y un resultado por delante de buy-and-hold. Anota cada vez que la ejecución llegó a un mejor precio del que habría dado una orden de mercado."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio dos: desplome y recuperación, con ticks activados\n\nEl segundo ejercicio es donde la teoría se encuentra con la cinta. Un desplome simulado y rápido de aproximadamente 40%, seguido de una recuperación agitada, reproducido con los ticks intrabarra activados para que tus órdenes se ejecuten a lo largo de la trayectoria dentro de cada vela. Los criterios son modestos (terminar en positivo, drawdown menor al 20%, al menos dos órdenes stop o stop-límite) y la mayoría de los estudiantes los reprueban la primera vez. Ese es el punto.\n\nQué sale mal, en orden:\n\n- **Gaps a través de los stops.** Una vela abre 8% por debajo de tu stop. Tu stop se ejecuta en la apertura, no a tu precio. La pérdida es tres o cuatro veces la que habías dimensionado. El Módulo 4 te lo advirtió; ahora lo has sentido. La única solución que siempre funciona es el tamaño de la posición.\n- **Los rangos amplios se llevan todo.** En un desplome, un rango diario puede ser del 10%. Un stop que era un sensato 3% por debajo del precio queda dentro del ruido y se dispara en el primer tick a la baja, tras lo cual la vela cierra al alza. El ATR ([[Average True Range (ATR)|ATR]]) se triplica, aproximadamente, en un pánico; los stops fijados en dólares deberían ampliarse con él, y los tamaños reducirse en la misma proporción.\n- **Atrapar cuchillos.** La acción cayó 30% y *tiene* que estar barata. En un desplome, barato es una historia, no un nivel. Las entradas de reversión a la media funcionan cuando el rango está intacto; cuando el rango se rompió, espera un mínimo creciente antes de comprar cualquier retroceso.\n- **La sacudida de la recuperación.** El piso es una V, el primer rebote es de 15% en cuatro días y te lo perdiste. No persigas el cuarto día. La recuperación que sigue es agitada, y las órdenes límite en los retrocesos te meterán a mejores precios que las compras de pánico.\n\nPrueba también una orden stop-límite ([[Stop-limit order|stop-limit]]) en este ejercicio, además de un stop simple. Un stop-límite te protege de una ejecución terrible pero puede dejarte dentro de la posición si el gap es mayor que su límite. Ninguno de los dos es correcto en todos los casos. Aprender cuándo falla cada uno vale más que cualquier tarjeta de resultados."
+        },
+        {
+          "type": "text",
+          "md": "### Gaps de resultados: la versión programada de la misma lección\n\nLos datos demo no simulan reportes de resultados ([[Earnings report|earnings reports]]) individuales, pero toda acción real tiene cuatro al año y son la causa más común del gap nocturno que acaba de atravesar tu stop. Una empresa reporta después del cierre, la acción reabre 10% lejos de donde cerró, y toda orden pendiente entre esos dos precios se ejecuta en la apertura. Con una clave de datos reales conectada puedes reproducir una acción a través de una fecha de resultados (la página de Noticias lista las próximas) y sentir exactamente eso.\n\nLas reglas que se desprenden son simples y ampliamente ignoradas. Conoce la fecha antes de entrar; la página de Noticias y la mayoría de las páginas de cotizaciones la muestran. Decide de antemano si la posición debe mantenerse a través de ella y, de ser así, dimensiónala para que un gap de dos ATR en tu contra sea una pérdida que puedas encogerte de hombros y aceptar. Un stop no te protege de la noche a la mañana. El tamaño sí."
+        },
+        {
+          "type": "drill",
+          "drillId": "crash-and-recovery-xom-2020",
+          "md": "**Sobrevive al gap.** Los ticks están activados. Protege cada posición con una orden stop o stop-límite, dimensiona de modo que un gap del doble de tu distancia al stop siga siendo una pérdida pequeña, y no compres el primer rebote con todo. Al menos dos órdenes stop, un rendimiento positivo, drawdown menor al 20%. En tu primera corrida, anota el precio de ejecución de cada stop que se disparó junto al precio de stop que fijaste; la diferencia entre esas dos columnas es la lección."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio tres: una sesión intradía con VWAP\n\nEl último ejercicio cambia el marco temporal. Un día de operaciones simulado de 78 velas de cinco minutos con ticks activados, operado alrededor del VWAP ([[Volume-weighted average price (VWAP)|VWAP]]) como describió el Módulo 3: busca entradas largas cuando el precio retrocede hacia un VWAP ascendente en una mañana con tendencia alcista, o cortos cuando falla por debajo de él. Cuatro operaciones completas como máximo, sin posición al cierre y un drawdown intradía menor al 2% del capital.\n\nEl ejercicio está en esta lección porque el trading intradía es reversión a la media a un reloj más rápido, y todo lo que es difícil en operar reversiones es más difícil aquí. El spread es una porción mayor del movimiento. El ruido es mayor en relación con la señal, así que los stops se disparan por ticks que no significan nada. La tentación de tomar una operación más para volver a cero es constante, y el tope de cuatro operaciones del ejercicio existe para convertir el sobreoperar ([[Overtrading|overtrading]]) en un reprobado y no en una sensación. Terminar sin posición al cierre es la única regla inviolable del day trader: un gap nocturno sobre una posición intradía apalancada es la forma en que terminan las cuentas pequeñas.\n\nSi terminas el día con una o dos operaciones, una ganancia diminuta y un drawdown menor al 1%, lo hiciste bien. Si terminas con cuatro operaciones, una pérdida y unas ganas enormes de una quinta, acabas de conocer la razón por la que la mayoría de la gente no debería hacer day trading, y la conociste gratis."
+        },
+        {
+          "type": "drill",
+          "drillId": "intraday-aapl-5min",
+          "md": "**Opera un día alrededor del VWAP y vete a casa sin posición.** Largo en retrocesos hacia un VWAP ascendente en una mañana con tendencia alcista, corto en fallos por debajo de él, con un stop pendiente en cada posición. Como máximo cuatro operaciones completas, al menos una, sin posición a la campana de cierre y un drawdown intradía menor al 2%. Antes de empezar, anota la hora del día a partir de la cual no tomarás nuevas operaciones."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Las operaciones de reversión se ganan en la entrada.** Las operaciones de tendencia perdonan una entrada descuidada porque el movimiento es grande; las de reversión no, porque el movimiento es pequeño. Si no consigues tu precio con una orden límite, no había operación. Perseguir una reversión es la forma en que un método con 60% de acierto termina con expectativa negativa.",
+          "title": "Regla práctica"
+        },
+        {
+          "type": "exercise",
+          "md": "Mide lo que los gaps y los ticks le hacen a tus stops.\n\n- Corre **Desplome y recuperación** con ticks activados. Por cada stop que se disparó, registra el precio del stop y el precio de ejecución. Calcula el deslizamiento promedio en porcentaje.\n- Córrelo otra vez con ticks desactivados y las mismas reglas. Compara las dos tarjetas de resultados: los números de drawdown difieren porque las ejecuciones ocurren en lugares distintos, no porque el mercado haya cambiado.\n- Corre **Operar el rango** y cuenta cuántas de tus ejecuciones fueron ejecuciones límite. Estima cuánto ahorró cada ejecución límite frente a una orden de mercado al cierre de la vela.\n- Corre la **Sesión intradía** una vez. En el diario, registra tu emoción y tu confianza en cada operación. ¿La confianza de la cuarta operación es mayor o menor que la de la primera? ¿Cuál salió mejor?",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=crash-and-recovery-xom-2020",
+            "label": "Abrir Desplome y recuperación"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Qué forma estadística suele tener un método de reversión a la media, comparado con el seguimiento de tendencia?",
+              "choices": [
+                "Tasa de acierto baja y ganadores promedio grandes",
+                "Tasa de acierto alta y ganadores promedio pequeños, con pérdidas grandes ocasionales cuando el estiramiento sigue estirándose",
+                "Tanto la tasa de acierto como el ganador promedio son mayores que en el seguimiento de tendencia",
+                "No tiene pérdidas porque los precios siempre revierten"
+              ],
+              "answer": 1,
+              "explain": "Los precios normalmente rebotan un poco, así que las operaciones de reversión ganan a menudo; pero estás vendiendo contra un movimiento en lugar de montarlo, así que las ganancias son pequeñas, y la operación que no revierte es el inicio de una nueva tendencia y puede borrar muchas ganadoras. Por eso las entradas precisas y los stops firmes importan más aquí."
+            },
+            {
+              "q": "¿Por qué el ejercicio de operar el rango exige al menos dos órdenes límite?",
+              "choices": [
+                "Las órdenes límite son las únicas que admite el motor de replay",
+                "La ventaja en una operación de reversión es de solo unos puntos porcentuales, y perseguir con órdenes de mercado regala buena parte de ella; una orden límite consigue tu precio o no hay operación",
+                "Las órdenes límite siempre se ejecutan",
+                "Las órdenes de mercado no están permitidas en mercados en rango"
+              ],
+              "answer": 1,
+              "explain": "La ventaja de un trader de reversiones está en comprar un poco más abajo y vender un poco más arriba que la multitud. Las órdenes límite cerca del soporte y la resistencia capturan eso; si el mercado no viene a tu precio, no había operación."
+            },
+            {
+              "q": "En el ejercicio de desplome con ticks activados, una vela diaria abre 8% por debajo de tu stop de venta pendiente. ¿Qué pasa, y cuál es la única solución que siempre funciona?",
+              "choices": [
+                "El stop se ejecuta al precio del stop; no hay nada que arreglar",
+                "El stop se ejecuta en la apertura, muy por debajo de tu precio de stop; la única protección confiable es el tamaño de la posición",
+                "El stop se cancela automáticamente; usa un stop-límite en su lugar",
+                "El stop se ejecuta al cierre anterior; usa un stop más amplio"
+              ],
+              "answer": 1,
+              "explain": "Un gap se salta el precio del stop, así que el stop se convierte en una orden de mercado ejecutada al primer precio disponible, la apertura. Los stop-límite evitan una mala ejecución pero pueden dejarte dentro. Dimensionar de modo que un gap del doble de tu distancia al stop siga siendo una pérdida pequeña es la protección que siempre funciona."
+            },
+            {
+              "q": "El ATR se triplica, aproximadamente, durante un pánico. ¿Qué dice la lección que eso implica para tus stops y tamaños de posición?",
+              "choices": [
+                "Ajustar los stops y aumentar el tamaño, porque los movimientos son mayores",
+                "Mantener ambos iguales; las reglas nunca deben cambiar",
+                "Ampliar los stops con el ATR para que queden fuera del ruido, y reducir el tamaño en la misma proporción para que el riesgo en dólares se mantenga constante",
+                "Quitar los stops por completo hasta que pase la volatilidad"
+              ],
+              "answer": 2,
+              "explain": "Un stop que era un sensato 3% por debajo del precio queda dentro de un rango diario del 10% y se dispara por ruido. Ampliar el stop con el ATR lo mantiene significativo, y reducir el tamaño mantiene el riesgo por operación en el 1% del capital a pesar del stop más amplio."
+            },
+            {
+              "q": "¿Por qué el ejercicio intradía te limita a cuatro operaciones completas y exige que termines sin posición al cierre?",
+              "choices": [
+                "Porque el motor solo tiene datos para cuatro operaciones",
+                "Porque sobreoperar para volver a cero es el fallo intradía clásico, y un gap nocturno sobre una posición intradía es la forma en que terminan las cuentas pequeñas",
+                "Porque los day traders no pueden vender en corto",
+                "Porque el VWAP se reinicia después de cuatro operaciones"
+              ],
+              "answer": 1,
+              "explain": "El tope de operaciones convierte el sobreoperar en un reprobado y no en una sensación. Irse a casa sin posición es la única regla inviolable del day trader: una posición dimensionada para un drawdown intradía del 2% puede perder muchas veces eso en un gap nocturno."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l4",
+      "title": "Ejercicios de riesgo: mercados bajistas, disciplina de stops y tamaño",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Los ejercicios que deciden si sobrevives\n\nTodo el Módulo 4 se reducía a tres números: el porcentaje del capital que arriesgas en una operación, la distancia a tu stop y el drawdown que sigue a una racha perdedora. Estos ejercicios ponen esos números bajo presión. Los escenarios son feos a propósito: un año que pierde más de un tercio, una acción que cae a la mitad y luego se recupera, un colapso de tres cuartas partes. A nadie se le pide predecirlos. Se te pide salir del otro lado con una cuenta.\n\nUn marco útil: en un mercado alcista, el trader que asume más riesgo parece el más listo; en un mercado bajista, el trader que asumió menos es el único que sigue operando. No puedes saber en qué mercado estás hasta después. Así que la pregunta en cada ejercicio no es *¿cuánto puedo ganar?* sino *¿cuánto pierdo si me equivoco, y puedo sobrevivir a equivocarme cinco veces seguidas?*"
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio uno: supervivencia en un mercado bajista\n\nEl primer escenario pierde más de un tercio de su valor con rebotes brutales en el camino hacia abajo. Los criterios: mantener el drawdown ([[Drawdown|drawdown]]) de tu capital por debajo del 15%, terminar por delante de buy-and-hold y proteger cada posición con un stop. Fíjate en lo que *no* se exige. No tienes que ganar dinero. No tienes que vender en corto. El efectivo es una posición, y en este ejercicio es una buena.\n\nLas trampas, en el orden en que las encontrarás:\n\n- **Comprar la primera caída.** Una caída del 10% en una acción que solo había subido se parece a los retrocesos que aprendiste a comprar en la Lección 2. A veces lo es. La diferencia en un mercado bajista es que cada rebote no logra un nuevo máximo. Una vez que ves un máximo decreciente seguido de un mínimo decreciente, aplica las reglas de tendencia de la Lección 2 al revés: la carga de la prueba recae sobre los largos.\n- **Rebotes de mercado bajista.** Son violentos, de 15% a 25% en un par de semanas, y son los pisos más convincentes que verás jamás. Si estás corto, tu stop debe estar por encima del alcance probable del rebote; si estás largo, el rebote es donde reduces, no donde agregas. Los rebotes del ejercicio están construidos para engañarte al menos una vez.\n- **Promediar a la baja.** La acción cayó 40%, así que está barata, así que compras más. Tu costo promedio mejora y tu exposición se duplica. Promediar a la baja convierte una pérdida pequeña en una grande con una historia que suena mejor. El criterio de drawdown está ahí para hacerlo reprobar.\n- **No hacer nada porque no tienes una opinión.** Eso está permitido. Quedarse en efectivo durante un año en el que buy-and-hold pierde mucho aprueba los dos primeros criterios. Aun así necesitarás una posición protegida para aprobar el tercero, que es la forma en que el ejercicio te obliga a tomar al menos una operación bien dimensionada en un mercado hostil."
+        },
+        {
+          "type": "drill",
+          "drillId": "bear-market-survival-2022",
+          "md": "**Sobrevive, no predigas.** Mantén el drawdown de tu capital por debajo del 15% a lo largo de un año que pierde más de un tercio, termina por delante de buy-and-hold y protege cada posición con un stop. Los cortos están permitidos pero no son obligatorios; el efectivo es una posición legítima. Cuando llegue un rebote del 20%, decide antes de avanzar si es el piso o un rebote de mercado bajista, y anota por qué. Luego avanza."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio dos: disciplina de stop loss y la regla del 1%\n\nEl segundo escenario es un año violento: una acción pierde más de la mitad de su valor en algún momento y aun así termina más arriba. Puedes operarla como quieras con una sola restricción tomada del Módulo 4 ([[The 1% rule|Module 4]], la regla del 1%): nunca arriesgues más del 1% del capital en una operación. Cada posición se dimensiona a partir de la distancia a su stop, y el stop se coloca como una orden. Los criterios revisan tu drawdown (menor al 10%), tu conteo de stops (al menos tres) y un mínimo de tres operaciones, así que no puedes aprobar quedándote fuera.\n\nLa aritmética, una vez más, porque la harás una docena de veces en este ejercicio:\n\n- Presupuesto de riesgo = 1% × capital. Sobre $100,000, eso es $1,000.\n- Distancia al stop = precio de entrada − precio del stop, en dólares por acción. Usa un nivel (bajo el mínimo de oscilación, o 2 × ATR), no un número redondo.\n- Acciones = presupuesto de riesgo ÷ distancia al stop, redondeado hacia abajo.\n\nUna acción de $200 con un stop a $16 de distancia recibe 62 acciones, una posición de unos $12,400. La misma acción en un mes más tranquilo con un stop a $6 de distancia recibe 166 acciones, unos $33,000. El tamaño de la posición es un *resultado* del stop, nunca un dato de entrada, y cambia por un factor de tres entre esos dos meses mientras el riesgo en dólares se mantiene igual. Los estudiantes que reprueban este ejercicio casi siempre lo reprueban por elegir primero el número de acciones y después el stop.\n\nVigila también la fuga lenta: cinco pérdidas seguidas al 1% son un drawdown del 5%, que se siente mucho peor de lo que suena. El límite del 10% permite unas diez pérdidas seguidas. Si te encuentras en seis, la respuesta correcta no es una operación más grande para recuperarte; es revisar si tus stops están dentro del ruido y ampliarlos (con un tamaño menor) si lo están."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "sma50"
+          ],
+          "caption": "Tesla, velas diarias. Fíjate cuánto puede recorrer el rango de un solo día. Un stop colocado a unos pocos puntos porcentuales en una acción así queda dentro del ruido, y la regla del 1% dicta entonces una posición pequeña. Eso es la regla haciendo su trabajo, no una razón para abandonarla."
+        },
+        {
+          "type": "drill",
+          "drillId": "stop-discipline-tsla-2024",
+          "md": "**Dimensiona a partir del stop, cada vez.** Antes de cada entrada, calcula el 1% del capital actual, divídelo por la distancia a tu stop y compra esa cantidad de acciones (redondeada hacia abajo). Coloca el stop como orden pendiente de inmediato. Al menos tres operaciones, al menos tres órdenes stop y un drawdown máximo menor al 10%. Si te tienta elegir primero el número de acciones, detente y haz la división."
+        },
+        {
+          "type": "text",
+          "md": "### Ejercicio tres: venta en corto con un stop de compra\n\nEl último ejercicio de riesgo es un colapso simulado de aproximadamente 75%, y te pide hacer lo que el Módulo 4 dijo a los principiantes que trataran con mucho cuidado: vender en corto. Abre al menos un corto, protégelo con un stop de compra por encima de la entrada, termina con un rendimiento positivo y cubre todo antes de que termine la sesión.\n\nTres cosas hacen distinto el corto en la práctica, y el ejercicio expone cada una:\n\n- **Margen.** El motor de paper trading exige que tu efectivo después de la venta, tu propio dinero más lo recaudado por el corto, sea al menos el 150% del valor del corto, como describió el Módulo 4. En una cuenta de $100,000 eso limita un corto a $200,000: el efectivo más lo recaudado sería $300,000, exactamente 1.5 × $200,000. Si intentas vender en corto $250,000 de acciones en una cuenta de $100,000, la orden es rechazada, porque $350,000 es menos que los $375,000 que exige la regla. Lee el motivo, reduce el tamaño y fíjate en que la regla acaba de hacer tu gestión de riesgo por ti.\n- **Pérdida ilimitada.** Un largo puede perder el 100%. Un corto puede perder más del 100%, y los rebotes de mercado bajista de 20% a 30% son exactamente los movimientos que lo hacen. El stop de compra no es opcional. Colócalo por encima del máximo decreciente más reciente, y dimensiona el corto a partir de la distancia hasta él con la misma aritmética del 1%, quizá del 0.5% como sugirió el Módulo 4 para los cortos.\n- **Cubrir.** Los cortos se sienten maravillosos en el camino hacia abajo y la mayoría de los vendedores en corto devuelven la mitad por aguantar esperando el cero. El ejercicio te obliga a cubrir antes del final; un plan mejor cubre en un objetivo o baja el stop de compra detrás de cada máximo decreciente, para que el primer rebote real te saque con la mayor parte del movimiento asegurada."
+        },
+        {
+          "type": "drill",
+          "drillId": "short-selling-nvda-2022",
+          "md": "**Vende en corto con un stop arriba, y cubre.** Abre al menos un corto, dimensionado a partir de la distancia a un stop de compra colocado por encima del último máximo decreciente, y coloca ese stop de compra de inmediato. Después de la venta, tu efectivo (tu propio dinero más lo recaudado por el corto) debe ser al menos el 150% del valor del corto. Termina en positivo y sin posición. Baja el stop de compra detrás de cada máximo decreciente en lugar de esperar cubrir en el piso."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El tamaño de la posición es el único control de riesgo que funciona en cada vela.** Los stops fallan en los gaps. Los indicadores fallan en los puntos de giro. El juicio falla bajo estrés. Una posición dimensionada para que el peor desenlace plausible sea un porcentaje pequeño del capital funciona aunque nada más lo haga. Los tres ejercicios de esta lección los puede aprobar alguien sin ninguna opinión de mercado y con un tamaño perfecto. Ninguno lo puede aprobar alguien con una opinión brillante y sin tamaño.",
+          "title": "La idea detrás de los tres ejercicios"
+        },
+        {
+          "type": "exercise",
+          "md": "Ponle una cifra en dólares a tu disciplina.\n\n- Corre **Disciplina de stop loss**. Por cada operación, escribe el presupuesto de riesgo, la distancia al stop y el número de acciones en las notas *antes* de colocar la orden. Después de la sesión, revisa si alguna operación perdió más del 1% del capital y, de ser así, por qué: un gap, un stop movido o una aritmética hecha después de la orden.\n- Corre **Supervivencia en mercado bajista** dos veces: una permitiéndote cortos y otra solo largo o efectivo. Compara los drawdowns. ¿La libertad adicional ayudó o perjudicó?\n- Corre **Práctica de venta en corto** y deja que el motor rechace a propósito un corto demasiado grande. Lee el mensaje de rechazo y calcula el corto más grande que tu efectivo habría permitido.\n- Guarda las cuatro sesiones en el diario con la etiqueta `risk`. En las estadísticas del diario, compara la calificación promedio que te diste en las sesiones donde seguiste la regla de tamaño con la de aquellas donde no lo hiciste.",
+          "action": {
+            "page": "replay.html",
+            "hash": "drill=stop-discipline-tsla-2024",
+            "label": "Abrir Disciplina de stop loss"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "El ejercicio de supervivencia en mercado bajista no exige un rendimiento positivo, solo un drawdown menor al 15%, un resultado por delante de buy-and-hold y al menos una orden stop. ¿Cuál es la lección detrás de esos criterios?",
+              "choices": [
+                "Que vender en corto es obligatorio en un mercado bajista",
+                "Que el efectivo es una posición legítima y que el objetivo es sobrevivir, no predecir; el requisito del stop te hace tomar al menos una operación bien dimensionada",
+                "Que buy-and-hold siempre gana",
+                "Que el drawdown no importa si el año termina en positivo"
+              ],
+              "answer": 1,
+              "explain": "No puedes saber de antemano en qué mercado estás, así que la pregunta es cuánto pierdes si te equivocas. Quedarse mayormente en efectivo aprueba los dos primeros criterios; el requisito del stop garantiza que practiques una posición protegida en un mercado hostil."
+            },
+            {
+              "q": "Tienes $100,000 de capital y quieres comprar una acción de $200 con un stop $16 por debajo de tu entrada. Bajo la regla del 1%, ¿cuántas acciones compras?",
+              "choices": [
+                "500 acciones, para que la posición sea de $100,000",
+                "100 acciones, un número redondo",
+                "62 acciones, porque $1,000 de riesgo dividido por $16 de distancia al stop es 62.5, redondeado hacia abajo",
+                "16 acciones, una por cada dólar de distancia al stop"
+              ],
+              "answer": 2,
+              "explain": "El presupuesto de riesgo es el 1% del capital, $1,000. Divide por la distancia al stop de $16 por acción y redondea hacia abajo: 62 acciones, una posición de unos $12,400. El número de acciones es un resultado del stop, nunca un dato de entrada."
+            },
+            {
+              "q": "¿Por qué promediar a la baja reprueba con tanta fiabilidad el criterio de drawdown del ejercicio de mercado bajista?",
+              "choices": [
+                "Porque el motor prohíbe comprar la misma acción dos veces",
+                "Porque duplica tu exposición a una posición que cae mientras solo mejora la historia, convirtiendo una pérdida pequeña en una grande",
+                "Porque aumenta las comisiones",
+                "Porque solo funciona para posiciones cortas"
+              ],
+              "answer": 1,
+              "explain": "Comprar más de una posición que cayó 40% baja tu costo promedio y duplica tu exposición. En una caída que continúa, la pérdida crece más rápido de lo que ayuda el promedio mejorado, y el límite de drawdown lo detecta."
+            },
+            {
+              "q": "En el ejercicio de venta en corto, intentas vender en corto $250,000 de acciones en una cuenta de $100,000 y la orden es rechazada. ¿Por qué?",
+              "choices": [
+                "La venta en corto está desactivada en replay",
+                "El motor de paper trading exige que el efectivo después de la venta sea igual al 150% del valor del corto, y $100,000 + $250,000 es menos que $250,000 × 1.5",
+                "Solo puedes vender en corto después de colocar un stop de compra",
+                "La acción está en una lista de difícil préstamo"
+              ],
+              "answer": 1,
+              "explain": "La regla de margen del Módulo 4 la aplica el motor: el efectivo después de la venta debe ser al menos el 150% del valor del corto. Después de la venta tendrías $350,000 en efectivo, pero el 150% de $250,000 es $375,000, así que la orden es rechazada. El corto más grande que la regla permite en una cuenta de $100,000 es $200,000 (efectivo + recaudado = 1.5 × valor del corto). El rechazo está haciendo tu gestión de riesgo por ti; reduce el tamaño hasta que la regla se cumpla."
+            },
+            {
+              "q": "¿Por qué la lección llama al tamaño de la posición el único control de riesgo que funciona en cada vela?",
+              "choices": [
+                "Porque los stops nunca fallan",
+                "Porque los indicadores siempre aciertan en los puntos de giro",
+                "Porque los stops fallan en los gaps, los indicadores fallan en los giros y el juicio falla bajo estrés, mientras que una posición pequeña limita la peor pérdida plausible sin importar lo demás",
+                "Porque el motor impone un tamaño máximo de posición"
+              ],
+              "answer": 2,
+              "explain": "Todos los demás controles dependen de que algo coopere: que el mercado negocie a través de tu stop, que el indicador acierte, que tú mantengas la calma. Una posición dimensionada para que el peor desenlace plausible sea un porcentaje pequeño del capital no necesita nada de eso."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7-l5",
+      "title": "Autoevaluación: la tarjeta de resultados, el diario y la revisión semanal",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Un ejercicio que no revisas es un juego que jugaste\n\nEl replay te da algo que una cuenta real no puede: la experiencia de cincuenta operaciones en una tarde, con el resultado de cada decisión registrado. El valor está en la revisión, no en el juego. El Módulo 4 presentó el diario de trading ([[Trading journal|trading journal]]) como una hoja de cálculo; la v0.3 de este sitio te da una página de Diario conectada directamente al motor de paper trading y a Market Replay. Esta lección trata de usarla de modo que cada ejercicio cambie el siguiente.\n\nEl orden de operaciones después de cada sesión: lee la tarjeta de resultados, guárdala en el diario, completa los tres campos que el motor no puede llenar (emoción, confianza, lecciones) y, una vez por semana, compara las entradas entre sí en lugar de compararlas con el mercado."
+        },
+        {
+          "type": "text",
+          "md": "### Leer la tarjeta de resultados\n\nLa tarjeta de fin de sesión tiene pocas líneas y cada una responde una pregunta distinta.\n\n- **Rendimiento frente a buy-and-hold.** Tu rendimiento porcentual sobre el efectivo del ejercicio frente a lo que habría ganado simplemente mantener el símbolo durante las mismas velas. La diferencia es tu *alfa* de la sesión. Un rendimiento positivo en un año de tendencia que pierde frente a buy-and-hold es un aprobado en dinero y un reprobado en método: pagaste por una actividad que no ayudó.\n- **Operaciones y tasa de acierto.** El conteo de operaciones completas y la proporción que fue rentable. Una tasa de acierto alta no es un objetivo; las Lecciones 2 y 3 mostraron que los métodos de tendencia *deben* ganar con menos frecuencia que los de reversión. Compara la tasa de acierto con el método, no con el 50%.\n- **Factor de beneficio.** Ganancia bruta dividida por pérdida bruta. Por encima de 1 significa que las ganadoras pagaron por las perdedoras. Combinado con la tasa de acierto te dice la forma del pago: una tasa de acierto del 40% con un factor de beneficio de 1.8 significa que tus ganadoras fueron mucho mayores que tus perdedoras, que es como debería verse un ejercicio de tendencia.\n- **Drawdown máximo.** La mayor caída de pico a valle del capital durante la sesión. Este es el número que les importa a los ejercicios de riesgo y el que hay que vigilar en *todos* los ejercicios. Si tu drawdown es habitualmente mayor que tu rendimiento, estás asumiendo más dolor del que te pagan.\n- **Criterios.** Cada criterio del ejercicio muestra aprobado o reprobado. Un criterio reprobado en una sesión rentable es información: dice que el resultado vino de algo distinto de la regla que estabas practicando.\n\nDos sesiones con el mismo rendimiento pueden ser operaciones completamente distintas. La que tiene la mitad del drawdown y un tercio de las operaciones es la mejor, y nada más que la tarjeta de resultados te lo dirá."
+        },
+        {
+          "type": "text",
+          "md": "### Guardar en el diario, y los tres campos que importan\n\nUn toque en *Guardar en el diario* escribe una entrada con el símbolo, las fechas, la tarjeta de resultados y el id y las etiquetas del ejercicio. El motor completa lo que sabe. Tú completas lo que no puede:\n\n- **Emoción.** Una palabra para cómo te sentiste durante la sesión: calmado, ansioso, aburrido, codicioso, vengativo. A lo largo de veinte sesiones, esta columna predice tus resultados mejor que cualquier indicador.\n- **Confianza (1 a 5).** Qué tan seguro estabas, *antes del resultado*, de que el plan era correcto. Más adelante compararás la confianza con los resultados. La mayoría de los estudiantes descubre que su confianza no tiene ninguna relación con sus resultados, lo cual es humillante y útil.\n- **Calificación (1 a 5).** Qué tan bien seguiste el plan, sin importar la ganancia. Una sesión perdedora en la que seguiste todas las reglas es un 5. Una sesión ganadora en la que abandonaste el stop y tuviste suerte es un 1 o un 2. Esta columna es la que el Módulo 4 llamó la más valiosa del diario, y los ejercicios están diseñados para llenarla con datos honestos.\n\nAgrega también **etiquetas**: las propias del ejercicio (`trend`, `risk`, `mean-reversion`) más las tuyas (`gap`, `broke-rule`, `moved-stop`). Las etiquetas son lo que hace útil la página de estadísticas. Por último, **lecciones**: una o dos frases, escritas en el minuto siguiente a terminar, sobre el único momento que decidió la sesión. Escríbelo como una instrucción a tu yo futuro (\"cuando el stop está a tres velas de distancia, no hagas nada\"), no como una historia."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Califica el proceso, no el resultado.** La cuenta de replay se reinicia en cada sesión; lo único que se traslada eres tú. Un diario que te califica por la ganancia te enseña a perseguir la ganancia. Un diario que te califica por seguir las reglas te enseña lo único que se transfiere a una cuenta real.",
+          "title": "Qué calificar"
+        },
+        {
+          "type": "text",
+          "md": "### La revisión semanal\n\nLa página de Diario tiene una lista de verificación para la revisión semanal. Las preguntas que hace, y por qué:\n\n1. **¿Cuántas sesiones corrí y cuántas terminé?** Las sesiones abandonadas son reglas rotas que no dejaron tarjeta de resultados.\n2. **¿Qué regla rompí con más frecuencia?** Ordena por la etiqueta `broke-rule` o por calificaciones bajas. Una sola regla suele explicar la mayor parte del daño; la solución es hacer esa regla mecánica (una orden pendiente, una lista de verificación escrita) en lugar de esforzarte más.\n3. **Expectativa en dos columnas.** Resultado promedio de las sesiones calificadas con 4 o 5 frente a las calificadas de 1 a 3. Si la columna de calificación alta es mejor, tu método funciona y tu disciplina es el problema, lo cual es buena noticia porque la disciplina se puede entrenar. Si la columna de calificación baja es mejor, tus reglas están mal y seguirlas con más cuidado no ayudará; vuelve al backtester.\n4. **Drawdown frente a rendimiento.** En las sesiones de la semana, ¿el drawdown máximo es consistentemente menor que el rendimiento? Si no, los tamaños son demasiado grandes o los stops demasiado ajustados para el método.\n5. **Confianza frente a resultado.** ¿Tus sesiones de confianza 5 salieron mejor que las de 2? Si no hay relación, deja de aumentar el tamaño en las operaciones en las que te sientes confiado.\n6. **Un cambio para la próxima semana.** Uno. Escrito como regla. Luego corre el mismo ejercicio otra vez con ese cambio, que es el único tipo de repetición que permite la Lección 1.\n\nLa página de Diario puede exportar tus entradas como CSV si quieres profundizar en una hoja de cálculo. Sin embargo, la mayor parte del valor está en las preguntas de arriba, respondidas con honestidad, cada semana."
+        },
+        {
+          "type": "text",
+          "md": "### Repetir un ejercicio como experimento\n\nComo las velas demo son deterministas, un ejercicio repetido es un experimento controlado: el mismo mercado, una regla cambiada, dos tarjetas de resultados. Eso es poderoso, y tiene una trampa. Después de la primera corrida *sabes* dónde están los grandes movimientos, y tu segunda corrida está contaminada por ese conocimiento, lo quieras o no. La repetición honesta cambia una regla que se aplicaría en *cualquier* gráfico (distancia del stop, longitud de la media móvil, tamaño), no una que por casualidad encaja con este gráfico (\"no operar en mayo\"). Si una segunda corrida solo funciona porque recordaste las velas, el resultado es sesgo de anticipación ([[Look-ahead bias|look-ahead bias]]) con pasos adicionales, la misma enfermedad sobre la que advirtió el Módulo 6 en los backtests.\n\nCuando quieras velas nuevas sin retrospectiva, cambia el símbolo, el intervalo o la fecha de inicio en los ajustes de replay y corre una sesión libre con la misma regla. La tarjeta de resultados también funciona ahí, sin criterios, y la entrada del diario llevará los ajustes para que puedas comparar."
+        },
+        {
+          "type": "drill",
+          "drillId": "hourly-swing-msft-2024",
+          "md": "**Escribe el plan, luego obedécelo.** Diez sesiones simuladas de velas horarias. Antes de pulsar reproducir, escribe tu regla de entrada, tu stop y tu objetivo en las notas. Una o dos operaciones planificadas, cada una protegida por un stop, terminando con un factor de beneficio de al menos 1. Después de la sesión, califícate únicamente por si hiciste lo que decían las notas. Este es el ejercicio para repetir cada semana como control de disciplina, con una fecha de inicio distinta cada vez."
+        },
+        {
+          "type": "exercise",
+          "md": "Convierte tu historial de replay en una revisión.\n\n- Abre la página de Diario. Confirma que tus sesiones de replay aparecen con sus tarjetas de resultados, etiquetas e ids de ejercicio. Para cualquier sesión que terminaste sin guardar, abre el historial de replay y guárdala ahora.\n- Completa emoción, confianza y calificación en cada entrada de replay a la que le falten. Sé duro con la calificación: ¿hiciste lo que decían las notas?\n- Recorre la lista de verificación de la revisión semanal y calcula la expectativa de dos columnas: rendimiento promedio de las sesiones calificadas con 4 o 5 frente a las de 1 a 3.\n- Escribe un cambio de regla para la próxima semana en las notas de la revisión, y luego elige un ejercicio de las Lecciones 2 a 4 para repetir con ese único cambio.\n- Exporta el diario como CSV y guarda una copia. Dentro de un mes, compara las dos columnas de esta semana con las de aquella. La dirección de esa comparación es la única métrica de progreso de este curso que importa.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=review",
+            "label": "Abrir la revisión semanal del Diario"
+          }
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Módulo completado.** Has practicado tendencias, reversiones, gaps, mercados bajistas, tamaño de posición y cortos con el futuro oculto, y tienes un diario con calificaciones honestas. El módulo final convierte ese historial en un plan de trading escrito: las reglas que has demostrado poder seguir, los tamaños que has demostrado poder sostener y el drawdown en el que te has prometido detenerte a revisar.",
+          "title": "Hacia dónde lleva esto"
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Dos sesiones de replay rinden ambas +12%. Una hizo 3 operaciones con un drawdown máximo del 6%; la otra hizo 14 operaciones con un drawdown del 15%. ¿Qué dice la lección sobre ellas?",
+              "choices": [
+                "Son igual de buenas; el rendimiento es el mismo",
+                "La sesión de 14 operaciones es mejor porque más operaciones significan más práctica",
+                "La sesión de 3 operaciones es la mejor: el mismo rendimiento con menos dolor y menos actividad, algo que solo revela la tarjeta de resultados",
+                "Ninguna cuenta a menos que el rendimiento supere el 20%"
+              ],
+              "answer": 2,
+              "explain": "El rendimiento por sí solo esconde cómo se logró un resultado. Menor drawdown y menos operaciones para el mismo rendimiento significan más rendimiento por unidad de riesgo y menos actividad que no ayudó. Comparar el drawdown con el rendimiento en todos los ejercicios es el hábito a construir."
+            },
+            {
+              "q": "Un ejercicio de tendencia termina con una tasa de acierto del 40% y un factor de beneficio de 1.8. ¿Cómo deberías leer eso?",
+              "choices": [
+                "Como un fracaso, porque la tasa de acierto está por debajo del 50%",
+                "Como la forma esperada de un método de tendencia: ganadoras mucho mayores que perdedoras, que es lo que significa un factor de beneficio mayor a 1 con una tasa de acierto baja",
+                "Como una señal de que el stop estaba demasiado ajustado",
+                "Como algo sin sentido, porque el factor de beneficio solo importa en operaciones de reversión"
+              ],
+              "answer": 1,
+              "explain": "La tasa de acierto debe compararse con el método, no con el 50%. El seguimiento de tendencia gana con menos frecuencia y gana más grande; un factor de beneficio de 1.8 dice que las ganancias brutas fueron 1.8 veces las pérdidas brutas a pesar de perder la mayoría de las operaciones."
+            },
+            {
+              "q": "¿Qué campo del diario dice la lección que debes usar para calificarte, y con qué criterio?",
+              "choices": [
+                "Rendimiento, según si la sesión ganó dinero",
+                "Calificación de 1 a 5, según qué tan bien seguiste el plan sin importar la ganancia",
+                "Confianza, según qué tan seguro te sentiste",
+                "Tasa de acierto, frente al 50%"
+              ],
+              "answer": 1,
+              "explain": "La cuenta de replay se reinicia en cada sesión; solo tú te trasladas. Calificar por seguir las reglas produce los datos para la prueba de expectativa en dos columnas y entrena la única habilidad que se transfiere a una cuenta real. Una sesión perdedora con todas las reglas seguidas es un 5."
+            },
+            {
+              "q": "En la revisión semanal, las sesiones que calificaste con 4 o 5 promedian −1% y las calificadas de 1 a 3 promedian +3%. ¿Qué significa eso?",
+              "choices": [
+                "Tu disciplina es el problema; sigue las reglas con más cuidado",
+                "Tus reglas están mal, así que seguirlas con más cuidado no ayudará; vuelve al backtester",
+                "Deberías operar solo cuando tengas ganas de romper las reglas",
+                "El diario tiene un error"
+              ],
+              "answer": 1,
+              "explain": "Si seguir el plan pierde y romperlo gana, el problema es el plan, no la disciplina. Esa es una señal para revisar las reglas del método en el laboratorio de estrategias, no para esforzarte más en obedecer reglas que pierden."
+            },
+            {
+              "q": "¿Por qué 'no operar en mayo' es un mal cambio de regla para repetir un ejercicio demo, mientras que 'usar un stop de 2 × ATR en lugar de un 3% fijo' es uno bueno?",
+              "choices": [
+                "Porque mayo siempre es un mes rentable",
+                "Porque el primero encaja con las velas que ahora recuerdas de la primera corrida (sesgo de anticipación), mientras que el segundo se aplicaría en cualquier gráfico y es un experimento genuino",
+                "Porque el motor no permite reglas basadas en fechas",
+                "Porque los stops por ATR siempre ganan más dinero"
+              ],
+              "answer": 1,
+              "explain": "Las velas demo son deterministas, así que una repetición solo es un experimento honesto si la regla cambiada es una que podrías aplicar a un gráfico que nunca has visto. Una regla que por casualidad encaja con las velas recordadas es retrospectiva disfrazada de regla, la misma enfermedad que el sesgo de anticipación en los backtests."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

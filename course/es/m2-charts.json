@@ -1,0 +1,423 @@
+{
+  "id": "m2-charts",
+  "title": "Cómo leer gráficos y velas",
+  "level": "beginner",
+  "minutes": 52,
+  "summary": "Velas japonesas, marcos temporales, tendencias, soporte y resistencia, líneas de tendencia, volumen y los patrones clásicos de velas y de gráficos, leídos en paneles de gráficos en vivo y practicados en el panel principal.",
+  "lessons": [
+    {
+      "id": "m2-l1",
+      "title": "Anatomía de una vela y cómo elegir un marco temporal",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Cuatro precios en una sola imagen\n\nUn gráfico de precios no es más que un registro de operaciones, y una vela (candlestick) es una forma compacta de mostrar lo que pasó durante un tramo de tiempo. Cada vela lleva cuatro números, que normalmente se abrevian **OHLC**: la **apertura** (open, la primera operación del período), el **máximo** (high, la operación más alta), el **mínimo** (low, la operación más baja) y el **cierre** (close, la última operación). La parte gruesa de la vela es el **cuerpo**, dibujado entre la apertura y el cierre. Las líneas delgadas arriba y abajo son las **mechas** (también llamadas sombras o colas), que llegan hasta el máximo y el mínimo.\n\nToma la vela diaria de una acción que abrió en $250.00, llegó a negociarse hasta $254.10, bajó hasta $248.60 y cerró en $253.20. El cuerpo va de 250.00 a 253.20, así que mide $3.20. La mecha superior va de 253.20 hasta 254.10 ($0.90) y la mecha inferior va de 250.00 hasta 248.60 ($1.40). El **rango** completo del día, máximo menos mínimo, es de $5.50. Nada en la vela te dice *en qué momento* del día ocurrieron esos precios, solo que ocurrieron.\n\nEl color lo decide el cierre en relación con la apertura. Si el cierre está por encima de la apertura, la vela es verde (o blanca, o azul, según el gráfico) y la llamamos vela **alcista**. Si el cierre está por debajo de la apertura, es roja (o negra) y **bajista**. En este panel (dashboard), el color de subida y el de bajada vienen del tema visual, así que se mantienen legibles en modo claro y oscuro.\n\nUna vela es una pequeña historia: dónde empezaron compradores y vendedores, hasta dónde empujó cada bando y quién llevaba la ventaja cuando se acabó el tiempo. Todo lo demás en el análisis técnico se construye a partir de secuencias de estas historias."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El color compara el cierre con la apertura, no con el día anterior.** Supón que una acción cerró en $100 el lunes, abrió el martes en $104 tras una buena noticia y luego se fue desinflando todo el día hasta cerrar en $102. La vela del martes es *roja* (102 está por debajo de la apertura de 104) aunque la acción terminó el día con una subida del 2%. Una vela roja que queda completamente por encima de la vela anterior es un mensaje muy distinto al de una vela roja que rompió por debajo de ella."
+        },
+        {
+          "type": "text",
+          "md": "### Qué te dicen los tamaños del cuerpo y de las mechas\n\nUna vez que puedes ubicar los cuatro precios, empieza a leer proporciones. Un **cuerpo largo** significa que el precio recorrió un buen trecho desde la apertura hasta el cierre en una sola dirección: un bando tuvo el control claramente. Un cuerpo verde largo que cierra cerca del máximo es lo más unilateral que puede ser una vela. Un **cuerpo pequeño** significa que la apertura y el cierre quedaron cerca, sin importar lo que pasó en medio: un empate.\n\nLas mechas registran rechazo. Una **mecha inferior larga** dice que los vendedores empujaron el precio hacia abajo, pero que al cierre los compradores habían recuperado la mayor parte. Una **mecha superior larga** es lo contrario: los compradores intentaron extender la subida y fueron rechazados. Cuando el cuerpo es diminuto comparado con el rango, digamos un cuerpo de $0.10 en un rango de $3.00, la vela es un **doji**, y significa que ningún bando pudo sostener la ventaja. El detector de patrones del panel marca un doji cuando el cuerpo es el 10% o menos del rango completo.\n\nEl tamaño solo significa algo en contexto. Un rango de $3 en una acción de $50 (6%) es un día salvaje; un rango de $3 en una acción de $500 (0.6%) es un día tranquilo. Los traders normalizan esto con el **rango verdadero promedio (ATR)** reciente de la acción, que conocerás en el módulo de indicadores. Por ahora, compara cada vela con sus vecinas: ¿este cuerpo es más grande que los últimos diez? ¿Esta mecha es inusualmente larga?\n\nUn buen hábito es describir una vela en una sola oración antes de mirar cualquier indicador. \"Abrió cerca del mínimo, cerró cerca del máximo, rango del doble del promedio reciente\" es un análisis completo. \"Verde\" no lo es."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["volume"],
+          "caption": "Velas diarias con el volumen debajo. Elige cualquier vela y nombra su apertura, máximo, mínimo y cierre solo a partir de la forma; luego pasa el cursor para comprobarlo. Fíjate en que los cuerpos más largos suelen coincidir con las barras de volumen más altas. (Los precios de demostración son simulados a menos que agregues una clave de API en el panel.)"
+        },
+        {
+          "type": "text",
+          "md": "### Marcos temporales: el mismo mercado con distintos niveles de zoom\n\nEl **intervalo** o **marco temporal** (timeframe) de un gráfico es cuánto tiempo abarca cada vela. Este panel ofrece barras de `5min`, `15min`, `1h` y `1day` (el laboratorio de estrategias agrega `1min`). Una sesión regular en Estados Unidos va de 9:30 a 16:00, hora del Este, es decir 6.5 horas, así que un día de negociación contiene 78 velas de cinco minutos, 26 velas de quince minutos o unas 7 velas horarias. Una vela diaria resume todas ellas: su apertura es la primera apertura de 5 minutos, su cierre es el último cierre de 5 minutos, y su máximo y mínimo son los extremos de todo el día. Los datos de demostración de esta app están construidos para que la primera apertura intradía y el último cierre intradía coincidan con la apertura y el cierre diarios; el máximo y el mínimo intradía se acercan a los extremos diarios pero no coincidirán al centavo.\n\nLos marcos temporales más cortos muestran más detalle y más **ruido**: idas y venidas aleatorias que no significan nada. Los marcos más largos suavizan ese ruido, pero reaccionan más tarde. Un movimiento que parece un desplome dramático en un gráfico de 1 minuto puede ser una ondulación invisible dentro de una sola vela diaria.\n\nQué marco temporal observas depende de cuánto tiempo piensas mantener la posición. Alguien que entra y sale dentro del mismo día (un **day trader**) vive en gráficos de 1 a 15 minutos. Un **swing trader**, que mantiene posiciones de días a semanas, trabaja sobre todo con gráficos diarios. Un inversionista de largo plazo puede mirar velas semanales y revisar una vez al mes. No existe un marco temporal \"correcto\", pero sí existe uno equivocado: el que no coincide con tu horizonte de inversión. Juzgar una posición de varios meses con un gráfico de 5 minutos es una forma segura de entrar en pánico sin motivo.\n\nCuando mires un gráfico, di siempre el marco temporal en voz alta. \"AAPL está en tendencia alcista\" está incompleto; \"AAPL está en tendencia alcista en el gráfico diario\" es una afirmación que puedes verificar."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**El hábito de varios marcos temporales.** Una regla práctica muy común: elige el marco temporal en el que operas, mira un escalón *más arriba* para decidir la dirección de la tendencia mayor, y un escalón *más abajo* para afinar tu entrada. Un swing trader podría leer el semanal para la dirección, el diario para la configuración (setup) y el horario para la entrada. Es una convención, no una ley; su valor está en que evita que luches contra la tendencia mayor sin darte cuenta."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "5min",
+          "overlays": ["vwap", "volume"],
+          "caption": "La misma acción en velas de 5 minutos con la línea de VWAP intradía (precio promedio ponderado por volumen, que se reinicia en cada sesión). Todo lo que ves en este gráfico cabe dentro de dos o tres velas del gráfico diario de arriba."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con AAPL en el gráfico diario. Luego:\n\n- Encuentra la vela con el **cuerpo más grande** en la ventana visible. Pasa el cursor sobre ella y anota su apertura, máximo, mínimo y cierre; después calcula el tamaño del cuerpo y de las dos mechas.\n- Cambia al intervalo **5min** y busca las velas de hoy (o de la última sesión). Cuenta aproximadamente cuántas hay en una sesión, comprueba que la apertura de la primera barra y el cierre de la última coincidan con la vela diaria, y observa qué tanto se acerca el máximo intradía al máximo diario.\n- Alterna entre `1h` y `1day` y escribe una oración describiendo la tendencia en cada uno. ¿Coinciden?\n\nGuarda estas notas; las compararás con el detector de patrones más adelante en este módulo.",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=", "label": "Abrir AAPL en el panel" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una vela diaria tiene apertura $250.00, máximo $254.10, mínimo $248.60 y cierre $253.20. ¿Cuánto mide el cuerpo?",
+              "choices": ["$5.50", "$3.20", "$0.90", "$1.40"],
+              "answer": 1,
+              "explain": "El cuerpo va de la apertura al cierre: 253.20 − 250.00 = $3.20. El rango completo (máximo − mínimo) es $5.50; la mecha superior mide $0.90 y la inferior $1.40."
+            },
+            {
+              "q": "Una acción cerró ayer en $100, abrió hoy en $104 y cerró hoy en $102. ¿De qué color es la vela de hoy?",
+              "choices": ["Verde, porque la acción sube 2% en el día", "Roja, porque el cierre está por debajo de la apertura", "Verde, porque el cierre está por encima del cierre de ayer", "Depende del volumen"],
+              "answer": 1,
+              "explain": "El color de la vela compara el cierre con la apertura de la misma vela. 102 está por debajo de 104, así que la vela es roja aunque la acción haya ganado respecto al cierre de ayer."
+            },
+            {
+              "q": "¿Qué forma de vela describe mejor 'los vendedores empujaron el precio con fuerza hacia abajo, pero los compradores lo recuperaron todo al cierre'?",
+              "choices": ["Un cuerpo rojo largo sin mechas", "Un cuerpo diminuto con una mecha superior larga", "Un cuerpo pequeño cerca de la parte alta con una mecha inferior larga", "Un doji con mechas iguales"],
+              "answer": 2,
+              "explain": "Una mecha inferior larga significa que el precio se negoció muy por debajo del cuerpo y luego se recuperó. Un cuerpo pequeño cerca de la parte alta del rango muestra que la recuperación se sostuvo hasta el cierre."
+            },
+            {
+              "q": "¿Cuántas velas de 5 minutos caben en una sesión regular de negociación en Estados Unidos (9:30 a 16:00, hora del Este)?",
+              "choices": ["48", "60", "78", "96"],
+              "answer": 2,
+              "explain": "La sesión regular dura 6.5 horas = 390 minutos. 390 ÷ 5 = 78 velas."
+            },
+            {
+              "q": "¿Cuál es el marco temporal más sensato como gráfico principal para alguien que espera mantener una posición durante unas semanas?",
+              "choices": ["1 minuto", "5 minutos", "Diario", "El que muestre más operaciones"],
+              "answer": 2,
+              "explain": "El marco temporal debe coincidir con el horizonte de la posición. Las velas diarias muestran el avance de una posición de varias semanas sin el ruido de las oscilaciones intradía; un gráfico de 1 o 5 minutos provocaría reacciones a movimientos que son irrelevantes en ese horizonte."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l2",
+      "title": "Tendencia, soporte y resistencia",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Definir una tendencia sin usar una regla\n\nLos precios no se mueven en línea recta; se mueven en **oscilaciones** (swings). Una acción sube, retrocede, vuelve a subir. Los puntos de giro se llaman **máximos de oscilación** (swing highs: un pico con máximos más bajos a ambos lados) y **mínimos de oscilación** (swing lows: un valle con mínimos más altos a ambos lados). Una tendencia se define por la secuencia de estos puntos de giro, una idea que se remonta a los escritos de Charles Dow a principios del siglo XX y que sigue siendo la definición más limpia que tenemos.\n\nUna **tendencia alcista** es una serie de máximos más altos *y* mínimos más altos. Imagina una acción que va 100 → 110 → 105 → 118 → 112 → 125. Los máximos de oscilación son 110, 118 y 125 (cada uno más alto), y los mínimos de oscilación son 105 y 112 (cada uno más alto). Los compradores están dispuestos a pagar más en cada subida y a entrar antes en cada caída. Una **tendencia bajista** es la imagen en espejo: máximos más bajos y mínimos más bajos, por ejemplo 125 → 112 → 118 → 105 → 110 → 100.\n\nCuando los máximos y los mínimos dejan de avanzar, el mercado está en un **rango** (también llamado lateral, consolidación o rango de negociación). Entre un tercio y la mitad del tiempo, la mayoría de las acciones está haciendo exactamente esto, según cómo lo midas, y por eso las estrategias de seguimiento de tendencia tienden a perder pequeñas cantidades repetidamente y a recuperarlas en los tramos con tendencia.\n\nLa prueba práctica para un cambio de tendencia es sencilla. Una tendencia alcista está en duda cuando el precio no logra hacer un máximo más alto, y se termina cuando el precio rompe por debajo del mínimo de oscilación más reciente. En el ejemplo anterior, si la acción cayera desde 125 hasta por debajo de 112, la tendencia alcista habría fallado según esta definición. Muchas veces llegarás temprano o te equivocarás con esta regla, pero te da una línea objetiva en lugar de una sensación."
+        },
+        {
+          "type": "text",
+          "md": "### Soporte y resistencia\n\nEl **soporte** es una zona de precio donde las caídas se han detenido repetidamente y el precio ha girado hacia arriba. La **resistencia** es una zona donde las subidas se han estancado repetidamente y el precio ha girado hacia abajo. Se forman por razones humanas muy corrientes. Quienes compraron cerca de $150 y vieron caer la acción sienten alivio al vender cuando vuelve a $150 (\"me salgo sin perder\"), y eso crea resistencia. Quienes se quedaron sin comprar en $120 la vez pasada esperan a que vuelva ahí, y eso crea soporte. Los números redondos como $100 o $500 atraen órdenes limitadas simplemente porque a los humanos nos gustan los números redondos.\n\nLo más importante que debes entender es que son **zonas, no líneas**. Si una acción rebotó en $148.20, $149.60 y $150.10 en tres ocasiones distintas, el soporte está \"alrededor de $148 a $150\", no exactamente en $149.30. Esperar que el precio respete un nivel al centavo garantiza que el ruido te sacará de la posición.\n\nLos niveles ganan credibilidad por los **toques** (cuántas veces reaccionó el precio ahí), la **recencia** (un nivel del mes pasado importa más que uno de hace tres años, aunque los niveles muy antiguos pueden importar cuando el precio finalmente regresa) y el **volumen** (muchas acciones cambiaron de manos cerca de ese precio, así que mucha gente lo tiene en la memoria).\n\nLa superposición `S/R` del panel encuentra niveles automáticamente: mira hacia atrás unas 120 barras, encuentra máximos y mínimos de oscilación, agrupa los que están cerca entre sí y conserva los tres soportes y las tres resistencias más fuertes. Es un punto de partida decente, pero no puede ver fechas de resultados, la psicología de los números redondos ni lo que pasó hace cinco años. Úsala como primer borrador y afínala con tus propios ojos."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Cambio de rol (polaridad).** Cuando el precio rompe con decisión una resistencia, esa antigua resistencia a menudo se convierte en nuevo soporte, y viceversa. Si una acción peleó con los $200 durante dos meses y luego subió hasta $215, un retroceso a $200 es donde quienes se perdieron la ruptura (breakout) tienen su segunda oportunidad, y donde los compradores de la ruptura defienden su entrada. Un rebote limpio en $200 desde arriba confirma la ruptura; una caída de regreso por debajo es una advertencia de que la ruptura falló."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sr", "sma50"],
+          "caption": "Niveles automáticos de soporte (verde punteado) y resistencia (rojo punteado) de las últimas 120 barras diarias, más la media móvil simple de 50 días. Comprueba si los niveles coinciden con máximos y mínimos de oscilación evidentes, y dónde está el precio respecto a la línea de 50 días."
+        },
+        {
+          "type": "text",
+          "md": "### Las medias móviles como soporte en movimiento\n\nUna **media móvil** es el precio de cierre promedio de las últimas *n* barras, recalculado en cada barra, de modo que se desliza por debajo o por encima del precio. Las medias móviles simples de 20, 50 y 200 días son las más vigiladas, y las medias móviles exponenciales de 9 y 21 períodos son populares entre los traders de más corto plazo. La mecánica completa se cubre en el módulo de indicadores; aquí nos interesa un solo uso: las medias móviles actúan como **soporte y resistencia dinámicos**.\n\nEn una tendencia alcista sana, el precio tiende a retroceder hasta una media móvil ascendente y rebotar, porque la media sigue aproximadamente lo que pagó el comprador típico reciente. Una acción que cotiza por encima de una media de 50 días ascendente, con retrocesos que se detienen cerca de ella, se está comportando bien. Cuando el precio cae por debajo de la media y la media se aplana o gira hacia abajo, la tendencia se está debilitando.\n\nDos advertencias. Primero, las medias móviles **se retrasan** (lag): por construcción, una media de 50 días refleja dónde estuvo el precio durante las últimas diez semanas, así que siempre confirmará una tendencia después de que empezó y señalará su fin después de que terminó. Segundo, hay muchísimo folclore alrededor de cruces específicos, como el de la media de 50 días por encima de la de 200 días (el \"cruce dorado\" o golden cross). Estos eventos sí reciben atención y pueden mover precios a corto plazo, pero la evidencia de que predicen rendimientos de forma confiable es mixta y depende mucho del mercado y del período estudiado. Trata un cruce como una pieza más de contexto, no como un disparador.\n\nUsa los interruptores `SMA 20` y `SMA 50` del panel y simplemente observa con qué frecuencia los retrocesos dentro de una tendencia los respetan. Notarás que es a menudo, pero no siempre, y ese es el resumen honesto de la mayoría de las herramientas técnicas."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Todos ven el mismo nivel.** Como los soportes y resistencias evidentes son visibles para todos, ahí ocurren dos cosas: se amontonan órdenes, y se amontonan órdenes de stop loss justo más allá. El precio a menudo se asoma un poco más allá del nivel, dispara esos stops y luego se da la vuelta: una **ruptura falsa** (false break) o \"barrida de stops\" (stop run). Si colocas un stop de protección, ponlo lo bastante lejos de la zona para que el ruido normal no lo alcance, y dimensiona tu posición de modo que ese stop más amplio siga arriesgando una cantidad que puedas aceptar (el módulo de riesgo explica cómo)."
+        },
+        {
+          "type": "text",
+          "md": "### Trabajar los niveles en la práctica\n\nAquí tienes una rutina que puedes repetir en cualquier gráfico en pocos minutos.\n\n- **Primero aléjate.** Mira de 6 a 12 meses de velas diarias y marca las dos o tres zonas de precio donde la acción giró repetidamente. Esos son tus niveles principales.\n- **Anota la tendencia** usando máximos y mínimos de oscilación. ¿Las oscilaciones recientes son más altas, más bajas o planas?\n- **Ubica dónde está el precio ahora respecto a los niveles.** Una acción que está 1% por encima de un soporte principal en tendencia alcista es una configuración muy distinta a una que está 1% por debajo de una resistencia principal en tendencia bajista. Expresa la distancia como porcentaje: en una acción de $300, $6 es un 2%.\n- **Pregúntate qué demostraría que estás equivocado.** Si crees que el soporte de $148 a $150 aguanta, un cierre diario en $145 dice que no aguantó. Escribe ese número antes de operar, no después.\n\nUn ejemplo concreto: supón que MSFT ha girado hacia arriba tres veces entre $495 y $502 en los últimos cuatro meses y ahora está en $506. El soporte es la zona de $495 a $502, entre un 0.8% y un 2.2% por debajo. Si además la acción hizo un máximo más alto la semana pasada, tienes una tendencia alcista apoyada justo encima de un soporte probado: un lugar de libro de texto para que los seguidores de tendencia busquen una entrada larga, con un stop en algún punto por debajo de $495.\n\nNada de esto predice el futuro. Lo que hace es organizar tus decisiones alrededor de lugares donde muchos otros participantes también estarán tomando decisiones, de modo que cuando te equivoques, lo descubras rápido y a bajo costo."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con MSFT con las superposiciones `S/R`, `SMA 20` y `SMA 50` activadas, en intervalo diario. Para MSFT y luego para dos símbolos más de tu elección (prueba con JPM y NVDA):\n\n- Anota los niveles automáticos de soporte y resistencia y decide si estás de acuerdo con cada uno. ¿Moverías alguno?\n- Clasifica la tendencia como alcista, bajista o lateral usando únicamente máximos y mínimos de oscilación.\n- Calcula qué tan lejos está el precio actual del soporte más cercano y de la resistencia más cercana, en porcentaje.\n- Escribe una oración: \"Estaría equivocado sobre esta tendencia si el precio cerrara por debajo/encima de ____.\"",
+          "action": { "page": "index.html", "hash": "symbol=MSFT&interval=1day&ov=sma20,sma50,sr", "label": "Abrir MSFT con niveles S/R" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Los puntos de oscilación de una acción, en orden, son 100, 110, 105, 118, 112, 125. ¿Qué tendencia describe esto?",
+              "choices": ["Tendencia bajista: los retrocesos son cada vez mayores", "Tendencia alcista: máximos más altos (110, 118, 125) y mínimos más altos (105, 112)", "Rango lateral entre 100 y 125", "No hay suficiente información"],
+              "answer": 1,
+              "explain": "Cada máximo de oscilación (110 → 118 → 125) es más alto que el anterior y cada mínimo de oscilación (105 → 112) es más alto que el anterior. Esa es la definición de una tendencia alcista."
+            },
+            {
+              "q": "Según la definición por puntos de oscilación, ¿cuándo se considera rota una tendencia alcista?",
+              "choices": ["Cuando aparece una sola vela roja", "Cuando el precio cierra por debajo del mínimo de oscilación más reciente", "Cuando la acción cae 1% desde su máximo", "Cuando el volumen baja durante tres días"],
+              "answer": 1,
+              "explain": "Una tendencia alcista es una serie de mínimos más altos. Una ruptura por debajo del mínimo de oscilación más reciente significa que esa secuencia falló. Las velas rojas y las caídas pequeñas ocurren dentro de toda tendencia alcista."
+            },
+            {
+              "q": "Una acción ha rebotado en $148.20, $149.60 y $150.10 en tres ocasiones. ¿Cuál es la mejor descripción de su soporte?",
+              "choices": ["Exactamente $149.30, el promedio de los tres", "Una zona aproximadamente de $148 a $150", "$150.10, el rebote más reciente", "No hay soporte porque los precios son distintos"],
+              "answer": 1,
+              "explain": "El soporte y la resistencia son zonas, no líneas precisas. Tres rebotes dentro de unos dos dólares definen un área; exigir precisión al centavo lleva a que el ruido te saque de la posición."
+            },
+            {
+              "q": "Una acción luchó con la resistencia de $200 durante dos meses y luego subió hasta $215. Según el principio de polaridad, ¿cómo es probable que actúen ahora los $200?",
+              "choices": ["Como resistencia, igual que antes", "Como soporte", "Como nada; los niveles antiguos dejan de importar después de una ruptura", "Como un punto de compra garantizado"],
+              "answer": 1,
+              "explain": "Una resistencia rota suele convertirse en soporte porque los compradores de la ruptura defienden sus entradas y los rezagados compran en la prueba de regreso (retest). Es probable, no garantizado: una caída de regreso por debajo de $200 señalaría una ruptura fallida."
+            },
+            {
+              "q": "¿Por qué las medias móviles confirman las tendencias tarde?",
+              "choices": ["Se calculan con precios futuros", "Promedian cierres pasados, así que reflejan dónde ha estado el precio y no hacia dónde va", "Solo se actualizan una vez por semana", "Ignoran la apertura y el cierre"],
+              "answer": 1,
+              "explain": "Una media móvil de 50 días es el promedio de los últimos 50 cierres. No puede girar hasta que suficientes cierres recientes se hayan movido, así que por diseño va detrás del precio. Ese suavizado es también lo que la hace útil como filtro de tendencia."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l3",
+      "title": "Líneas de tendencia, canales y volumen",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Dibujar una línea de tendencia que signifique algo\n\nUna **línea de tendencia** es una línea recta trazada a lo largo de los mínimos de oscilación de una tendencia alcista (por debajo del precio) o a lo largo de los máximos de oscilación de una tendencia bajista (por encima del precio). Convierte la idea vaga de \"la acción está subiendo\" en una línea inclinada y concreta, del lado correcto de la cual el precio debería mantenerse. Dos puntos definen la línea; un tercer toque que se respeta es lo que le da credibilidad. Un toque es una coincidencia, dos son una línea, tres son una línea de tendencia.\n\nSupón que una acción hace un mínimo de oscilación en $100 el día 1 y otro en $106 el día 11. La línea sube $6 en 10 días, es decir $0.60 por día. Si la extiendes, predice que la línea estará en $112 el día 21 y en $118 el día 31. Si el precio retrocede hasta $112.40 el día 21 y rebota, ese es tu tercer toque y la línea ya merece atención. Si en cambio el precio cierra en $109 el día 21, por debajo de la línea, la tendencia al menos se ha pausado.\n\nLa pendiente importa. Una línea que sube 3% al día no puede durar; se romperá pronto, y esa ruptura normalmente significa que el ritmo se está frenando, no que la tendencia se haya revertido. Las líneas de pendiente suave que han aguantado durante meses son aquellas cuyas rupturas tienen peso. Una secuencia habitual en una tendencia alcista larga es que una línea empinada se rompe, luego se traza una línea menos inclinada desde el nuevo mínimo, y luego esa también se rompe, a medida que la tendencia madura.\n\nLas rupturas de líneas de tendencia, como las rupturas de niveles, deben juzgarse por los **cierres**, idealmente con algo de continuación, y no por un único pinchazo intradía. Las advertencias sobre rupturas falsas de la lección anterior se aplican aquí por completo."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Las líneas de tendencia son subjetivas.** Dale el mismo gráfico a cinco analistas y obtendrás cinco líneas ligeramente distintas: algunos conectan mechas, otros conectan cierres, algunos usan una escala de precio logarítmica (donde movimientos porcentuales iguales se ven iguales) y otros una lineal. No hay una respuesta definitiva, así que no discutas con el gráfico por unos centavos. Trata tu línea como el centro de una zona y busca que el precio reaccione *cerca* de ella."
+        },
+        {
+          "type": "text",
+          "md": "### Canales\n\nSi trazas una línea de tendencia bajo los mínimos de oscilación de una tendencia alcista y luego una segunda línea, paralela a la primera, por los máximos de oscilación, tienes un **canal**. El precio tiende a oscilar entre los dos rieles mientras dure la tendencia. Los canales pueden inclinarse hacia arriba, hacia abajo o ser planos (un canal plano no es más que un rango de negociación con su soporte y su resistencia dibujados).\n\nLos canales sirven para dos cosas. Primero, te dicen en qué punto de la oscilación estás. Comprar en el riel inferior de un canal ascendente significa comprar un retroceso dentro de una tendencia alcista; comprar en el riel superior significa perseguir el precio. Segundo, dan un **movimiento medido** (measured move) cuando se rompen. La regla práctica habitual es que una ruptura de un canal recorre aproximadamente el ancho del canal más allá del riel roto. Si un canal mide $10 de ancho (riel inferior en $100, riel superior en $110 en el momento de la ruptura) y el precio rompe por encima de $110, el primer objetivo está alrededor de $120.\n\nEsa regla del movimiento medido es una heurística, no la medición de nada físico. Los investigadores que han intentado cuantificar con qué frecuencia los patrones alcanzan sus objetivos \"de libro\", el más famoso Thomas Bulkowski en su *Encyclopedia of Chart Patterns*, reportan tasas de éxito que varían mucho según el patrón, el mercado y el período, y las cifras se debaten. Usa los objetivos para planear dónde tomar ganancias parciales, no como promesas.\n\nUna señal de alerta dentro de un canal: cuando el precio no logra alcanzar el riel superior en una subida y gira hacia abajo antes de tiempo, los compradores están perdiendo entusiasmo y es más probable que el riel inferior se rompa en la siguiente prueba. Lo contrario, una subida que perfora el riel superior (un \"sobreimpulso\" u overthrow), suele marcar un clímax de corto plazo."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["ema21", "fib"],
+          "caption": "La EMA de 21 días como guía de tendencia, con niveles de retroceso de Fibonacci trazados entre el máximo más alto y el mínimo más bajo de las últimas 120 barras. Las líneas de 38.2%, 50% y 61.8% son donde los traders de tendencia suelen buscar que terminen los retrocesos. No hay evidencia de que estas proporciones tengan un poder especial en los mercados; son puntos de referencia populares, lo cual es en sí mismo una razón por la que los precios a veces reaccionan cerca de ellos."
+        },
+        {
+          "type": "text",
+          "md": "### Volumen: cuántas acciones votaron\n\nEl **volumen** es la cantidad de acciones negociadas durante una vela. Es la segunda serie de datos más importante de un gráfico después del precio, y la única que no se deriva del precio. El precio te dice qué decidió el mercado; el volumen te dice cuántos participantes tomaron parte en la decisión.\n\nLa idea central es la **confirmación**. Una ruptura por encima de una resistencia con volumen alto dice que muchos compradores estuvieron dispuestos a pagar el nuevo precio más alto; la misma ruptura con volumen escaso dice que solo unos pocos lo estuvieron, y el movimiento es más fácil de revertir. Del mismo modo, un retroceso en tendencia alcista con volumen *bajo* es normal y sano: poca gente está vendiendo, simplemente dejaron de comprar por un momento. Un retroceso con volumen *alto* es distribución: mucha gente está saliendo.\n\nCompara siempre con lo normal para esa acción. El **volumen diario promedio (ADV)** de una acción podría ser de 50 millones de acciones. Un día de ruptura con 140 millones de acciones es 2.8 veces lo normal, lo cual sí es notable. Un día con 55 millones de acciones es ruido. Muchos traders usan de 1.5x a 2x el volumen promedio como umbral aproximado para \"alto\", pero no hay nada mágico en esos números.\n\nDos cosas más que vigilar. Un **clímax de volumen**, un pico extremo después de un movimiento largo, a menudo marca agotamiento: los últimos compradores impacientes (o vendedores en pánico) ya actuaron y no queda nadie para continuar el movimiento. Y una **divergencia**, en la que el precio se arrastra hasta un nuevo máximo pero cada subida tiene menos volumen que la anterior, sugiere que la tendencia se sostiene con cada vez menos participantes. Ninguna de las dos es una señal de timing por sí sola; ambas son razones para ajustar los stops o reducir el tamaño de la posición."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**\"El volumen precede al precio\" es un dicho, no una ley.** Los picos de volumen tienen muchas causas que no tienen nada que ver con la tendencia: publicación de resultados, días de rebalanceo de índices, el vencimiento trimestral de opciones y futuros conocido como \"triple witching\", operaciones en bloque de un solo fondo. Antes de leer un significado en una barra de volumen, revisa el calendario. Un día con 3x de volumen en una fecha de resultados es lo esperable; la misma barra un martes cualquiera es interesante."
+        },
+        {
+          "type": "text",
+          "md": "### VWAP: el precio justo intradía\n\nPara los traders intradía, la herramienta de volumen más útil es el **VWAP**, el precio promedio ponderado por volumen (volume-weighted average price). Se calcula desde la primera operación de la sesión: multiplica el precio típico de cada vela (normalmente el promedio de máximo, mínimo y cierre) por su volumen, suma esos productos y divide por el volumen total acumulado hasta ese momento. El resultado es el precio promedio al que realmente cambiaron de manos las acciones hoy, ponderado por cuántas acciones se negociaron en cada nivel. Se reinicia al comienzo de cada sesión.\n\nUn ejemplo sencillo con tres velas de 5 minutos: 10,000 acciones a un promedio de $100.00, 30,000 a $100.50 y 20,000 a $100.20. El valor total es 1,000,000 + 3,015,000 + 2,004,000 = $6,019,000 sobre 60,000 acciones, así que el VWAP es $100.32. El promedio simple de los tres precios sería $100.23; el VWAP es mayor porque se negociaron más acciones a $100.50.\n\nLas instituciones usan el VWAP como referencia: un fondo que compra una posición grande quiere que su precio promedio de ejecución quede en el VWAP o por debajo, así que sus algoritmos tienden a comprar con más agresividad cuando el precio cae por debajo de él y a frenar cuando está por encima. Ese comportamiento es la razón por la que el precio a menudo reacciona alrededor de la línea de VWAP. Los traders leen el precio **por encima del VWAP** como compradores dispuestos a pagar más (alcista intradía) y **por debajo del VWAP** como vendedores que aceptan precios más bajos (bajista intradía), y muchos usan la recuperación del VWAP como disparador de entrada.\n\nEl VWAP solo tiene sentido intradía. En el gráfico diario el panel muestra una versión acumulativa para que esté completo, pero la herramienta real es la que ves en los gráficos de 1, 5 y 15 minutos."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "5min",
+          "overlays": ["vwap", "volume"],
+          "caption": "Una acción de alto volumen en velas de 5 minutos con VWAP. Observa cómo las barras de volumen más altas se concentran cerca de la apertura y del cierre, y si el precio pasa la sesión por encima o por debajo de la línea de VWAP."
+        },
+        {
+          "type": "exercise",
+          "md": "Las líneas de tendencia y los canales son difíciles de poner a prueba a ojo, pero una regla de **ruptura** (breakout) sí puede probarse con exactitud. En el laboratorio de estrategias, ejecuta la estrategia `20-bar breakout` en AAPL diario: compra cuando el precio cierra por encima del máximo más alto de las últimas 20 barras y vende cuando cierra por debajo del mínimo más bajo.\n\n- Anota el rendimiento total, el número de operaciones y la tasa de acierto, y compáralos con comprar y mantener (buy & hold).\n- Cambia `n` de 20 a 50 y vuelve a ejecutar. ¿Menos operaciones? ¿Mejor o peor?\n- Mira los marcadores de operaciones en el gráfico. ¿Puedes encontrar una ruptura que falló (compró y vendió rápido con pérdida)? ¿Cómo se veía el volumen ese día de ruptura?\n\nAsí se ve \"las rupturas funcionan\" cuando realmente lo mides: algunas sí, muchas no, y la estrategia sobrevive (o no) gracias al tamaño de las ganadoras.",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=breakout&n=20&run=1", "label": "Ejecutar el backtest de rupturas" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción hace mínimos de oscilación en $100 el día 1 y en $106 el día 11. Si la línea de tendencia se mantiene, ¿aproximadamente dónde estará el día 21?",
+              "choices": ["$106", "$109", "$112", "$118"],
+              "answer": 2,
+              "explain": "La línea sube $6 en 10 días, es decir $0.60 por día. Diez días más agregan otros $6: 106 + 6 = $112."
+            },
+            {
+              "q": "¿Cuántos toques se suelen requerir para considerar confirmada una línea de tendencia?",
+              "choices": ["Uno", "Dos", "Tres", "Diez"],
+              "answer": 2,
+              "explain": "Se necesitan dos puntos para trazar cualquier línea; un tercer toque que se respeta es lo que demuestra que el mercado realmente la está respetando. Uno o dos toques fácilmente podrían ser coincidencia."
+            },
+            {
+              "q": "Un canal ascendente mide $10 de ancho y el precio rompe por encima del riel superior en $110. ¿Cuál es el objetivo habitual por movimiento medido?",
+              "choices": ["$100", "$115", "$120", "$130"],
+              "answer": 2,
+              "explain": "La regla práctica del movimiento medido suma el ancho del canal al punto de ruptura: 110 + 10 = $120. Es una heurística para planear, no una garantía."
+            },
+            {
+              "q": "Una acción promedia 50 millones de acciones al día y rompe por encima de una resistencia con 52 millones de acciones. ¿Cómo deberías leer el volumen?",
+              "choices": ["Confirmación fuerte: el volumen estuvo por encima del promedio", "Confirmación débil: el volumen fue esencialmente normal", "Bajista: las rupturas deberían ocurrir con volumen bajo", "El volumen es irrelevante para las rupturas"],
+              "answer": 1,
+              "explain": "52 millones está solo 4% por encima del promedio, lo cual es ruido. Las rupturas convincentes suelen venir con volumen muy por encima de lo normal (muchos traders buscan 1.5x a 2x o más), lo que muestra una participación amplia."
+            },
+            {
+              "q": "Tres velas de 5 minutos negocian 10,000 acciones a $100.00, 30,000 a $100.50 y 20,000 a $100.20. ¿Cuál es el VWAP?",
+              "choices": ["$100.23", "$100.32", "$100.50", "$100.70"],
+              "answer": 1,
+              "explain": "Dólares totales = 1,000,000 + 3,015,000 + 2,004,000 = 6,019,000; acciones totales = 60,000; 6,019,000 ÷ 60,000 = $100.32. El promedio sin ponderar ($100.23) es menor porque ignora que la mayoría de las acciones se negoció a $100.50."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l4",
+      "title": "Patrones clásicos de velas",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Los patrones son contexto más forma\n\nLos patrones de velas son formas con nombre que hacen una, dos o tres velas consecutivas. Vienen de los comerciantes de arroz japoneses, fueron popularizados en Occidente por el libro de Steve Nison de 1991 y tienen nombres poéticos: martillo, estrella de la mañana, tres cuervos negros. Los nombres son fáciles de recordar; las ideas detrás de ellos son historias sencillas sobre quién ganó la pelea en las últimas sesiones.\n\nLa regla más importante de todas: **un patrón de reversión necesita algo que revertir.** Un martillo (hammer) es un patrón alcista de suelo *solo* cuando aparece después de una caída. Exactamente la misma forma de vela en medio de un rango lateral no es más que una vela con una mecha inferior larga. El detector del panel aplica esta regla: no etiquetará un martillo a menos que las barras previas estuvieran cayendo, ni una estrella fugaz (shooting star) a menos que estuvieran subiendo. Si buscas patrones por tu cuenta, aplica la misma disciplina.\n\nLa segunda regla es la **ubicación**. Un martillo en un nivel de soporte que ya ha aguantado tres veces merece atención. Un martillo en medio de la nada, no. Los patrones no crean soporte ni resistencia; te muestran cómo se comportó el precio cuando llegó ahí.\n\nEmpieza con el más simple: el **doji**. Un doji tiene una apertura y un cierre casi iguales, así que su cuerpo es una línea delgada con mechas por arriba y por abajo. Nuestro detector llama doji a una vela cuando el cuerpo es el 10% o menos del rango entre máximo y mínimo: para una vela con un rango de $4.00, eso es un cuerpo de $0.40 o menos. Un doji por sí solo significa indecisión. Después de una subida fuerte es una luz amarilla, que sugiere que la tendencia puede estar cansándose, pero no dice nada sobre la dirección hasta que la *siguiente* vela muestre hacia dónde se resolvió la indecisión."
+        },
+        {
+          "type": "text",
+          "md": "### Martillo y estrella fugaz\n\nEl **martillo** es una sola vela con un cuerpo pequeño cerca de la parte alta de su rango y una mecha inferior larga, de al menos el doble del cuerpo, con poca o ninguna mecha superior. La historia: los vendedores empujaron el precio con fuerza hacia abajo durante la sesión, luego entraron los compradores y lo recuperaron todo al cierre. Para que cuente, el mercado debe haber venido cayendo.\n\nLos números lo hacen concreto. Después de una semana de caídas, una acción abre en $97.80, baja hasta un mínimo de $94.10 y cierra en $98.00. El cuerpo mide $0.20 (de 97.80 a 98.00), la mecha inferior mide $3.70 y la mecha superior mide $0.00 si el máximo fue 98.00. La mecha inferior es más de 18 veces el cuerpo. Los compradores absorbieron una caída de $3.70 y empujaron el cierre por encima de la apertura. El color del cuerpo importa poco; un martillo puede ser verde o rojo. Lo que importa es el rechazo de los precios más bajos.\n\nLa **estrella fugaz** es la imagen en espejo en la cima de una subida: un cuerpo pequeño cerca de la parte *baja* del rango con una mecha *superior* larga. Los compradores empujaron a nuevos máximos y fueron rechazados. Después de una subida de $180 a $205, una vela que abre en $204.50, se dispara hasta $209.80 y cierra en $204.20 muestra a los compradores incapaces de sostener nada de un empuje de $5: una advertencia.\n\nTambién oirás hablar del **martillo invertido** (forma de estrella fugaz después de una caída) y del **hombre colgado** (hanging man: forma de martillo después de una subida). Son las mismas formas en el contexto opuesto y son señales más débiles, que dependen aún más de la confirmación. Nuestro detector mantiene las cosas simples y etiqueta solo martillo y estrella fugaz, cada uno en su contexto correcto.\n\nEn todos los casos, el patrón se **confirma** solo cuando la siguiente vela cierra en la dirección esperada: por encima del máximo del martillo, o por debajo del mínimo de la estrella fugaz. Actuar antes de la confirmación es apostar a que la historia ya terminó; esperar es apostar a que puedes permitirte perder los primeros puntos porcentuales."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Las estadísticas realmente no están resueltas.** Los autores que han hecho backtests de patrones de velas sobre muestras grandes reportan resultados muy variados, y varios estudios académicos encuentran que muchos patrones de una sola vela, tomados por sí solos y sin confirmación, predicen los siguientes días más o menos igual que lanzar una moneda. Otros encuentran ventajas modestas en mercados y períodos específicos. Aquí no citaremos una tasa de éxito para ningún patrón, porque cualquier número único sería una falsa precisión. La postura honesta: los patrones son un lenguaje útil para describir lo que acaba de pasar, son más informativos en niveles importantes, y nunca deberían ser la única razón para una operación."
+        },
+        {
+          "type": "text",
+          "md": "### Patrones envolventes\n\nUn patrón **envolvente** (engulfing) consta de dos velas en las que el segundo cuerpo cubre por completo al primero, con el color opuesto. Un **envolvente alcista** después de una caída: una vela roja, y luego una vela verde que abre en el cierre de la roja o por debajo y cierra en la apertura de la roja o por encima. Por ejemplo, el primer día va de $100.00 hacia abajo hasta $98.00 (cuerpo rojo de $2.00); el día siguiente abre en $97.50 y cierra en $101.00 (cuerpo verde de $3.50, que cubre todo el cuerpo rojo). Los vendedores de ayer fueron arrollados; todos los que vendieron ayer ahora están perdiendo.\n\nUn **envolvente bajista** después de una subida es lo inverso: una vela verde, y luego una vela roja que abre en el cierre de la verde o por encima y cierra en la apertura de la verde o por debajo. El detector del panel exige que el segundo cuerpo sea estrictamente mayor que el primero y que el primer cuerpo no sea trivial, lo que filtra las velas diminutas \"envueltas\" por velas corrientes.\n\nDos patrones relacionados con reglas un poco más flexibles son la **línea penetrante** (piercing line: una vela verde que cierra más allá de la mitad del cuerpo rojo anterior, sin envolverlo del todo) y la **nube oscura** (dark cloud cover, su espejo bajista). Cuentan una historia parecida con menos fuerza.\n\nLos patrones envolventes están entre las señales más intuitivas porque la comparación de tamaño es muy directa. Son más fuertes cuando la vela envolvente también tiene volumen por encima del promedio, cuando ocurre en una zona de soporte o resistencia, y cuando la vela envuelta era en sí misma una vela significativa y no un doji. Un envolvente alcista con 2.5x el volumen promedio en un nivel que ya ha aguantado dos veces es una configuración completa que vale la pena anotar; un envolvente alcista con volumen normal en medio de un rango es una curiosidad."
+        },
+        {
+          "type": "text",
+          "md": "### Patrones de tres velas\n\nLa **estrella de la mañana** (morning star) es un suelo de tres velas. La vela uno es una vela roja larga dentro de una caída. La vela dos es una vela de cuerpo pequeño (de cualquier color, idealmente un doji) que abre con un hueco (gap) por debajo del primer cierre: el último empujón de los vendedores, sin convicción. La vela tres es una vela verde fuerte que cierra al menos a mitad del cuerpo de la primera vela. En números: día uno $110 → $104, día dos un cuerpo diminuto entre $103.20 y $103.60, día tres $103.80 → $108.50, que queda muy por encima del punto medio de la primera vela, $107. La secuencia se lee: venta intensa, agotamiento, y luego compradores al mando.\n\nLa **estrella de la tarde** (evening star) es el techo en espejo: vela verde larga, vela pequeña con hueco al alza, vela roja larga que cierra por debajo del punto medio de la primera vela. El detector del panel exige que el cuerpo del medio no supere el 30% del primer cuerpo y que la tercera vela mida al menos la mitad del primer cuerpo, de modo que solo marca ejemplos bien formados.\n\nLos **tres soldados blancos** son tres velas verdes fuertes consecutivas, cada una abriendo dentro del cuerpo anterior y cerrando en un nuevo máximo. Suelen aparecer cuando termina una caída y señalan compras constantes y sin prisa. Los **tres cuervos negros** son lo contrario: tres velas rojas fuertes que bajan en escalera, cada una abriendo dentro del cuerpo anterior y cerrando más abajo, lo que señala ventas persistentes después de un techo. Son patrones con sabor a continuación: para cuando cierra la tercera vela, el movimiento ya está en marcha, y la pregunta es si unirse o esperar un retroceso.\n\nAquí el detector solo busca velas \"sólidas\", es decir, con un cuerpo de al menos la mitad del rango, porque tres velas verdes con mechas enormes y cuerpos diminutos son un cuadro muy distinto y mucho menos convincente."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["patterns", "sma20"],
+          "caption": "Los últimos patrones de velas que encontró el detector, marcados con flechas (hacia arriba para alcista, hacia abajo para bajista, un punto para un doji neutral). Los patrones son deliberadamente escasos: un martillo necesita una caída previa, una barra envolvente debe tragarse el cuerpo anterior. Para cada marcador, revisa qué hizo el precio en las cinco velas siguientes."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Una lista de verificación de patrones, antes de actuar.**\n\n- ¿Había una tendencia previa al patrón que este pudiera revertir?\n- ¿Está el patrón en una zona de soporte o resistencia, una línea de tendencia o una media móvil?\n- ¿El volumen estuvo por encima de lo normal en la vela de la señal?\n- ¿La siguiente vela lo confirmó (cerró más allá del extremo del patrón)?\n- ¿Dónde está tu stop (normalmente justo más allá de la mecha del patrón), y la distancia hasta un objetivo razonable es al menos el doble?\n\nSi no puedes marcar al menos cuatro, no estás mirando una operación; estás mirando una vela."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con la superposición `Patterns` y los niveles `S/R` activados. El panel de patrones debajo del gráfico lista todos los patrones encontrados en las últimas 150 barras con una descripción.\n\n- Para cada uno de los últimos cinco patrones, registra: el nombre del patrón, su sesgo, si estaba cerca de un nivel automático de soporte/resistencia, y qué hizo el precio en las cinco velas siguientes (subió, bajó o quedó plano, en porcentaje).\n- Cuenta cuántos de los cinco se movieron en la dirección del sesgo del patrón. Con una muestra tan pequeña la respuesta es ruido, y esa es la lección: necesitarías cientos de ejemplos para afirmar algo, y para eso está el backtester.\n- Prueba con otros dos símbolos y con el intervalo `1h`. ¿Encuentras más patrones o menos?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma20,pat,sr", "label": "Abrir el detector de patrones" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una vela tiene un rango de $4.00 entre mínimo y máximo. ¿Cuánto puede medir su cuerpo, como máximo, para que el panel la clasifique como doji?",
+              "choices": ["$0.04", "$0.40", "$1.00", "$2.00"],
+              "answer": 1,
+              "explain": "El detector llama doji a una vela cuando el cuerpo es el 10% o menos del rango: el 10% de $4.00 es $0.40."
+            },
+            {
+              "q": "Después de una semana de caídas, una acción abre en $97.80, cae hasta $94.10 y cierra en $98.00 (el máximo). ¿Qué patrón es este?",
+              "choices": ["Estrella fugaz", "Envolvente bajista", "Martillo", "Doji"],
+              "answer": 2,
+              "explain": "Un cuerpo pequeño ($0.20) en la parte alta del rango con una mecha inferior larga ($3.70) después de una caída es un martillo: los vendedores empujaron con fuerza hacia abajo y los compradores lo recuperaron todo."
+            },
+            {
+              "q": "¿Por qué una vela con forma de martillo en medio de un rango lateral NO se considera una señal de martillo?",
+              "choices": ["Los martillos solo ocurren en gráficos semanales", "Un patrón de reversión necesita una tendencia previa que revertir", "Los rangos laterales no tienen mechas", "En un rango el cuerpo debe ser verde"],
+              "answer": 1,
+              "explain": "La historia del martillo es que una caída fue rechazada. Sin una caída previa, la misma forma no es más que una vela con una mecha inferior larga; el detector del panel no la etiquetará."
+            },
+            {
+              "q": "Día uno: una vela roja de $100.00 a $98.00. Día dos: una vela verde de $97.50 a $101.00. ¿Qué es esto?",
+              "choices": ["Estrella de la mañana", "Línea penetrante", "Envolvente alcista", "Tres soldados blancos"],
+              "answer": 2,
+              "explain": "El cuerpo verde (97.50 a 101.00) abre por debajo del cierre rojo y cierra por encima de la apertura roja, cubriendo por completo el cuerpo anterior con el color opuesto: un patrón envolvente alcista."
+            },
+            {
+              "q": "¿Qué significa que una estrella fugaz esté 'confirmada'?",
+              "choices": ["La misma forma aparece de nuevo al día siguiente", "El volumen estuvo por debajo del promedio", "La siguiente vela cierra por debajo del mínimo de la estrella fugaz", "El RSI está por encima de 70"],
+              "answer": 2,
+              "explain": "La confirmación significa que la vela siguiente resuelve la indecisión en la dirección del patrón. Para una estrella fugaz bajista, eso es un cierre por debajo de su mínimo; para un martillo alcista, un cierre por encima de su máximo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2-l5",
+      "title": "Patrones de gráficos: reversiones y continuaciones",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### De las velas a las estructuras\n\nLos patrones de velas abarcan de una a tres barras. Los **patrones de gráficos** (chart patterns) son más grandes: formas que se construyen a lo largo de semanas o meses a partir de máximos y mínimos de oscilación, soportes y resistencias. No son un tipo de análisis distinto; son las mismas ideas de las lecciones anteriores, organizadas de maneras reconocibles y con nombres para que los traders puedan hablar de ellas.\n\nLos patrones se dividen en dos familias. Los **patrones de reversión** se forman al final de una tendencia y sugieren que está por cambiar de dirección: hombro-cabeza-hombro, dobles techos y dobles suelos, techos redondeados. Los **patrones de continuación** se forman como una pausa dentro de una tendencia y sugieren que la tendencia se reanudará: banderas, banderines, la mayoría de los triángulos. La distinción tiene que ver con dónde aparece el patrón, ya que varias formas (los triángulos en especial) pueden ser de cualquiera de los dos tipos.\n\nCasi todos los patrones de gráficos comparten tres partes. Hay un **límite** que lo define: una línea de cuello (neckline), el riel de un canal, una línea de tendencia convergente. Hay una **ruptura** (breakout), cuando el precio cierra más allá de ese límite, que es el momento en que el patrón se completa. Y hay un **objetivo por movimiento medido**, normalmente la altura del patrón proyectada desde el punto de ruptura. Para un patrón de 15 puntos de altura que rompe en $100, el objetivo de libro es $85 para un techo o $115 para un suelo.\n\nLa disciplina que separa la lectura útil de patrones de las ilusiones es simple: **un patrón no es un patrón hasta que rompe.** Antes de la ruptura es una posibilidad que estás observando. La mayoría de los \"hombro-cabeza-hombro\" que la gente señala en gráficos en vivo nunca se completan; se convierten en rangos o se resuelven hacia arriba. Las reglas de confirmación de esta lección existen para evitar que operes posibilidades."
+        },
+        {
+          "type": "text",
+          "md": "### Hombro-cabeza-hombro\n\nEl **hombro-cabeza-hombro** (head and shoulders) es el patrón de reversión más conocido. Después de una tendencia alcista, el precio hace un pico (el **hombro izquierdo**), retrocede, sube hasta un pico más alto (la **cabeza**), retrocede aproximadamente hasta la misma zona de antes, y luego sube hasta un pico más bajo (el **hombro derecho**). Una línea trazada por los dos mínimos de los retrocesos es la **línea de cuello**. El patrón se completa cuando el precio cierra por debajo de la línea de cuello.\n\nLa historia es la de una tendencia que se queda sin compradores. El hombro izquierdo y la cabeza son comportamiento normal de tendencia alcista: un máximo más alto. El hombro derecho es el fallo: el mercado no pudo hacer un nuevo máximo. Romper la línea de cuello rompe entonces el mínimo de oscilación más reciente, así que la definición de tendencia alcista por puntos de oscilación de la Lección 2 también ha fallado oficialmente. El hombro-cabeza-hombro no es más que ese fallo con nombre propio.\n\nEl volumen suele contar la misma historia. Tiende a ser más alto en el hombro izquierdo, más ligero en la cabeza (menos gente persiguiendo el máximo final) y más ligero aún en el hombro derecho, para luego expandirse en la ruptura de la línea de cuello. Una ruptura de la línea de cuello con volumen tranquilo es sospechosa.\n\nPara el objetivo, mide desde la cima de la cabeza hasta la línea de cuello y proyecta esa distancia hacia abajo desde la ruptura. Si la cabeza llegó a $120 y la línea de cuello está en $100, la altura es de $20 y el objetivo es $80. El precio regresa con frecuencia a la línea de cuello después de romperla (un **retroceso** o **prueba de regreso**, retest), que es la regla de polaridad de la Lección 2 en acción: el antiguo soporte se convierte en resistencia. Esa prueba de regreso es la entrada de menor riesgo que muchos traders esperan.\n\nEl **hombro-cabeza-hombro invertido** es la misma estructura al revés, al final de una tendencia bajista: un mínimo, un mínimo más bajo, un mínimo más alto, y luego una ruptura por encima de la línea de cuello. Las líneas de cuello suelen estar inclinadas en lugar de planas; una línea de cuello ligeramente ascendente en un techo, o ligeramente descendente en un suelo, es normal."
+        },
+        {
+          "type": "text",
+          "md": "### Dobles techos y dobles suelos\n\nUn **doble techo** (double top) parece una letra M. El precio sube hasta un pico, retrocede, sube de nuevo hasta aproximadamente el mismo nivel y falla, y luego cae. Los dos picos no tienen que ser idénticos; la mayoría de los practicantes acepta picos separados por un pequeño porcentaje, y la tolerancia exacta es cuestión de gusto. El valle entre ellos es el nivel de confirmación: el patrón se completa cuando el precio cierra por debajo de él.\n\nToma una acción que hace un pico en $150.00, cae hasta $138.00, sube hasta $149.20 y gira hacia abajo. Los dos picos están a menos de 0.5% uno del otro. El patrón es solo un doble techo *potencial* hasta que el precio cierre por debajo de $138. Si lo hace, el objetivo medido es la altura ($150 − $138 = $12) proyectada hacia abajo desde la ruptura: $126. Si en cambio el precio se mantiene por encima de $138 y termina rompiendo los $150, no hubo doble techo; hubo un rango que se resolvió hacia arriba.\n\nEl **doble suelo** (double bottom) es la imagen en espejo con forma de W al final de una caída: dos mínimos cerca del mismo precio, un pico entre ellos, y se completa con un cierre por encima de ese pico. Un **triple techo o triple suelo** es la misma idea con tres pruebas; cuantas más veces se prueba un nivel sin romperse, más significativa tiende a ser la ruptura final, pero también es más probable que el patrón en realidad sea solo un rango.\n\nEl tiempo importa. Dos picos con una semana de diferencia son más probablemente un único proceso de techo que un patrón; picos separados por varias semanas o meses, con un valle significativo entre ellos, hacen un doble techo más creíble. No hay un mínimo fijo, pero muchos chartistas quieren ver al menos unas semanas y un valle de varios puntos porcentuales antes de darle nombre a la forma."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Reglas de confirmación, y por qué difieren.** Como las rupturas falsas son comunes, los traders agregan filtros antes de aceptar una ruptura: un *cierre* más allá del nivel en lugar de un toque intradía; un cierre un cierto porcentaje más allá (1% a 3% es común); dos cierres consecutivos más allá; o una ruptura acompañada de volumen muy por encima del promedio. Distintos libros prescriben distintos filtros y ninguno es demostrablemente el mejor. El sentido de cualquier filtro es un intercambio: una regla más estricta significa menos señales falsas pero una entrada más tardía y peor. Elige uno, escríbelo y aplícalo con consistencia para que tus resultados puedan compararse."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["sr", "sma50", "volume"],
+          "caption": "Soporte y resistencia automáticos con la SMA de 50 días y volumen. Busca pruebas repetidas de la misma resistencia (un posible doble o triple techo) o del mismo soporte (un posible doble suelo), y fíjate si el nivel ya se rompió o si todavía se está probando. Intenta describir la estructura antes de decidir qué es."
+        },
+        {
+          "type": "text",
+          "md": "### Banderas y banderines\n\nUna **bandera** (flag) es una pausa breve después de un movimiento fuerte. El movimiento fuerte es el **mástil** (pole): una subida casi vertical, a menudo con volumen alto, que deja pocos retrocesos. La **bandera** en sí es una consolidación pequeña y ordenada que se desliza suavemente *en contra* de la dirección del mástil, entre dos líneas aproximadamente paralelas, con volumen decreciente. Luego el precio rompe en la dirección del mástil y la tendencia se reanuda. Un **banderín** (pennant) es lo mismo, pero la consolidación converge en un triángulo pequeño en lugar de un canal paralelo.\n\nLa psicología: un movimiento fuerte atrae a quienes toman ganancias (lo que produce la deriva suave en contra), pero no a suficientes vendedores nuevos para revertirlo (por eso la deriva es suave y el volumen se seca). Cuando termina la toma de ganancias, los compradores originales, más quienes se perdieron el mástil, empujan hacia adelante.\n\nEn números: una acción sube de $20.00 a $25.00 en cuatro sesiones (un mástil de $5), luego pasa seis sesiones deslizándose desde $25.00 hasta unos $23.50 con la mitad de su volumen habitual. Después cierra en $25.20, por encima del límite superior de la bandera. El objetivo por movimiento medido suma la altura del mástil a la ruptura: $25.20 + $5.00 = $30.20. Las banderas en gráficos diarios suelen durar de una a cuatro semanas; una \"bandera\" que se arrastra durante dos meses probablemente es otra cosa.\n\nLas banderas son patrones de continuación y funcionan en ambas direcciones: una **bandera bajista** (bear flag) es una caída fuerte, una deriva suave hacia arriba y luego una ruptura a la baja. Una bandera que rompe hacia el lado *equivocado* (en contra del mástil) es un patrón fallido, y los patrones fallidos a menudo producen movimientos fuertes por sí mismos, porque todos los que se posicionaron para la continuación tienen que salir a la vez."
+        },
+        {
+          "type": "text",
+          "md": "### Triángulos y cuñas\n\nUn **triángulo** se forma cuando las oscilaciones se hacen cada vez más pequeñas, de modo que las líneas de tendencia trazadas por los máximos y por los mínimos convergen. Hay tres tipos, nombrados según cuál línea es plana.\n\nUn **triángulo ascendente** tiene un techo plano (máximos repetidos aproximadamente al mismo precio) y mínimos ascendentes. Los compradores entran antes cada vez mientras los vendedores sostienen una línea; la expectativa habitual es una ruptura al alza, sobre todo dentro de una tendencia alcista. Un **triángulo descendente** tiene un suelo plano y máximos descendentes: vendedores cada vez más agresivos contra un piso defendido, con inclinación bajista. Un **triángulo simétrico** tiene máximos descendentes *y* mínimos ascendentes, que convergen hacia un punto, y se considera neutral: la dirección de la ruptura decide.\n\nEl objetivo es la altura del triángulo en su punto más ancho, proyectada desde la ruptura. Si un triángulo simétrico empezó con un máximo de $60 y un mínimo de $50 y rompe al alza en $56, el objetivo es aproximadamente $66. Una regla práctica muy repetida dice que las rupturas son más confiables cuando ocurren entre dos tercios y tres cuartos del camino desde el inicio del triángulo hasta su vértice (apex); los patrones que se arrastran hasta el vértice tienden a desinflarse. Esto es una convención de los textos clásicos más que un hecho medido, pero captura algo real: una compresión que se resuelve con energía es distinta de una que simplemente se queda sin espacio.\n\nLas **cuñas** (wedges) parecen triángulos en los que ambas líneas se inclinan en la misma dirección. Una **cuña ascendente** (ambas líneas subiendo y convergiendo) normalmente se resuelve a la baja; una **cuña descendente** normalmente se resuelve al alza. La lógica es que el movimiento dentro de la cuña está perdiendo impulso: cada empuje recorre menos terreno.\n\nLos triángulos pueden ser patrones de reversión o de continuación según dónde se formen, y precisamente por eso es la ruptura, no la forma, la que decide tu operación."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**La retrospectiva es mentirosa.** Todo patrón de gráfico parece obvio *después* de completarse; los libros están llenos de ejemplos perfectos, seleccionados porque funcionaron. En el borde derecho de un gráfico en vivo estás mirando un garabato ambiguo que podría convertirse en tres patrones distintos. Practica cubriendo el lado derecho de un gráfico, nombrando lo que ves, anotando tu nivel de ruptura y tu objetivo, y luego destapándolo. Hazlo cincuenta veces y aprenderás más sobre tus propios sesgos de lo que cualquier libro puede enseñarte, y lo harás con dinero de práctica."
+        },
+        {
+          "type": "exercise",
+          "md": "Planea y coloca una operación basada en un patrón en tu cuenta de paper trading. Primero, en el panel, encuentra una acción que esté probando un nivel de resistencia por segunda o tercera vez (una ruptura potencial) o que acabe de completar una bandera. Anota tres números: el **nivel de ruptura**, un **stop** por debajo del patrón y un **objetivo por movimiento medido**.\n\nLuego, en la página del portafolio:\n\n- Coloca una orden de compra **stop** o **stop-limit** en el nivel de ruptura, para que solo entres si la ruptura realmente ocurre (no antes).\n- Dimensiona la posición de modo que la distancia entre la entrada y el stop, multiplicada por el número de acciones, no supere el 1% de tu cuenta de práctica. En una cuenta de $100,000 con una distancia al stop de $2, eso es como máximo 500 acciones.\n- Registra el plan en las notas de la operación: nombre del patrón, entrada, stop, objetivo.\n\nVuelve en una semana. ¿Se disparó la ruptura? ¿Alcanzó el objetivo, tocó el stop, o ninguna de las dos cosas? El resultado de una sola operación no prueba nada; el hábito de escribir el plan primero es todo el sentido del ejercicio.",
+          "action": { "page": "portfolio.html", "hash": "positions", "label": "Abrir tu portafolio de práctica" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "En un hombro-cabeza-hombro, la cabeza llega a $120 y la línea de cuello está en $100. ¿Cuál es el objetivo por movimiento medido tras la ruptura de la línea de cuello?",
+              "choices": ["$110", "$100", "$80", "$60"],
+              "answer": 2,
+              "explain": "La altura del patrón es 120 − 100 = $20. Proyecta esa distancia hacia abajo desde la ruptura de la línea de cuello: 100 − 20 = $80. Los objetivos son herramientas de planificación, no garantías."
+            },
+            {
+              "q": "Una acción hace un pico en $150, cae a $138, sube a $149.20 y gira hacia abajo. ¿Cuándo se convierte esto en un doble techo confirmado?",
+              "choices": ["En cuanto el segundo pico falla por debajo de $150", "Cuando el precio cierra por debajo del valle de $138", "Cuando el volumen disminuye", "Cuando el RSI cruza 50"],
+              "answer": 1,
+              "explain": "Dos picos por sí solos son apenas un patrón potencial. El doble techo se completa cuando el precio cierra por debajo del valle entre los picos ($138). Hasta entonces, la acción puede estar simplemente en un rango que se resuelva hacia arriba."
+            },
+            {
+              "q": "¿Cuál de estos es un patrón de continuación?",
+              "choices": ["Hombro-cabeza-hombro", "Doble suelo", "Bandera alcista", "Triple techo"],
+              "answer": 2,
+              "explain": "Una bandera es una pausa breve después de un movimiento fuerte, tras la cual se espera que la tendencia previa se reanude. El hombro-cabeza-hombro, los dobles suelos y los triples techos son patrones de reversión."
+            },
+            {
+              "q": "Una acción sube de $20 a $25, consolida en una bandera hasta $23.50 y luego rompe en $25.20. ¿Cuál es el objetivo por movimiento medido?",
+              "choices": ["$26.70", "$28.50", "$30.20", "$35.00"],
+              "answer": 2,
+              "explain": "El mástil mide 25 − 20 = $5. Sumar la altura del mástil al punto de ruptura da 25.20 + 5.00 = $30.20."
+            },
+            {
+              "q": "Un triángulo tiene un techo plano con máximos repetidos cerca de $60 y mínimos ascendentes. ¿Cómo se llama, y hacia qué lado suele inclinarse?",
+              "choices": ["Triángulo descendente, inclinación bajista", "Triángulo ascendente, inclinación alcista", "Triángulo simétrico, neutral", "Cuña ascendente, inclinación bajista"],
+              "answer": 1,
+              "explain": "Un techo plano con mínimos ascendentes es un triángulo ascendente: los compradores entran antes cada vez mientras los vendedores sostienen una línea fija, así que la resolución esperada (no garantizada) es al alza."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -20,6 +20,16 @@
  *   - timeRemaining(moduleId?) → estimated minutes left; moduleProgress/courseProgress gain minutesLeft
  *   - certificate({name, id, verifyUrl}) prints a supplied id (BT.auth.issueCertificate) or a
  *     local 'BT-LOCAL-XXXXXX' one; localCertId() generates the latter
+ *
+ * v0.4 additions
+ *   - language-aware loading: with BT.i18n (js/i18n.js) active in 'es', every course file
+ *     is fetched from course/es/<file> first and falls back to course/<file> (English);
+ *     the normalised index / module / glossary carry {lang, englishOnly} so the UI can
+ *     show an 'English only' badge. lang()/setLang(code) select the language; the
+ *     'bt:lang' / 'bt:langchange' window events (dispatched by js/i18n.js) switch it and
+ *     drop the in-memory caches so the next loadIndex()/loadModule() re-fetches.
+ *   - recommend() → the single best next step for the course home's 'Up next' card
+ *   - certificateRecord() → the saved certificate (bt.course.certificate) for certificate.html
  */
 (function () {
   'use strict';
@@ -151,9 +161,76 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Language (v0.4). English files live in course/, translations in      */
+  /* course/<lang>/ with identical names; anything missing falls back.    */
+  /* ------------------------------------------------------------------ */
+  var DEFAULT_LANG = 'en';
+  var LANG_RE = /^[a-z]{2}(-[a-z]{2,4})?$/;
+  var _lang = null;              // null → ask BT.i18n / localStorage on first use
+  var _known = null;             // the language lang() last answered with (= what the caches hold)
+
+  function cleanLang(code) {
+    code = String(code == null ? '' : code).toLowerCase().trim();
+    return LANG_RE.test(code) ? code : DEFAULT_LANG;
+  }
+  /** The active course language: an explicit setLang(), else BT.i18n.lang(), else localStorage 'bt.lang', else 'en'. */
+  function lang() {
+    if (_lang) return (_known = _lang);
+    var code = '';
+    try { if (BT.i18n && typeof BT.i18n.lang === 'function') code = BT.i18n.lang(); } catch (e) { code = ''; }
+    if (!code) { var stored = store.get('bt.lang', ''); if (typeof stored === 'string') code = stored; }
+    return (_known = cleanLang(code));
+  }
+  /** Drop every in-memory course cache (index, modules, glossary) so the next load re-fetches. */
+  function invalidate() {
+    _index = null; _indexPromise = null; _modules = {}; _modulePromises = {};
+    _gloss = null; _glossPromise = null; _glossFailed = false;
+  }
+  /**
+   * setLang(code) → true when the language changed (caches are dropped so the next
+   * loadIndex()/loadModule() fetches the right files), false when it was already active.
+   */
+  function setLang(code) {
+    var next = cleanLang(code);
+    // Compare with the language the caches were loaded for, not with BT.i18n.lang():
+    // by the time 'bt:lang' fires, i18n already answers with the NEW language.
+    var prev = _lang || _known || lang();
+    var changed = next !== prev;
+    _lang = next; _known = next;
+    if (changed) invalidate();
+    return changed;
+  }
+  /** fileFor(name, code?) → 'course/es/m1.json' for a translation, 'course/m1.json' for English. */
+  function fileFor(name, code) {
+    code = cleanLang(code || lang());
+    return code === DEFAULT_LANG ? COURSE_DIR + name : COURSE_DIR + code + '/' + name;
+  }
+  /**
+   * fetchLocalised(name) → Promise<{json, lang, englishOnly}>: the translated file when
+   * the active language is not English and the file exists, otherwise the English one
+   * (englishOnly:true marks the fallback). Errors from the ENGLISH file propagate.
+   */
+  function fetchLocalised(name) {
+    var code = lang();
+    if (code === DEFAULT_LANG) return fetchJSON(fileFor(name, DEFAULT_LANG)).then(function (json) { return { json: json, lang: DEFAULT_LANG, englishOnly: false }; });
+    return fetchJSON(fileFor(name, code)).then(function (json) { return { json: json, lang: code, englishOnly: false }; },
+      function () { return fetchJSON(fileFor(name, DEFAULT_LANG)).then(function (json) { return { json: json, lang: DEFAULT_LANG, englishOnly: true }; }); });
+  }
+  // js/i18n.js dispatches 'bt:lang' on window when the language changes (the contract
+  // names it 'bt:langchange'; both are honoured). Pure modules may not have a window.
+  function onLangEvent(e) {
+    var code = (e && e.detail && e.detail.lang) || '';
+    if (!code) { try { code = BT.i18n && BT.i18n.lang ? BT.i18n.lang() : ''; } catch (err) { code = ''; } }
+    if (code) setLang(code);
+  }
+  try {
+    if (typeof window.addEventListener === 'function') { window.addEventListener('bt:lang', onLangEvent); window.addEventListener('bt:langchange', onLangEvent); }
+  } catch (e) { /* no window events (tests) */ }
+
+  /* ------------------------------------------------------------------ */
   /* Glossary (course/glossary.json), loaded lazily on first use          */
   /* ------------------------------------------------------------------ */
-  var GLOSSARY_FILE = COURSE_DIR + 'glossary.json';
+  var GLOSSARY_NAME = 'glossary.json';
   var _gloss = null;             // {terms:[], byKey:{}} once loaded
   var _glossPromise = null;
   var _glossFailed = false;
@@ -184,19 +261,19 @@
       // 'Higher high / higher low' → both halves
       t.term.split(/\s*\/\s*/).forEach(function (part) { if (part !== t.term) add(part, t); });
     });
-    return { terms: terms, byKey: byKey, categories: (json && Array.isArray(json.categories)) ? json.categories : [] };
+    return { terms: terms, byKey: byKey, categories: (json && Array.isArray(json.categories)) ? json.categories : [], lang: DEFAULT_LANG, englishOnly: false };
   }
   /** glossary.load() → Promise<{terms, byKey}>; resolves to null (never rejects) when the file is unavailable. */
   function loadGlossary(force) {
     if (_gloss && !force) return Promise.resolve(_gloss);
     if (_glossFailed && !force) return Promise.resolve(null);
     if (_glossPromise && !force) return _glossPromise;
-    _glossPromise = fetchJSON(GLOSSARY_FILE).then(function (json) {
-      _gloss = indexGlossary(json); _glossFailed = false; return _gloss;
+    _glossPromise = fetchLocalised(GLOSSARY_NAME).then(function (r) {
+      _gloss = indexGlossary(r.json); _gloss.lang = r.lang; _gloss.englishOnly = r.englishOnly; _glossFailed = false; return _gloss;
     }).catch(function () { _glossFailed = true; _glossPromise = null; return null; });
     return _glossPromise;
   }
-  function setGlossary(json) { _gloss = indexGlossary(json); _glossFailed = false; _glossPromise = Promise.resolve(_gloss); return _gloss; }
+  function setGlossary(json, code) { _gloss = indexGlossary(json); _gloss.lang = cleanLang(code || DEFAULT_LANG); _glossFailed = false; _glossPromise = Promise.resolve(_gloss); return _gloss; }
   function resetGlossary() { _gloss = null; _glossFailed = false; _glossPromise = null; }
   /** glossary.lookup('RSI') → term object or null (sync; null until load() has resolved). */
   function lookupTerm(term) {
@@ -214,6 +291,8 @@
     get loaded() { return !!_gloss; }, get failed() { return _glossFailed; },
     get terms() { return _gloss ? _gloss.terms : []; },
     get categories() { return _gloss ? _gloss.categories : []; },
+    get lang() { return _gloss ? _gloss.lang : null; },
+    get englishOnly() { return !!(_gloss && _gloss.englishOnly); },
     categoryLabel: function (id) {
       var c = (_gloss ? _gloss.categories : []).filter(function (x) { return x && x.id === id; })[0];
       return c ? String(c.label) : String(id || '');
@@ -248,13 +327,16 @@
     catch (e) { throw CourseError(file + ' is not valid JSON: ' + e.message, 'parse'); }
   }
 
-  /** Normalise an index so the rest of the app can rely on its shape. */
-  function normaliseIndex(json) {
+  /** Normalise an index so the rest of the app can rely on its shape. `loc` = {lang, englishOnly} from fetchLocalised. */
+  function normaliseIndex(json, loc) {
     var modules = (json && Array.isArray(json.modules)) ? json.modules : [];
+    loc = loc || {};
     return {
       version: json && json.version || '',
       title: json && json.title || 'Course',
       summary: json && json.summary || '',
+      lang: cleanLang(loc.lang || DEFAULT_LANG),
+      englishOnly: !!loc.englishOnly,
       modules: modules.map(function (m, i) {
         return {
           id: String(m.id || ('m' + (i + 1))),
@@ -263,6 +345,8 @@
           minutes: +m.minutes || 0,
           summary: String(m.summary || ''),
           pro: !!m.pro,
+          lang: cleanLang(loc.lang || DEFAULT_LANG),
+          englishOnly: !!loc.englishOnly,     // refined per module once its file is loaded
           lessons: (Array.isArray(m.lessons) ? m.lessons : []).map(function (l, j) {
             return { id: String(l.id || (m.id + '-l' + (j + 1))), title: String(l.title || ('Lesson ' + (j + 1))), minutes: +l.minutes || 0, pro: !!(l.pro || m.pro) };
           })
@@ -276,9 +360,10 @@
    * {id, title, level, minutes, summary, lessons:[{id,title,minutes,blocks}]}
    * or a bare {lessons:[...]} and fills the gaps from the index when known.
    */
-  function normaliseModule(json, id) {
+  function normaliseModule(json, id, loc) {
     var meta = (_index && _index.modules.filter(function (m) { return m.id === id; })[0]) || {};
     var lessons = (json && Array.isArray(json.lessons)) ? json.lessons : [];
+    loc = loc || {};
     var mod = {
       id: String((json && json.id) || id),
       title: String((json && json.title) || meta.title || id),
@@ -287,6 +372,8 @@
       summary: String((json && json.summary) || meta.summary || ''),
       objectives: (json && Array.isArray(json.objectives)) ? json.objectives.map(String) : [],
       pro: !!((json && json.pro) || meta.pro),
+      lang: cleanLang(loc.lang || DEFAULT_LANG),
+      englishOnly: !!loc.englishOnly,
       lessons: lessons.map(function (l, j) {
         var fallbackId = (meta.lessons && meta.lessons[j] && meta.lessons[j].id) || (id + '-l' + (j + 1));
         var indexed = (meta.lessons || []).filter(function (x) { return x.id === String(l.id || fallbackId); })[0] || {};
@@ -309,15 +396,17 @@
   function loadIndex(force) {
     if (_index && !force) return Promise.resolve(_index);
     if (_indexPromise && !force) return _indexPromise;
-    _indexPromise = fetchJSON(COURSE_DIR + 'index.json').then(function (json) {
-      _index = normaliseIndex(json);
+    var p = fetchLocalised('index.json').then(function (r) {
+      if (_indexPromise !== p) return _indexPromise || loadIndex();   // caches were dropped (language switch) meanwhile
+      _index = normaliseIndex(r.json, r);
       return _index;
-    }).catch(function (e) { _indexPromise = null; throw e; });
-    return _indexPromise;
+    }).catch(function (e) { if (_indexPromise === p) _indexPromise = null; throw e; });
+    _indexPromise = p;
+    return p;
   }
 
   /** Inject an index without fetching (tests, embedded builds). */
-  function setIndex(json) { _index = normaliseIndex(json); _indexPromise = Promise.resolve(_index); return _index; }
+  function setIndex(json, loc) { _index = normaliseIndex(json, loc); _indexPromise = Promise.resolve(_index); return _index; }
 
   /** Load (once) a module file by id, e.g. 'm1-foundations'. */
   function loadModule(id, force) {
@@ -325,12 +414,13 @@
     if (!/^[a-z0-9-]+$/i.test(id)) return Promise.reject(CourseError('Bad module id "' + id + '"', 'input'));
     if (_modules[id] && !force) return Promise.resolve(_modules[id]);
     if (_modulePromises[id] && !force) return _modulePromises[id];
-    _modulePromises[id] = loadIndex().catch(function () { return null; }).then(function () {
-      return fetchJSON(COURSE_DIR + id + '.json');
-    }).then(function (json) {
-      var mod = normaliseModule(json, id);
+    var p = loadIndex().catch(function () { return null; }).then(function () {
+      return fetchLocalised(id + '.json');
+    }).then(function (r) {
+      if (_modulePromises[id] !== p) return _modulePromises[id] || loadModule(id);   // caches were dropped (language switch) meanwhile
+      var mod = normaliseModule(r.json, id, r);
       _modules[id] = mod;
-      // refresh the index with the real lesson titles / minutes
+      // refresh the index with the real lesson titles / minutes / language
       if (_index) {
         var im = _index.modules.filter(function (m) { return m.id === id; })[0];
         if (im) {
@@ -338,14 +428,17 @@
           if (mod.pro) im.pro = true;
           if (mod.minutes) im.minutes = mod.minutes;
           if (mod.summary) im.summary = mod.summary;
+          im.lang = mod.lang; im.englishOnly = mod.englishOnly;
+          if (mod.title && mod.title !== id) im.title = mod.title;
         }
       }
       return mod;
-    }).catch(function (e) { delete _modulePromises[id]; throw e; });
-    return _modulePromises[id];
+    }).catch(function (e) { if (_modulePromises[id] === p) delete _modulePromises[id]; throw e; });
+    _modulePromises[id] = p;
+    return p;
   }
 
-  function setModule(json, id) { var mod = normaliseModule(json, id || (json && json.id)); _modules[mod.id] = mod; return mod; }
+  function setModule(json, id, loc) { var mod = normaliseModule(json, id || (json && json.id), loc); _modules[mod.id] = mod; return mod; }
 
   /** Load every module listed in the index (parallel). Resolves with {id: module|Error}. */
   function loadAll() {
@@ -530,6 +623,75 @@
   }
   function certificateEligible() { return certificateStatus().eligible; }
 
+  /** The saved certificate record ({name, date, id, verified, verifyUrl}) or null. Read by certificate.html. */
+  function certificateRecord() {
+    var c = progress.certificate;
+    return c && typeof c === 'object' && c.id ? c : null;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 'Up next' recommendation (v0.4)                                      */
+  /* ------------------------------------------------------------------ */
+  /**
+   * recommend() → the single most useful next step, in priority order:
+   *   'start'       nothing done yet → first lesson
+   *   'retake'      a quiz scored below PASS_PCT in a module whose lessons are otherwise done
+   *                 (it is the only thing standing between the student and that module)
+   *   'quiz'        a module with every lesson done but a lesson whose quiz was never taken
+   *   'resume'      the last-opened lesson is unfinished
+   *   'next'        the first unfinished lesson in course order (after the last one opened when possible)
+   *   'certificate' everything complete and passed, no certificate issued yet
+   *   'done'        certificate issued; nothing left
+   * Returns {kind, lessonId, moduleId, title, score?, reason} — `reason` is a short English sentence
+   * (the UI passes it through BT.t when a translation exists).
+   */
+  function recommend() {
+    var modules = _index ? _index.modules : [];
+    if (!modules.length) return { kind: 'none', lessonId: null, moduleId: null, title: '', reason: '' };
+    var anyDone = Object.keys(progress.lessonsDone).some(function (k) { return progress.lessonsDone[k]; });
+    var anyQuiz = Object.keys(progress.quizScores).length > 0;
+    var seq = lessonSequence();
+    var titleOf = function (lessonId) { for (var i = 0; i < seq.length; i++) if (seq[i].lessonId === lessonId) return seq[i].title; return lessonId; };
+    if (!anyDone && !anyQuiz && !progress.lastLessonId) {
+      return { kind: 'start', lessonId: seq[0].lessonId, moduleId: seq[0].moduleId, title: seq[0].title, reason: 'Start with the first lesson; everything later builds on it.' };
+    }
+    // retake / quiz: only inside modules whose lessons are all done, so the course keeps moving forward
+    for (var m = 0; m < modules.length; m++) {
+      var mod = modules[m], mp = moduleProgress(mod.id);
+      if (!mp.total || mp.done !== mp.total) continue;
+      var low = null, untaken = null;
+      mod.lessons.forEach(function (l) {
+        var s = progress.quizScores[l.id];
+        if (s == null) { if (!untaken) untaken = l; }
+        else if (s < PASS_PCT && (!low || s < progress.quizScores[low.id])) low = l;
+      });
+      if (mp.quizAvg != null && mp.quizAvg < PASS_PCT && low) {
+        return { kind: 'retake', lessonId: low.id, moduleId: mod.id, title: low.title, score: progress.quizScores[low.id], reason: 'This quiz scored ' + progress.quizScores[low.id] + '%; the module needs an ' + PASS_PCT + '% average for the certificate. Your best score counts.' };
+      }
+      if (mp.quizzes === 0 && untaken) {
+        return { kind: 'quiz', lessonId: untaken.id, moduleId: mod.id, title: untaken.title, reason: 'Every lesson in this module is done but no quiz has been taken yet; the certificate needs one.' };
+      }
+    }
+    var last = progress.lastLessonId, nb = last ? neighbours(last) : null;
+    if (last && nb && nb.index >= 0 && !progress.lessonsDone[last]) {
+      return { kind: 'resume', lessonId: last, moduleId: (moduleOfLesson(last) || {}).id || null, title: titleOf(last), reason: 'You opened this lesson but have not marked it complete.' };
+    }
+    var startAt = nb && nb.index >= 0 ? nb.index + 1 : 0, i;
+    for (i = startAt; i < seq.length; i++) if (!progress.lessonsDone[seq[i].lessonId]) break;
+    if (i >= seq.length) for (i = 0; i < seq.length; i++) if (!progress.lessonsDone[seq[i].lessonId]) break;
+    if (i < seq.length) {
+      return { kind: 'next', lessonId: seq[i].lessonId, moduleId: seq[i].moduleId, title: seq[i].title, reason: 'The next unfinished lesson in course order.' };
+    }
+    var st = certificateStatus();
+    if (st.eligible) {
+      if (certificateRecord()) return { kind: 'done', lessonId: null, moduleId: null, title: 'Course complete', reason: 'Every lesson and quiz is done and your certificate is issued. Keep practising in Market Replay.' };
+      return { kind: 'certificate', lessonId: null, moduleId: null, title: 'Issue your certificate', reason: 'Every requirement is met; add your name and issue it.' };
+    }
+    // all lessons done but some module still fails the quiz bar without a low score to point at (no quiz in that module's lessons)
+    var failing = st.modules.filter(function (r) { return !r.ok; })[0];
+    return { kind: 'certificate', lessonId: null, moduleId: failing ? failing.id : null, title: failing ? failing.title : 'Certificate', reason: failing ? failing.reason : 'Check the certificate requirements.' };
+  }
+
   /* ------------------------------------------------------------------ */
   /* Certificate drawing                                                  */
   /* ------------------------------------------------------------------ */
@@ -713,6 +875,10 @@
     loadIndex: loadIndex, loadModule: loadModule, loadAll: loadAll, setIndex: setIndex, setModule: setModule,
     getIndex: getIndex, getModule: getModule, moduleOfLesson: moduleOfLesson, lessonSequence: lessonSequence,
     neighbours: neighbours, lessonHasQuiz: lessonHasQuiz,
+    // language (v0.4)
+    lang: lang, setLang: setLang, fileFor: fileFor, invalidate: invalidate, DEFAULT_LANG: DEFAULT_LANG,
+    // recommendation (v0.4)
+    recommend: recommend, certificateRecord: certificateRecord,
     // progress
     get progress() { return progress; },
     save: saveProgress, markDone: markDone, unmarkDone: unmarkDone, isDone: isDone,
@@ -722,6 +888,6 @@
     // certificate & quiz
     certificate: certificate, localCertId: localCertId, isLocalCertId: isLocalCertId, gradeQuiz: gradeQuiz,
     PASS_PCT: PASS_PCT, DEFAULT_LESSON_MINUTES: DEFAULT_LESSON_MINUTES, STORE_KEY: STORE_KEY, CourseError: CourseError,
-    version: '0.3.0'
+    version: '0.4.0'
   };
 })();

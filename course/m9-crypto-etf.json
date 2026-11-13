@@ -1,0 +1,500 @@
+{
+  "id": "m9-crypto-etf",
+  "title": "Crypto & ETFs: Different Markets, Same Discipline",
+  "level": "intermediate",
+  "minutes": 58,
+  "summary": "What an ETF is and what its expense ratio really costs, how index, sector, bond, commodity and leveraged funds differ, what bitcoin and ether are and why they trade 24 hours a day, how volatility changes your position size but not your risk rule, and how the same indicators, backtests and journal apply on a market that never closes.",
+  "disclaimer": "Educational content only. Nothing in this module is investment, tax or legal advice, and no asset mentioned is a recommendation. Fees, fund details and market facts were accurate when written; always check the issuer's own page and current regulations before acting.",
+  "lessons": [
+    {
+      "id": "m9-l1",
+      "title": "What an ETF is and what the expense ratio costs you",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### One share, hundreds of companies\n\nAn [[ETF|exchange-traded fund]] is a basket of investments, usually stocks or bonds, packaged into shares that trade on an [[Exchange|exchange]] exactly like a single [[Stock|stock]]. When you buy one share of SPY you own a sliver of all 500-odd companies in the S&P 500 at once. When you buy one share of TLT you own a slice of a portfolio of long-dated US Treasury bonds. The fund company holds the actual securities; you hold shares of the fund.\n\nThat is why ETFs show up everywhere in this course. They give you the market's [[Trend|trend]] without single-company surprises, they are among the most [[Liquidity|liquid]] instruments in the world, and the dashboard, backtester and Market Replay treat them like any other [[Ticker|ticker]]. SPY has been the [[Benchmark|benchmark]] in every scorecard since Module 6.\n\nTwo cousins are worth telling apart. A **mutual fund** also pools money into a basket, but you buy and sell it once a day at the closing value, through the fund company, often with a minimum investment. An ETF trades all session long at whatever price buyers and sellers agree on, has no minimum beyond one share (or a fraction, at brokers that offer fractional shares), and in the US is usually more tax-efficient because of the way its shares are created and redeemed. A **stock** is one company. An ETF is a rule for holding many.\n\n### Price versus value\n\nEvery ETF has a **net asset value (NAV)**: the market value of everything it holds, minus costs, divided by the number of shares. Its market price floats around that NAV. Large institutions called *authorized participants* can create new ETF shares by delivering the underlying basket to the fund, or redeem shares for the basket, and they do so whenever the price drifts from NAV because the gap is a free profit for them. That arbitrage keeps SPY within a cent or two of its value almost all the time.\n\nAlmost. In fast markets the machinery can stall. On the morning of 24 August 2015 several large US ETFs briefly traded 20 to 30 percent below the value of their holdings while the stocks inside them were halted. Anyone with a resting [[Market order|market order]] or a plain [[Stop order (stop-loss)|stop]] that morning sold at those prices. The lesson from Module 1 holds here too: use [[Limit order|limit orders]] for anything you care about, and be wary of trading an ETF in the first minutes after the open."
+        },
+        {
+          "type": "text",
+          "md": "### The expense ratio: the fee you never see leave\n\nEvery fund charges an **expense ratio**, quoted as a percentage of your money per year. You will never get a bill. The fee is skimmed out of the fund's assets a tiny bit each day, so it simply shows up as the fund lagging its index by that amount every year.\n\n- SPY charges **0.0945%**: $9.45 a year on $10,000.\n- VOO tracks the same index for **0.03%**: $3 a year on $10,000.\n- QQQ charges **0.20%**, IWM **0.19%**, GLD **0.40%**.\n- An actively managed thematic fund such as ARKK charges **0.75%**, and the leveraged funds in Lesson 2 charge **0.84% to 0.95%**.\n\nThose look like rounding errors, and for a one-week trade they are. For a position you hold for decades they are not. Start with $10,000 earning 7% a year before fees and compound for 30 years:\n\n- At 0.03% you end with about **$75,500**.\n- At 0.0945% about **$74,100**.\n- At 0.20% about **$72,000**.\n- At 0.75% about **$61,600**.\n- At 0.95% about **$58,300**.\n\nThe only thing that differed in those five lines is the fee. Nobody *earned* the gap; it was quietly deducted. This is why, when two funds track the same index, the cheaper one wins by construction, and why a trader's account can hold the expensive, fast-moving fund for a week while a long-term holding sits in the cheap one.\n\n### The other costs\n\n- **The [[Bid-ask spread|spread]]**. SPY's spread is usually a cent; a thinly traded niche ETF can have a spread of 0.5% or more, which you pay on every round trip. Check it in the quote before you size the trade.\n- **Tracking difference**. Fees, cash drag and sampling mean the fund's return is never exactly the index's. Compare a fund's one-year return with its index on the issuer's page; the difference should be close to the expense ratio.\n- **Distributions and taxes**. Equity ETFs pass through the [[Dividend|dividends]] of their holdings (SPY pays quarterly). In the US, distributions and realised gains are taxable in a regular account; gold trusts such as GLD are taxed as collectibles, at a higher long-term rate than stocks. Tax rules differ by country and change, so this is a flag to read up, not a rule."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "The one number to read first",
+          "md": "Before anything else about a fund, find three facts on the issuer's page: **what index or rule it follows**, **the expense ratio**, and **the average daily volume**. If you cannot say in one sentence what the fund owns and why, you are not ready to trade it. The demo universe here lists an approximate expense ratio and what each ETF tracks so you can practise reading them, but the issuer's page is the source of truth."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": ["sma50", "sma200", "volume"],
+          "bars": 400,
+          "caption": "SPY, daily, with 50- and 200-day SMAs and volume. An index ETF trends more smoothly than most of its components because the companies inside it do not all report earnings on the same night. Demo prices are simulated; connect a live key to see the real fund."
+        },
+        {
+          "type": "exercise",
+          "md": "Read a fund the way a careful buyer would.\n\n- Open the dashboard on **SPY**, then search for **VOO**, **QQQ**, **ARKK** and **GLD** in turn. The symbol line under the chart names what each one is.\n- For each fund write down, from memory or the issuer's page: what it tracks, its expense ratio, and roughly how many holdings it has. Rank the five from cheapest to most expensive.\n- Work out the yearly fee in dollars on a $25,000 position in each. Then write one sentence on which of the five you would be willing to hold for ten years, and why the fee matters more for that one than for a one-week trade.\n- In your journal, start a page called *Instruments I understand* and add the funds you can describe in one sentence. Anything you cannot describe stays off it for now.",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=SPY&interval=1day&ov=sma50,sma200",
+            "label": "Open SPY on the dashboard"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "What is an ETF?",
+              "choices": [
+                "A single company's shares listed on more than one exchange",
+                "A fund that holds a basket of assets and whose shares trade on an exchange all session long like a stock",
+                "A savings account offered by a stock exchange",
+                "A derivative contract that expires monthly"
+              ],
+              "answer": 1,
+              "explain": "An exchange-traded fund holds a basket (stocks, bonds, commodities) and issues shares that trade intraday on an exchange. Unlike a mutual fund it is priced continuously, and unlike an option it has no expiry."
+            },
+            {
+              "q": "How is an ETF's expense ratio actually charged to you?",
+              "choices": [
+                "As a bill from your broker at year end",
+                "As a commission each time you trade the fund",
+                "It is deducted a little each day from the fund's assets, so the fund lags its index by roughly that amount per year",
+                "It is only charged when you sell at a profit"
+              ],
+              "answer": 2,
+              "explain": "You never see the fee leave. It comes out of the fund's holdings continuously, which is why a fund's return trails its index by about the expense ratio every year."
+            },
+            {
+              "q": "SPY charges about 0.0945% and VOO about 0.03%, and both track the S&P 500. On a $10,000 position, what is the yearly fee difference?",
+              "choices": [
+                "About $6.45",
+                "About $64.50",
+                "About $0.65",
+                "About $945"
+              ],
+              "answer": 0,
+              "explain": "0.0945% of $10,000 is $9.45; 0.03% is $3.00; the difference is $6.45 a year. Small on a short trade, but it compounds for as long as you hold."
+            },
+            {
+              "q": "What keeps an ETF's market price close to its net asset value most of the time?",
+              "choices": [
+                "The exchange sets the ETF's price equal to NAV every minute",
+                "Authorized participants create or redeem shares whenever price drifts from NAV, because the gap is a profit for them",
+                "The fund company buys back shares whenever the price falls",
+                "Nothing; ETF prices routinely differ from NAV by several percent"
+              ],
+              "answer": 1,
+              "explain": "Creation and redemption arbitrage by large institutions pulls price back toward NAV. It usually works within pennies, but it can stall briefly in disorderly markets such as the morning of 24 August 2015."
+            },
+            {
+              "q": "Which order type does the lesson recommend for entering an ETF, especially around the open?",
+              "choices": [
+                "A market order, because ETFs are always liquid",
+                "A limit order, so a brief dislocation from NAV cannot fill you at a bad price",
+                "A stop order, so you buy only when price is rising",
+                "No order; ETFs should be bought through the fund company"
+              ],
+              "answer": 1,
+              "explain": "A limit order caps the price you pay. Market and stop orders become market orders when triggered and can fill at any price during a dislocation, which is what hurt holders in August 2015."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m9-l2",
+      "title": "Index, sector, bond, commodity and leveraged ETFs",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Broad index funds: the market in one ticker\n\nAn **index ETF** follows a published list of securities and a weighting rule. SPY, VOO and IVV all follow the S&P 500, the 500 or so largest US companies weighted by [[Market cap|market capitalisation]], so the biggest companies get the biggest weights. VTI follows the whole US market, more than 3,500 companies. QQQ follows the Nasdaq-100, which leans heavily toward technology. IWM follows the Russell 2000, two thousand smaller companies. DIA follows the Dow, just thirty blue chips weighted by share price rather than size, which is why one high-priced stock can move it more than a far larger company.\n\nCap weighting has a consequence worth knowing: in 2025 the ten largest companies made up more than a third of the S&P 500. \"Buying the whole market\" is also a concentrated bet on a handful of names, and when they lead, the [[Index|index]] looks unstoppable; when they lag, it feels like nothing works. Equal-weight versions exist that give each company the same share.\n\n### Sector funds: picking the neighbourhood, not the house\n\nA **[[Sector|sector]] ETF** holds the companies of one industry group. The Select Sector SPDRs split the S&P 500 into eleven slices: XLK for technology, XLF for financials, XLE for energy, XLV for health care, and so on, each for about 0.08% a year. They let you act on a view (\"oil is breaking out\") without choosing between Exxon and Chevron. They are also more concentrated than they look: XLE has roughly two dozen holdings and its top two make up around 40% of the fund. Sector funds move more than the broad index and often take turns leading, a pattern traders call *rotation*.\n\n### Bond and commodity funds\n\nTLT holds US Treasury bonds with twenty or more years to maturity. Bond prices move opposite to interest rates, and the longer the bond the bigger the move: TLT's sensitivity means a one-percentage-point rise in long yields knocks roughly 15 to 17% off its price. It is a bond fund, but it is not a quiet one.\n\nGLD holds gold bars in a vault; each share is a claim on a fraction of an ounce, less fees. It lets you trade gold on a stock exchange with a normal brokerage account. Commodity funds that hold **futures** rather than the physical asset behave differently again: they must keep rolling contracts, which costs money when later contracts are pricier, so over long periods they can drift away from the headline commodity price.\n\n### Active, thematic and crypto funds\n\nNot every ETF tracks an index. ARKK is run by managers who choose the holdings, for 0.75% a year; its performance is a bet on their judgement. **Spot bitcoin ETFs** such as IBIT, approved in the US in January 2024, hold bitcoin in custody and trade on the NASDAQ during stock market hours. They are a bridge between the two halves of this module: the asset trades around the clock (Lesson 3) while the fund trades 9:30 to 4:00, so the fund's Monday open absorbs the whole weekend's move as a [[Gap|gap]]."
+        },
+        {
+          "type": "text",
+          "md": "### Leveraged and inverse funds: read this twice\n\nTQQQ aims to deliver **three times the daily return** of the Nasdaq-100; SQQQ aims for **minus three times**. They do it with swaps and futures, and the word that matters is *daily*. Each night the fund resets so that tomorrow's move is again 3× tomorrow's index move. That reset makes the fund's return over weeks depend on the *path* the index took, not just where it ended up.\n\nTry it with two days. The index rises 10% then falls back to where it started (a 9.09% drop). Flat round trip. The 3× fund rises 30% to 130, then falls 3 × 9.09% = 27.27%: 130 × 0.7273 = **94.5**. The index is unchanged; the leveraged fund is down 5.5%. The choppier the market, the faster this *volatility decay* eats the fund, and in a sideways year a 3× fund can lose a lot while its index goes nowhere. In a smooth trend the fund can also deliver *more* than 3× the index's total return, which is what makes the charts look so tempting after the fact.\n\nAdd fees of 0.84% to 0.95% a year and the conclusion is simple: leveraged and inverse ETFs are short-term trading instruments, not holdings. US regulators have repeatedly warned retail investors on exactly this point. If you ever use one, you size it for its real volatility (Lesson 4) and you set a time limit before you enter.\n\nOne honesty note about this platform: the paper account and backtester treat TQQQ as a plain price series. They do not model the daily reset mechanics, financing costs or the fund's own fees. For leveraged products, what you see here is a rough sketch, not a simulation you can trust to the decimal."
+        },
+        {
+          "type": "chart",
+          "symbol": "TQQQ",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50", "volume"],
+          "bars": 300,
+          "caption": "TQQQ, daily. Compare the size of these swings with QQQ on the dashboard: the fund moves about three times as much each day, so a stop that is sensible on QQQ is far too tight here. The demo series is a simplified sketch; a real leveraged fund also suffers daily-reset decay in choppy markets."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Inverse funds are not short positions",
+          "md": "Holding SQQQ is not the same as [[Short selling|shorting]] QQQ. A short position's loss grows without limit as the index rises, while an inverse fund can only go to zero. But the inverse fund also decays in a sideways market and resets daily, so if you hold it for weeks waiting for a fall, you can be right about the direction and still lose money. If you need to be short an index for more than a few days, Module 4's lesson on shorting and margin is the honest route, with all its risks stated."
+        },
+        {
+          "type": "exercise",
+          "md": "See the reset arithmetic for yourself.\n\n- Open a spreadsheet or the notes app. Start an index at 100 and a 3× fund at 100. Apply these daily index moves in order: +4%, −4%, +4%, −4%, +4%, −4%. For each day the fund moves three times as much as the index. Where does each end up after six days?\n- Now apply +2% six times in a row. Compare the fund's total gain with three times the index's total gain. In which path does leverage help, and in which does it hurt?\n- Open the dashboard on **QQQ** and then on **TQQQ** with the 20-day SMA. Count how many times in the last 60 bars price crossed the SMA on each. Write down why a signal that is tolerable on QQQ might whipsaw you to death on TQQQ.\n- Add one line to your exclusion list from Module 8 about leveraged and inverse funds: either *not at all*, or the exact holding limit in days you would allow.",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=QQQ&interval=1day&ov=sma20,sma50",
+            "label": "Open QQQ, then switch to TQQQ"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "An index rises 10% on day one and falls 9.09% on day two, ending where it started. Roughly where does a 3× daily leveraged fund end up?",
+              "choices": [
+                "Exactly where it started, like the index",
+                "Up about 3%",
+                "Down about 5.5%",
+                "Down about 30%"
+              ],
+              "answer": 2,
+              "explain": "The fund rises 30% to 130, then falls 27.27% to about 94.5. The daily reset makes multi-day returns path-dependent; sideways chop erodes a leveraged fund even when the index is flat."
+            },
+            {
+              "q": "Why is 'buying the whole market' through an S&P 500 ETF still a concentrated bet?",
+              "choices": [
+                "Because the fund can only hold 50 stocks at a time",
+                "Because the index is weighted by market cap, so the ten largest companies make up more than a third of it",
+                "Because it only holds technology companies",
+                "Because the fund is actively managed"
+              ],
+              "answer": 1,
+              "explain": "Cap weighting gives the biggest companies the biggest weights. In 2025 the top ten were over a third of the S&P 500, so the index's fortunes lean heavily on a handful of names."
+            },
+            {
+              "q": "What distinguishes a sector ETF such as XLE from a broad index ETF such as SPY?",
+              "choices": [
+                "XLE holds only the energy companies of the S&P 500, so it is more concentrated and moves more than the whole index",
+                "XLE is a bond fund",
+                "XLE trades 24 hours a day",
+                "XLE charges no expense ratio"
+              ],
+              "answer": 0,
+              "explain": "Sector funds slice the index by industry. XLE holds about two dozen energy names with its top two around 40% of the fund, so it is far more concentrated than SPY."
+            },
+            {
+              "q": "A spot bitcoin ETF such as IBIT trades during NYSE hours while bitcoin trades around the clock. What follows?",
+              "choices": [
+                "The ETF never moves on weekends, so holding it over a weekend is risk-free",
+                "The ETF's Monday open absorbs the whole weekend's move in bitcoin as a gap, so a stop order placed Friday may fill far from its price",
+                "The ETF's price is fixed at Friday's close until Monday, so you can buy at that price on Sunday",
+                "The ETF charges no fee because bitcoin has no manager"
+              ],
+              "answer": 1,
+              "explain": "The fund holds an asset that keeps trading while the fund does not. Whatever bitcoin did from Friday 4:00 pm to Monday 9:30 am shows up as a gap at the open, and resting stops trigger at the open price, not the stop price."
+            },
+            {
+              "q": "Which statement about TLT is accurate?",
+              "choices": [
+                "It is a short-term bond fund with almost no price movement",
+                "It holds long-dated US Treasuries, so a one-point rise in long yields costs it roughly 15 to 17% of its price",
+                "It holds gold bars in a vault",
+                "It is a 3× leveraged stock fund"
+              ],
+              "answer": 1,
+              "explain": "TLT holds Treasury bonds with twenty or more years to maturity. Long bonds are very sensitive to interest rates, so TLT is a bond fund that can move like a volatile stock."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m9-l3",
+      "title": "What crypto is and how it trades 24/7",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Three assets, three ideas\n\n**Bitcoin (BTC)** launched in 2009 as a digital currency with no issuer: a public ledger kept by thousands of computers, with new coins created on a fixed schedule and a hard cap of 21 million. Its supporters value the scarcity and the fact that no government or company controls it; its critics point out that it produces no cash flow, so there is no earnings number to anchor a price to. Both are true. Its price is set entirely by what the next buyer will pay.\n\n**Ether (ETH)** is the currency of Ethereum, launched in 2015, a network that runs programs (\"smart contracts\") as well as moving money. Most stablecoins, lending protocols and tokenised assets run on it or on networks like it. Ether has no hard supply cap; its issuance changed when the network switched to *proof of stake* in 2022, which also cut its energy use by more than 99%.\n\n**Solana (SOL)** launched in 2020 as a faster, cheaper smart-contract network. It is younger, more volatile and has suffered network outages that Bitcoin and Ethereum have not. In our demo universe it is the most volatile of the three, on purpose.\n\nThere are thousands of other coins. Most have tiny trading volume, concentrated ownership and no history through a full market cycle. This course covers only the three above, and even those only as a trading instrument: a price series with its own habits.\n\n### Where and how it trades\n\nStocks trade on a few regulated exchanges with one official closing price. Crypto trades on dozens of venues at once: centralised exchanges such as Coinbase, Kraken and Binance, plus decentralised exchanges that are software rather than companies. Each venue has its own [[Order book|order book]], so the price of bitcoin differs slightly from one to the next, and there is no official close. By convention, charting sites draw the **daily candle from 00:00 to 00:00 UTC**, which is 8:00 pm or 7:00 pm New York time depending on daylight saving. That is why this platform stamps crypto daily bars with the UTC date.\n\nPairs matter too. **BTC-USD** is bitcoin priced in dollars. **BTCUSDT** is bitcoin priced in Tether, a *stablecoin* designed to be worth one dollar, which is how most offshore volume trades. The two prices stay very close in normal times but they are not the same thing, and a stablecoin's own troubles would show up as a difference between them. When you connect a live data key here, the platform maps BTC-USD to each provider's spelling for you (`BTC/USD` at Twelve Data, `BINANCE:BTCUSDT` at Finnhub, `BTC` with market `USD` at Alpha Vantage).\n\nThe market never closes. No weekends, no holidays, no [[Pre-market|pre-market]] or [[After-hours session|after-hours]] sessions, no opening bell, no circuit breakers that pause trading after a sharp drop. A move that would be an overnight [[Gap|gap]] in a stock is simply a candle in crypto. That is both the appeal and the hazard: nothing is hidden by a close, but nothing is paused by one either, and the biggest moves have a habit of arriving on Sunday night when the fewest people are watching and [[Liquidity|liquidity]] is thinnest."
+        },
+        {
+          "type": "chart",
+          "symbol": "BTC-USD",
+          "interval": "1h",
+          "overlays": ["ema21", "volume"],
+          "bars": 400,
+          "caption": "Bitcoin, hourly, with a 21-period EMA and volume. Scroll back: there is no break at the weekend and no gap at any open, because there is no open. Volume thins on Saturdays and Sundays and thickens during US and European hours. Demo bars are simulated on a 24/7 calendar."
+        },
+        {
+          "type": "text",
+          "md": "### Owning it: keys, custody and what can go wrong\n\nWhen you buy a stock, a regulated [[Broker|broker]] holds it for you, and in the US the SIPC insures the account against the broker's failure up to set limits. Crypto has two models and neither looks like that.\n\n- **Exchange custody.** You hold a balance at the exchange, like a bank account. It is convenient and it is what most beginners do. It also means you are an unsecured creditor of the exchange. When FTX, then the third-largest exchange, collapsed in November 2022, customers' balances were simply gone for years.\n- **Self-custody.** You hold the private keys in your own wallet. Nobody can freeze or lose your coins but you, and you can lose them completely: forgotten passwords, a phishing link or a mistyped address are irreversible. There is no customer service line for the Bitcoin network.\n\nRegulation is still being written and differs by country. In the US, bitcoin itself is treated as a commodity and, for tax purposes, as **property**: every sale or swap, even coin for coin, is a taxable event. Many countries treat it similarly; some ban exchanges outright. Spot bitcoin ETFs (Lesson 2) exist partly because they let people hold the asset inside a normal regulated brokerage account.\n\n### A history of drawdowns\n\nBitcoin has gone through several cycles of tenfold rises and 70-to-85% collapses. Between November 2021 and November 2022 it lost roughly three quarters of its value; ether lost about 80%; many smaller coins lost 95% or disappeared. People who bought near the 2021 peak waited more than three years to get back to even. A [[Drawdown|drawdown]] like that is not a bug in the market; it is what a very volatile asset with no cash-flow anchor does. Lesson 4 is about sizing so that you survive it.\n\n### What this platform does with crypto\n\nBTC-USD, ETH-USD and SOL-USD are in the demo universe. In [[Demo mode|demo mode]] their prices are simulated on a 24/7 calendar: every day of the year has a candle, hourly bars run through weekends, and the clock widget reports *open* around the clock. With a live key the platform fetches the real pair where the provider's free tier allows (Alpha Vantage offers only daily crypto candles for free, so intraday there stays simulated and says so). Paper trades in crypto go through the same portfolio engine, so the journal, stats and Market Replay all work. One current limitation: the paper account trades whole units, so it is realistic for SOL and ETH and not yet for buying a fraction of one bitcoin."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "title": "Not advice, and not a recommendation",
+          "md": "Nothing here says you should own crypto, and nothing here says you should not. It is a highly volatile, lightly regulated asset class in which many people have lost everything they put in, including to fraud. If you ever decide to trade it with real money, use only a regulated venue in your country, only money you can afford to lose entirely, and the sizing rules of the next lesson. Paper trade it here first for as long as it takes to stop being surprised."
+        },
+        {
+          "type": "exercise",
+          "md": "Meet the clock that never stops.\n\n- Open the dashboard on **BTC-USD** at the 1-hour interval. Find last Saturday and Sunday on the chart. Note the size of the largest hourly candle over the weekend and compare it with the largest weekday candle.\n- Look at the market clock in the header. It reads *open* and names no next bell. Switch to **SPY** and watch it change back to the NYSE schedule. Then try **IBIT**: it is a bitcoin fund, but it keeps stock market hours.\n- Switch to the daily interval on BTC-USD. The candles are dated in UTC: a daily bar closes at 8:00 pm New York time (7:00 pm in summer). Write down what time that is where you live.\n- In your journal, write three sentences: what bitcoin is in your own words, what ether is, and one thing about custody you did not know before this lesson.",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=BTC-USD&interval=1h&ov=ema21",
+            "label": "Open BTC-USD hourly on the dashboard"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Why is there no single official closing price for bitcoin?",
+              "choices": [
+                "Because bitcoin only trades once a day",
+                "Because it trades on dozens of independent venues around the clock, each with its own order book and slightly different price",
+                "Because exchanges are not allowed to publish prices",
+                "Because its price is fixed by the network's software"
+              ],
+              "answer": 1,
+              "explain": "Crypto trades on many centralised and decentralised exchanges simultaneously, 24/7. Prices differ slightly across venues, and the 'daily close' is just the charting convention of 00:00 UTC."
+            },
+            {
+              "q": "A charting site draws bitcoin's daily candle from 00:00 to 00:00 UTC. In New York, when does that candle close?",
+              "choices": [
+                "4:00 pm, the same as the stock market",
+                "Midnight New York time",
+                "8:00 pm in winter or 7:00 pm in summer, because New York is 5 or 4 hours behind UTC",
+                "9:30 am, when the stock market opens"
+              ],
+              "answer": 2,
+              "explain": "UTC midnight is 19:00 or 20:00 Eastern depending on daylight saving. The platform stamps crypto daily bars with the UTC date for this reason."
+            },
+            {
+              "q": "What does the FTX collapse of November 2022 illustrate about keeping crypto on an exchange?",
+              "choices": [
+                "That exchange balances are insured like bank deposits",
+                "That you are an unsecured creditor of the exchange, and if it fails your balance may be gone",
+                "That self-custody is impossible",
+                "That bitcoin itself stopped working"
+              ],
+              "answer": 1,
+              "explain": "Exchange custody means the exchange holds the coins and you hold a claim on the exchange. When FTX failed, customers' balances were frozen for years. Self-custody removes that risk and replaces it with the risk of losing your own keys."
+            },
+            {
+              "q": "Between November 2021 and November 2022, roughly how far did bitcoin fall from its peak?",
+              "choices": [
+                "About 10%",
+                "About 25%",
+                "Roughly three quarters of its value",
+                "It did not fall; it rose every year"
+              ],
+              "answer": 2,
+              "explain": "Bitcoin lost roughly 75% over that year and ether about 80%. Drawdowns of 70 to 85% have happened in every major crypto cycle so far, which is why position sizing is the subject of the next lesson."
+            },
+            {
+              "q": "On this platform, what is true of crypto in demo mode?",
+              "choices": [
+                "Crypto is not available in demo mode",
+                "Prices are simulated on a 24/7 calendar with a candle every day, including weekends, and daily bars dated in UTC",
+                "Crypto follows NYSE hours in demo mode",
+                "Demo crypto prices are real-time prices from Coinbase"
+              ],
+              "answer": 1,
+              "explain": "The demo generator uses a 24/7 calendar for BTC-USD, ETH-USD and SOL-USD: every day has a bar, hourly bars run through weekends, and the market clock shows open around the clock. Real prices need a live data key."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m9-l4",
+      "title": "Volatility and position sizing: the numbers change, the rule does not",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### How much does it move?\n\nModule 4 gave you the [[The 1% rule|1% rule]]: risk no more than a small fixed slice of the account on any one trade, and let the distance to your stop decide how many units you buy. That rule does not change for an ETF or a coin. What changes, dramatically, is the distance to a sensible stop, because these instruments move at very different speeds.\n\n[[Volatility|Volatility]] is usually quoted as an annualised percentage. Rough, typical figures, which also drive the demo universe here:\n\n- SPY about **15%** a year; TLT about 15%; GLD about 15%.\n- A large stock such as AAPL about **28%**; TSLA about **60%**.\n- TQQQ about **60%**, because it is three times QQQ's 20%.\n- Bitcoin about **55%**, ether about **75%**, solana around **100%**.\n\nTo turn an annual figure into a typical daily move, divide by the square root of the number of trading days. Stocks have about 252 sessions a year, so SPY's 15% becomes 15 ÷ 15.9 ≈ **0.9% a day**. Crypto trades 365 days, so bitcoin's 55% becomes 55 ÷ 19.1 ≈ **2.9% a day**, ether about 3.9%, solana about 5%. A \"normal\" day in bitcoin is a big day in SPY, and a 10% day, which SPY has seen a handful of times in a century, happens in crypto several times a year.\n\nThe [[ATR|Average True Range]] from Module 3 measures the same thing in dollars, straight off the chart, and it is what you should size from, because it adapts as the market calms down or heats up."
+        },
+        {
+          "type": "text",
+          "md": "### Same dollar risk, very different position\n\nTake a $10,000 paper account and a 1% risk budget: **$100 per trade**. Place the stop two ATRs below the entry on each instrument and see what the rule produces.\n\n- **SPY** at $620 with an ATR of $6. Stop distance 2 × $6 = $12. Units = $100 ÷ $12 ≈ **8 shares**, a $4,960 position, about half the account.\n- **TQQQ** at $75 with an ATR of $3. Stop distance $6. Units = $100 ÷ $6 ≈ **16 shares**, a $1,200 position, 12% of the account. The fund's built-in 3× leverage shows up as a position one quarter the size of the SPY one for the same risk.\n- **ETH-USD** at $2,500 with an ATR of $110. Stop distance $220. Units = $100 ÷ $220 ≈ **0.45 ETH**, a $1,136 position. Since the paper account trades whole units, the honest choice here is to size with a smaller dollar risk or pick a cheaper coin for practice.\n- **SOL-USD** at $150 with an ATR of $8. Stop distance $16. Units = $100 ÷ $16 ≈ **6 SOL**, a $900 position, 9% of the account.\n- **BTC-USD** at $107,000 with an ATR of $3,200. Stop distance $6,400. Units = $100 ÷ $6,400 ≈ **0.016 BTC**, about $1,670. Real exchanges sell fractions of a coin down to a hundred-millionth; one whole bitcoin would be ten times the whole account and many times the risk budget. Do not do that in paper trading either; the habit is the point.\n\nFive instruments, one rule, one dollar at risk per trade. The position sizes range from half the account to a tenth of it. A trader who buys \"about $5,000 of whatever\" has not sized anything; they have let the instrument choose their risk for them, and crypto will choose a very large one.\n\n### Three risks the rule does not cover\n\n- **Gaps versus continuous moves.** A stock or ETF can open far below your stop; your [[Stop order (stop-loss)|stop]] fills at the open, not at your price (Module 7's drill on this is worth repeating). Crypto cannot gap, but it can fall 15% at 3 am on a Sunday while your stop order fills just fine and you wake up to the result. Decide, in writing, whether you hold crypto positions over weekends at all.\n- **Correlation.** Bitcoin was sold to many as a hedge that moves independently of stocks. In 2022 it fell together with the Nasdaq, and its [[Correlation|correlation]] with QQQ ran well above zero for most of that year. Owning QQQ, TQQQ, IBIT and BTC-USD is one bet in four costumes. Check the correlation matrix on the Compare page before you call anything [[Diversification|diversification]].\n- **The arithmetic of recovery.** A 50% loss needs a 100% gain to get back to even; an 80% loss needs 400%. The volatility that makes crypto exciting makes those losses ordinary. Keep the total exposure to all highly volatile positions, not just each one, under a written cap."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "title": "Size from the stop, never from the price",
+          "md": "Units = (account × risk %) ÷ (entry − stop). Measure the stop in ATRs so the formula adapts to the instrument. If the answer is a fraction of a unit you cannot trade, the trade is too big for the account at that risk level, not an invitation to round up. That single habit is most of what separates people who survive their first crypto bear market from people who do not."
+        },
+        {
+          "type": "chart",
+          "symbol": "ETH-USD",
+          "interval": "1day",
+          "overlays": ["bb", "volume"],
+          "bars": 250,
+          "caption": "Ether, daily, with Bollinger Bands (20, 2). The bands are wide because ether's daily moves are roughly four times SPY's. Price touching the lower band here is a normal day, not an extreme one; a stop placed where you would put it on SPY would be hit by noise. Simulated demo series."
+        },
+        {
+          "type": "exercise",
+          "md": "Size the same $100 of risk five ways.\n\n- Set the paper account to $10,000 for this exercise (Portfolio settings) so the numbers match the lesson. You can reset it afterwards.\n- On the dashboard, open **SPY**, **QQQ**, **TQQQ**, **SOL-USD** and **ETH-USD** in turn with the ATR pane on. Write down each price and ATR(14).\n- For each, compute the stop distance (2 × ATR) and the units the 1% rule allows. Round *down* to whole units. Which instruments give you zero units at $100 of risk? What does that tell you about the account size needed to trade them properly?\n- Place one paper trade in **SOL-USD** at the size you computed, with a sell stop two ATRs below your fill. Leave it open until the next lesson and note how it feels to hold a position that trades while you sleep.\n- Open the Compare page, add QQQ, TQQQ, IBIT, BTC-USD and GLD, and read the correlation matrix. Write one sentence on which pair surprised you.",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=SOL-USD&interval=1day&ov=sma20&pane=atr",
+            "label": "Open SOL-USD with the ATR pane"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Bitcoin's volatility is about 55% a year and it trades 365 days. Roughly what is a typical daily move?",
+              "choices": [
+                "About 0.15%",
+                "About 0.9%",
+                "About 2.9%",
+                "About 55%"
+              ],
+              "answer": 2,
+              "explain": "Divide the annual figure by the square root of the trading days: 55% ÷ √365 ≈ 55 ÷ 19.1 ≈ 2.9% a day. SPY's 15% ÷ √252 is about 0.9%, so a normal bitcoin day is roughly three normal SPY days."
+            },
+            {
+              "q": "A $10,000 account risks 1% ($100) per trade. SOL is at $150 with an ATR of $8 and you place the stop two ATRs below entry. How many SOL does the rule allow?",
+              "choices": [
+                "66 SOL, because $10,000 ÷ $150 = 66",
+                "About 6 SOL, because $100 ÷ $16 = 6.25, rounded down",
+                "1 SOL",
+                "12 SOL, because $100 ÷ $8 = 12.5"
+              ],
+              "answer": 1,
+              "explain": "Units = risk ÷ stop distance = $100 ÷ (2 × $8) = 6.25, rounded down to 6. The position is worth about $900, under a tenth of the account, because the coin moves so much."
+            },
+            {
+              "q": "For the same dollar risk, why is a sensible TQQQ position roughly a quarter the size of a SPY position?",
+              "choices": [
+                "Because TQQQ is cheaper per share",
+                "Because TQQQ moves about three to four times as much per day, so its two-ATR stop is proportionally much further from entry",
+                "Because brokers limit leveraged ETF purchases",
+                "Because TQQQ pays no dividend"
+              ],
+              "answer": 1,
+              "explain": "The 3× fund's volatility is built in. A stop measured in ATRs sits proportionally further away, so the risk formula hands back fewer units. The leverage is already in the instrument; your size must shrink to compensate."
+            },
+            {
+              "q": "What did 2022 show about bitcoin as a 'hedge' against stocks?",
+              "choices": [
+                "Bitcoin rose while stocks fell, proving the hedge",
+                "Bitcoin fell alongside the Nasdaq with a clearly positive correlation, so QQQ, TQQQ, IBIT and BTC-USD behaved like one bet",
+                "Bitcoin was flat all year",
+                "Bitcoin's correlation with stocks was exactly zero"
+              ],
+              "answer": 1,
+              "explain": "In 2022 bitcoin and tech stocks fell together and their correlation stayed well above zero. Holding several instruments that move together is concentration dressed as diversification; the Compare page's correlation matrix shows it."
+            },
+            {
+              "q": "The sizing formula tells you to buy 0.016 BTC but your account can only trade whole coins. What is the right response?",
+              "choices": [
+                "Buy one whole bitcoin; it is close enough",
+                "Treat it as a sign the trade is too large for this account at this risk level, and either skip it or use a venue that trades fractions",
+                "Lower the stop to make the formula produce a bigger number",
+                "Ignore the stop and buy with all the cash"
+              ],
+              "answer": 1,
+              "explain": "The formula is the rule; the instrument does not get a vote. A fraction you cannot trade means the position does not fit the account. Widening or dropping the stop to make the number work is the mistake Module 4 warned about."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m9-l5",
+      "title": "Same toolkit, different clock: applying technical analysis",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Indicators do not know what they are measuring\n\nA [[Moving average|moving average]] averages closes. [[RSI|RSI]] compares up-closes with down-closes. [[MACD|MACD]] subtracts one EMA from another. None of them knows whether the series underneath is Apple, a gold trust or ether, and that is why every tool in Module 3 works out of the box on an ETF or a coin. The dashboard's composite signal, the backtester's strategies and Market Replay all run on BTC-USD exactly as they run on SPY.\n\nWhat the tools *do* notice is the calendar. A 200-day SMA on a stock covers 200 sessions, about nine and a half months. On crypto, 200 daily bars cover 200 calendar days, about six and a half months, because weekends are bars too. The same [[Lookback period|lookback]] means a different stretch of time. If you want the crypto version of \"the 200-day\", you are closer to 280 bars; many crypto traders simply accept that the standard numbers mean something slightly different and use them anyway. Either way, write down which you chose.\n\nIntraday is the bigger adjustment. Stock indicators lean on the session: [[VWAP|VWAP]] resets at the open, volume is U-shaped, the first and last half hours matter most. Crypto has no open to anchor to. Traders borrow one: the 00:00 UTC daily roll, or the 9:30 am New York stock open, which still moves crypto because so much of its volume now comes from US institutions and the spot ETFs. Pick an anchor and be consistent.\n\n### Volume, liquidity and what the number means\n\n**Crypto volume** is split across venues, so the number on any one chart is a sample, and some exchanges have historically inflated their totals. Use volume for *shape* (is this move heavier than the last five days?) rather than for absolute comparisons across coins or providers.\n\n**ETF volume** is honest exchange volume, but it understates an ETF's liquidity. Because authorized participants can create shares on demand, an ETF with light volume can still absorb a large order near NAV as long as the stocks *inside* it are liquid. The reverse is also true: a heavily traded ETF holding illiquid bonds can trade far from NAV in a panic. For ETFs, look through to the holdings before you trust the tape.\n\n### Patterns that behave differently\n\n- **[[Breakout|Breakouts]] and [[False breakout|false breakouts]].** Thin weekend liquidity makes crypto prone to sharp moves that reverse by Monday. Many crypto traders demand a daily close beyond the level, or wait for the weekday session, before acting. The breakout drill from Module 7 is worth repeating on BTC-USD with that rule added.\n- **[[Overbought|Overbought]] that stays overbought.** RSI above 70 is a pullback warning on SPY. In a crypto trend RSI can stay above 70 for weeks. [[Mean reversion|Mean reversion]] against a crypto trend has ended many accounts; let the trend tools from Module 3 (ADX, the slope of the moving averages) tell you which playbook applies before you fade anything.\n- **Gaps that are not gaps.** Bitcoin futures on the CME close on Friday evening and reopen Sunday evening New York time, so the *futures* chart shows weekend gaps that the spot chart does not. Traders talk about \"CME gaps filling\"; that is a futures phenomenon, not a property of the coin, and you will not see it on the spot series here.\n- **Sector rotation on ETFs.** The [[Relative strength|relative strength]] line on the Compare page (any ETF versus SPY) is one of the cleanest uses of technical analysis there is: it shows whether money is moving into or out of a slice of the market, which no single stock chart can tell you."
+        },
+        {
+          "type": "chart",
+          "symbol": "BTC-USD",
+          "interval": "1day",
+          "overlays": ["sma50", "sma200", "rsi", "volume"],
+          "bars": 400,
+          "caption": "Bitcoin, daily, 50- and 200-bar SMAs with RSI(14) below. Note how long RSI can sit above 70 or below 30 compared with the stock charts in Module 3: in a volatile trending market the oscillator pins rather than cycles. Simulated demo series on a 24/7 calendar."
+        },
+        {
+          "type": "text",
+          "md": "### Backtesting on a market that never closes\n\nThe Strategy Lab runs any built-in strategy on BTC-USD or an ETF. Three adjustments make the result honest:\n\n1. **Costs.** Spot crypto exchanges charge 0.1% to 0.6% per trade, and spreads on anything but the largest coins are wider than SPY's penny. Set slippage to at least 25 to 50 basis points for crypto, and remember that an ETF's cost is its spread plus, for holding periods of months, its expense ratio.\n2. **Bars per year.** A \"one-year\" test on crypto is 365 bars, not 252. Strategy parameters tuned on stocks (a 20/50 SMA cross, a 14-period RSI) span different amounts of calendar time. Re-test rather than assume.\n3. **History.** Bitcoin's liquid history is barely a decade and it contains only a few full cycles; the demo series here is a simulation. Treat any crypto backtest as a sketch of a strategy's character, not a forecast, and remember Module 6's warning about [[Overfitting|overfitting]] to a handful of events.\n\n### Same discipline\n\nEverything in Module 8's trading plan applies unchanged. Write which instruments you trade and which you exclude. Write your risk per trade and your total cap on volatile positions. Write whether you hold crypto over weekends. Validate the rule in a [[Backtest|backtest]], then in [[Market replay|replay]] with the future hidden, then in thirty paper trades, before a single real dollar. Journal every trade with the same honesty, including the ones you took because the chart was exciting at 2 am.\n\nThe markets in this module are different from stocks in their hours, their fees, their custody and their volatility. They are not different in the one thing that decides whether you keep your money: whether you follow a written rule when it is uncomfortable. That was the subject of the first eight modules, and it is the subject of this one too."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "title": "A fair comparison",
+          "md": "Run the same strategy with the same parameters on SPY, QQQ, GLD and BTC-USD, then line up the four scorecards in the Strategy Lab. The return will grab your eye; look at the maximum drawdown and the number of trades first. A strategy that earns 40% with a 60% drawdown on bitcoin is a strategy that would have made you quit before it paid. The point of the comparison is to learn what each market does to a rule, not to find the market with the biggest number."
+        },
+        {
+          "type": "exercise",
+          "md": "Take one rule across four markets.\n\n- Open the Strategy Lab with the 20/50 SMA crossover on **BTC-USD**, daily, and set slippage to 50 basis points to stand in for exchange fees. Run it and write down return, buy-and-hold return, trades and maximum drawdown.\n- Run the identical test on **SPY**, **QQQ** and **GLD** with slippage at 10 basis points. Put the four rows side by side.\n- Which market gave the most trades? Which had the deepest drawdown? Was the crossover better or worse than buy-and-hold in each? Write two sentences on what the 24/7 calendar did to the number of signals.\n- Close the SOL-USD paper position you opened in Lesson 4 if you still hold it, and journal it with the tags `crypto`, `sizing`. Add one line to your Module 8 trading plan under *Instruments*: your written rule for ETFs and for crypto, even if the rule is *not yet*.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=BTC-USD&tf=1day&strategy=smaCross&fast=20&slow=50&slippageBps=50&run=1",
+            "label": "Run the SMA crossover on BTC-USD"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "A 200-bar daily SMA covers about nine and a half months on a stock. How long does it cover on bitcoin, and why?",
+              "choices": [
+                "The same, because a day is a day",
+                "About six and a half months, because crypto has a bar every calendar day including weekends",
+                "About a year, because crypto trades more hours per day",
+                "About three months, because crypto bars are shorter"
+              ],
+              "answer": 1,
+              "explain": "Stocks have about 252 sessions a year; crypto has 365 daily bars. The same lookback in bars spans less calendar time on crypto, so parameters tuned on stocks mean something different there."
+            },
+            {
+              "q": "Why does an ETF's trading volume understate its real liquidity?",
+              "choices": [
+                "Because exchanges hide ETF volume",
+                "Because authorized participants can create new shares on demand, so a large order can be absorbed near NAV as long as the holdings themselves are liquid",
+                "Because ETFs only trade once a day",
+                "It does not; ETF volume is the only measure of liquidity"
+              ],
+              "answer": 1,
+              "explain": "An ETF's liquidity comes from its underlying basket, not just from its own tape. The flip side is that an ETF holding illiquid assets can trade far from NAV in stress however much volume it prints."
+            },
+            {
+              "q": "Why should RSI above 70 be read more cautiously on bitcoin than on SPY?",
+              "choices": [
+                "Because RSI cannot be calculated on crypto",
+                "Because in a strong crypto trend RSI can stay above 70 for weeks, so fading it as 'overbought' fights the trend",
+                "Because crypto RSI uses a different formula",
+                "Because RSI is always below 70 on crypto"
+              ],
+              "answer": 1,
+              "explain": "Oscillators pin in volatile trends. Check trend-strength tools such as ADX and the slope of the moving averages before choosing a mean-reversion playbook on crypto."
+            },
+            {
+              "q": "What are the so-called 'CME gaps' in bitcoin?",
+              "choices": [
+                "Gaps in the spot price caused by exchanges closing at weekends",
+                "Gaps on the bitcoin futures chart, because CME futures close Friday evening and reopen Sunday evening while spot keeps trading",
+                "Errors in the data feed",
+                "Gaps caused by bitcoin's network halting on weekends"
+              ],
+              "answer": 1,
+              "explain": "The spot market never closes, so the spot chart has no gaps. The futures contract on the CME does close, so its chart gaps over weekends. It is a property of the futures schedule, not of the coin."
+            },
+            {
+              "q": "What adjustment does the lesson recommend when backtesting a strategy on crypto in the Strategy Lab?",
+              "choices": [
+                "Set costs to zero because crypto has no commissions",
+                "Set slippage higher (25 to 50 basis points) to stand in for exchange fees and wider spreads, and remember a year is 365 bars",
+                "Use only one month of data",
+                "Use leverage to make the results clearer"
+              ],
+              "answer": 1,
+              "explain": "Spot crypto exchanges charge 0.1 to 0.6% per trade and spreads are wider than SPY's. Higher slippage keeps the test honest, and the 365-bar year changes what standard parameters mean."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Run a Broward Trading class: create a class code, see every student's course progress, quiz average, replay drills, journal activity and paper-trading process in one roster, keep a gradebook with the Teaching Guide weights, and export grades to a spreadsheet. No student emails required.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Instructor — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and type come from css/style.css tokens */
+  .in-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .in-head h1{margin:0;font-size:var(--fs-xl)}
+  .in-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:0;max-width:70ch}
+  .in-head .status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+  .in button,.in select,.in input:not([type=checkbox]):not([type=radio]),.in textarea{min-height:44px}
+  .in button.sm,.in .th-btn{min-height:36px}
+  @media (max-width:760px){.in button.sm,.in .th-btn,.in .close{min-height:44px}}
+  .in input[type=checkbox]{width:22px;height:22px;margin:0;flex:0 0 auto}
+  .gain{color:var(--up)} .loss{color:var(--down)} .warn-text{color:var(--warn-text,var(--warn))}
+
+  /* class card */
+  .class-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2);align-items:end}
+  .class-row select{width:100%}
+  .code-box{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center;margin-top:var(--sp-3);padding:var(--sp-3);border:1px dashed var(--line2);border-radius:var(--r-md);background:var(--panel2)}
+  .code-big{font-family:var(--mono);font-size:clamp(30px,8vw,44px);font-weight:600;letter-spacing:.14em;line-height:1;user-select:all;-webkit-user-select:all}
+  .code-box .what{flex:1 1 240px;color:var(--muted);font-size:var(--fs-sm);line-height:1.55;margin:0}
+  .code-box .what b{color:var(--fg)}
+  .code-actions{display:flex;flex-wrap:wrap;gap:var(--sp-2);width:100%}
+  .create{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--sp-2);margin-top:var(--sp-3)}
+  .create .field.wide{grid-column:1/-1}
+  .create .row{grid-column:1/-1}
+  .inline-check{display:inline-flex;gap:8px;align-items:center;min-height:44px;color:var(--fg);font-size:var(--fs-sm)}
+  .how-steps{margin:var(--sp-2) 0 0;padding-left:20px;color:var(--muted);font-size:var(--fs-sm);line-height:1.6}
+  .how-steps li{margin-bottom:4px} .how-steps b{color:var(--fg)}
+
+  /* roster */
+  .toolbar{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center;margin-top:var(--sp-2)}
+  .toolbar input[type=search]{flex:1 1 180px}
+  .roster{min-width:720px}
+  .roster th{padding:0 10px 4px 0}
+  .th-btn{background:none;border:0;border-radius:var(--r);padding:8px 6px;margin:0 -6px;color:var(--muted);font:inherit;font-size:var(--fs-xs);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;cursor:pointer}
+  .th-btn.on,.th-btn:hover{color:var(--fg)}
+  th.right .th-btn{margin-left:auto;display:block}
+  .roster td{padding:10px 10px 10px 0;font-size:var(--fs-sm)}
+  .roster td small{display:block;color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);margin-top:2px}
+  .roster tr.r{cursor:pointer}
+  .roster tr.r:hover td,.roster tr.r:focus-visible td{background:var(--panel2)}
+  .roster tr.r:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .roster tr.stale td:first-child{border-left:3px solid var(--warn);padding-left:8px}
+  .mini{display:inline-block;width:56px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;vertical-align:middle;margin-right:6px}
+  .mini i{display:block;height:100%;background:var(--accent)}
+  @media (max-width:760px){.roster td{padding:12px 10px 12px 0}}
+
+  /* gradebook */
+  .weights{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-3)}
+  .weights .help{line-height:1.5}
+  .req{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:var(--sp-2);align-items:end;margin-top:var(--sp-3)}
+  .req .field.wide{grid-column:1/-1}
+  .grades{min-width:760px}
+  .grades td{padding:9px 10px 9px 0;font-size:var(--fs-sm)}
+  .grades td small,.grades th small{display:block;color:var(--muted);font-size:var(--fs-xs);font-family:var(--mono);text-transform:none;letter-spacing:0}
+  .grades td.missing{color:var(--faint)}
+  .grades td.manual{color:var(--accent)}
+  .grades tr[data-id]{cursor:pointer}
+  .grades tr[data-id]:hover td{background:var(--panel2)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-xs);color:var(--muted);margin-top:var(--sp-2)}
+  .legend b{font-weight:500}
+
+  /* export */
+  .io-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--sp-3)}
+  .io-grid textarea{font-family:var(--mono);font-size:var(--fs-xs);min-height:160px;white-space:pre;overflow:auto}
+  .io-grid .row{gap:var(--sp-2)}
+
+  /* privacy */
+  .priv{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--sp-3);margin-top:var(--sp-2)}
+  .priv h3{font-size:var(--fs-md);margin:0 0 4px}
+  .priv p{margin:0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55}
+  .import-errors ul{margin:var(--sp-2) 0 0;padding-left:18px;font-size:var(--fs-xs);color:var(--muted)}
+
+  /* drawer */
+  .modal.wide{width:min(820px,100%)}
+  .d-meta{font-size:var(--fs-xs);color:var(--muted);font-family:var(--mono);line-height:1.6;word-break:break-word}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-2);margin-top:var(--sp-3)}
+  .tiles .stat{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2)}
+  .tiles .stat .value{font-size:var(--fs-lg)}
+  @media (max-width:420px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .tiles .stat .value{font-size:var(--fs-md)}}
+  .d-sec{margin-top:var(--sp-4)}
+  .d-sec h3{font-size:var(--fs-sm);letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:0 0 var(--sp-2)}
+  .d-drills{list-style:none;margin:0;padding:0;font-size:var(--fs-sm)}
+  .d-drills li{padding:8px 0;border-top:1px solid var(--line);line-height:1.5}
+  .d-drills li:first-child{border-top:0}
+  .d-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-2)}
+  .d-total{margin-top:var(--sp-2);font-family:var(--mono);font-size:var(--fs-sm)}
+  .modal footer{justify-content:flex-start}
+  .modal footer .spacer{flex:1 1 auto}
+  .modal footer button,.modal .close{min-height:44px}
+  .modal .close{min-width:44px}
+  @media (max-width:600px){.modal{max-height:94dvh}}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page in" id="instApp">
+
+  <header class="in-head">
+    <div>
+      <h1>Instructor</h1>
+      <p class="sub">Create a class code, watch the roster fill in, and keep a gradebook that grades process, never profit. Students are pseudonymous: no email, no account.</p>
+    </div>
+    <div class="status">
+      <span class="pill" id="pillBackend">offline: share codes</span>
+      <span class="pill accent" id="pillStudents">no class yet</span>
+      <span class="pill" id="pillActive" hidden></span>
+    </div>
+  </header>
+
+  <main class="stack">
+
+    <!-- ---------------- Class ---------------- -->
+    <section class="card" id="classCard" aria-labelledby="classTitle">
+      <h2 id="classTitle">Your class <button class="ghost sm" id="newClassBtn" type="button" hidden>+ New class</button></h2>
+      <div class="class-row">
+        <div class="field"><label for="classSelect">Active class</label><select id="classSelect" aria-label="Active class"><option value="">No classes yet</option></select></div>
+        <button type="button" id="refreshBtn" hidden title="Pull the latest snapshots from the classroom server">Refresh from server</button>
+      </div>
+
+      <div id="classDetails" hidden>
+        <div class="code-box">
+          <div class="code-big no-i18n" id="codeBig" aria-label="Class code">——————</div>
+          <p class="what" id="classMeta"></p>
+          <div class="code-actions">
+            <button type="button" class="primary" id="copyCode">Copy code</button>
+            <button type="button" id="copyInvite">Copy invitation text</button>
+            <span class="msg" id="codeMsg" role="status"></span>
+          </div>
+        </div>
+        <ol class="how-steps">
+          <li>Students open <b>Learn → Classroom</b> on their phone and type the code. They may add a first name or a nickname; nothing else is asked.</li>
+          <li><b>With the classroom server</b> their snapshot arrives automatically each time they finish a lesson or quiz (and at most every five minutes otherwise). <b>Without it</b> they tap <b>Copy share code</b> every week and send you the code; paste the codes below.</li>
+          <li>Tap a row for the module breakdown, drills and the grade sheet. Export the roster or the gradebook as CSV when grades are due.</li>
+        </ol>
+        <p class="note" id="tokenNote" hidden></p>
+        <div class="row mt-3">
+          <button type="button" class="danger sm" id="deleteClass">Delete this class from this device</button>
+        </div>
+      </div>
+
+      <form id="createForm" class="create" novalidate>
+        <div class="field wide"><label for="cName">Class name</label><input id="cName" type="text" maxlength="80" placeholder="FIN 1100 — Markets by Doing" autocomplete="off" required></div>
+        <div class="field"><label for="cSection">Section <span class="muted">(optional)</span></label><input id="cSection" type="text" maxlength="40" placeholder="Tue 6 pm · Central" autocomplete="off"></div>
+        <div class="field"><label for="cTerm">Term <span class="muted">(optional)</span></label><input id="cTerm" type="text" maxlength="40" placeholder="Spring 2027" autocomplete="off"></div>
+        <div class="row" id="secretRow" hidden>
+          <label class="inline-check"><input type="checkbox" id="cRemote" checked> Sync with the classroom server (students need no share codes)</label>
+        </div>
+        <div class="row">
+          <button type="submit" class="primary" id="createBtn">Create class and get a code</button>
+          <button type="button" class="ghost" id="cancelCreate">Cancel</button>
+          <span class="msg" id="createMsg" role="status"></span>
+        </div>
+        <span class="help">A class lives in this browser (and on the classroom server when one is configured). Export a backup from the Export section before you clear site data or change devices.</span>
+      </form>
+
+      <details class="mt-3" id="secretDetails" hidden>
+        <summary class="muted">Instructor secret (only if your school set one on the server)</summary>
+        <div class="row mt-2">
+          <input id="secretIn" type="password" autocomplete="off" placeholder="paste the INSTRUCTOR_SECRET" aria-label="Instructor secret" style="flex:1 1 200px">
+          <button type="button" id="secretSave">Save in this browser</button>
+          <span class="msg" id="secretMsg" role="status"></span>
+        </div>
+        <span class="help">Lets you create classes and read rosters without a magic-link account. It is sent only to the classroom server you configured and stored only in this browser.</span>
+      </details>
+    </section>
+
+    <!-- ---------------- Roster ---------------- -->
+    <section class="card" id="rosterCard" aria-labelledby="rosterTitle">
+      <h2 id="rosterTitle">Roster <span class="muted" id="rosterCount" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="toolbar">
+        <input id="rosterSearch" type="search" placeholder="Find a student by name or id" aria-label="Find a student" autocomplete="off">
+        <span class="help">Tap a column heading to sort. A yellow edge marks a student with no activity for more than a week.</span>
+      </div>
+      <div class="table-wrap mt-2">
+        <table class="roster hover" aria-label="Class roster">
+          <thead id="rosterHead"></thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+      <p class="note">Paper return is shown for conversation ("why does the top return have the biggest drawdown?") and is never part of the grade. Progress and quiz data come from the student's own device and are evidence of work, not proof; combine them with in-class exercises and the capstone.</p>
+    </section>
+
+    <!-- ---------------- Import ---------------- -->
+    <section class="card" id="importCard" data-acc="open" aria-labelledby="importTitle">
+      <h2 id="importTitle">Import share codes</h2>
+      <div class="field">
+        <label for="importIn">Paste one or many codes (any text around them is ignored)</label>
+        <textarea id="importIn" rows="4" placeholder="BT1.eJyrVkrOz1PyL… (one per line, or a whole email thread)" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      </div>
+      <div class="row mt-2">
+        <button type="button" class="primary" id="importBtn">Import</button>
+        <span class="msg" id="importMsg" role="status"></span>
+      </div>
+      <div class="import-errors" id="importErrors"></div>
+      <span class="help">A share code is the student's whole snapshot, compressed. Newer snapshots replace older ones for the same student; an older code never overwrites what you already have.</span>
+    </section>
+
+    <!-- ---------------- Gradebook ---------------- -->
+    <section class="card" id="gradeCard" data-acc aria-labelledby="gradeTitle">
+      <h2 id="gradeTitle">Gradebook <button class="ghost sm" id="resetWeights" type="button">Reset to guide defaults</button></h2>
+      <p class="muted" style="font-size:var(--fs-sm);margin:0 0 var(--sp-3)">Weights follow the Teaching Guide (§8): quizzes 20, drills 20, journal 20, forward test 10, capstone 25, participation 5. Four components are scored automatically from the snapshot as a starting point; forward test and capstone are yours to enter, and you can override any automatic score per student.</p>
+      <div class="weights" id="weights"></div>
+      <div class="row mt-2"><span class="msg" id="weightsTotal" role="status"></span></div>
+      <div class="req">
+        <div class="field wide"><label for="reqIds">Required drill ids (comma separated)</label><input id="reqIds" type="text" spellcheck="false" autocomplete="off"></div>
+        <div class="field"><label for="reqCount">Count for full marks</label><input id="reqCount" type="number" inputmode="numeric" min="1" max="20" step="1"></div>
+        <div class="row"><button type="button" id="reqSave">Save drill rules</button><span class="msg" id="reqMsg" role="status"></span></div>
+      </div>
+      <div class="table-wrap mt-3">
+        <table class="grades hover" aria-label="Gradebook">
+          <thead id="gradeHead"></thead>
+          <tbody id="gradeBody"></tbody>
+        </table>
+      </div>
+      <div class="legend"><span><b>Blue</b> = you entered it</span><span><b>Grey dash</b> = nothing yet (manual component)</span><span><b>Letter*</b> = incomplete: a component is still missing</span><span>Bands: A 90+, B 80, C 70, D 60</span></div>
+    </section>
+
+    <!-- ---------------- Export ---------------- -->
+    <section class="card" id="exportCard" data-acc aria-labelledby="exportTitle">
+      <h2 id="exportTitle">Export &amp; backup</h2>
+      <div class="io-grid">
+        <div class="field">
+          <div class="row">
+            <button type="button" id="expRoster">Roster CSV</button>
+            <button type="button" id="expGrades">Gradebook CSV</button>
+            <button type="button" id="expJson">Backup JSON</button>
+          </div>
+          <textarea id="expOut" readonly placeholder="Your export appears here. Copy it into Google Sheets or Excel (paste into cell A1, then Data → Split text to columns if needed), or download it as a file." aria-label="Export output"></textarea>
+          <div class="row"><button type="button" class="sm" id="expCopy">Copy</button><button type="button" class="sm" id="expDownload">Download file</button><span class="msg" id="expMsg" role="status"></span></div>
+          <span class="help">CSV has one row per student and plain column names (<code>progress_pct</code>, <code>quiz_avg_pct</code>, <code>drills_required_passed</code>…). Names that start with "=" are quoted so a nickname cannot run a formula in your spreadsheet.</span>
+        </div>
+        <div class="field">
+          <label for="impBackup">Restore a backup JSON</label>
+          <textarea id="impBackup" placeholder="Paste a backup made on this page (another device, or before clearing site data)."></textarea>
+          <div class="row"><button type="button" id="impBackupBtn">Restore</button><span class="msg" id="impBackupMsg" role="status"></span></div>
+          <span class="help">Restoring merges: existing classes keep their newer snapshots and your manual grades.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- Privacy ---------------- -->
+    <section class="card" id="privacyCard" data-acc aria-labelledby="privTitle">
+      <h2 id="privTitle">Privacy notice</h2>
+      <div class="priv">
+        <div><h3>No emails, no accounts</h3><p>A student joins with the class code alone. The app creates a random id (like <code>s-k3m9p2x7qa</code>) on their device; that id, an optional name they type, and course statistics are the whole record. You cannot look a student up, and neither can we.</p></div>
+        <div><h3>Data minimisation (FERPA-minded)</h3><p>Snapshots contain lesson ids, quiz percentages, drill scorecards, paper-trading statistics, journal counts and the Daily 5 streak. No journal text, no trade list, no IP address, no device details. The server stores exactly these fields and nothing it did not ask for.</p></div>
+        <div><h3>Where it lives</h3><p>Everything on this page is in this browser (<code>bt.instructor</code>). With the classroom server, snapshots also live in your school's own Cloudflare account for up to 400 days and can be deleted by you per student or by your IT staff per class.</p></div>
+        <div><h3>Your part</h3><p>The name field is for your convenience only; a first name or a seat number is enough. Treat exports like any grade sheet: keep them in the LMS or your institution's drive, not in email threads. Removing a student here deletes their server record and tells their device to stop sending.</p></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ---------------- Student drawer ---------------- -->
+<div class="modal-backdrop" id="drawer" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <header><h2 id="dTitle">Student</h2><button type="button" class="close ghost" id="dClose" aria-label="Close">✕</button></header>
+    <div class="field">
+      <label for="dName">Your label for this student</label>
+      <input id="dName" type="text" maxlength="40" placeholder="first name, nickname or seat number" autocomplete="off">
+      <span class="help" id="dNameHelp"></span>
+    </div>
+    <p class="d-meta mt-2"><span id="dId"></span><br><span id="dMeta"></span></p>
+    <div class="tiles" id="dTiles"></div>
+
+    <div class="d-sec">
+      <h3>Modules</h3>
+      <div class="table-wrap">
+        <table class="dense" aria-label="Module breakdown" style="min-width:420px">
+          <thead><tr><th>Module</th><th class="right">Lessons</th><th class="right">Progress</th><th class="right">Quiz avg</th></tr></thead>
+          <tbody id="dModules"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="d-sec">
+      <h3>Replay drills (best attempt per drill)</h3>
+      <ul class="d-drills" id="dDrills"></ul>
+    </div>
+
+    <div class="d-sec" id="dGradeCard">
+      <h3>Grade sheet</h3>
+      <p class="muted" style="font-size:var(--fs-xs);margin:0 0 var(--sp-2)">Leave a box empty to keep the automatic score; type points to override it. Forward test and capstone always need your number.</p>
+      <div class="d-grade" id="dGrade"></div>
+      <div class="field mt-2"><label for="dNote">Private note</label><textarea id="dNote" rows="2" maxlength="500" placeholder="Capstone feedback, accommodations, anything you want next to the grade."></textarea></div>
+      <p class="d-total" id="dTotal"></p>
+    </div>
+
+    <footer>
+      <button type="button" class="danger" id="dRemove">Remove from class</button>
+      <span class="spacer"></span>
+      <button type="button" class="primary" id="dDone">Done</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/classroom.js"></script>
+<script src="js/instructor.js"></script>
+</body>
+</html>

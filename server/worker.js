@@ -777,7 +777,7 @@ function clampNum(v, lo, hi, dp = 2) {
 /* Whitelist the snapshot: only known fields, bounded sizes, numbers clamped. Anything else is dropped. */
 function sanitizeSnapshot(body) {
   const b = body && typeof body === 'object' ? body : {};
-  const lessonsDone = Array.isArray(b.lessonsDone) ? [...new Set(b.lessonsDone.map(x => cleanText(x, 40)).filter(Boolean))].slice(0, 400) : [];
+  const lessonsDone = Array.isArray(b.lessonsDone) ? [...new Set(b.lessonsDone.filter(x => typeof x === 'string').map(x => cleanText(x, 40)).filter(Boolean))].slice(0, 400) : [];
   const quizScores = {};
   if (b.quizScores && typeof b.quizScores === 'object') {
     Object.keys(b.quizScores).slice(0, 400).forEach(k => { const key = cleanText(k, 40); const v = clampNum(b.quizScores[k], 0, 100, 0); if (key && v !== null) quizScores[key] = v; });

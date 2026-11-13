@@ -1,0 +1,313 @@
+{
+  "version": "0.4.0",
+  "title": "Curso de Broward Trading",
+  "summary": "Nueve módulos que te llevan desde '¿qué es una acción?' hasta un plan de trading escrito, probado con backtesting y practicado en replay, y luego te muestran cómo la misma disciplina se aplica a cripto y ETFs, con el panel de paper trading y Market Replay como tu laboratorio.",
+  "modules": [
+    {
+      "id": "m1-foundations",
+      "title": "Fundamentos del mercado",
+      "level": "beginner",
+      "minutes": 52,
+      "summary": "Qué son los mercados, cómo funcionan las órdenes, qué mueve los precios y por qué el paper trading es el lugar correcto para empezar.",
+      "lessons": [
+        {
+          "id": "m1-l1",
+          "title": "Qué es realmente una acción",
+          "minutes": 10
+        },
+        {
+          "id": "m1-l2",
+          "title": "Bolsas y horarios del mercado",
+          "minutes": 10
+        },
+        {
+          "id": "m1-l3",
+          "title": "Leer una cotización: bid, ask y el spread",
+          "minutes": 10
+        },
+        {
+          "id": "m1-l4",
+          "title": "Tipos de órdenes: mercado, límite y stop",
+          "minutes": 12
+        },
+        {
+          "id": "m1-l5",
+          "title": "Corredores, paper trading y qué mueve los precios",
+          "minutes": 10
+        }
+      ]
+    },
+    {
+      "id": "m2-charts",
+      "title": "Cómo leer gráficos y velas",
+      "level": "beginner",
+      "minutes": 52,
+      "summary": "Velas japonesas, marcos temporales, tendencias, soporte y resistencia, y los patrones clásicos de reversión, leídos en paneles de gráficos reales.",
+      "lessons": [
+        {
+          "id": "m2-l1",
+          "title": "Anatomía de una vela y cómo elegir un marco temporal",
+          "minutes": 10
+        },
+        {
+          "id": "m2-l2",
+          "title": "Tendencia, soporte y resistencia",
+          "minutes": 10
+        },
+        {
+          "id": "m2-l3",
+          "title": "Líneas de tendencia, canales y volumen",
+          "minutes": 10
+        },
+        {
+          "id": "m2-l4",
+          "title": "Patrones clásicos de velas",
+          "minutes": 10
+        },
+        {
+          "id": "m2-l5",
+          "title": "Patrones de gráficos: reversiones y continuaciones",
+          "minutes": 12
+        }
+      ]
+    },
+    {
+      "id": "m3-indicators",
+      "title": "Indicadores técnicos",
+      "level": "intermediate",
+      "minutes": 58,
+      "summary": "Medias móviles, RSI, MACD, Bandas de Bollinger, herramientas de volumen y cómo el panel las combina en una señal compuesta.",
+      "lessons": [
+        {
+          "id": "m3-l1",
+          "title": "Medias móviles y cruces",
+          "minutes": 12
+        },
+        {
+          "id": "m3-l2",
+          "title": "Osciladores de momentum: RSI y estocástico",
+          "minutes": 11
+        },
+        {
+          "id": "m3-l3",
+          "title": "MACD, Bandas de Bollinger y ATR",
+          "minutes": 12
+        },
+        {
+          "id": "m3-l4",
+          "title": "Fuerza de tendencia y contexto: ADX, VWAP e Ichimoku",
+          "minutes": 11
+        },
+        {
+          "id": "m3-l5",
+          "title": "Cómo combinar indicadores y la señal compuesta",
+          "minutes": 12
+        }
+      ]
+    },
+    {
+      "id": "m4-risk",
+      "title": "Gestión del riesgo y paper trading",
+      "level": "intermediate",
+      "minutes": 56,
+      "summary": "Tamaño de posición, stops, expectativa, drawdowns y el diario de trading, practicados en tu cuenta de paper trading.",
+      "lessons": [
+        {
+          "id": "m4-l1",
+          "title": "Tamaño de posición y la regla del 1%",
+          "minutes": 11
+        },
+        {
+          "id": "m4-l2",
+          "title": "Stops, riesgo/beneficio y expectativa",
+          "minutes": 12
+        },
+        {
+          "id": "m4-l3",
+          "title": "Drawdowns, rachas y psicología del trading",
+          "minutes": 11
+        },
+        {
+          "id": "m4-l4",
+          "title": "Venta en corto, margen y apalancamiento",
+          "minutes": 10
+        },
+        {
+          "id": "m4-l5",
+          "title": "Tu plan de trading, el diario y cómo usar bien la cuenta de paper trading",
+          "minutes": 12
+        }
+      ]
+    },
+    {
+      "id": "m5-options",
+      "title": "Fundamentos de opciones",
+      "level": "advanced",
+      "minutes": 58,
+      "summary": "Calls, puts, la prima, las griegas, diagramas de pago y las estrategias de riesgo definido del laboratorio de opciones.",
+      "lessons": [
+        {
+          "id": "m5-l1",
+          "title": "Calls, puts y de qué está hecha una prima",
+          "minutes": 12
+        },
+        {
+          "id": "m5-l2",
+          "title": "Cómo leer una cadena de opciones",
+          "minutes": 11
+        },
+        {
+          "id": "m5-l3",
+          "title": "Las griegas, de forma intuitiva, y la volatilidad implícita",
+          "minutes": 13
+        },
+        {
+          "id": "m5-l4",
+          "title": "Covered calls, protective puts y spreads verticales",
+          "minutes": 11
+        },
+        {
+          "id": "m5-l5",
+          "title": "Straddles, strangles, iron condors y riesgo de asignación",
+          "minutes": 11
+        }
+      ]
+    },
+    {
+      "id": "m6-strategy",
+      "title": "Estrategia y backtesting",
+      "level": "advanced",
+      "minutes": 57,
+      "summary": "Convertir reglas en una estrategia, probarla con honestidad mediante backtesting, evitar el sobreajuste y escribir un plan de trading que puedas seguir.",
+      "lessons": [
+        {
+          "id": "m6-l1",
+          "title": "Qué es una estrategia: reglas de entrada y salida",
+          "minutes": 11
+        },
+        {
+          "id": "m6-l2",
+          "title": "Fundamentos del backtesting y las métricas que importan",
+          "minutes": 13
+        },
+        {
+          "id": "m6-l3",
+          "title": "Por qué los backtests mienten: anticipación, supervivencia y sobreajuste",
+          "minutes": 12
+        },
+        {
+          "id": "m6-l4",
+          "title": "Costos de transacción y el camino al paper trading",
+          "minutes": 11
+        },
+        {
+          "id": "m6-l5",
+          "title": "Proyecto final: construye, prueba y opera en paper tu propia estrategia",
+          "minutes": 10
+        }
+      ]
+    },
+    {
+      "id": "m7-replay",
+      "title": "Ejercicios prácticos: Market Replay",
+      "level": "intermediate",
+      "minutes": 57,
+      "summary": "Reproduce velas históricas con el futuro oculto y completa ejercicios calificados sobre tendencias, reversiones, gaps, mercados bajistas, stops y tamaño de posición; después revisa cada sesión en el diario.",
+      "lessons": [
+        {
+          "id": "m7-l1",
+          "title": "Cómo usar Market Replay con honestidad",
+          "minutes": 10
+        },
+        {
+          "id": "m7-l2",
+          "title": "Ejercicios de tendencia: aguantar y seguir la regla",
+          "minutes": 12
+        },
+        {
+          "id": "m7-l3",
+          "title": "Ejercicios de reversión y rango: reversión a la media, gaps e intradía",
+          "minutes": 12
+        },
+        {
+          "id": "m7-l4",
+          "title": "Ejercicios de riesgo: mercados bajistas, disciplina de stops y tamaño",
+          "minutes": 12
+        },
+        {
+          "id": "m7-l5",
+          "title": "Autoevaluación: la tarjeta de resultados, el diario y la revisión semanal",
+          "minutes": 11
+        }
+      ]
+    },
+    {
+      "id": "m8-capstone",
+      "title": "Proyecto final: tu plan de trading",
+      "level": "advanced",
+      "minutes": 62,
+      "summary": "Convierte todo lo aprendido en el curso en un único plan de trading escrito: metas y restricciones, universo y marco temporal, reglas de entrada, salida y riesgo, tres puertas de validación (backtest, replay y 30 operaciones en papel), un calendario de revisión, una plantilla para completar y un examen final que cubre todos los módulos.",
+      "lessons": [
+        {
+          "id": "m8-l1",
+          "title": "Metas, restricciones y una autoevaluación honesta",
+          "minutes": 11
+        },
+        {
+          "id": "m8-l2",
+          "title": "Elegir tu mercado, tu universo y tu marco temporal",
+          "minutes": 11
+        },
+        {
+          "id": "m8-l3",
+          "title": "Escribir tus reglas: entrada, salida, riesgo y gestión",
+          "minutes": 13
+        },
+        {
+          "id": "m8-l4",
+          "title": "Validación: backtest, replay y 30 operaciones en papel",
+          "minutes": 13
+        },
+        {
+          "id": "m8-l5",
+          "title": "Calendario de revisión, métricas del diario, el plan escrito y el examen final",
+          "minutes": 14
+        }
+      ]
+    },
+    {
+      "id": "m9-crypto-etf",
+      "title": "Cripto y ETFs: mercados distintos, la misma disciplina",
+      "level": "intermediate",
+      "minutes": 57,
+      "summary": "Cómo se negocia el cripto las 24 horas, qué contiene realmente un ETF y cuánto cuesta, por qué la volatilidad cambia tu tamaño de posición y cómo cada hábito de gráficos, riesgo y diario del curso se aplica sin cambios a BTC-USD y SPY.",
+      "lessons": [
+        {
+          "id": "m9-l1",
+          "title": "Fundamentos de cripto: monedas, exchanges y un mercado que nunca cierra",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l2",
+          "title": "ETFs: canastas, seguimiento de índices y ratios de gastos",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l3",
+          "title": "Volatilidad y tamaño de posición en distintos mercados",
+          "minutes": 12
+        },
+        {
+          "id": "m9-l4",
+          "title": "Leer BTC-USD y SPY con las mismas herramientas de gráficos",
+          "minutes": 11
+        },
+        {
+          "id": "m9-l5",
+          "title": "Comisiones, custodia, impuestos y cómo agregar un nuevo mercado a tu plan",
+          "minutes": 12
+        }
+      ]
+    }
+  ]
+}

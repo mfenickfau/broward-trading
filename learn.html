@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Learn · Broward Trading</title>
-<meta name="description" content="A free eight-module course on markets, charts, indicators, risk, options, backtesting, Market Replay drills and writing your own trading plan, with quizzes, glossary tooltips, a paper-trading lab and a verifiable completion certificate.">
+<meta name="description" content="A free nine-module course on markets, charts, indicators, risk, options, backtesting, Market Replay drills, writing your own trading plan, and crypto & ETFs, with quizzes, glossary tooltips, a paper-trading lab, printable lessons and a verifiable completion certificate. English and Spanish.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Minimal fallback so the page is readable when css/style.css is missing.
@@ -258,8 +260,42 @@ code{font-family:var(--mono);font-size:.92em;background:var(--panel2);border:1px
   .checklist li > span:last-child{grid-column:2}
   body.has-tabbar .learn-wrap{padding-bottom:12px}
 }
-@media print{.topnav,.tabbar,.sidebar,.lesson-nav,.cert-form,.teaser,.procard,.gl-pop,#nav,#footer{display:none !important}}
+
+/* ---- v0.4: English-only badge, Up next reasons, first-week & classroom cards, print bar ---- */
+.pill.enonly{color:var(--warn);border-color:var(--warn);vertical-align:middle;font-weight:500;letter-spacing:.4px}
+h1 .pill.enonly,h3 .pill.enonly{font-size:10px;margin-left:4px}
+.continue .why{color:var(--fg);font-size:13px;margin:0 0 8px;line-height:1.5}
+.continue.retake{border-color:var(--warn)} .continue.retake .ctag{color:var(--warn)} .continue.retake .go{background:var(--warn);color:#141a22}
+.homegrid.side{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.fw-card,.class-card{display:flex;flex-direction:column;gap:8px;position:relative}
+.fw-card .lede,.class-card .lede{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.fw-card .fw-live{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+.fw-card .fw-live .ring{width:64px;height:64px} .fw-card .fw-live .ring .lbl{font-size:13px}
+.fw-card .fw-status{margin:0 0 4px;font-weight:500;font-size:14px;color:var(--fg)}
+.fw-card.complete .fw-status{color:var(--up)}
+.fw-card .go,.class-card .go{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:auto;text-decoration:none;border-radius:6px;padding:8px 14px;font-weight:500;background:var(--accent);color:#fff}
+.class-card .go.ghost,.fw-card .go.ghost{background:transparent;color:var(--accent);border:1px solid var(--line);font-weight:400}
+.skeleton-line{display:inline-block;width:60%;height:12px;border-radius:6px;background:var(--panel2)}
+.class-join{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:8px}
+.class-join input{min-height:44px;font-size:16px;text-transform:none}
+.class-join #classCode{text-transform:uppercase;letter-spacing:2px}
+.class-join button{min-height:44px}
+@media (max-width:560px){.class-join{grid-template-columns:1fr 1fr}.class-join button{grid-column:1 / -1}}
+.class-card .fine{margin:0;font-size:12px;color:var(--muted)}
+.class-card .class-status{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}
+.class-card .class-status .muted{color:var(--muted)}
+.class-card .cactions{display:flex;flex-wrap:wrap;gap:8px}
+.class-card .cactions button{min-height:44px}
+.class-card .msg{margin:0;font-size:13px} .class-card .msg.ok{color:var(--up)} .class-card .msg.err{color:var(--warn)}
+.class-card .msg:empty{display:none}
+.share-out{width:100%;font-size:12px;word-break:break-all;resize:vertical;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px;color:inherit}
+.printbar{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
+.printbar .toolbtn{min-height:36px}
+.printbar .ghost{background:transparent;color:var(--muted)}
+@media (max-width:760px){.printbar .toolbtn{min-height:44px;flex:1}}
+#printModule{display:none}
 </style>
+<link rel="stylesheet" href="css/print.css" media="print">
 </head>
 <body class="page">
 
@@ -281,6 +317,9 @@ if (!window.LightweightCharts) document.write('<script src="js/vendor/lightweigh
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/course.js"></script>
+<!-- optional: first-week progress card and classroom card; learn.js guards every use -->
+<script src="js/onboarding.js"></script>
+<script src="js/classroom.js"></script>
 <script src="js/learn.js"></script>
 </body>
 </html>

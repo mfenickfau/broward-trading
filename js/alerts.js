@@ -33,6 +33,8 @@
   'use strict';
   window.BT = window.BT || {};
   var BT = window.BT;
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var STORAGE_KEY = 'bt.alerts';
   var MAX_ALERTS = 50;
@@ -124,7 +126,7 @@
     var def = KINDS[kind], value = spec.value;
     if (def.needsValue) {
       var n = typeof value === 'string' ? parseFloat(value.replace(/[$,%\s]/g, '')) : value;
-      if (!isNum(n)) return { ok: false, reason: 'Enter a number for "' + def.label + '".' };
+      if (!isNum(n)) return { ok: false, reason: T('Enter a number for "{label}".', { label: def.label }) };
       if (def.group === 'price' && n <= 0) return { ok: false, reason: 'A price level must be above zero.' };
       if (def.group === 'rsi' && (n < 0 || n > 100)) return { ok: false, reason: 'RSI runs from 0 to 100. Classic levels: 30 oversold, 70 overbought.' };
       value = def.group === 'price' ? Math.round(n * 10000) / 10000 : Math.round(n * 100) / 100;
@@ -144,12 +146,12 @@
   function describe(a) {
     var pair;
     switch (a.kind) {
-      case 'price_above': return a.symbol + ' price rises above ' + fmtPrice(a.value);
-      case 'price_below': return a.symbol + ' price falls below ' + fmtPrice(a.value);
-      case 'rsi_above': return a.symbol + ' RSI(14) rises above ' + fmtNum(a.value, 0);
-      case 'rsi_below': return a.symbol + ' RSI(14) falls below ' + fmtNum(a.value, 0);
-      case 'sma_cross': pair = parsePair(a.value) || { fast: 20, slow: 50 }; return a.symbol + ' SMA ' + pair.fast + ' crosses SMA ' + pair.slow;
-      case 'signal_change': return a.symbol + ' signal ' + (a.value ? 'turns ' + a.value : 'changes state');
+      case 'price_above': return T('{symbol} price rises above {price}', { symbol: a.symbol, price: fmtPrice(a.value) });
+      case 'price_below': return T('{symbol} price falls below {price}', { symbol: a.symbol, price: fmtPrice(a.value) });
+      case 'rsi_above': return T('{symbol} RSI(14) rises above {value}', { symbol: a.symbol, value: fmtNum(a.value, 0) });
+      case 'rsi_below': return T('{symbol} RSI(14) falls below {value}', { symbol: a.symbol, value: fmtNum(a.value, 0) });
+      case 'sma_cross': pair = parsePair(a.value) || { fast: 20, slow: 50 }; return T('{symbol} SMA {fast} crosses SMA {slow}', { symbol: a.symbol, fast: pair.fast, slow: pair.slow });
+      case 'signal_change': return a.value ? T('{symbol} signal turns {state}', { symbol: a.symbol, state: a.value }) : T('{symbol} signal changes state', { symbol: a.symbol });
     }
     return a.symbol + ' ' + a.kind;
   }
@@ -161,9 +163,9 @@
     var v = validate(spec);
     if (!v.ok) return { status: 'rejected', reason: v.reason };
     var list = all();
-    if (list.length >= MAX_ALERTS) return { status: 'rejected', reason: 'You can keep up to ' + MAX_ALERTS + ' alerts. Remove a fired one first.' };
+    if (list.length >= MAX_ALERTS) return { status: 'rejected', reason: T('You can keep up to {max} alerts. Remove a fired one first.', { max: MAX_ALERTS }) };
     var dup = list.filter(function (a) { return a.symbol === v.alert.symbol && a.kind === v.alert.kind && String(a.value) === String(v.alert.value) && !a.firedAt; })[0];
-    if (dup) return { status: 'rejected', reason: 'That alert already exists (#' + dup.id + ').', alert: dup };
+    if (dup) return { status: 'rejected', reason: T('That alert already exists (#{id}).', { id: dup.id }), alert: dup };
     var a = Object.assign({ id: nextId(), createdAt: clock(), enabled: true, firedAt: null, fired: 0, state: false, lastSignal: null, lastValue: null }, v.alert);
     a.status = 'ok';
     list.push(a); save();
@@ -246,18 +248,18 @@
     switch (a.kind) {
       case 'price_above': {
         var hi = isNum(b.high) ? Math.max(b.high, b.close) : b.close;
-        return { cond: hi >= a.value, now: b.close, detail: 'last ' + fmtPrice(b.close) + (hi !== b.close && hi >= a.value ? ' (high ' + fmtPrice(hi) + ' touched the level)' : '') };
+        return { cond: hi >= a.value, now: b.close, detail: T('last {price}', { price: fmtPrice(b.close) }) + (hi !== b.close && hi >= a.value ? ' ' + T('(high {price} touched the level)', { price: fmtPrice(hi) }) : '') };
       }
       case 'price_below': {
         var lo = isNum(b.low) ? Math.min(b.low, b.close) : b.close;
-        return { cond: lo <= a.value, now: b.close, detail: 'last ' + fmtPrice(b.close) + (lo !== b.close && lo <= a.value ? ' (low ' + fmtPrice(lo) + ' touched the level)' : '') };
+        return { cond: lo <= a.value, now: b.close, detail: T('last {price}', { price: fmtPrice(b.close) }) + (lo !== b.close && lo <= a.value ? ' ' + T('(low {price} touched the level)', { price: fmtPrice(lo) }) : '') };
       }
       case 'rsi_above':
       case 'rsi_below': {
         var r = rsiSeries(bars, ind), rv = r ? last(r) : null;
         if (!isNum(rv)) return null;
         var c = a.kind === 'rsi_above' ? rv >= a.value : rv <= a.value;
-        return { cond: c, now: rv, detail: 'RSI ' + fmtNum(rv, 1) + (a.kind === 'rsi_above' ? ' — momentum is stretched; watch for a pullback or a bearish divergence.' : ' — sellers may be exhausted; mean-reversion traders look for entries here.') };
+        return { cond: c, now: rv, detail: T('RSI {value}', { value: fmtNum(rv, 1) }) + ' — ' + (a.kind === 'rsi_above' ? T('momentum is stretched; watch for a pullback or a bearish divergence.') : T('sellers may be exhausted; mean-reversion traders look for entries here.')) };
       }
       case 'sma_cross': {
         var pair = parsePair(a.value) || { fast: 20, slow: 50 };
@@ -269,13 +271,13 @@
         var crossed = dNow !== 0 && dPrev !== 0 && dNow !== dPrev;
         var dir = dNow > 0 ? 'up' : 'down';
         return { cond: crossed, now: dNow, direction: dir,
-          detail: crossed ? (dir === 'up' ? 'Golden cross: SMA ' + pair.fast + ' moved above SMA ' + pair.slow + ' — the short-term trend turned stronger than the long-term one.' : 'Death cross: SMA ' + pair.fast + ' moved below SMA ' + pair.slow + ' — short-term weakness is now dragging on the longer trend.') : 'SMA ' + pair.fast + ' is ' + (dNow > 0 ? 'above' : 'below') + ' SMA ' + pair.slow };
+          detail: crossed ? T(dir === 'up' ? 'Golden cross: SMA {fast} moved above SMA {slow} — the short-term trend turned stronger than the long-term one.' : 'Death cross: SMA {fast} moved below SMA {slow} — short-term weakness is now dragging on the longer trend.', { fast: pair.fast, slow: pair.slow }) : T(dNow > 0 ? 'SMA {fast} is above SMA {slow}' : 'SMA {fast} is below SMA {slow}', { fast: pair.fast, slow: pair.slow }) };
       }
       case 'signal_change': {
         var st = signalState(bars, ind);
         if (!st) return null;
         var changed = a.lastSignal != null && st !== a.lastSignal && (!a.value || st === a.value);
-        return { cond: changed, now: st, detail: 'Signal is now ' + st + (a.lastSignal ? ' (was ' + a.lastSignal + ')' : '') + '. Open "Why?" on the Signal card to read which rules changed their vote.' };
+        return { cond: changed, now: st, detail: T('Signal is now {state}', { state: st }) + (a.lastSignal ? ' ' + T('(was {state})', { state: a.lastSignal }) : '') + '. ' + T('Open "Why?" on the Signal card to read which rules changed their vote.') };
       }
     }
     return null;
@@ -360,7 +362,7 @@
     fired.forEach(function (f) {
       if (muted) return;
       if (BT.app && typeof BT.app.toast === 'function') {
-        try { BT.app.toast(f.message, tone(f), 'Alert: ' + f.title, 9000); } catch (e) { /* ignore */ }
+        try { BT.app.toast(f.message, tone(f), T('Alert: {title}', { title: f.title }), 9000); } catch (e) { /* ignore */ }
       }
       sendNotification(f);   // no-op unless the student granted permission
     });

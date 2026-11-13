@@ -1,0 +1,409 @@
+{
+  "id": "m1-foundations",
+  "title": "Fundamentos del mercado",
+  "level": "beginner",
+  "minutes": 52,
+  "summary": "Qué son los mercados, cómo funcionan las órdenes, qué mueve los precios y por qué el paper trading es el lugar correcto para empezar.",
+  "lessons": [
+    {
+      "id": "m1-l1",
+      "title": "Qué es realmente una acción",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Una acción es una porción de un negocio\n\nCuando compras una acción (share) de una empresa, eres dueño de una fracción diminuta de esa empresa. No es un producto ni una promesa de un corredor de bolsa: es un derecho legal sobre una parte del negocio en sí. Si una empresa ha emitido 1,000,000 de acciones y tú tienes 100, eres dueño del 0.01% de ella. Tienes derecho al 0.01% de los dividendos que pague y a un 0.01% del voto en la asamblea anual de accionistas.\n\nEl precio de esa porción lo fijan otras personas. Si lo máximo que alguien está dispuesto a pagar por una acción en este momento es $50, la acción vale $50, digan lo que digan los contadores de la empresa. Multiplica el precio por la cantidad de acciones y obtienes la **capitalización de mercado** (market cap), la estimación continua del mercado sobre cuánto vale el negocio completo. Una empresa con 1,000,000 de acciones que cotizan a $50 tiene una capitalización de mercado de $50,000,000.\n\nDos cosas pueden hacer que tu porción valga más. Primero, la empresa puede crecer: más ventas, más ganancias, y por lo tanto cada acción representa un derecho sobre algo más grande. Segundo, otros inversionistas pueden simplemente decidir que quieren las acciones más que ayer y empujar el precio hacia arriba con sus ofertas. En el corto plazo (días y semanas) domina la segunda fuerza. A lo largo de los años, la primera tiende a ganar. El análisis técnico, al que este curso dedica mucho tiempo, trata principalmente de la segunda fuerza: cómo se comportan las multitudes de compradores y vendedores y qué huellas dejan en un gráfico."
+        },
+        {
+          "type": "text",
+          "md": "### Por qué las empresas venden acciones, y con quién estás negociando en realidad\n\nUna empresa vende acciones para recaudar dinero que no tiene que devolver. La primera vez que lo hace públicamente es la **oferta pública inicial (IPO)**. Ese es el *mercado primario*: el efectivo va de los inversionistas a la empresa. Ocurre una sola vez por acción.\n\nTodo lo que viene después es el *mercado secundario*, y es donde pasarás todo tu tiempo. Cuando compras 10 acciones de una empresa en el panel (dashboard), la empresa no recibe nada. Le estás comprando a otro inversionista que decidió vender, a través de una bolsa que los emparejó. A la empresa solo le importa en el sentido de que un precio más alto le facilita recaudar dinero más adelante y mantiene contentos a sus ejecutivos (que normalmente tienen acciones).\n\nEsto importa para tu forma de pensar. Toda operación tiene dos lados. Si compras porque crees que el precio va a subir, la persona que te vende o bien no está de acuerdo o tiene otra razón (necesita el efectivo, está rebalanceando, es un fondo que tiene que vender). Ninguno de los dos conoce el futuro. La ventaja de un trader no es tener certeza; es acertar un poco más de lo que se equivoca, o ganar más cuando acierta de lo que pierde cuando se equivoca. La lección 2 del módulo de riesgo está construida por completo alrededor de esa segunda idea.\n\nLas acciones también vienen en algunas variedades que verás en las páginas de cotización. Las **acciones comunes** (common stock) son las que hemos descrito. Las **acciones preferentes** (preferred stock) normalmente pagan un dividendo fijo y no tienen voto. Algunas empresas tienen dos clases de acciones con distintos derechos de voto (GOOGL y GOOG de Alphabet son el ejemplo clásico). Para graficar y hacer paper trading, usarás acciones comunes."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El precio es una negociación, no un hecho.** Una cotización de $187.42 significa que la última operación ocurrió a ese precio. La siguiente puede ocurrir más arriba o más abajo, y nadie está obligado a negociar contigo a $187.42. Todo este módulo se construye sobre esa única idea."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo ganas (o pierdes) dinero con una acción\n\nHay exactamente dos formas en que una acción te paga.\n\n**Apreciación del precio.** Compras a $100 y luego vendes a $120. Tu ganancia es de $20 por acción, o 20%. Compra 50 acciones y la ganancia es de $1,000 antes de comisiones e impuestos. Lo inverso es igual de cierto: compra a $100, vende a $80, y has perdido $20 por acción. Hasta que vendes, la ganancia o pérdida es *no realizada*; la página del portafolio muestra ambos números por separado porque se sienten muy distintos y se gravan de forma distinta.\n\n**Dividendos.** Algunas empresas pagan parte de su ganancia a los accionistas en efectivo, normalmente cada tres meses. Si una acción de $100 paga $0.75 por trimestre, su *rendimiento por dividendo* (dividend yield) es $3.00 / $100 = 3% anual. Muchas empresas de rápido crecimiento no pagan nada porque reinvierten cada dólar. Los datos de demostración del panel no simulan dividendos, así que tu cuenta de práctica solo reflejará cambios de precio.\n\nTambién es posible ganar cuando un precio cae. La **venta en corto** (short selling) significa pedir acciones prestadas, venderlas y recomprarlas más tarde, con suerte más baratas. Vende en corto a $100, recompra a $80, quédate con $20. El riesgo está invertido y es ilimitado: si la acción sube a $300 debes $200 por acción. El motor de paper trading permite cortos (una cantidad negativa en tu tabla de posiciones), y el módulo de riesgo cubre cuándo, si es que alguna vez, un principiante debería usarlos.\n\nUn número honesto para anclar expectativas: los índices amplios de acciones de EE. UU. han subido en la mayoría de los períodos de varias décadas, pero también han caído más de la mitad en un par de años (2007 a 2009 es el ejemplo más reciente). Las acciones individuales pueden llegar a cero, y lo hacen. Cualquiera que te prometa rendimientos estables sin ese riesgo a la baja te está vendiendo algo."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma50"],
+          "caption": "Apple, barras diarias con una media móvil simple de 50 días. Cada vela es un día de negociación. La línea naranja es el promedio del precio de cierre de los 50 días anteriores; el precio que deambula por encima y por debajo de ella es el comportamiento de la multitud a corto plazo que estudia este curso. Si la etiqueta dice *demo*, estos son precios simulados: la forma es realista pero los niveles no son el historial real de Apple."
+        },
+        {
+          "type": "text",
+          "md": "### Índices y ETFs: ser dueño de todo el mercado en una sola línea\n\nEscucharás constantemente que \"el mercado subió 1% hoy\". Eso se refiere a un **índice**, una canasta de acciones ponderada según una regla. El S&P 500 sigue a unas 500 de las empresas más grandes de EE. UU., ponderadas por capitalización de mercado, así que Apple y Microsoft lo mueven mucho más que la empresa número 500. El Dow Jones Industrial Average son 30 empresas grandes ponderadas por *precio*, una peculiaridad histórica que lo hace un peor punto de referencia pero uno famoso. El Nasdaq Composite cubre todo lo que cotiza en la bolsa Nasdaq y tiene mucho peso en tecnología.\n\nNo puedes comprar un índice directamente, pero sí puedes comprar un **fondo cotizado en bolsa (ETF)** que tiene la misma canasta y se negocia como una sola acción. SPY, VOO e IVV siguen al S&P 500; QQQ sigue al Nasdaq-100. Un ETF te da *diversificación*: si una empresa colapsa, es una quinientosava parte de tu inversión y no toda.\n\n¿Por qué un curso de trading empieza aquí? Porque el índice es tu vara de medir. Si tu estrategia ganó 8% en un año mientras un ETF del S&P 500 ganó 15%, trabajaste duro para rendir menos que algo que podías haber comprado con un clic. El laboratorio de estrategias en la página de backtest muestra el rendimiento de *comprar y mantener* (buy and hold) junto a cada estrategia exactamente por esta razón. Superarlo de forma consistente es difícil; la mayoría de los gestores de fondos profesionales no lo logran en períodos largos. Eso no es razón para renunciar al trading activo, pero es el estándar al que debes exigirte.\n\nEl universo de demostración de esta app son acciones individuales grandes de EE. UU. Cuando se conectan datos reales, también puedes escribir el ticker de un ETF como SPY en el buscador."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Nada de esto es asesoría de inversión.** Broward Trading es un simulador educativo gratuito. Los tickers aparecen porque son conocidos y útiles para enseñar, no porque alguien los esté recomendando. Nunca se envían órdenes reales, y los precios de demostración son simulados."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con Apple cargado en el gráfico diario.\n\n- Lee el **último precio** y la insignia de estado del mercado en el encabezado. ¿Está abierto el mercado en este momento?\n- Pasa el cursor sobre cualquier vela. Anota su apertura, máximo, mínimo y cierre.\n- Imagina que tuvieras 100 acciones compradas a la apertura de esa vela. Usando su cierre, calcula tu ganancia o pérdida no realizada en dólares y como porcentaje.\n- Pasa el cursor sobre una vela unas 50 barras a la izquierda y calcula lo mismo. ¿Qué fuerza (crecimiento del negocio o ánimo de la multitud) crees que explica la mayor parte de la diferencia a lo largo de 50 días de negociación?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma50", "label": "Abrir AAPL en el panel" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una empresa tiene 2,000,000 de acciones en circulación y su acción se negoció por última vez a $25. ¿Cuál es su capitalización de mercado?",
+              "choices": ["$25", "$2,000,000", "$50,000,000", "No se puede calcular sin la ganancia de la empresa"],
+              "answer": 2,
+              "explain": "La capitalización de mercado es el precio por las acciones en circulación: $25 x 2,000,000 = $50,000,000. La ganancia no forma parte de la fórmula; la opinión del mercado sobre las ganancias futuras ya está dentro del precio."
+            },
+            {
+              "q": "Compras 10 acciones de una empresa en una bolsa. ¿Quién recibe tu dinero?",
+              "choices": ["La empresa, que lo usa para crecer", "La bolsa, que lo guarda en fideicomiso", "Otro inversionista que vendió sus acciones", "Tu corredor de bolsa, como depósito"],
+              "answer": 2,
+              "explain": "Después de la IPO, las acciones se negocian en el mercado secundario entre inversionistas. La empresa solo recibe dinero cuando emite acciones nuevas."
+            },
+            {
+              "q": "Una acción de $40 paga un dividendo de $0.30 cada trimestre. ¿Cuál es su rendimiento por dividendo anual?",
+              "choices": ["0.75%", "3%", "7.5%", "12%"],
+              "answer": 1,
+              "explain": "Cuatro pagos trimestrales de $0.30 suman $1.20 al año. $1.20 / $40 = 0.03, o 3%."
+            },
+            {
+              "q": "¿Por qué la página de backtest muestra el rendimiento de comprar y mantener junto a cada estrategia?",
+              "choices": ["Porque comprar y mantener siempre es la mejor estrategia", "Para darte un punto de referencia; una estrategia que rinde menos que simplemente mantener la acción no ha agregado valor", "Porque lo exigen las regulaciones de valores", "Para estimar los dividendos, que el simulador de otro modo ignora"],
+              "answer": 1,
+              "explain": "Una estrategia tiene que superar la alternativa perezosa para que valga su esfuerzo y su riesgo. Comprar y mantener es la vara de medir, no una recomendación."
+            },
+            {
+              "q": "¿Cuál afirmación sobre la venta en corto es correcta?",
+              "choices": ["Tu pérdida máxima es el monto por el que vendiste las acciones", "Ganas si el precio cae y tu pérdida potencial es ilimitada si sube", "Es imposible en una cuenta de paper trading", "Te paga el dividendo a ti en lugar de al dueño"],
+              "answer": 1,
+              "explain": "Vender acciones prestadas a $100 y recomprarlas a $80 gana $20, pero si la acción sube a $300 debes $200 por acción, y no hay techo. Quienes venden en corto también le deben al prestamista cualquier dividendo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l2",
+      "title": "Bolsas y horarios del mercado",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Dónde ocurren realmente las operaciones\n\nUna bolsa es un motor de emparejamiento con reglas. Los compradores publican los precios que están dispuestos a pagar, los vendedores publican los precios que aceptarán, y cuando dos de ellos coinciden se registra una operación. En Estados Unidos los dos grandes nombres son la **Bolsa de Nueva York (NYSE)** y el **Nasdaq**. La NYSE todavía tiene un piso de remates en Manhattan para la televisión, pero el emparejamiento lo hacen computadoras, como en todas partes.\n\nUna acción está *listada* en una bolsa (Apple y Microsoft en Nasdaq, Coca-Cola y JPMorgan en la NYSE) pero puede *negociarse* casi en cualquier lugar. Tu corredor está obligado por regulación a enviar tu orden a donde esté el mejor precio disponible, que podría ser la bolsa donde está listada, una bolsa competidora como Cboe, o un centro fuera de bolsa operado por un mayorista. Para un principiante la conclusión práctica es simple: hay un solo precio nacional en cada momento, y el nombre de la bolsa junto a un ticker es principalmente una etiqueta. El buscador del panel muestra esa etiqueta con cada resultado.\n\nLos símbolos ticker son códigos cortos: de una a cuatro letras para acciones de EE. UU. (F, GE, AAPL, MSFT), a veces con un sufijo para la clase de acción (BRK.B). La misma empresa puede tener símbolos distintos en distintos países. Cuando escribes un símbolo en el panel le estás pidiendo al proveedor de datos ese código exacto, así que **BRK.B** y **BRKB** no son intercambiables; el proveedor elige la convención."
+        },
+        {
+          "type": "text",
+          "md": "### El día de negociación, en hora del Este\n\nEl mercado de valores de EE. UU. sigue el reloj de Nueva York, que también es la zona horaria del condado de Broward, así que nunca tienes que convertir.\n\n- **Sesión regular: 9:30 am a 4:00 pm hora del Este, de lunes a viernes.** Es cuando el volumen es más profundo y las cotizaciones son más confiables. Todo lo que un principiante necesita aprender puede aprenderse en estas seis horas y media.\n- **Premercado (pre-market): aproximadamente de 4:00 am a 9:30 am.** Los corredores permiten operar, pero hay muchos menos participantes. Los precios pueden dar sacudidas con volumen escaso.\n- **Después del cierre (after-hours): de 4:00 pm a aproximadamente 8:00 pm.** La misma historia. Las empresas publican deliberadamente sus reportes de resultados justo después de las 4:00 pm para que la primera reacción ocurra aquí.\n- **Cerrado** los fines de semana y en nueve o diez días festivos de EE. UU. al año (Año Nuevo, Día de Martin Luther King Jr., Día de los Presidentes, Viernes Santo, Memorial Day, Juneteenth, Día de la Independencia, Día del Trabajo, Acción de Gracias, Navidad). El mercado también cierra temprano, a la 1:00 pm, en algunos días, normalmente el día después de Acción de Gracias y la víspera de Navidad.\n\nLa apertura y el cierre son los dos momentos más activos. A las 9:30 una **subasta de apertura** fija el primer precio emparejando todas las órdenes que se acumularon durante la noche; a las 4:00 una **subasta de cierre** hace lo mismo, y por eso la última operación del día suele tener un volumen enorme. La hora del almuerzo tiende a ser más tranquila. Trata esto como tendencias ampliamente observadas y no como leyes: cualquier día puede romper el patrón.\n\nLa insignia de estado del mercado en el encabezado del panel se calcula a partir de este calendario y muestra la fase (pre, abierto, after, cerrado) con la hora actual de Nueva York."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Antes de confiar en un precio, mira el reloj.** Una cotización mostrada a las 7 pm es una operación de after-hours y puede estar a varios dólares de donde la acción abra mañana. La insignia de estado del mercado del panel es la forma más rápida de saber qué sesión estás viendo."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "15min",
+          "overlays": ["vwap"],
+          "caption": "Microsoft en barras de 15 minutos. Cada sesión regular son 26 barras (de 9:30 a 4:00). La línea rosada VWAP es el precio promedio ponderado por volumen y se reinicia en la apertura de cada día; busca los cortes entre el cierre de un día y la apertura del siguiente, donde el precio suele saltar. Con datos simulados las sesiones siguen de todos modos el calendario real de la NYSE."
+        },
+        {
+          "type": "text",
+          "md": "### Gaps: lo que pasa mientras el mercado está cerrado\n\nEl mundo no se detiene a las 4:00 pm. Una empresa puede anunciar una adquisición a las 6:00 pm, un informe del gobierno puede salir a las 8:30 am, una guerra puede empezar un sábado. Toda esa información no tiene adónde ir hasta la siguiente apertura, así que aparece como un **gap** (brecha): el primer precio de la nueva sesión queda muy por encima o por debajo del último precio de la anterior, sin operaciones en el medio.\n\nSupón que una acción cierra a $100.00 el martes. Después de la campana la empresa reporta un trimestre malo. La subasta de apertura del miércoles empareja compradores y vendedores a $88.50. Si tenías acciones, perdiste $11.50 por cada una sin oportunidad de vender a $99, $95 o $90. Una **orden stop** a $95 (que se cubre en la lección 4) no te habría salvado: se habría activado en la apertura y vendido cerca de $88.50.\n\nLos gaps son la razón por la que muchos traders evitan mantener una posición a través de una fecha de resultados a menos que estén apostando deliberadamente a ella, y la razón por la que el tamaño de la posición (cuántas acciones tienes en relación con tu cuenta) importa más que cualquier indicador. Un gap nocturno del 12% en una posición que es el 5% de tu cuenta te cuesta 0.6%. El mismo gap en una posición que es toda tu cuenta te cuesta 12%.\n\nEn el gráfico, una vela diaria esconde el gap dentro de su rango: ves una barra cuya apertura está lejos del cierre de la barra anterior. En gráficos intradía el gap se ve como un espacio vacío entre la última barra de un día y la primera del siguiente. Cambia el panel a barras de 5 minutos después de una temporada de resultados y los encontrarás fácilmente."
+        },
+        {
+          "type": "text",
+          "md": "### La liquidez cambia a lo largo del día\n\n**Liquidez** significa cuánto puedes comprar o vender sin mover el precio. Apple negocia decenas de millones de acciones al día; un banco regional pequeño podría negociar 20,000. En la primera y la última media hora de la sesión regular, la liquidez en las acciones grandes está en su punto más profundo, los spreads entre compra y venta (lección 3) son estrechos, y tus órdenes se ejecutan cerca del precio cotizado. A mitad del día, y especialmente en horario extendido, se adelgaza.\n\nPara un principiante esto lleva a algunos hábitos sensatos, ninguno de ellos polémico:\n\n- Opera acciones líquidas. Los aproximadamente 60 nombres del universo de demostración se eligieron en parte porque todos se negocian mucho.\n- Prefiere la sesión regular. Operar en horario extendido es una herramienta para quienes saben exactamente por qué la necesitan.\n- Ten cuidado en los primeros minutos después de la apertura. El descubrimiento de precios tras la subasta de apertura puede ser violento, y muchos day traders esperan deliberadamente hasta las 9:45 o las 10:00 antes de colocar cualquier orden.\n- Conoce el calendario. Los medios días y las sesiones alrededor de los festivos suelen ser escasas.\n\nEl motor de paper trading de esta app ejecuta las órdenes de mercado al precio actual sin deslizamiento (slippage) y te permite colocar órdenes a cualquier hora del día; si el mercado está cerrado, una orden de mercado simplemente se ejecuta al último precio conocido. Eso es más amable que la realidad. La página de backtest te permite agregar un ajuste de *slippage* en puntos básicos para que los resultados sean más honestos; el módulo de estrategia explica cómo elegirlo."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**El horario extendido no es un atajo.** Las reacciones a los resultados en la sesión de after-hours a menudo se revierten parcial o totalmente a la mañana siguiente, cuando el mercado completo da su opinión. Observarlas es educativo; operarlas con dinero real es para más adelante, si es que alguna vez."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con Microsoft en barras de 5 minutos.\n\n- Anota la insignia de estado del mercado y la hora de Nueva York que muestra.\n- Desplázate a la izquierda hasta encontrar el límite entre dos días de negociación. Pasa el cursor sobre la última barra del día anterior y la primera barra del día siguiente. Registra el cierre de una y la apertura de la otra, y calcula el gap en dólares y en porcentaje.\n- Cuenta cuántas barras de 5 minutos forman una sesión regular (deberían ser 78). Si los datos son en vivo y tu proveedor incluye horario extendido, verás más.\n- Cambia al intervalo de 1 hora y encuentra el mismo gap. Fíjate en cuánto más difícil es verlo.",
+          "action": { "page": "index.html", "hash": "symbol=MSFT&interval=5min&ov=vwap", "label": "Abrir MSFT en barras de 5 minutos" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál es el horario regular de negociación del mercado de valores de EE. UU.?",
+              "choices": ["8:00 am a 5:00 pm hora del Este", "9:30 am a 4:00 pm hora del Este, de lunes a viernes", "9:00 am a 4:30 pm hora del Pacífico", "24 horas al día en días hábiles"],
+              "answer": 1,
+              "explain": "La sesión regular va de 9:30 am a 4:00 pm hora del Este. Existen sesiones de premercado y after-hours, pero tienen mucho menos volumen."
+            },
+            {
+              "q": "Una acción cierra a $60.00. Esa noche la empresa anuncia un gran retiro de productos y a la mañana siguiente la primera operación es a $52.00. ¿Cómo se llama esto?",
+              "choices": ["Un spread", "Un gap", "Un dividendo", "Una suspensión"],
+              "answer": 1,
+              "explain": "Un gap es un salto entre el cierre de una sesión y la apertura de la siguiente sin operaciones en el medio. Las noticias publicadas con el mercado cerrado son la causa habitual."
+            },
+            {
+              "q": "¿Cuál de estos es generalmente el período más líquido del día de negociación para las acciones grandes de EE. UU.?",
+              "choices": ["La sesión de premercado a las 6 am", "La hora después de la apertura y la última media hora antes del cierre", "La hora del almuerzo, cuando las instituciones no están", "La sesión de after-hours después de un reporte de resultados"],
+              "answer": 1,
+              "explain": "La apertura y el cierre concentran la mayor parte del volumen, y por eso existen las subastas de apertura y cierre. Es una tendencia ampliamente observada, no una garantía para un día en particular."
+            },
+            {
+              "q": "¿Por qué las empresas suelen publicar sus reportes de resultados justo después de las 4:00 pm hora del Este?",
+              "choices": ["Las regulaciones lo exigen", "Para que la primera reacción ocurra en la sesión escasa de after-hours y los inversionistas tengan la noche para digerir el reporte antes de la sesión regular", "Porque las bolsas están cerradas por mantenimiento hasta esa hora", "Para evitar pagar dividendos ese día"],
+              "answer": 1,
+              "explain": "Publicar fuera del horario regular les da tiempo a analistas e inversionistas para leer el reporte. La reacción en after-hours es real pero puede revertirse en parte en la siguiente apertura."
+            },
+            {
+              "q": "¿Cómo ejecuta el motor de paper trading de esta app una orden de mercado cuando el mercado está cerrado?",
+              "choices": ["Rechaza la orden", "La pone en cola para la subasta de apertura con slippage realista", "La ejecuta de inmediato al último precio conocido", "La ejecuta al mínimo del día anterior"],
+              "answer": 2,
+              "explain": "El simulador ejecuta las órdenes de mercado de inmediato al último precio conocido sin slippage, lo cual es más indulgente que un corredor real. La página de backtest te permite agregar slippage para que los resultados sean más honestos."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l3",
+      "title": "Leer una cotización: bid, ask y el spread",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Tres precios, no uno\n\nAbre cualquier app real de corretaje y verás que una acción no tiene un precio; tiene tres.\n\n- **Último** (last): el precio de la operación más reciente. Es el número que muestran los titulares y la cifra grande de precio del panel. Es historia, aunque tenga apenas un segundo de antigüedad.\n- **Bid** (precio de compra): el precio más alto que alguien está dispuesto a *pagar* en este momento. Si quieres vender ahora mismo, esto es aproximadamente lo que recibirás.\n- **Ask** (precio de venta, u *oferta*): el precio más bajo al que alguien está dispuesto a *vender* en este momento. Si quieres comprar ahora mismo, esto es aproximadamente lo que pagarás.\n\nJunto al bid y al ask hay un **tamaño** (size), la cantidad de acciones disponibles a ese precio, a menudo cotizado en lotes redondos de 100. Una cotización de `187.40 x 300 / 187.42 x 500` significa que hay compradores que quieren 300 acciones a $187.40 y vendedores que ofrecen 500 acciones a $187.42. Detrás de esos mejores precios hay más órdenes a peores precios; toda la pila es el **libro de órdenes** (order book), y la lección 4 explica cómo tus propias órdenes se suman a él.\n\nEl ask siempre está en o por encima del bid. Si alguien estuviera dispuesto a comprar a $187.45 mientras otro estuviera dispuesto a vender a $187.42, la bolsa los emparejaría al instante y ambas órdenes desaparecerían. La brecha que queda es el **spread**. Una operación ocurre cuando un comprador acepta pagar el ask (la operación se registra *en el ask*, señal de compra ansiosa) o un vendedor acepta el bid (se registra *en el bid*, venta ansiosa). Observar de qué lado se registran las operaciones es una forma muy antigua de leer el ánimo del mercado."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Compras al ask y vendes al bid.** El spread es un costo que pagas cada vez que entras y sales, antes de que el precio se haya movido en absoluto. En una acción líquida de gran capitalización es uno o dos centavos. En una acción poco negociada puede ser de varios por ciento, que es más de lo que muchos traders esperan ganar en toda la operación."
+        },
+        {
+          "type": "text",
+          "md": "### El spread es un impuesto a la impaciencia\n\nToma la cotización de arriba: bid $187.40, ask $187.42. Compra 100 acciones al ask ($18,742) y véndelas de inmediato al bid ($18,740): has perdido $2, alrededor del 0.01%. Trivial. Ahora toma una acción poco negociada cotizada en bid $4.80, ask $5.00. Compra 1,000 acciones a $5.00 ($5,000), vende a $4.80 ($4,800): has perdido $200, o 4%, en cero segundos. La acción tendría que subir 4.2% solo para que quedes en equilibrio.\n\nLo que importa es el spread relativo: spread dividido por precio. Aquí están los dos ejemplos lado a lado.\n\n- Gran capitalización: $0.02 / $187.41 = 0.011%\n- Acción poco negociada: $0.20 / $4.90 = 4.1%\n\nLa segunda operación es aproximadamente 380 veces más cara de entrar y salir que la primera. Cualquier estrategia que opere con frecuencia debe superar este obstáculo en cada ida y vuelta, y por eso las estrategias de alta frecuencia en acciones ilíquidas son un juego perdedor para los traders minoristas, y por eso el universo de demostración está construido con nombres muy líquidos.\n\nLos spreads también se amplían cuando los mercados están nerviosos. Durante una caída fuerte, los creadores de mercado (market makers) que normalmente están listos para comprar y vender se retiran, el bid baja, el ask sube, y el costo cotizado de operar puede multiplicarse en minutos. Los spreads de premercado y after-hours se comportan igual por la misma razón: menos participantes.\n\nEl simulador no modela un spread. Cada ejecución de práctica ocurre al último precio. Cuando pases a un corredor real más adelante, espera que tus resultados sean un poco peores de lo que el simulador sugería, y trata esa diferencia como el spread (más el slippage) que el simulador te ocultó."
+        },
+        {
+          "type": "text",
+          "md": "### El resto de la página de cotización\n\nDebajo de los tres precios, una página de cotización muestra un bloque de números. Esto es lo que te dice cada uno, usando una cotización inventada para una acción de $150.\n\n- **Apertura 148.20, Máximo 151.10, Mínimo 147.90, Cierre/Último 150.00**: el OHLC de hoy, los mismos cuatro números que dibujan una vela. Rango del día = máximo menos mínimo = $3.20, o alrededor del 2.1% del precio. Una acción que se mueve rutinariamente 2% al día es dos veces más volátil que una que se mueve 1%.\n- **Cierre anterior 149.00, Cambio +1.00 (+0.67%)**: el movimiento de hoy medido desde el cierre de ayer, no desde la apertura de hoy. Si la acción abrió con gap al alza, la mayor parte del cambio puede haber ocurrido antes de la primera operación.\n- **Volumen 12.4M, Volumen promedio 9.8M**: acciones negociadas hoy frente a un día típico. Un volumen por encima del promedio significa que hay más gente involucrada, lo que le da más peso a un movimiento. El panel muestra el volumen como barras debajo del gráfico de precios.\n- **Rango de 52 semanas 112.00 a 158.00**: los precios más bajo y más alto del último año. Una acción cerca de su máximo de 52 semanas está en una tendencia alcista fuerte por definición; si eso es una razón para comprar o para esperar es uno de los debates más antiguos del trading.\n- **Capitalización de mercado 2.3T**: precio por acciones, de la lección 1.\n- **P/E 28.5**: precio dividido por las ganancias por acción de los últimos doce meses. Te dice cuántos dólares pagan los inversionistas por un dólar de ganancia anual. Un P/E alto normalmente significa alto crecimiento esperado; un P/E bajo significa bajas expectativas o problemas. Es una herramienta de valoración, no de timing, y los traders técnicos en su mayoría la ignoran.\n- **Rendimiento por dividendo 0.5%**: dividendo anual dividido por precio.\n\nNo necesitas memorizar esto. Necesitas poder mirar una página de cotización sin que te intimide."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "bb"],
+          "caption": "Nvidia, diario, con Bandas de Bollinger (promedio de 20 días más y menos dos desviaciones estándar). El ancho de las bandas es una lectura visual rápida de la volatilidad: una acción con bandas anchas tiene un rango diario típico grande, lo que normalmente va de la mano con spreads más amplios y gaps más grandes. Pasa el cursor sobre cualquier vela para leer su apertura, máximo, mínimo, cierre y volumen."
+        },
+        {
+          "type": "text",
+          "md": "### Volumen: cuántas personas están de acuerdo con el precio\n\nEl precio te dice dónde se encontraron compradores y vendedores. El volumen te dice cuántas acciones cambiaron de manos para llegar ahí. Un movimiento con volumen alto refleja a mucha gente actuando; un movimiento con volumen bajo puede ser un puñado de órdenes empujando un libro de órdenes vacío.\n\nAlgunas formas en que los traders lo usan, todas tendencias y no reglas:\n\n- Una ruptura (breakout) a un nuevo máximo con volumen muy por encima del promedio se toma más en serio que una en un día tranquilo.\n- Un repunte con volumen que se reduce de forma constante sugiere que menos compradores lo están persiguiendo.\n- El día de mayor volumen en semanas a menudo marca un momento de decisión: un mínimo de pánico o un máximo de euforia.\n\nEl volumen también impulsa una herramienta que ya viste en el gráfico: el **VWAP**, el precio promedio ponderado por volumen. Es el precio promedio de cada acción negociada hoy, ponderado por cuántas acciones se negociaron a cada precio. A las instituciones que necesitan comprar un bloque grande a lo largo del día a menudo se las juzga por si superaron el VWAP, así que actúa como un imán durante la sesión. El módulo de indicadores lo cubre en detalle.\n\nEn los datos de demostración, el volumen se simula para que parezca plausible pero no contiene información. Con una clave de API en vivo conectada, es real, y la comparación entre ambos es en sí misma instructiva."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Una prueba rápida de liquidez** antes de operar cualquier acción con dinero real: volumen diario promedio por encima de un millón de acciones y un spread cotizado por debajo del 0.1% del precio. La mayoría de los nombres del universo de demostración la pasan con facilidad. Muchas acciones de pequeña capitalización y casi todas las acciones de centavos (penny stocks) la fallan."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre Nvidia en el gráfico diario con Bandas de Bollinger.\n\n- Pasa el cursor sobre la vela más reciente y registra su apertura, máximo, mínimo, cierre y volumen.\n- Calcula el rango del día como porcentaje: (máximo menos mínimo) dividido por el cierre.\n- Pasa el cursor sobre una vela donde las Bandas de Bollinger se vean estrechas y otra donde se vean anchas. Calcula el porcentaje de rango del día para cada una. ¿La banda más ancha coincide con el rango más grande?\n- Supón que el spread cotizado es $0.05. Calcula cuánto es eso como porcentaje del cierre, y luego calcula cuánto te costaría el spread en una ida y vuelta de 200 acciones.",
+          "action": { "page": "index.html", "hash": "symbol=NVDA&interval=1day&ov=sma20,bb", "label": "Abrir NVDA con Bandas de Bollinger" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción está cotizada en bid $42.10, ask $42.14. Colocas una orden para comprar de inmediato. ¿Aproximadamente qué precio pagarás?",
+              "choices": ["$42.10", "$42.12", "$42.14", "El cierre anterior"],
+              "answer": 2,
+              "explain": "Los compradores que quieren operar de inmediato pagan el ask, el precio más bajo que ofrece un vendedor. Los vendedores que quieren inmediatez reciben el bid."
+            },
+            {
+              "q": "La acción A está cotizada en $250.00 / $250.04. La acción B está cotizada en $3.00 / $3.09. ¿Cuál tiene el spread relativo más grande, y aproximadamente por cuánto?",
+              "choices": ["A, porque su spread es $0.04 frente a $0.09", "B, aproximadamente 3% frente a 0.016%, es decir unas 190 veces mayor", "Son iguales en términos porcentuales", "No se puede determinar sin el volumen"],
+              "answer": 1,
+              "explain": "El spread relativo es el spread dividido por el precio. A: 0.04 / 250 = 0.016%. B: 0.09 / 3.045 = alrededor de 3%. La acción poco negociada cuesta mucho más para entrar y salir."
+            },
+            {
+              "q": "Una página de cotización muestra Cierre anterior 80.00, Apertura 83.00, Último 83.50. ¿Cuál afirmación es correcta?",
+              "choices": ["La acción sube $0.50 en el día", "La acción abrió con un gap al alza de $3.00 y ha ganado otros $0.50 desde entonces", "La acción está en baja porque abrió por encima del último precio", "El rango del día es $3.50"],
+              "answer": 1,
+              "explain": "El cambio se mide desde el cierre anterior: +$3.50 en total. La mayor parte ($3.00) ocurrió en el gap entre el cierre de ayer y la apertura de hoy."
+            },
+            {
+              "q": "¿Qué sugiere un movimiento de precio con volumen muy por encima del promedio de la acción?",
+              "choices": ["El movimiento probablemente es un error de datos", "Hay más participantes involucrados, así que el movimiento tiene más peso", "El spread debe haberse ampliado", "La empresa pagó un dividendo"],
+              "answer": 1,
+              "explain": "Un volumen alto significa que muchas acciones cambiaron de manos a esos precios. Los traders le dan más credibilidad a esos movimientos que a los de volumen escaso, aunque es una tendencia, no una garantía."
+            },
+            {
+              "q": "¿Cómo trata el simulador de paper trading de esta app el spread entre bid y ask?",
+              "choices": ["Ejecuta las compras al ask y las ventas al bid usando cotizaciones en vivo", "Agrega un spread fijo del 1% a cada orden", "Ignora el spread y ejecuta todo al último precio, así que los resultados reales serán un poco peores", "Solo modela el spread para opciones"],
+              "answer": 2,
+              "explain": "Las ejecuciones de práctica ocurren al último precio sin spread. Espera que operar de verdad cueste un poco más en cada ida y vuelta."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l4",
+      "title": "Tipos de órdenes: mercado, límite y stop",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Órdenes de mercado: velocidad por encima del precio\n\nUna **orden de mercado** (market order) dice *ejecútame ahora al mejor precio disponible, sea cual sea*. Si compras, tomas el ask; si vendes, golpeas el bid. En una acción líquida durante el horario regular, la ejecución llega en una fracción de segundo a uno o dos centavos de lo que viste. Es la herramienta correcta cuando entrar o salir importa más que el precio exacto: cerrar una posición que se está moviendo en tu contra, por ejemplo.\n\nSu debilidad es que has renunciado al control del precio. Supón que colocas una orden de mercado para comprar 2,000 acciones de una acción cotizada en $50.00 / $50.02 con solo 300 acciones ofrecidas a $50.02. Tomas esas 300, luego las siguientes 500 a $50.05, luego 1,200 a $50.10. Tu precio promedio es de unos $50.08, no $50.02. Esa diferencia es el **deslizamiento** (slippage), y crece con el tamaño de la orden y se reduce con la liquidez. En un mercado rápido o una acción poco negociada, una orden de mercado puede ejecutarse sorprendentemente lejos de la última cotización que viste. Muchos traders experimentados nunca usan órdenes de mercado en premercado o after-hours exactamente por esta razón.\n\nEn el motor de paper trading, `placeOrder({type:'market'})` se ejecuta al instante al precio actual sin slippage. Eso lo convierte en una forma limpia de aprender, y en una optimista. La pestaña de ajustes de la página del portafolio te permite fijar una comisión por operación; la página de backtest agrega un ajuste de slippage. Usa ambos una vez que hayas superado lo básico."
+        },
+        {
+          "type": "text",
+          "md": "### Órdenes límite: precio por encima de la velocidad\n\nUna **orden límite** (limit order) dice *ejecútame a este precio o mejor, y no de otra forma*. Un límite de compra a $49.50 solo se ejecutará a $49.50 o menos. Un límite de venta a $52.00 solo se ejecutará a $52.00 o más. Si el mercado nunca llega ahí, la orden se queda sin ejecutar y eventualmente expira.\n\nEjemplo: una acción se negocia a $50.20. Crees que vale la pena comprarla pero no perseguirla. Colocas un límite de compra por 100 acciones a $49.75. Pueden pasar tres cosas. La acción baja a $49.75 y te ejecutan, pagando $25 menos en total de lo que habría costado una orden de mercado. O baja a $49.80 y rebota a $55 sin tocar tu precio; tenías razón sobre la acción y no ganaste nada. O cae directo a través de $49.75 hasta $45; te ejecutan, y ahora tienes una acción que está 9.5% abajo. El límite protegió tu precio de entrada. Nunca prometió que la entrada fuera una buena idea.\n\nLas órdenes límite son la forma en que la mayoría de los profesionales entran en posiciones, porque el spread (lección 3) y el slippage juegan en contra de las órdenes de mercado cada vez. Dejar una orden de compra en el bid en lugar de pagar el ask ahorra el spread cuando se ejecuta; el costo es que a veces no se ejecuta.\n\nUna orden límite que has colocado pero que no se ha ejecutado está **abierta** (o *activa*, working). Aparece en el libro de órdenes del que leíste en la lección 3, sumándose al tamaño a su precio. Puedes cancelarla en cualquier momento antes de que se ejecute. En la página del portafolio, las órdenes abiertas se listan con un botón de cancelar, y el motor revisa cada una contra cada barra nueva: un límite de compra se ejecuta si el mínimo de la barra está en o por debajo de tu límite; un límite de venta se ejecuta si el máximo de la barra está en o por encima de él."
+        },
+        {
+          "type": "text",
+          "md": "### Órdenes stop: salidas (y entradas) automáticas\n\nUna **orden stop** es una orden de mercado dormida. No hace nada hasta que el precio toca el **precio stop**; entonces despierta y se convierte en una orden de mercado. El uso clásico es el **stop de pérdida** (stop loss): compras a $50 y colocas un stop de venta a $46. Si la acción cae a $46, el stop se activa y te venden a mercado, limitando el daño a aproximadamente 8%. No tienes que estar mirando. Para un estudiante con clases a las que asistir, ese es todo el atractivo.\n\nLos stops también funcionan en la otra dirección. Un **stop de compra** (buy stop) a $52 en una acción que se negocia a $50 se activa si el precio sube a $52, lo que los traders usan para entrar en una ruptura solo cuando realmente ha ocurrido. En el motor de paper trading, un stop de compra se activa cuando el máximo de una barra alcanza el precio stop, y un stop de venta cuando el mínimo de una barra lo alcanza.\n\nComo un stop activado es una orden de *mercado*, su precio de ejecución no está garantizado. Vuelve al ejemplo del gap de la lección 2: tu stop a $46, la acción cierra a $47 y abre al día siguiente a $40. El stop se activa en la apertura y vende a unos $40, no a $46. Los stops limitan las pérdidas en un mercado que se mueve con normalidad. No protegen contra los gaps.\n\nLa **orden stop-límite** (stop-limit) aborda eso combinando las dos: cuando se toca el precio stop, se convierte en una orden *límite* en lugar de una orden de mercado. Stop de venta $46, límite $45.50 significa: una vez que el precio toque $46, vende, pero no por debajo de $45.50. En el caso del gap a $40 no te ejecutarían en absoluto, lo que te protege de una ejecución terrible y te deja con una acción a $40. No hay almuerzo gratis: el stop-límite cambia una mala ejecución por el riesgo de no ejecutarse.\n\nDónde poner un stop es una pregunta a la que el módulo de riesgo dedica una lección completa. La versión corta con la que la mayoría de los traders está de acuerdo: debajo de un mínimo reciente (swing low) para una posición larga, a una distancia que mantenga la pérdida en dólares en una fracción pequeña y fija de tu cuenta, y no en un número redondo obvio donde están los stops de todos los demás."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Un stop no es una garantía.** Se convierte en una orden de mercado al activarse y se ejecuta al siguiente precio disponible, que después de un gap puede ser mucho peor que el precio stop. Un stop-límite evita la mala ejecución pero puede dejarte dentro de la posición. El tamaño de la posición es la única protección que siempre funciona."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "Tesla, diario, con medias móviles de 20 y 50 días. Una forma común de pensar las órdenes en un gráfico como este: un límite de compra un poco por debajo del precio actual para entrar en un retroceso, un stop de venta debajo del mínimo reciente más cercano para salir si el retroceso se convierte en un desplome, y un límite de venta en un nivel de resistencia por encima para tomar ganancias. Las tres órdenes juntas definen la operación antes de que empiece."
+        },
+        {
+          "type": "text",
+          "md": "### Vigencia de la orden, y cómo ejecuta el simulador\n\nToda orden lleva una **vigencia** (time in force, TIF) que dice cuánto tiempo vive.\n\n- **Day** (día): se cancela automáticamente al cierre de las 4:00 pm si no se ejecutó. Es la opción predeterminada en la mayoría de los corredores.\n- **GTC (good 'til cancelled, válida hasta cancelar)**: permanece abierta a lo largo de los días hasta que se ejecuta o la cancelas. La mayoría de los corredores expiran silenciosamente las órdenes GTC después de 60 a 90 días.\n- Algunos corredores ofrecen **IOC** (immediate or cancel: ejecuta lo que puedas ahora mismo, cancela el resto) y **FOK** (fill or kill: todo ahora mismo o nada). Los principiantes rara vez necesitan alguna de las dos.\n\nEl motor de paper trading admite `day` y `gtc`. Las órdenes day se cancelan al inicio de la siguiente sesión.\n\nAquí está la lógica de ejecución en un solo lugar, porque conocerla te ahorrará confusiones en la página del portafolio:\n\n- **Mercado**: se ejecuta de inmediato al precio actual. Las compras necesitan efectivo suficiente (acciones por precio más comisión); de lo contrario la orden se rechaza con un motivo.\n- **Límite de compra**: se ejecuta a tu precio límite cuando el mínimo de una barra está en o por debajo de él. **Límite de venta**: se ejecuta cuando el máximo de una barra está en o por encima de él.\n- **Stop de compra**: se activa cuando el máximo de una barra alcanza el stop. **Stop de venta**: se activa cuando el mínimo de una barra alcanza el stop. La ejecución es al precio stop, salvo que la barra haya *abierto* más allá de tu stop (un gap), en cuyo caso recibes la apertura, que es peor. El motor te lo indica en la nota de la orden cuando eso ocurrió: los gaps te perjudican aquí igual que en un corredor real.\n- **Stop-límite**: se activa como un stop, luego se ejecuta solo si el precio límite todavía es alcanzable dentro de esa barra; de lo contrario sigue activa como una orden límite normal.\n\nLas ejecuciones se revisan una vez por barra nueva en los símbolos que tienes o en los que tienes órdenes. En el intervalo diario eso significa una vez al día; en barras de 1 minuto es casi tiempo real. Esto es más grueso que una bolsa real, donde las ejecuciones ocurren operación por operación, pero es la misma lógica que usa el motor de backtest, así que una estrategia que funciona en el laboratorio se comportará igual en tu cuenta de práctica."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Una frase por cada tipo de orden.**\n\n- Mercado: *ejecútame ahora, al precio que sea.*\n- Límite: *ejecútame solo a este precio o mejor.*\n- Stop: *cuando el precio llegue a este nivel, ejecútame a mercado.*\n- Stop-límite: *cuando el precio llegue a este nivel, ejecútame solo a mi límite o mejor.*\n\nLos principiantes se meten en problemas con más frecuencia por usar una orden de mercado donde correspondía un límite, y por no tener ningún stop."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre la boleta de operación del panel y coloca un pequeño conjunto (bracket) de órdenes en cualquier acción de la lista de seguimiento (10 acciones es más que suficiente). Después puedes revisar las ejecuciones y las órdenes abiertas en la página del portafolio.\n\n- Compra 10 acciones con una orden de **mercado** y anota el precio de ejecución en el historial de operaciones.\n- Coloca un **stop de venta** 5% por debajo de tu precio de ejecución, vigencia GTC.\n- Coloca un **límite de venta** 10% por encima de tu precio de ejecución, GTC.\n- Coloca un **límite de compra** 3% por debajo del precio actual por otras 10 acciones, solo por el día.\n\nVuelve después del siguiente día de negociación. ¿Qué órdenes se ejecutaron, cuáles siguen abiertas y cuál se canceló? Compara el razonamiento con las reglas de ejecución de esta lección. Luego cancela todo lo que siga activo para que no te sorprenda más adelante.",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day", "label": "Abrir la boleta de operación del panel" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción se negocia a $30.00. Quieres comprar solo si baja a $29.00 o menos. ¿Qué orden colocas?",
+              "choices": ["Compra a mercado", "Límite de compra a $29.00", "Stop de compra a $29.00", "Stop de venta a $29.00"],
+              "answer": 1,
+              "explain": "Un límite de compra se ejecuta solo al precio límite o mejor (más bajo). Un stop de compra a $29 no tiene sentido porque los stops se activan cuando el precio se mueve hacia ellos desde el otro lado; un stop de compra va por encima del precio actual."
+            },
+            {
+              "q": "Tienes acciones compradas a $80 y colocas un stop de venta a $74. La acción cierra a $75 y abre al día siguiente a $66 tras malas noticias. ¿Qué es lo más probable que ocurra?",
+              "choices": ["Te venden a $74 como prometía el stop", "El stop se activa en la apertura y te venden cerca de $66", "El stop se cancela porque el precio se lo saltó", "El stop se convierte en una orden límite a $74"],
+              "answer": 1,
+              "explain": "Un stop se convierte en una orden de mercado una vez que el precio alcanza o supera el nivel stop. Después de un gap se ejecuta al siguiente precio disponible, aquí alrededor de $66. Los stops no protegen contra los gaps."
+            },
+            {
+              "q": "¿Cuál es la principal disyuntiva de una orden stop-límite en comparación con un stop simple?",
+              "choices": ["Cuesta una comisión más alta", "Evita una mala ejecución después de un gap pero puede no ejecutarse en absoluto, dejándote dentro de la posición", "Se ejecuta más rápido", "Solo puede usarse para comprar"],
+              "answer": 1,
+              "explain": "Al activarse, un stop-límite se convierte en una orden límite, así que no venderá por debajo de tu límite. Si el precio salta con un gap a través del límite, simplemente te quedas sin ejecutar."
+            },
+            {
+              "q": "En el motor de paper trading, ¿cuándo se ejecuta un límite de venta abierto a $120?",
+              "choices": ["Cuando el máximo de cualquier barra está en o por encima de $120", "Cuando el mínimo de cualquier barra está en o por debajo de $120", "Solo cuando el cierre es exactamente $120", "De inmediato, al precio actual"],
+              "answer": 0,
+              "explain": "Un límite de venta pide $120 o mejor. El motor lo ejecuta cuando el rango de una barra alcanza ese precio desde abajo, es decir, cuando el máximo toca o supera $120."
+            },
+            {
+              "q": "¿Qué significa una vigencia de 'day'?",
+              "choices": ["La orden solo puede colocarse durante horas de luz", "La orden se ejecuta al precio de cierre del día", "La orden se cancela al final de la sesión de negociación si no se ha ejecutado", "La orden permanece abierta durante 24 horas"],
+              "answer": 2,
+              "explain": "Las órdenes day expiran al cierre. Las órdenes GTC (good 'til cancelled) permanecen abiertas a lo largo de las sesiones hasta que se ejecutan o se cancelan."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1-l5",
+      "title": "Corredores, paper trading y qué mueve los precios",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Qué hace un corredor por ti\n\nLas personas no pueden enviar órdenes a una bolsa directamente. Un **corredor de bolsa** (broker) guarda tu efectivo y tus acciones, enruta tus órdenes, reporta tus operaciones para fines fiscales y te da la app que miras. Hoy la mayoría de los corredores de EE. UU. cobran **cero comisión** en operaciones con acciones. En su lugar ganan dinero con los intereses de tu efectivo no invertido, con los préstamos de margen, con las tarifas por opciones y, en muchos casos, con el **pago por flujo de órdenes** (payment for order flow): los mayoristas le pagan al corredor por ejecutar las órdenes de sus clientes. Los reguladores exigen que el corredor siga buscando el mejor precio disponible, y si este arreglo le cuesta algo significativo a los traders minoristas es un tema debatido; vale la pena conocer el modelo de negocio de cualquier empresa que te da algo gratis.\n\nAlgunas cosas que debes buscar cuando eventualmente elijas uno:\n\n- **Membresía en SIPC**, que asegura tu cuenta hasta $500,000 contra la quiebra del propio corredor (no contra la pérdida de valor de tus inversiones).\n- Una **cuenta de efectivo** (cash account) frente a una **cuenta de margen** (margin account). El margen te permite pedir prestado contra tus tenencias para comprar más; también permite que una mala semana te cueste más de lo que depositaste. Los principiantes deberían empezar con efectivo.\n- Un **modo de paper trading** gratuito. Muchos corredores ofrecen uno, y las habilidades se transfieren.\n- Acciones fraccionarias, para que puedas comprar $50 de una acción de $900.\n- La regla del **pattern day trader**: en una cuenta de margen de EE. UU. con menos de $25,000, hacer cuatro o más day trades (comprar y vender la misma acción el mismo día) en cinco días hábiles hace que te restrinjan la cuenta. Es una razón por la que muchos estudiantes hacen swing trading a lo largo de días en lugar de day trading.\n\nEsta app no es un corredor. Nunca se conecta a uno y nunca envía una orden real. El portafolio que ves vive en el almacenamiento local de tu navegador, y borrar los datos del navegador lo elimina."
+        },
+        {
+          "type": "text",
+          "md": "### Paper trading: qué enseña y qué no puede enseñar\n\n**Paper trading** significa operar con dinero simulado sobre precios reales (o realistas). Empiezas aquí con $100,000 de efectivo ficticio, colocas órdenes, el motor las ejecuta, y tu curva de capital en la página del portafolio muestra cómo te va. El objetivo es cometer tus errores de principiante donde no cuestan nada.\n\nLo que enseña bien:\n\n- La mecánica: tipos de órdenes, ejecuciones, tamaños de posición, leer un P&L (ganancias y pérdidas). Equivocarse en esto con dinero real es caro y completamente evitable.\n- El proceso: escribir por qué entraste, dónde está tu stop y qué te haría salir, y luego revisar si seguiste tus propias reglas. El historial de operaciones de la página del portafolio es la materia prima de tu diario.\n- Probar estrategias en tiempo real. Un backtest te dice cómo le fue a una regla con datos pasados; el paper trading te dice si realmente puedes ejecutarla día tras día.\n\nLo que no puede enseñar, y sobre lo que debes ser honesto:\n\n- **La emoción.** Perder $2,000 de dinero ficticio no se siente como nada. Perder $2,000 del dinero de la renta hace que la gente abandone sus planes exactamente en el peor momento. La mayoría de los traders descubren que sus resultados en papel son mejores que sus primeros resultados reales solo por esta razón.\n- **Las ejecuciones.** Como dijeron las lecciones anteriores, el simulador ignora el spread y el slippage, y revisa las ejecuciones una vez por barra en lugar de operación por operación. Las ejecuciones reales son un poco peores, siempre.\n- **El tamaño.** $100,000 ficticios se comportan distinto a $2,000 reales. Cuando pases a operar en vivo, empieza con una cantidad cuya pérdida total sería molesta pero no dañina, y aumenta solo después de meses de registros.\n\nUn hábito útil: trata la cuenta de práctica como si fuera real, incluyendo una regla de que no la reiniciarás después de una mala racha. El botón de reinicio existe para empezar de cero después de haber aprendido algo, no para borrar la evidencia."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El simulador sirve para construir hábitos, no para demostrar que eres un genio.** Cualquiera puede ganar 30% en papel en un buen mes. La habilidad que se transfiere al dinero real es seguir reglas escritas durante un mes perdedor sin cambiarlas."
+        },
+        {
+          "type": "text",
+          "md": "### Qué mueve realmente un precio\n\nEn la escala más pequeña la respuesta es trivial: un precio sube cuando los compradores están más ansiosos que los vendedores y baja cuando los vendedores están más ansiosos que los compradores. La pregunta interesante es qué hace que una multitud esté ansiosa.\n\n**Noticias de la empresa.** Los reportes de resultados de cada trimestre son lo más importante: ingresos, ganancias y, sobre todo, la **guía** (guidance), el pronóstico de la empresa para el próximo trimestre. Lanzamientos de productos, cambios de ejecutivos, demandas, retiros de productos, adquisiciones y cambios de dividendos también cuentan. Las fechas de resultados se publican con anticipación; una posición que se mantiene a través de una es una apuesta sobre el reporte, lo pretendas o no.\n\n**Noticias de la industria y el sector.** Los buenos resultados de un rival pueden impulsar a todo un sector; una nueva regulación puede hundirlo. Cuando Nvidia reporta, AMD y Broadcom a menudo se mueven también.\n\n**Noticias macroeconómicas.** Las decisiones de tasas de interés de la Reserva Federal (ocho reuniones programadas al año), los reportes de inflación (CPI, mensual), el reporte de empleo (el primer viernes de la mayoría de los meses) y el PIB. Tasas de interés más altas hacen que los bonos sean más atractivos en relación con las acciones y que las ganancias futuras valgan menos hoy, así que las acciones, especialmente las de rápido crecimiento, tienden a caer cuando se espera que las tasas suban. Estas publicaciones llegan a horas fijas, normalmente a las 8:30 am o a las 2:00 pm hora del Este, y todo el mercado puede dar un giro en segundos.\n\n**Flujos y posicionamiento.** Fondos indexados que compran una acción que acaba de ser agregada al S&P 500, un fondo grande rebalanceando al final del trimestre, operadores de opciones cubriéndose antes de un vencimiento del viernes. Nada de esto tiene que ver con la empresa; mueve los precios de todos modos.\n\n**Sentimiento.** Miedo y codicia, modas y pánicos. Esta es la fuerza que el análisis técnico intenta medir, bajo la teoría de que el comportamiento de la multitud se repite en patrones reconocibles."
+        },
+        {
+          "type": "text",
+          "md": "### Expectativas, no noticias: por qué un buen reporte puede hundir una acción\n\nLa experiencia más confusa para los traders nuevos es esta: una empresa reporta ganancias récord y la acción cae 8%. O reporta una pérdida y la acción se dispara. La explicación es que **los precios se mueven por la diferencia entre lo que pasó y lo que se esperaba**, no por lo que pasó.\n\nRecorre un ejemplo. Una acción se negocia a $100. Los analistas esperan ganancias de $2.00 por acción. Durante las dos semanas antes del reporte, traders optimistas compran y empujan el precio a $108, así que para el día del reporte el mercado espera en silencio algo mejor que $2.00, digamos $2.10. La empresa reporta $2.05: un récord, por encima de la estimación publicada, y una decepción en relación con el precio. Algunos de los traders que compraron a $104 y $106 venden, y la acción cae a $101. Los titulares dicen *las acciones caen a pesar de ganancias récord*. No pasó nada extraño; el resultado simplemente ya estaba **descontado en el precio** (priced in), y más.\n\nLa misma lógica funciona al revés. Una empresa de la que todos esperan una pérdida de $1.00 por acción pierde $0.60, y la acción sube 15% porque estaba valorada para el desastre.\n\nEsto tiene tres consecuencias prácticas para ti. Primero, no puedes operar noticias que lees en un titular; para cuando es un titular, ya está en el precio. Segundo, la reacción a la noticia te dice más que la noticia: una acción que ignora una mala noticia está siendo comprada por alguien con convicción. Tercero, cuando el gráfico y la historia no coinciden, el gráfico te está mostrando lo que la gente realmente hizo con su dinero. Ese es el argumento más fuerte para aprender análisis técnico, y el siguiente módulo empieza ahí.\n\nSi los mercados incorporan la información tan bien que nadie puede superarlos de forma consistente es el **debate del mercado eficiente**, y está genuinamente sin resolver entre académicos y profesionales. La posición sensata para un principiante es la humildad: asume que el precio sabe más que tú, y busca las situaciones limitadas en las que tal vez no sea así."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": ["ema9", "ema21", "rsi"],
+          "caption": "Amazon, diario, con medias móviles exponenciales de 9 y 21 días y un panel de RSI debajo. Las velas grandes de un solo día en un gráfico como este normalmente coinciden con fechas de resultados o publicaciones macroeconómicas importantes. Fíjate en cuántas veces un gran movimiento va seguido de varios días de deriva mientras el mercado decide si la primera reacción fue correcta. El módulo de indicadores explica cómo leer el panel del RSI."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Empieza hoy un diario de trading**, aunque sea en una app de notas. Para cada operación de práctica: fecha, símbolo, por qué entraste, dónde estaban tu stop y tu objetivo, cómo terminó, y una frase sobre qué harías distinto. En tres meses el diario te enseñará más que cualquier indicador."
+        },
+        {
+          "type": "exercise",
+          "md": "Haz tu primera operación de práctica deliberada.\n\n- Abre tu portafolio de práctica y reinícialo a $100,000 para empezar limpio (pestaña de ajustes).\n- Elige una acción de la lista de seguimiento. En el panel, mira su gráfico diario y escribe una frase sobre por qué la tendrías durante las próximas dos semanas.\n- Compra una posición que valga no más del 5% de la cuenta (unos $5,000) con una orden de mercado. Coloca un stop de venta debajo de un mínimo reciente.\n- Registra la operación en tu diario con el precio de entrada, el precio stop y tu razón.\n- Durante la próxima semana, revisa la insignia de estado del mercado una vez al día, anota cualquier noticia sobre la empresa y observa si la reacción del precio coincide con la noticia. No toques la operación a menos que se active tu stop o tu razón deje de ser cierta.",
+          "action": { "page": "portfolio.html", "hash": "settings", "label": "Abrir ajustes del portafolio" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "La mayoría de los corredores de EE. UU. no cobran comisión en operaciones con acciones. ¿Cuál de estas es una forma real en que ganan dinero en su lugar?",
+              "choices": ["Una parte de las ganancias de cada empresa", "Intereses sobre el efectivo no invertido de los clientes, préstamos de margen y pago por flujo de órdenes", "Tarifas que pagan las bolsas por listar acciones", "Subsidios del gobierno"],
+              "answer": 1,
+              "explain": "Los corredores de cero comisión ganan intereses sobre los saldos de efectivo, cobran intereses por el margen y a menudo reciben pago por flujo de órdenes de los mayoristas que ejecutan las órdenes de los clientes."
+            },
+            {
+              "q": "¿Cuál de estas cosas NO enseña el paper trading de forma realista?",
+              "choices": ["Cómo se ejecutan los tipos de órdenes", "Cómo leer un estado de ganancias y pérdidas", "La presión emocional de perder dinero real", "Cómo llevar un diario de trading"],
+              "answer": 2,
+              "explain": "Las pérdidas simuladas no duelen, así que el paper trading no puede reproducir el miedo y la impaciencia que causan la mayoría de los errores con dinero real. Las habilidades de mecánica y proceso sí se transfieren."
+            },
+            {
+              "q": "Una empresa reporta ganancias trimestrales de $3.10 por acción, un récord, frente a una estimación publicada de $3.00. La acción cae 7%. ¿Cuál es la explicación más probable?",
+              "choices": ["El proveedor de datos cometió un error", "Las ganancias récord siempre son malas para una acción", "Los traders habían empujado el precio hacia arriba anticipando un resultado aún mejor, así que el reporte decepcionó en relación con lo que estaba descontado en el precio", "La empresa debe haber recortado su dividendo"],
+              "answer": 2,
+              "explain": "Los precios se mueven por la brecha entre los resultados y las expectativas. Si la subida antes del reporte implicaba algo mejor que $3.10, un trimestre récord puede ser de todos modos una decepción."
+            },
+            {
+              "q": "Se espera que las tasas de interés suban. ¿Qué efecto sobre las acciones se describe con mayor frecuencia?",
+              "choices": ["Las acciones, especialmente las de rápido crecimiento, tienden a caer porque las ganancias futuras valen menos hoy y los bonos se vuelven más competitivos", "Las acciones siempre suben porque los bancos ganan más", "No hay conexión entre las tasas y las acciones", "Solo las acciones con dividendos se ven afectadas"],
+              "answer": 0,
+              "explain": "Las tasas más altas aumentan el descuento que se aplica a las ganancias futuras y hacen que los bonos más seguros sean relativamente más atractivos. Las acciones de crecimiento, cuyo valor está lejos en el futuro, suelen ser las más sensibles. Es una tendencia, no una ley."
+            },
+            {
+              "q": "Bajo la regla del pattern day trader de EE. UU., ¿qué pasa si haces cuatro o más day trades en cinco días hábiles en una cuenta de margen con menos de $25,000?",
+              "choices": ["Debes una penalidad fiscal", "Tu cuenta queda marcada y se le restringe seguir haciendo day trading hasta que agregues fondos", "Tu corredor debe pagarte pago por flujo de órdenes", "Nada; la regla solo aplica a opciones"],
+              "answer": 1,
+              "explain": "La regla marca el day trading frecuente en cuentas de margen pequeñas y lo restringe. Es una razón por la que muchos estudiantes prefieren mantener operaciones durante varios días (swing trading) mientras aprenden."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

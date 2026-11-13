@@ -1,0 +1,636 @@
+{
+  "id": "m8-capstone",
+  "title": "Proyecto final: tu plan de trading",
+  "level": "advanced",
+  "minutes": 62,
+  "summary": "Convierte todo lo aprendido en el curso en un único plan de trading escrito: metas y restricciones, universo y marco temporal, reglas de entrada, salida y riesgo, tres puertas de validación (backtest, replay y 30 operaciones en papel), un calendario de revisión, una plantilla para completar y un examen final que cubre todos los módulos.",
+  "lessons": [
+    {
+      "id": "m8-l1",
+      "title": "Metas, restricciones y una autoevaluación honesta",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Qué produce este módulo\n\nCada módulo anterior te dejó una habilidad: leer un gráfico, dimensionar una posición, valorar una opción, correr un backtest, sobrevivir a un simulacro de replay. Este módulo convierte esas habilidades en un solo documento, un plan de trading escrito ([[Trading plan|trading plan]]) que podrías entregarle a un desconocido para que opere exactamente como tú lo tienes previsto. La Lección 5 contiene la plantilla. Las Lecciones 1 a 4 desarrollan el razonamiento detrás de cada sección, y la última lección termina con un examen de diez preguntas que abarca todo el curso.\n\nUn plan no es una predicción sobre el mercado. Es un conjunto de decisiones sobre *ti*: qué vas a operar, cuándo lo vas a mirar, cuánto vas a arriesgar, qué tiene que cumplirse antes de entrar, qué te obliga a salir y cómo te vas a evaluar después. El Módulo 4 presentó la idea y las ocho preguntas. El proyecto final va más despacio y más a fondo, porque la diferencia entre un plan que se sigue y uno que se abandona en la primera semana perdedora casi siempre está en los detalles que parecían demasiado obvios para escribirlos.\n\nEmpieza por las metas y las restricciones, porque todas las demás secciones dependen de ellas. Un conjunto de reglas que te exige estar frente a la pantalla a las 9:31 am no le sirve a alguien que está en clase a las 9:31 am. Una meta del 30% anual es una fantasía para alguien que solo tolera un 10% de caída ([[Drawdown|drawdown]]). Escribir primero las restricciones evita que construyas un plan dentro del cual no puedes vivir."
+        },
+        {
+          "type": "text",
+          "md": "### Metas: primero el proceso, después los resultados\n\nLos principiantes escriben metas de resultado: *ganar 20% este año*, *convertir $5,000 en $10,000*. Los mercados no reciben órdenes, así que una meta de resultado es un deseo, y los deseos llevan a la gente a hacer cosas peligrosas en diciembre cuando van perdiendo. Las metas de tu plan deben ser en su mayoría de proceso, con la meta de resultado enunciada una sola vez, con modestia, como una forma de comprobar si vale la pena seguir con el proceso.\n\nUna división útil:\n\n- **Metas de proceso** que controlas por completo: *cada operación tiene un stop colocado junto con la entrada*; *cada operación se anota en el diario antes de la ejecución*; *la revisión semanal se hace todos los domingos*; *tomo todas las señales válidas de mi universo, o anoto la razón por la que la dejé pasar*. Puntúalas cada mes como un porcentaje. Un cumplimiento del plan superior al 90% es lo primero que hay que lograr. Nada más puede evaluarse hasta entonces.\n- **Metas de aprendizaje** para el próximo trimestre: *completar 30 operaciones en papel de un mismo setup*; *terminar los tres simulacros de riesgo del Módulo 7 con un factor de beneficio superior a 1*; *entender por qué mis pérdidas son más grandes que mis ganancias*.\n- **Una meta de resultado**, con un horizonte lo bastante largo para que signifique algo: *expectativa ([[Expectancy|expectancy]]) positiva después de costos en las primeras 30 operaciones*, o *superar al comprar y mantener en mi universo a 12 meses con un drawdown máximo menor*. Un año es el período más corto en el que un resultado de swing trading dice algo; la Lección 4 explica por qué 30 operaciones es un piso, no un veredicto.\n\nEscribe la meta de resultado en términos de la vara de medir del Módulo 1: el ETF de índice que podrías haber comprado en su lugar. Superar a una cuenta de ahorros mientras un fondo indexado ganó 15% no es un éxito, y la página de backtest imprime la comparación con comprar y mantener junto a cada resultado exactamente por esta razón."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Una meta que no puedes medir desde tu diario no es una meta.** Para cada línea de la sección de metas, pregúntate: ¿qué columna de la exportación del diario, o qué número de las estadísticas de la página Diario, me dice si la cumplí? Si no existe ese número, reescribe la meta hasta que exista."
+        },
+        {
+          "type": "text",
+          "md": "### Restricciones: los hechos de tu vida que el plan debe respetar\n\nLas restricciones no son debilidades; son las paredes de la habitación en la que estás diseñando. Escribe todas estas.\n\n**Tiempo.** ¿Cuándo, honestamente, puedes mirar un gráfico? ¿Diez minutos después del cierre de las 4:00 pm? ¿Una hora el domingo? Si no puedes seguir la sesión regular, el trading intradía queda descartado, y tu plan pertenece al marco temporal ([[Timeframe|timeframe]]) diario, con órdenes colocadas por la noche y revisadas una vez al día. El Módulo 1 cubrió los horarios; el Módulo 2 cubrió cómo el período de tenencia se deriva del marco temporal. A la mayoría de los estudiantes les encaja un plan de swing diario y nada más, y ese es un lugar perfectamente bueno donde pasar el primer año.\n\n**Capital.** El monto real con el que vas a operar cuando pases a dinero real, no los $100,000 de la cuenta de papel. Si son $3,000, un riesgo del 1% por operación son $30, lo que con un stop al 5% de distancia compra unas 12 acciones de una acción de $50. Reinicia la cuenta de papel a ese número (ajustes de Portafolio) para que tus hábitos en papel se formen a la escala correcta. Por debajo de $25,000 en una cuenta de margen en EE. UU., la regla del pattern day trader te limita a tres day trades en cinco días hábiles, otra razón por la que el marco diario encaja.\n\n**Tipo de cuenta.** Efectivo (cash), no margen, hasta que el plan tenga un año de registros. Sin apalancamiento, sin ventas en corto salvo que una regla específica y probada del plan lo indique (Módulo 4, Lección 4). Opciones solo en las formas de riesgo definido del Módulo 5 (calls y puts largos, spreads verticales, covered calls sobre acciones que posees) y solo si el plan tiene una sección aparte para ellas.\n\n**Tolerancia al riesgo, medida.** ¿Qué tan grande es el drawdown que puedes aguantar sin cambiar las reglas? No el número que te suena bien: el número del que tienes evidencia. Tus sesiones de replay y tu curva de capital en papel ya muestran cómo te comportaste en menos 8% o menos 15%. Elige el drawdown más profundo que de verdad toleraste con calma y conviértelo, o algo menor, en el máximo del plan. Si tus reglas producen drawdowns mayores en el backtest, cambian las reglas, no la tolerancia.\n\n**Frontera de conocimiento.** Enumera lo que *no* vas a operar porque no lo has estudiado: penny stocks, futuros, cripto, apuestas a reportes de ganancias, opciones desnudas. La lista se acorta a medida que aprendes. Un plan sin exclusiones es un plan que se va a improvisar."
+        },
+        {
+          "type": "chart",
+          "symbol": "SPY",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200"
+          ],
+          "caption": "El ETF del S&P 500, diario, con medias móviles de 50 y 200 días: tu vara de medir. Lo que gane tu plan tiene que compararse con simplemente poseer esta línea. Observa la profundidad de sus peores drawdowns en pantalla; si la idea de que tu cuenta caiga tanto te hace querer venderlo todo, el límite de drawdown de tu plan debe ser más estricto que el del índice, lo que normalmente significa posiciones más pequeñas, no entradas más ingeniosas. Si la etiqueta dice *demo*, la forma es simulada."
+        },
+        {
+          "type": "text",
+          "md": "### La autoevaluación: lo que tus registros ya dicen\n\nAntes de escribir una sola regla, lee tu propia historia. La página Diario guarda cada operación en papel y cada sesión de replay con sus etiquetas, emociones y calificaciones; la página Portafolio guarda las estadísticas; la página Replay conserva las tarjetas de puntuación de cada sesión. Dedica veinte minutos a responder estas preguntas a partir de los datos, no de la memoria:\n\n- ¿Cuál es mi cumplimiento del plan hasta ahora? Cuenta las operaciones en las que hiciste lo que decían las notas frente a las que no. La prueba de dos columnas del Módulo 4: expectativa de la columna \"seguí el plan\" frente a la columna \"rompí el plan\".\n- ¿Qué setups ganaron dinero y cuáles perdieron? Las estadísticas del Diario por setup y por etiqueta responden esto en una sola vista.\n- ¿Cuándo rompo las reglas? ¿Después de una pérdida (revancha), después de una ganancia (exceso de confianza), los viernes, en los primeros quince minutos de una sesión? El campo de emoción era para esto.\n- ¿Mis pérdidas son mayores que lo planeado? Compara el riesgo planeado (1R) con la pérdida real en cada operación perdedora. Un patrón de pérdidas de 1.5R y 2R significa que los stops se están moviendo o se colocan donde los gaps los alcanzan.\n- ¿Qué tan profundo fue mi peor drawdown, y qué hice durante él?\n\nEscribe las respuestas como un párrafo corto al inicio de tu plan bajo el encabezado *De dónde parto*. Es la línea base con la que se comparará la revisión trimestral de la Lección 5. Los estudiantes que se saltan este paso escriben planes para el trader que imaginan; los que lo hacen escriben planes para el trader que son, que es el que va a ejecutar."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Si los registros son escasos, ese es el primer hallazgo.** Menos de 20 operaciones en papel anotadas en el diario significa que la primera meta de tu plan es simplemente producir 30 de ellas bajo reglas escritas (Lección 4). No escribas filtros de entrada elaborados sobre cero evidencia."
+        },
+        {
+          "type": "exercise",
+          "md": "Empieza ahora tu documento del plan, en cualquier app de notas, con dos encabezados.\n\n- Bajo **Metas**, escribe tres metas de proceso, una meta de aprendizaje para los próximos 90 días y una meta de resultado enunciada frente al benchmark SPY (o tu ETF de índice). Comprueba cada una contra la página Diario: nombra el número que la va a medir.\n- Bajo **Restricciones**, escribe tus horas reales de trading, tu capital inicial real, tu tipo de cuenta, tu drawdown máximo tolerable con la evidencia que lo respalda y tu lista de exclusiones.\n- Abre la página Diario y corre las estadísticas por setup, etiqueta y emoción. Escribe el párrafo *De dónde parto*: cumplimiento hasta ahora, mejores y peores setups, cuándo rompes las reglas, cómo se comparan tus pérdidas reales con el 1R planeado.\n- Si tu capital inicial real difiere del de la cuenta de papel, reinicia la cuenta de papel a ese monto en la pestaña de ajustes de Portafolio, con una comisión de $1, para que cada operación de aquí en adelante sea a escala real.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=stats",
+            "label": "Abrir las estadísticas del Diario"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál de estas es una meta de proceso y no una meta de resultado?",
+              "choices": [
+                "Ganar 15% este año",
+                "Cada operación tiene una orden stop colocada al mismo tiempo que la entrada",
+                "Duplicar la cuenta en 18 meses",
+                "Superar al S&P 500 por cinco puntos porcentuales"
+              ],
+              "answer": 1,
+              "explain": "Una meta de proceso es algo que controlas por completo y que puedes puntuar como porcentaje de operaciones. Las otras tres dependen de lo que haga el mercado, que ningún plan puede garantizar."
+            },
+            {
+              "q": "Un estudiante solo puede mirar gráficos después de las 5 pm entre semana y durante una hora el domingo. ¿A qué marco temporal apunta esa restricción?",
+              "choices": [
+                "Velas de 5 minutos con operaciones durante la apertura",
+                "Velas horarias gestionadas a lo largo de la sesión",
+                "Velas diarias con órdenes colocadas por la noche y revisadas una vez al día",
+                "No importa; cualquier marco temporal se puede operar desde el teléfono"
+              ],
+              "answer": 2,
+              "explain": "Si no puedes seguir la sesión regular, las reglas intradía no pueden ejecutarse tal como están escritas. Las velas diarias con órdenes limitadas y stops en reposo encajan con el horario."
+            },
+            {
+              "q": "¿Cómo debe elegirse el límite de drawdown máximo del plan?",
+              "choices": [
+                "Elige el drawdown más profundo que de verdad toleraste con calma en papel o en replay, o menos",
+                "Usa el peor drawdown histórico del índice",
+                "Elige un número redondo que suene disciplinado, como 50%",
+                "No debe haber límite; los drawdowns son parte del trading"
+              ],
+              "answer": 0,
+              "explain": "La tolerancia es un hecho sobre ti, medido a partir de cómo te comportaste en drawdowns pasados. Si las reglas producen drawdowns más profundos que eso en las pruebas, cambian las reglas, no el límite."
+            },
+            {
+              "q": "Tu capital real de trading será de $3,000 pero tu cuenta de papel tiene $100,000. ¿Qué recomienda la lección?",
+              "choices": [
+                "Mantener los $100,000 para que las estadísticas sean más suaves",
+                "Reiniciar la cuenta de papel a $3,000 con una comisión realista para que los hábitos se formen a escala real",
+                "Operar la cuenta de papel con 30 veces el tamaño normal para compensar",
+                "Cambiar a opciones, que necesitan menos capital"
+              ],
+              "answer": 1,
+              "explain": "Los hábitos de dimensionamiento de posiciones solo se transfieren si la cuenta de papel tiene el tamaño de la real. Un riesgo del 1% sobre $3,000 son $30, y aprender qué se compra con eso es parte del plan."
+            },
+            {
+              "q": "¿Cuál es el propósito del párrafo de autoevaluación \"De dónde parto\"?",
+              "choices": [
+                "Impresionar a un futuro empleador",
+                "Registrar la línea base (cumplimiento, mejores y peores setups, cuándo se rompen las reglas) con la que se compararán las revisiones posteriores",
+                "Estimar el rendimiento del próximo año",
+                "Decidir qué indicador es el más preciso"
+              ],
+              "answer": 1,
+              "explain": "La autoevaluación obliga a escribir el plan para el trader que realmente eres, y le da a la revisión trimestral de la Lección 5 algo concreto con lo que medir el progreso."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l2",
+      "title": "Elegir tu mercado, tu universo y tu marco temporal",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Instrumento: acciones, ETFs, opciones\n\nEl plan nombra exactamente qué operas. Para casi todos los estudiantes que terminan este curso la respuesta correcta es **acciones líquidas de EE. UU. y ETFs de índice**, por tres razones que ya conoces. Son los instrumentos que el panel, el replay y el motor de backtest modelan mejor. Sus costos son mínimos: uno o dos centavos de spread en una acción de $200, comisión cero en la mayoría de los brókers. Y no tienen vencimiento, así que una tesis que llega temprano no está automáticamente equivocada.\n\nLos ETFs merecen una frase propia. SPY, QQQ y uno o dos ETFs sectoriales te dan la tendencia del mercado sin el riesgo de los reportes de ganancias de una sola empresa. Un plan que opera solo ETFs en el gráfico diario es más lento y más aburrido que uno que opera acciones individuales, y durante el primer año muy a menudo es el más rentable de los dos para quien está aprendiendo, porque hay menos formas de salir lastimado.\n\nLas opciones pertenecen al plan solo como una sección aparte con sus propias reglas, y solo en las formas de riesgo definido del Módulo 5: calls o puts largos dimensionados de modo que toda la prima sea el 1% de riesgo, spreads verticales ([[Vertical spread|vertical spreads]]), calls cubiertas ([[Covered call|covered calls]]) sobre acciones que ya posees, puts protectoras ([[Protective put|protective puts]]) alrededor de una fecha de reporte de ganancias. Escribe la prima máxima en riesgo por operación y la regla para elegir el vencimiento (por ejemplo, al menos 45 días, para que la [[Theta|theta]] no sea el factor principal). Si no puedes explicar por qué una opción es mejor que la acción para un setup específico, el setup es una operación con acciones.\n\nTodo lo demás, futuros, forex, cripto, penny stocks, ETFs apalancados, va a la lista de exclusiones de la Lección 1 hasta que tenga su propio módulo de estudio y sus propias reglas probadas."
+        },
+        {
+          "type": "text",
+          "md": "### Universo: una lista de seguimiento que de verdad conoces\n\nEl universo es el conjunto de símbolos a los que pueden aplicarse tus reglas. Más pequeño y bien conocido supera a más grande y anónimo. Un estudiante que opera velas diarias después del trabajo puede seguir correctamente de 15 a 30 nombres; 200 nombres significa que las señales que tomas son las que por casualidad te llamaron la atención, y eso no es una regla.\n\nConstrúyelo con filtros que puedas escribir y comprobar:\n\n- **Liquidez.** La prueba del Módulo 1: volumen promedio superior a un millón de acciones al día y un spread cotizado inferior al 0.1% del precio. Todos los nombres del universo demo la pasan; muchas small caps reales no.\n- **Precio.** Por encima de unos $20. Las acciones de menor precio tienen spreads proporcionalmente más amplios y gaps más erráticos, y los stops fijos en dólares se vuelven enormes en términos porcentuales.\n- **Comportamiento que encaja con el setup.** Las reglas de seguimiento de tendencia quieren nombres que tiendan (compara la pendiente de 200 días y el [[Average Directional Index (ADX)|ADX]] entre candidatos); las reglas de reversión a la media quieren nombres que oscilen dentro de un rango. Las líneas de rendimiento normalizado de la página Comparar muestran esto de un vistazo.\n- **Diversidad.** Seis acciones de semiconductores son una sola posición con seis sombreros. Usa la matriz de correlación de la página Comparar y limita los pares altamente correlacionados (por encima de aproximadamente 0.8) a uno o dos por sector, o escribe una regla que limite las posiciones abiertas por sector.\n- **Calendario conocido.** Debes saber el mes de reporte de ganancias de cada nombre. La página Noticias muestra la próxima fecha de reporte cuando hay una clave conectada; si no, búscala y anótala en la lista de seguimiento.\n\nRevisa el universo cada trimestre, no cada semana. Agregar una acción porque salió en las noticias ayer es la forma en que los planes se desvían."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El universo antes que las señales.** Una regla que funciona en tu universo y nunca se prueba en otro lugar podría estar sobreajustada a esos nombres (Módulo 6, Lección 3). Una regla que se prueba en nombres fuera del universo y sigue funcionando se ha ganado el derecho a operarse en los que tú sigues."
+        },
+        {
+          "type": "chart",
+          "symbol": "QQQ",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "El ETF del Nasdaq-100 con medias móviles de 20, 50 y 200 días. Tres medias en un gráfico muestran tres marcos temporales a la vez: la pendiente de 200 días es la tendencia *a favor* de la cual opera un swing trader, la de 50 días es la zona de retroceso, la de 20 días es donde se agrupan las entradas de corto plazo. Un plan indica qué media define \"la tendencia\" y cuál define \"la entrada\", para que dos lectores del plan vean lo mismo."
+        },
+        {
+          "type": "text",
+          "md": "### Marco temporal: elige a partir de tus restricciones y quédate ahí\n\nEl Módulo 2 explicó que el marco temporal fija el período de tenencia, el tamaño de un stop razonable y el número de señales por mes. El plan elige un marco temporal de *operación* y, normalmente, un marco *superior* para el contexto, y nombra ambos.\n\n- **Velas diarias, tenencia de días a semanas**: la opción por defecto para cualquiera con trabajo o clases. Las señales llegan unas pocas veces al mes por nombre, las órdenes pueden quedar en reposo de un día para otro, la regla del pattern day trader nunca aplica. Contexto desde el gráfico semanal o la media de 200 días.\n- **Velas horarias, tenencia de días**: para quien puede revisar dos o tres veces durante la sesión. Más señales, stops más ajustados, más ruido. Contexto desde el gráfico diario.\n- **Velas de 5 y 15 minutos, tenencia de minutos a horas**: para quien está frente a la pantalla durante toda la sesión, con una conexión rápida, y ya aprobó el plan más lento. Todo es más rápido, incluidos los errores. El simulacro intradía del Módulo 7 es el lugar para descubrir si esto te conviene antes de que lo descubra tu dinero real.\n\nLa combinación estándar es **operar en un marco temporal, filtrar en el inmediatamente superior**: por ejemplo, tomar entradas de ruptura diarias solo cuando la tendencia semanal (o la pendiente de la media de 200 días) está de acuerdo. Esta única regla elimina una gran parte de las señales falsas ([[Whipsaw|whipsaws]]) que destruyen los resultados de seguimiento de tendencia en los rangos, y es fácil de probar en el laboratorio comparando resultados con y sin el filtro.\n\nElijas lo que elijas, escribe el intervalo de vela exactamente como lo escribe la app (1day, 1h, 15min, 5min) y las horas durante las cuales vas a actuar. Cambiar de marco temporal a mitad de una operación, normalmente bajando a uno inferior para encontrar una razón para no tomar el stop, es una de las rupturas de reglas más comunes en los diarios. El plan debe prohibirlo en una sola frase."
+        },
+        {
+          "type": "text",
+          "md": "### Benchmark y conjunto de comparación\n\nPor último, el plan nombra el benchmark contra el que se mide la meta de resultado, casi siempre el ETF de índice que mejor se ajusta al universo: SPY para una lista amplia de gran capitalización, QQQ para una con mucho peso tecnológico. También nombra un **conjunto de comparación**: dos o tres símbolos *fuera* del universo en los que se probará cada regla antes de adoptarla. El Módulo 6 defendió probar en al menos tres nombres no relacionados; escribir esos nombres en el plan te impide elegir después los más convenientes.\n\nSi quieres, guarda ambos en la página Comparar como un grupo, y mira la línea de fuerza relativa de tu universo frente a SPY una vez al mes. Si los nombres que operas son persistentemente más débiles que el índice, un plan solo en largo está nadando contra la corriente, y la revisión trimestral debe preguntar por qué."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**El replay de mercado y el feed demo comparten un mismo historial de precios simulado.** Es determinista y realista en su forma, pero sus símbolos son etiquetas, no las empresas reales. Elige tu universo a partir de datos reales de liquidez y sector una vez que haya una clave conectada; usa el universo demo para practicar las reglas, no para juzgar qué acciones son \"buenas\"."
+        },
+        {
+          "type": "exercise",
+          "md": "Construye la sección de universo de tu plan.\n\n- Abre la página Comparar con SPY más cinco nombres candidatos de tu lista de seguimiento (seis símbolos es el máximo de la página; vuelve a correrla para el resto). Mira el rendimiento normalizado a un año y la matriz de correlación. Elimina o empareja cualquier nombre correlacionado por encima de aproximadamente 0.8 con otro de la lista.\n- Para cada nombre que sobreviva escribe: sector, rango diario típico (ATR como porcentaje del precio desde el panel ATR del dashboard), mes de reporte de ganancias y si ha estado en tendencia o en rango durante las últimas 200 velas.\n- Escribe tu marco temporal de operación, tu marco temporal de filtro, la cadena exacta del intervalo de vela, las horas en que vas a actuar y la frase que prohíbe cambiar de marco temporal a mitad de una operación.\n- Nombra tu ETF de benchmark y tres símbolos de comparación fuera del universo.\n- Termina con la sección de instrumentos: solo acciones y ETFs, o acciones más una sección de opciones de riesgo definido con la prima máxima por operación y los días mínimos hasta el vencimiento.",
+          "action": {
+            "page": "compare.html",
+            "hash": "SPY,AAPL,MSFT,NVDA,JPM,XOM",
+            "label": "Abrir la página Comparar"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Por qué la lección recomienda acciones líquidas de EE. UU. y ETFs de índice como instrumentos por defecto para un primer plan de trading?",
+              "choices": [
+                "Siempre suben",
+                "Los costos son mínimos, no tienen vencimiento y los motores de la app los modelan mejor",
+                "Los reguladores exigen que los principiantes los operen",
+                "Son los únicos instrumentos con gráficos"
+              ],
+              "answer": 1,
+              "explain": "Los spreads estrechos y la ausencia de comisión mantienen baja la barrera de costos, no tener vencimiento significa que una tesis temprana no es automáticamente una pérdida, y los motores de papel, replay y backtest se construyeron alrededor de ellos."
+            },
+            {
+              "q": "Seis de los ocho nombres de una lista de seguimiento son acciones de semiconductores con correlaciones por pares cercanas a 0.9. ¿Cuál es el problema?",
+              "choices": [
+                "La lista de seguimiento es demasiado pequeña",
+                "En la práctica son una sola posición; un movimiento del sector golpea a las seis a la vez, así que la diversificación es una ilusión",
+                "Los semiconductores no se pueden graficar",
+                "La correlación solo importa para las opciones"
+              ],
+              "answer": 1,
+              "explain": "Los nombres altamente correlacionados se mueven juntos. Seis posiciones en ellos cargan aproximadamente el riesgo de una sola posición grande, lo que rompe en espíritu los límites por operación y de exposición total. Limita las posiciones por sector o recorta la lista."
+            },
+            {
+              "q": "¿Qué significa en la práctica \"operar en un marco temporal, filtrar en el inmediatamente superior\"?",
+              "choices": [
+                "Usar dos gráficos del mismo intervalo",
+                "Tomar entradas del marco temporal de operación solo cuando la tendencia del marco superior está de acuerdo, por ejemplo rupturas diarias solo cuando la pendiente de 200 días es alcista",
+                "Cambiar a un marco temporal inferior cuando un stop está cerca",
+                "Promediar los precios de los dos marcos temporales"
+              ],
+              "answer": 1,
+              "explain": "El marco superior define la tendencia; el inferior sincroniza la entrada. El filtro elimina muchas señales falsas en los rangos y es fácil de probar en el laboratorio comparando con y sin él."
+            },
+            {
+              "q": "¿Bajo qué condición permite la lección incluir opciones en el plan?",
+              "choices": [
+                "Siempre que una acción sea demasiado cara para comprar 100 acciones",
+                "Nunca",
+                "Solo formas de riesgo definido en una sección aparte con sus propias reglas, incluyendo la prima máxima por operación y una regla de días mínimos hasta el vencimiento",
+                "Solo opciones cortas desnudas, que tienen la mayor tasa de acierto"
+              ],
+              "answer": 2,
+              "explain": "Los calls y puts largos, los spreads verticales, las calls cubiertas y las puts protectoras tienen pérdidas máximas conocidas. El plan debe indicar por qué una opción supera a la acción para un setup específico y cómo se dimensiona; de lo contrario, el setup es una operación con acciones."
+            },
+            {
+              "q": "¿Por qué escribir en el plan tres símbolos de comparación fuera del universo?",
+              "choices": [
+                "Para tener más gráficos que mirar",
+                "Para que cada regla nueva se pruebe en nombres que no elegiste por conveniencia, protegiéndote del sobreajuste a la lista de seguimiento",
+                "Porque el motor de backtest requiere al menos cuatro símbolos",
+                "Para diversificar la cuenta de papel"
+              ],
+              "answer": 1,
+              "explain": "Una regla que solo funciona en los nombres que elegiste puede haber encontrado historias sobre esas acciones. Comprometerse de antemano con símbolos de prueba externos hace honesta la comprobación fuera de muestra."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l3",
+      "title": "Escribir tus reglas: entrada, salida, riesgo y gestión",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### La prueba del desconocido\n\nUna regla es una frase que dos personas al leerla ejecutarían de forma idéntica sobre el mismo gráfico. *Comprar cuando la tendencia se vea fuerte* falla: ¿fuerte para quién? *Comprar en la próxima apertura cuando el cierre de ayer esté por encima de la SMA de 20 días, la SMA de 50 días esté por encima de la SMA de 200 días y el cierre de ayer sea el cierre más alto de los últimos 20 días* pasa: cualquiera con el dashboard puede comprobar cada cláusula. El Módulo 6 llamó a esto una definición de estrategia; las estrategias integradas del motor de backtest están escritas así, y por eso pueden probarse.\n\nCada regla del plan tiene que pasar la prueba del desconocido, y la forma más fácil de saberlo es intentar expresarla como algo que el laboratorio de estrategias pudiera ejecutar. Si no puedes imaginar la condición como una comparación entre números en el gráfico (un cierre contra una media, un [[Relative Strength Index (RSI)|RSI]] contra un nivel, un máximo contra los últimos 20 máximos, un múltiplo del ATR), es una sensación, no una regla. Las sensaciones pueden quedarse en el plan como un *veto discrecional*, el derecho a dejar pasar una señal, siempre que cada señal omitida se anote con su razón. Nunca pueden ser una razón para entrar.\n\nEl plan tiene cuatro grupos de reglas: **setup y entrada**, **salida**, **riesgo** y **gestión**. Escríbelos en ese orden."
+        },
+        {
+          "type": "text",
+          "md": "### Reglas de setup y entrada\n\nUn setup es la condición de mercado que hace que valga la pena considerar una operación; la entrada es el disparador exacto. Elige una familia de setups del Módulo 6 y escríbela por completo antes de considerar una segunda. Las tres familias, con la forma de sus reglas:\n\n- **Seguimiento de tendencia**, como el cruce de SMA ([[SMA crossover strategy|SMA crossover]]) o un retroceso a la media de 20 días en una tendencia alcista. *Setup:* la de 50 días por encima de la de 200 días, ambas subiendo. *Entrada:* cierre de vuelta por encima de la de 20 días tras al menos tres cierres por debajo. Menos señales, menor tasa de acierto, ganancias más grandes.\n- **Ruptura (breakout)**, como la regla de máximo de 20 días del laboratorio. *Setup:* precio en una base de al menos 15 velas, ATR contrayéndose. *Entrada:* cierre por encima del máximo de la base con volumen superior al promedio de 20 días. Sensible a las rupturas falsas ([[False breakout|false breakouts]]); el filtro de marco superior de la Lección 2 importa más aquí que en ningún otro lugar.\n- **Reversión a la media**, como la regla de RSI del laboratorio o el rebote de Bollinger ([[Bollinger bounce strategy|Bollinger bounce]]). *Setup:* una acción que ha estado en rango, RSI(14) por debajo de 30, precio en la banda inferior. *Entrada:* primer cierre de vuelta por encima de la banda inferior. Mayor tasa de acierto, ganancias más pequeñas, y nunca debe aplicarse a una acción en una tendencia bajista pronunciada.\n\nCada regla de entrada también especifica *cómo* entras: a mercado en la próxima apertura, una orden limitada a un nivel indicado con una vigencia indicada, o un buy stop por encima de un nivel para las rupturas (Módulo 1, Lección 4). Indica qué pasa si una orden limitada no se ejecuta: se cancela al cierre o se mantiene un día más.\n\nAgrega los **filtros** que vetan una entrada aun cuando el disparador se active: nada de entradas en los dos días previos a un reporte de ganancias; nada de entradas en sesiones de medio día; nada de entradas nuevas cuando la exposición total (más abajo) está en su tope; nada de entradas en un nombre que ya tienes. Luego escribe la cláusula de veto discrecional y sigue adelante. Los principiantes dedican el noventa por ciento de su esfuerzo aquí y es el grupo menos importante; las salidas y el dimensionamiento deciden el resultado."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Un setup escrito por completo vale más que tres setups escritos a medias.** Cada setup necesita su propio backtest, sus propias 30 operaciones en papel y su propia fila en las estadísticas del diario. Agrega el segundo setup cuando el primero haya pasado las tres puertas de la Lección 4, no antes."
+        },
+        {
+          "type": "text",
+          "md": "### Reglas de salida: el stop, el objetivo, el límite de tiempo y el trailing\n\nEl Módulo 4 defendió que dónde sales importa más que dónde entras. El plan define cada forma en que una operación puede terminar, y la primera se escribe antes de colocar la orden de entrada.\n\n**Stop inicial (stop loss).** Dos métodos sólidos, elige uno por setup. *Estructura:* justo por debajo del mínimo relevante más reciente (para una posición larga), lo bastante lejos para que el ruido normal no lo toque. *Volatilidad:* un múltiplo del [[Average True Range (ATR)|ATR]], típicamente de 1.5 a 3 veces el ATR de 14 días por debajo de la entrada. El método del ATR se adapta automáticamente a cuánto se mueve una acción y es fácil de probar en backtest. Elijas el que elijas, el stop se coloca como una orden real en el momento en que se ejecuta la entrada, no se guarda en la cabeza, y nunca se aleja del precio.\n\n**Objetivo.** Opciones: un múltiplo fijo del riesgo inicial (2R o 3R), un nivel estructural como el máximo anterior o la banda superior de Bollinger, o ningún objetivo, dejando que el trailing haga el trabajo. Indica uno. Un plan de seguimiento de tendencia a menudo no tiene objetivo fijo; un plan de reversión a la media casi siempre lo tiene (la banda media, la media de 20 días).\n\n**Stop de tiempo.** Si la operación no ha ido a ninguna parte después de N velas, sal. El capital inmovilizado en una operación muerta es capital que no está disponible para una señal viva, y los diarios muestran que las operaciones estancadas a menudo se convierten en pérdidas. Diez velas es un valor por defecto común para setups de swing diarios.\n\n**Stop dinámico (trailing stop).** Una vez que la operación va ganando un monto establecido (1R es lo típico), mueve el stop al punto de equilibrio; a partir de ahí, arrástralo por debajo de cada nuevo mínimo relevante o a un múltiplo del ATR por debajo del cierre más alto. El [[Trailing stop|trail]] convierte una operación ganadora en una ganadora que no puede volverse perdedora, a costa de que a veces te saque antes de tiempo. Prueba ambas versiones en el laboratorio.\n\n**Salidas por eventos.** Reporte de ganancias dentro del período de tenencia: o sales el día anterior o reduces a la mitad del tamaño y aceptas el gap, decidido ahora, no la noche anterior. Una acción suspendida o una posición que ha perdido más de lo planeado por un gap: sal en la apertura, anótalo, nada de promediar a la baja."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "Apple, diario, con las medias de 20, 50 y 200 días. Imagina la regla de retroceso en tendencia del plan aplicada aquí: setup cuando la de 50 días está por encima de la de 200, entrada en un cierre de vuelta por encima de la de 20 días, stop inicial a 2 x ATR por debajo de la entrada, trailing por debajo de cada mínimo relevante más alto una vez que vas ganando 1R. Cada una de esas frases puede comprobarla un desconocido con este gráfico y el panel ATR del dashboard. Activa el panel y mide unas cuantas operaciones a mano antes de confiar en que el laboratorio lo haga."
+        },
+        {
+          "type": "text",
+          "md": "### Reglas de riesgo: los números que te mantienen en el juego\n\nEstas son las reglas que te permiten sobrevivir a la racha perdedora que todo método tiene. Son aritmética, no son negociables y son lo primero que revisa la revisión semanal.\n\n- **Riesgo por operación.** Una fracción fija del capital actual de la cuenta, que se pierde si se alcanza el stop inicial: 1% es el valor por defecto del curso (Módulo 4, Lección 1); 0.5% mientras un setup está en sus primeras 30 operaciones en papel. Acciones = (capital x riesgo%) / (entrada menos stop). Esta fórmula es el plan; escríbela completa.\n- **Exposición total (heat).** La suma del riesgo abierto en todas las posiciones, con un tope del 4% al 6% del capital. Cuando se alcanza el tope, nada de entradas nuevas, ni siquiera las válidas. Anótalas como omitidas.\n- **Máximo de posiciones** y **máximo por sector**: por ejemplo seis posiciones abiertas, dos por sector, usando el trabajo de correlación de la Lección 2.\n- **Límites de pérdida diaria y semanal.** Si las pérdidas cerradas más las abiertas llegan al 3% en una semana, nada de entradas nuevas hasta el lunes siguiente; gestiona las abiertas únicamente según sus reglas. Este es el cortacircuitos contra el trading de revancha (Módulo 4, Lección 3), y la columna de emoción del diario te mostrará si lo necesitabas.\n- **Respuesta al drawdown.** A menos 10% desde el pico de capital (o lo que la autoevaluación de la Lección 1 dijo que puedes tolerar), reduce el riesgo por operación a la mitad. En el drawdown máximo del plan, deja de operar, en real o en papel, revisa y reanuda solo después de un diagnóstico escrito. El riesgo vuelve a la normalidad solo cuando el capital marca un nuevo máximo.\n- **Apalancamiento y ventas en corto.** Ninguno, salvo que una regla específica y probada del plan diga lo contrario. Si se permiten ventas en corto, un stop firme es obligatorio y el tamaño de la posición se reduce a la mitad.\n- **Costos asumidos.** La comisión y el deslizamiento (slippage) usados en cada prueba y esperados en real: $1 por ejecución y 10 puntos básicos es el valor por defecto del curso. Si los costos reales resultan mayores, los backtests se vuelven a correr con los números reales."
+        },
+        {
+          "type": "text",
+          "md": "### Reglas de gestión y la lista de cosas que no vas a hacer\n\nLa gestión cubre lo que haces entre la entrada y la salida, y es donde ocurre la mayor parte del daño discrecional. Mantenla corta y estricta.\n\n- **Escalado.** O entras con el tamaño completo o escalas según una regla fija (la mitad en el disparador, la mitad en el primer mínimo más alto). Nada de agregar a posiciones perdedoras; nada de agregar más allá del tamaño total planeado.\n- **Frecuencia de revisión.** Para un plan diario: una vez, después del cierre, durante diez a quince minutos. El plan nombra la hora. Revisar una operación diaria cada hora es la forma en que se toman decisiones de cinco minutos sobre posiciones diarias.\n- **Colocación de órdenes.** Stop colocado junto con la ejecución; objetivo o trailing actualizado en la revisión diaria; órdenes del día canceladas al cierre, órdenes GTC revisadas cada semana.\n- **Registro.** Fila del diario creada antes de la ejecución con setup, entrada, stop, objetivo, tamaño, R planeado, confianza y emoción; completada al salir con el resultado en R, cumplimiento del plan (sí o no), calificación y una lección. La página Diario crea la fila automáticamente a partir de la operación en papel; tu trabajo son los campos que ella no puede llenar.\n\nLuego escribe la **lista de \"No voy a\"**, la imagen espejo de las reglas: *No voy a alejar un stop. No voy a entrar sin una orden stop. No voy a cambiar de marco temporal para justificar quedarme dentro. No voy a operar en los primeros quince minutos. No voy a agregar a una posición perdedora. No voy a tomar una señal que no esté en este documento.* La mayoría de los diarios de planes fracasados contienen las mismas seis frases en tiempo pasado."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Las reglas escritas después de una pérdida son revancha disfrazada; las reglas escritas después de una ganancia son exceso de confianza disfrazado.** Los cambios de reglas ocurren únicamente en la revisión programada (Lección 5), de uno en uno, con la razón y la evidencia por escrito. Durante la semana, el plan es de solo lectura."
+        },
+        {
+          "type": "exercise",
+          "md": "Escribe la sección de reglas de tu plan y luego compárala con el laboratorio.\n\n- Elige una familia de setups y escribe el setup, el disparador de entrada, el tipo de orden y la regla para órdenes no ejecutadas en frases que pasen la prueba del desconocido. Nombra el filtro de marco superior y tus filtros por eventos.\n- Escribe cada salida: método del stop inicial con su parámetro, objetivo, stop de tiempo, regla de trailing, regla para reportes de ganancias.\n- Escribe las reglas de riesgo con tus números: riesgo por operación, la fórmula del número de acciones, tope de exposición total, máximo de posiciones y por sector, límite de pérdida semanal, respuesta al drawdown, costos asumidos.\n- Escribe las reglas de gestión y tu lista de \"No voy a\".\n- Abre el laboratorio de estrategias con la regla integrada más parecida a tu setup, con $1 de comisión y 10 pb de deslizamiento. Lee su descripción y compárala cláusula por cláusula con la tuya. Cada cláusula tuya que el laboratorio no pueda expresar es un elemento discrecional; decide si la conservas como veto o la eliminas.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&commission=1&slippageBps=10&run=1",
+            "label": "Abrir el laboratorio de estrategias"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál de estas reglas de entrada pasa la \"prueba del desconocido\"?",
+              "choices": [
+                "Comprar cuando el impulso claramente esté acelerando",
+                "Comprar cuando el gráfico parezca estar a punto de romper",
+                "Comprar en la próxima apertura cuando el cierre de ayer esté por encima de la SMA de 20 días, la SMA de 50 días esté por encima de la SMA de 200 días y el cierre de ayer sea el cierre más alto de los últimos 20 días",
+                "Comprar cuando te sientas seguro sobre la empresa"
+              ],
+              "answer": 2,
+              "explain": "Una regla pasa cuando dos lectores actuarían de forma idéntica sobre el mismo gráfico. Solo la tercera opción consiste por completo en comparaciones comprobables entre números."
+            },
+            {
+              "q": "Tu capital es de $20,000, el riesgo por operación es del 1%, la entrada es $50 y el stop inicial es $46. ¿Cuántas acciones da la fórmula del plan?",
+              "choices": [
+                "400",
+                "200",
+                "50",
+                "1,000"
+              ],
+              "answer": 2,
+              "explain": "Acciones = (capital x riesgo%) / (entrada menos stop) = ($20,000 x 0.01) / ($50 - $46) = $200 / $4 = 50 acciones. La posición vale $2,500 pero el monto en riesgo es $200."
+            },
+            {
+              "q": "Tu plan tiene un stop de tiempo de 10 velas. Una operación de swing ya tiene 10 velas, está unos centavos por encima de la entrada y ni el stop ni el objetivo se han tocado. ¿Qué dice el plan que hagas?",
+              "choices": [
+                "Aguantar: una operación que no ha perdido dinero sigue funcionando",
+                "Cerrarla ahora y liberar el capital; una operación que no ha ido a ninguna parte en su tiempo asignado falló el setup aunque nunca tocó el stop",
+                "Mover el stop al punto de equilibrio y darle diez velas más",
+                "Agregar a la posición para acelerar las cosas"
+              ],
+              "answer": 1,
+              "explain": "El stop de tiempo es una regla de salida, no una sugerencia. El capital estacionado en una operación estancada no puede tomar la próxima señal viva, y los diarios muestran que las operaciones muertas a menudo se deterioran en pérdidas. Extender el plazo porque la operación 'todavía no ha perdido' es exactamente la desviación discrecional que el plan existe para evitar; si diez velas es un número equivocado para tu setup, cambia la regla en la revisión trimestral, no a mitad de la operación."
+            },
+            {
+              "q": "El plan dice que la exposición total tiene un tope del 5% del capital. Tienes cuatro posiciones abiertas que arriesgan 1.25% cada una, y se activa una señal válida. ¿Qué haces?",
+              "choices": [
+                "Tomarla a la mitad del tamaño",
+                "Tomarla y ajustar los otros stops",
+                "Dejarla pasar y anotarla como señal omitida con la razón",
+                "Cerrar la posición más débil para hacer espacio"
+              ],
+              "answer": 2,
+              "explain": "Cuando se alcanza el tope, nada de entradas nuevas, ni siquiera las válidas. Anotar la omisión mantiene el registro honesto y permite que la revisión juzgue si el tope está bien fijado."
+            },
+            {
+              "q": "¿Cuándo pueden cambiarse las reglas del plan?",
+              "choices": [
+                "Inmediatamente después de una pérdida, mientras la lección está fresca",
+                "Siempre que una operación vaya mal",
+                "Solo en la revisión programada, un cambio a la vez, con la razón y la evidencia por escrito",
+                "Nunca; un plan es permanente"
+              ],
+              "answer": 2,
+              "explain": "Los cambios hechos tras una pérdida son revancha disfrazada y los cambios tras una ganancia son exceso de confianza. La revisión es el único momento en que el plan se puede editar; entre revisiones es de solo lectura."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l4",
+      "title": "Validación: backtest, replay y 30 operaciones en papel",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Tres puertas, en orden, con los criterios escritos primero\n\nUn plan que no ha sido probado es una opinión. El proyecto final lo valida a través de tres puertas, cada una de las cuales responde una pregunta distinta, y cada una de las cuales puede devolverte a la Lección 3. El orden importa: la prueba barata y rápida va primero, la lenta y costosa al final.\n\n1. **[[Backtest|Backtest]]** (horas): *¿tiene la regla una expectativa positiva después de costos en datos que nunca ha visto?*\n2. **Replay ([[Market replay|Replay]])** (días): *¿puedo ejecutar la regla vela a vela, con el lado derecho del gráfico oculto, sin romperla?*\n3. **Paper trading** (semanas a meses): *¿sobreviven la regla, y yo, al contacto con precios en vivo, horarios reales y noticias reales?*\n\nAntes de correr cualquiera de ellas, escribe en el plan los criterios de aprobación de cada puerta. El Módulo 6 fue directo al respecto: un resultado juzgado con criterios elegidos después es un cuento, no una prueba. A continuación hay valores por defecto sugeridos; ajústalos a tus restricciones de la Lección 1 y luego no los toques hasta la revisión.\n\nCada puerta termina con una decisión escrita de **sigue / no sigue** (go / no-go). No sigue significa exactamente un cambio en las reglas, registrado con su razón, y la puerta se corre de nuevo. Nunca cambies dos cosas a la vez, porque no sabrás cuál funcionó, y nunca relajes un criterio para dejar pasar un resultado."
+        },
+        {
+          "type": "text",
+          "md": "### Puerta 1: el backtest, hecho con honestidad\n\nCorre tu setup en el laboratorio de estrategias en el intervalo diario con la comisión y el deslizamiento del plan. Usa la regla integrada más parecida a la tuya; si tu regla agrega un filtro que el laboratorio no tiene (un veto por reportes de ganancias, una comprobación de marco superior), anota que tus resultados reales deberían ser algo mejores que los del laboratorio, nunca peores, y trata cualquier brecha en sentido contrario como una advertencia.\n\nEl procedimiento, del Módulo 6:\n\n- **Dentro de muestra (in-sample).** Corre sobre cada símbolo de tu universo con el historial más largo disponible. Registra en una tabla operaciones, factor de beneficio, tasa de acierto, drawdown máximo, exposición y la comparación con comprar y mantener.\n- **Fuera de muestra (out-of-sample).** Corre los mismos parámetros sobre los tres símbolos de comparación con los que te comprometiste en la Lección 2. Si ajustaste algún parámetro dentro de muestra, los resultados fuera de muestra son los únicos que cuentan.\n- **Sensibilidad.** Cambia cada parámetro alrededor de un 20% (una ventana de 20 días a 16 y a 24) y confirma que el resultado no se derrumba. Una regla que funciona en 20 y falla en 18 y 22 ha encontrado ruido. El optimizador del laboratorio muestra toda la cuadrícula; buscas una meseta amplia, no un pico agudo.\n- **Costos duplicados.** Vuelve a correr con $2 y 20 puntos básicos. Si la ventaja desaparece, la regla es sensible a los costos y pertenece a un marco temporal más lento, o a ninguno.\n\nCriterios de aprobación sugeridos: al menos 30 operaciones en todo el universo; factor de beneficio ([[Profit factor|profit factor]]) superior a 1.3 después de costos en el conjunto fuera de muestra; drawdown máximo ([[Maximum drawdown|maximum drawdown]]) dentro del límite del plan; un resultado que se mantiene en los valores vecinos de los parámetros; y un rendimiento al menos competitivo con comprar y mantener dada su menor exposición. Registra los números reales junto a los criterios. Una regla que aprueba por poco es una regla para operar a la mitad del tamaño."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Un backtest fallido es un éxito barato.** Costó una noche y te ahorró meses. El resultado más caro del proyecto final es una regla que falla solo después de treinta operaciones en papel porque el backtest se omitió o se suavizó."
+        },
+        {
+          "type": "text",
+          "md": "### Puerta 2: el replay, donde la regla se encuentra con tus manos\n\nEl backtest probó la regla. El replay te prueba a ti aplicando la regla, con el futuro oculto y el reloj corriendo. El Módulo 7 explicó por qué eso es distinto: en un gráfico terminado cada señal es obvia; en el replay, la ruptura que falla se ve exactamente igual que la que funciona.\n\nCorre el plan en al menos tres sesiones de replay con velas diarias, elegidas para cubrir regímenes distintos: un año en tendencia, un período en rango y un mercado bajista. Los simulacros del Módulo 7 ofrecen los tres, o elige tus propios símbolos y fechas de inicio de tu universo. En cada sesión:\n\n- Escribe las reglas que estás probando en las notas de la sesión antes de presionar play. Mantén el plan abierto junto al gráfico.\n- Toma cada señal válida con el tamaño del plan y coloca el stop como orden de inmediato. No omitas nada sin anotar la razón.\n- No busques lo que hizo la acción real en ese período. La nota de honestidad del motor de replay está ahí por una razón.\n- Al final, guarda la sesión, ábrela en la página Diario y califícate únicamente por cumplimiento.\n\nCriterios de aprobación sugeridos: cumplimiento superior al 90% en el conjunto de sesiones (cuenta las rupturas de reglas por operación); resultados en cada sesión en la misma dirección y magnitud aproximada que el backtest para ese régimen; ninguna sesión en la que el drawdown superara el límite del plan sin que se siguiera la regla de respuesta al drawdown. Una regla que no puedes seguir en el replay, donde nada está en juego, no se seguirá con dinero."
+        },
+        {
+          "type": "drill",
+          "drillId": "bear-market-survival-2022",
+          "md": "**Opera tu plan escrito a través de un mercado bajista.** Aplica tus propias reglas, no las sugeridas por el simulacro, con tu riesgo real por operación y tu tope de exposición total. Criterios de aprobación para el proyecto final: cada ruptura de regla anotada, drawdown mantenido dentro del límite de tu plan, y la regla de respuesta al drawdown (reducir el tamaño a la mitad en el primer umbral) realmente ejecutada cuando se activó. Si tu plan es solo en largo, terminar en cero o ligeramente abajo con un cumplimiento alto es aprobar; una ganancia obtenida con ventas en corto improvisadas es reprobar."
+        },
+        {
+          "type": "text",
+          "md": "### Puerta 3: treinta operaciones en papel, y lo que treinta pueden y no pueden demostrar\n\nAhora opera el plan en la cuenta de papel, a la escala del capital real fijada en la Lección 1, hasta que se hayan cerrado treinta operaciones del setup. Para una regla de swing diaria en un universo de 20 nombres eso toma aproximadamente de dos a cuatro meses. La duración es el punto: expone el plan a temporadas de reportes de ganancias, publicaciones macro, una semana festiva y al menos un tramo en el que nada funciona.\n\nTen claro qué demuestran treinta operaciones. Con una tasa de acierto del 50%, el error estándar de la tasa de acierto en 30 operaciones es de unos 9 puntos porcentuales, así que el rango del 95% va aproximadamente del 32% al 68%. Treinta operaciones no pueden distinguir una ventaja ligera de la suerte. Lo que sí pueden hacer:\n\n- Demostrar que puedes seguir reglas escritas durante meses. Ese es el resultado principal, y es un requisito previo para todo lo demás.\n- Detectar problemas gruesos que el backtest ocultó: ejecuciones que nunca ocurren porque las órdenes limitadas son demasiado ajustadas, señales que llegan cuando no puedes actuar, costos más altos que los asumidos, un universo en el que la mitad de los nombres reportan ganancias en las mismas dos semanas.\n- Producir un diario con suficientes filas para que las estadísticas por setup, emoción y etiqueta signifiquen algo.\n\nCriterios de aprobación sugeridos: cumplimiento superior al 90%; expectativa realizada después de costos igual o superior a cero (positiva es mejor, pero cero con cumplimiento alto en un mal mercado no es reprobar); peor pérdida no mayor de aproximadamente 1.3R, lo que significa que los stops se respetaron y los gaps fueron sobrevivibles; ninguna regla de cortacircuitos ignorada. Si la puerta 3 se aprueba, el plan puede operarse en real a la mitad del riesgo planeado durante las siguientes treinta operaciones, pasando al riesgo completo después si los números se mantienen. Si falla por cumplimiento, el arreglo es conductual y las siguientes treinta vuelven a ser en papel. Si falla por expectativa con cumplimiento alto, vuelve a la puerta 1 con un solo cambio."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "sma200"
+          ],
+          "caption": "Microsoft, diario. Cuenta cuántas señales válidas habría producido tu regla aquí en aproximadamente un año; para una regla típica de retroceso en tendencia diaria son de cinco a diez por nombre. Treinta operaciones en un solo nombre son años; en un universo de 20 nombres son unos pocos meses. El número de señales por mes que produce tu universo es un dato de planificación: muy pocas y la puerta 3 nunca termina, demasiadas y tu revisión nocturna no alcanza."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Guarda los resultados de las tres puertas en el propio plan**, bajo un encabezado *Registro de validación*: fecha, datos usados, criterios, números, decisión y el único cambio hecho, si lo hubo. Un plan con su propio historial de pruebas es mucho más difícil de abandonar en una mala semana que una lista de reglas."
+        },
+        {
+          "type": "exercise",
+          "md": "Corre la puerta 1 esta noche; programa las puertas 2 y 3.\n\n- En el laboratorio de estrategias, corre la estrategia integrada más parecida a tu setup sobre cada símbolo del universo y cada símbolo de comparación con $1 de comisión y 10 pb de deslizamiento. Llena las tablas dentro y fuera de muestra en el registro de validación de tu plan, incluyendo comprar y mantener para cada uno.\n- Corre el barrido de parámetros (alrededor de más y menos 20% en cada parámetro) y la corrida con costos duplicados. Escribe sigue o no sigue frente a cada criterio escrito de antemano.\n- Pon tres sesiones de replay en tu calendario para esta semana, una para un período en tendencia, otra en rango y otra bajista, y escribe sus criterios de aprobación.\n- Abre los ajustes de Portafolio, confirma que la cuenta está a la escala del capital real con una comisión de $1 y escribe la fecha a partir de la cual se contarán las treinta operaciones. Desde esa fecha, cada operación es una operación de la puerta 3.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=rsiReversion&low=30&high=70&commission=1&slippageBps=10&run=1",
+            "label": "Correr un backtest con costos"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Por qué los criterios de aprobación de cada puerta de validación se escriben antes de correr la prueba?",
+              "choices": [
+                "Porque el laboratorio los requiere como entradas",
+                "Para que el resultado se juzgue contra un estándar fijado de antemano y no contra uno elegido para encajar con el resultado",
+                "Para ahorrar tiempo",
+                "Porque los criterios no pueden cambiarse después bajo ninguna circunstancia"
+              ],
+              "answer": 1,
+              "explain": "Un resultado juzgado con criterios elegidos después es un cuento, no una prueba. Los criterios pueden cambiar, pero solo en la revisión programada y con la razón registrada."
+            },
+            {
+              "q": "Una regla muestra un factor de beneficio de 2.1 con una ventana de 20 días, pero de 0.8 con 18 días y 0.9 con 22 días. ¿Qué sugiere esto?",
+              "choices": [
+                "La regla es robusta y 20 es el ajuste óptimo",
+                "El resultado en 20 probablemente es ruido; una regla sólida muestra una meseta amplia en los valores vecinos de los parámetros",
+                "Los datos deben estar mal",
+                "La regla necesita un backtest más largo"
+              ],
+              "answer": 1,
+              "explain": "La sensibilidad a un único valor de parámetro es una marca distintiva del sobreajuste. La cuadrícula del optimizador debería mostrar una meseta; un pico agudo significa que el parámetro encontró el pasado, no una ventaja."
+            },
+            {
+              "q": "¿Qué prueba la puerta de replay que la puerta de backtest no prueba?",
+              "choices": [
+                "Si la regla es rentable",
+                "Si puedes ejecutar la regla vela a vela con el futuro oculto, sin romperla",
+                "Si el proveedor de datos es preciso",
+                "Si la regla funciona en velas intradía"
+              ],
+              "answer": 1,
+              "explain": "El backtest prueba la regla; el replay prueba al trader aplicando la regla bajo incertidumbre. El cumplimiento, no la ganancia, es el principal criterio de aprobación de la puerta de replay."
+            },
+            {
+              "q": "¿Qué pueden demostrar de manera realista treinta operaciones en papel?",
+              "choices": [
+                "Que la estrategia tiene una ventaja estadísticamente significativa",
+                "Que puedes seguir reglas escritas durante meses, y si hay problemas gruesos de ejecución que el backtest ocultó",
+                "Que la estrategia funcionará con dinero real",
+                "Nada; solo importan los backtests"
+              ],
+              "answer": 1,
+              "explain": "Con una tasa de acierto del 50%, el rango del 95% para la tasa de acierto en 30 operaciones va aproximadamente del 32% al 68%, así que una ventaja no puede confirmarse. El cumplimiento y los problemas de ejecución sí pueden, y ese es el propósito de la puerta."
+            },
+            {
+              "q": "La puerta 3 termina con 94% de cumplimiento pero una expectativa ligeramente negativa después de costos. ¿Qué recomienda la lección?",
+              "choices": [
+                "Abandonar el trading",
+                "Pasar a dinero real de todos modos porque el cumplimiento fue alto",
+                "Volver a la puerta 1, hacer exactamente un cambio en las reglas con su razón registrada y volver a probar",
+                "Hacer varios cambios a la vez para arreglarlo más rápido"
+              ],
+              "answer": 2,
+              "explain": "Un cumplimiento alto significa que lo que necesita trabajo es el método, no el comportamiento, así que el arreglo pertenece a la puerta de backtest. Un cambio a la vez mantiene visibles la causa y el efecto."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8-l5",
+      "title": "Calendario de revisión, métricas del diario, el plan escrito y el examen final",
+      "minutes": 14,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### La revisión es parte del plan, no una ocurrencia tardía\n\nLas reglas de la Lección 3 deciden operaciones individuales. La revisión decide si las reglas están funcionando y si las estás siguiendo. Sin una cadencia fija, las revisiones ocurren solo después de las malas semanas, que es exactamente cuando el juicio está en su peor momento. Por eso el plan programa cuatro tipos de revisión y dice qué puede cambiar cada una.\n\n**Diaria, de diez a quince minutos después del cierre.** Completa las filas del diario de todo lo que cerró; crea filas para todo lo que se entrará mañana; actualiza los trailing stops; cancela las órdenes del día vencidas; revisa el calendario de reportes de ganancias y macro de mañana frente a las posiciones abiertas. Cambios permitidos: ninguno al plan.\n\n**Semanal, a una hora fija, unos treinta minutos.** La lista de revisión semanal de la página Diario existe para esto. Calcula el cumplimiento de la semana (rupturas de reglas divididas por decisiones), corre la prueba de dos columnas (expectativa de las operaciones que siguieron el plan frente a las que lo rompieron), lee cada línea de \"lección\" del diario y verifica que se respetaron las reglas de exposición y de límite de pérdidas. Escribe una frase sobre lo que la próxima semana hará distinto *en lo conductual*. Cambios permitidos: ninguno a las reglas; un compromiso conductual.\n\n**Mensual, alrededor de una hora.** Las métricas de abajo, por setup, etiqueta y emoción, comparadas con las expectativas del backtest y con el benchmark. Cambios permitidos: el riesgo por operación, hacia arriba o hacia abajo, según la regla de escalado; el universo, si un nombre dejó de pasar los filtros.\n\n**Trimestral, unas cuantas horas.** Relee todo el plan frente a tres meses de diario. Decide como máximo un cambio de regla, con la evidencia, y vuelve a correr la puerta 1 con él antes de adoptarlo. Revisa el universo y las restricciones (tus horas o tu capital pueden haber cambiado). Sube el número de versión y fecha el documento. Cambios permitidos: cualquiera, de uno en uno, por escrito.\n\nUn plan que se revisa según un calendario mejora despacio. Un plan que se revisa después de cada pérdida empeora rápido, porque cada cambio es una reacción a la última operación y no a las últimas cien."
+        },
+        {
+          "type": "text",
+          "md": "### Las métricas del diario que importan, y cómo leerlas\n\nEl Módulo 4 y el Módulo 6 presentaron la mayoría de estas; el proyecto final fija la lista corta que calcularás cada mes a partir de la exportación del Diario o de las estadísticas del Portafolio, y para qué sirve cada una.\n\n- **Cumplimiento (%).** Operaciones que siguieron el plan divididas por todas las operaciones. La métrica maestra. Por debajo del 90% nada más es interpretable, porque no estás operando el plan que estás midiendo.\n- **Expectativa (en R).** Resultado promedio por operación en unidades de riesgo inicial: (tasa de acierto x ganancia promedio en R) menos (tasa de pérdida x pérdida promedio en R). Positiva después de costos es la meta; la expectativa del backtest es la comparación. Calcúlala por separado para la columna de operaciones que siguieron el plan y para la de las que lo rompieron.\n- **Factor de beneficio.** Ganancias brutas divididas por pérdidas brutas. Por encima de 1.3 es saludable para una regla de swing; por debajo de 1 está perdiendo. Con menos de 30 operaciones es ruidoso; dilo cuando lo registres.\n- **Tasa de acierto y ganancia promedio / pérdida promedio en R.** Juntas, no por separado. Una tasa de acierto del 40% con ganancias de 2.5R es un buen plan de tendencia; una tasa de acierto del 70% con ganancias de 0.5R y pérdidas de 1R es un plan perdedor.\n- **Pérdida promedio en R.** Debe estar cerca de 1.0 o por debajo. Por encima de 1.2 significa que los stops se están moviendo o que los gaps los alcanzan; revisa las operaciones.\n- **Drawdown máximo (%) y drawdown actual.** Frente al límite del plan y a los umbrales de respuesta al drawdown.\n- **Exposición y número de operaciones.** Suficientes operaciones para que signifiquen algo; exposición lo bastante baja para que hubiera efectivo disponible cuando llegaron las señales.\n- **Por setup, etiqueta y emoción.** Los desgloses de la página Diario. Las preguntas: ¿qué setup genera la expectativa? ¿Qué etiqueta (semana de reportes, lunes, medio día) pierde? ¿Qué emoción al entrar precede a las rupturas de reglas?\n- **Frente al benchmark.** Tu rendimiento y tu drawdown junto a los de SPY en el mismo período. Rendir por debajo con un drawdown mucho menor puede ser aceptable en el primer año; rendir por debajo con uno mayor no lo es.\n\nExporta el diario como CSV cada mes y guarda todas las exportaciones. La serie de números mensuales, no un mes aislado, es donde se hacen visibles las tendencias de tu trading."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El escalado es una regla, no una sensación.** Pasa de papel a real a la mitad del riesgo solo después de aprobar la puerta 3. Pasa al riesgo completo solo después de treinta operaciones más con cumplimiento superior al 90% y expectativa igual o superior a cero. Vuelve a la mitad del riesgo en el primer umbral de drawdown. Escríbelo en la sección 12 y deja que los números tomen la decisión."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "sma200"
+          ],
+          "caption": "Una acción con una tendencia larga y un drawdown profundo en un mismo gráfico: el tipo de año que produce tanto los mejores como los peores meses de un diario. La revisión mensual es donde descubres si tus ganancias vinieron del plan o de la tendencia, y si tus pérdidas vinieron de las reglas o de romperlas. Nvidia aquí es una ilustración de cambio de régimen, no una recomendación; los datos demo son simulados."
+        },
+        {
+          "type": "text",
+          "md": "### El plan escrito: plantilla para completar\n\nCopia el esquema de abajo en tu propio documento y llena cada línea. Los corchetes marcan los espacios en blanco. Una sección que no puedes llenar es una sección que aún no has decidido, y el plan no está terminado hasta que no quede ningún corchete.\n\n---\n\n**MI PLAN DE TRADING, versión [1.0], con fecha [fecha]. Próxima revisión programada: [fecha].**\n\n**1. De dónde parto**\n\n- Operaciones en papel anotadas hasta ahora: [n]. Cumplimiento: [%]. Mejor setup: [nombre, expectativa]. Peor setup: [nombre, expectativa].\n- Cuándo rompo las reglas: [después de pérdidas / después de ganancias / hora del día / otro].\n- Pérdida real promedio en operaciones perdedoras vs 1R planeado: [x.x R].\n- Drawdown más profundo tolerado con calma: [%].\n\n**2. Metas**\n\n- Metas de proceso (puntuadas cada mes): [stop colocado con cada entrada]; [fila del diario antes de cada ejecución]; [revisión semanal cada (día)]; [cada señal válida tomada o anotada].\n- Meta de aprendizaje para los próximos 90 días: [...].\n- Meta de resultado: [p. ej. expectativa positiva después de costos en 30 operaciones; superar a (benchmark) a 12 meses con un drawdown máximo menor].\n\n**3. Restricciones**\n\n- Horas en que puedo actuar: [horas entre semana], [hora del fin de semana]. Hora de revisión de operaciones abiertas: [hora, minutos].\n- Capital inicial (real): [$]. Cuenta de papel fijada en este monto: [sí/no]. Tipo de cuenta: [efectivo].\n- Drawdown máximo que aceptaré: [%]. Apalancamiento: [ninguno]. Ventas en corto: [ninguna / referencia a la regla].\n- No opero: [penny stocks, futuros, cripto, apuestas a reportes de ganancias, opciones desnudas, ...].\n\n**4. Mercado, universo y marco temporal**\n\n- Instrumentos: [acciones y ETFs de EE. UU. / más opciones de riesgo definido según la sección 9].\n- Universo (nombre, sector, ATR % del precio, mes de reporte de ganancias, tendencia/rango): [lista de 15 a 30].\n- Filtros del universo: volumen promedio > [1M], precio > [$20], spread < [0.1%], máximo [2] nombres por sector, correlación por pares < [0.8].\n- Marco temporal de operación: [1day]. Marco temporal de filtro: [semanal / pendiente de 200 días]. No cambio de marco temporal durante una operación.\n- Benchmark: [SPY]. Símbolos de comparación para pruebas fuera de muestra: [A], [B], [C].\n\n**5. Setup y entrada (un setup; agrega un segundo solo después de que pase todas las puertas)**\n\n- Nombre y familia del setup: [retroceso en tendencia / ruptura / reversión a la media].\n- Condiciones del setup: [p. ej. SMA de 50 días por encima de la de 200 días, ambas subiendo].\n- Disparador de entrada: [p. ej. cierre de vuelta por encima de la SMA de 20 días tras >= 3 cierres por debajo].\n- Tipo de orden y vigencia: [a mercado en la próxima apertura / limitada en ... GTC / buy stop en ...]. Regla si no se ejecuta: [cancelar al cierre / mantener un día].\n- Filtros: sin entrada en los [2] días previos a un reporte de ganancias; sin entrada cuando la exposición está en el tope; sin entrada en un nombre que ya tengo; [otros].\n- Veto discrecional: puedo dejar pasar una señal válida si [...], y anoto cada omisión con su razón. Nunca puedo entrar por discreción.\n\n**6. Salidas**\n\n- Stop inicial: [estructura: por debajo del último mínimo relevante / volatilidad: (x) ATR(14) por debajo de la entrada]. Colocado como orden junto con la ejecución. Nunca se aleja.\n- Objetivo: [n R / nivel / ninguno, solo trailing].\n- Stop de tiempo: salir después de [n] velas sin progreso.\n- Trailing: a +[1]R mover el stop al punto de equilibrio; luego arrastrar [por debajo de cada mínimo relevante más alto / (x) ATR por debajo del cierre más alto].\n- Reporte de ganancias dentro del período de tenencia: [salir el día anterior / reducir a la mitad y mantener].\n- Gap más allá del stop o suspensión: salir en la apertura, anotarlo, nada de promediar a la baja.\n\n**7. Riesgo**\n\n- Riesgo por operación: [1]% del capital actual ([0.5]% durante las primeras 30 operaciones de un setup).\n- Acciones = (capital x riesgo %) / (entrada - stop). Costos asumidos: [$1] por ejecución, [10] pb de deslizamiento.\n- Tope de exposición abierta total: [5]%. Máximo de posiciones: [6]. Máximo por sector: [2].\n- Límite de pérdida semanal: [3]%; al alcanzarlo, sin entradas nuevas hasta el [lunes].\n- Respuesta al drawdown: a -[10]% desde el pico, reducir el riesgo por operación a la mitad; a -[máx]% detenerse, diagnosticar por escrito, reanudar solo después de la revisión. El riesgo normal se reanuda con un nuevo máximo de capital.\n\n**8. Gestión**\n\n- Escalado: [tamaño completo en el disparador / mitad en el disparador, mitad en el primer mínimo más alto]. Nunca agregar a una perdedora.\n- Revisión diaria a las [hora] durante [15] minutos: actualizar trailings, cancelar órdenes del día, revisar órdenes GTC [cada semana].\n- Diario: fila antes de la ejecución (setup, entrada, stop, objetivo, tamaño, R planeado, confianza, emoción); completada al salir (resultado en R, cumplimiento sí/no, calificación, una lección).\n\n**9. Opciones (eliminar si no se usan)**\n\n- Formas permitidas: [call/put largo, spreads verticales, calls cubiertas sobre acciones que poseo, puts protectoras]. Prima máxima en riesgo por operación: [= 1% del capital]. Días mínimos hasta el vencimiento al entrar: [45]. Por qué una opción en lugar de la acción para este setup: [...].\n\n**10. No voy a**\n\n- Alejar un stop. Entrar sin una orden stop. Cambiar de marco temporal para justificar quedarme dentro. Operar los primeros [15] minutos. Agregar a una posición perdedora. Tomar una señal que no esté en este documento. [Otros de mi autoevaluación.]\n\n**11. Registro de validación**\n\n- Puerta 1 backtest: fecha [..], símbolos [..], costos [..], criterios [..], resultados [..], decisión [sigue/no sigue], cambio hecho [..].\n- Puerta 2 replay: sesiones [..], cumplimiento [%], criterios [..], decisión [..].\n- Puerta 3 papel: fechas [..], operaciones [30], cumplimiento [%], expectativa [R], peor pérdida [R], decisión [..].\n\n**12. Calendario de revisión y métricas**\n\n- Diaria [hora]: registrar y gestionar. Semanal [día, hora]: lista del Diario, % de cumplimiento, prueba de dos columnas. Mensual: expectativa, factor de beneficio, drawdown máximo, R promedio, por setup / etiqueta / emoción, frente al benchmark. Trimestral: revisión del plan, revisión del universo, subir el número de versión.\n- Regla de escalado: a real con la mitad del riesgo después de la puerta 3; a riesgo completo después de 30 operaciones más con cumplimiento > 90% y expectativa >= 0; de vuelta a la mitad del riesgo en cualquier umbral de drawdown.\n\n---\n\nFirmado: [nombre], [fecha]. No editaré este documento salvo en una revisión programada."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Guarda el plan donde operas.** Pégalo en una entrada del diario en la página Diario (una entrada manual etiquetada *plan*) para que viaje con tus registros y sus versiones queden fechadas junto a tus operaciones. Guarda la exportación CSV después de cada revisión mensual."
+        },
+        {
+          "type": "exercise",
+          "md": "Termina el plan y pon en marcha el reloj.\n\n- Llena cada corchete de la plantilla. Lee el resultado en voz alta una vez; cualquier frase que un desconocido no pudiera ejecutar se reescribe.\n- Crea una entrada manual del diario etiquetada *plan* que contenga el documento completo, con fecha y versión 1.0.\n- Pon las cuatro revisiones en tu calendario: diaria después del cierre, semanal en un día fijo, mensual el primer fin de semana, trimestral con un cambio de versión.\n- Abre la revisión semanal del Diario y córrela sobre tus operaciones existentes de papel y replay como ensayo, para que la primera revisión real no sea la primera vez que ves la lista.\n- Haz el examen final de abajo. Se basa en los ocho módulos. Apruébalo y el certificado de la página Aprender es tuyo; más importante aún, ahora tienes un documento que te dirá, con honestidad, si debes seguir operando como lo haces.",
+          "action": {
+            "page": "journal.html",
+            "hash": "view=review",
+            "label": "Abrir la revisión semanal"
+          }
+        },
+        {
+          "type": "text",
+          "md": "### Examen final\n\nDiez preguntas sobre todo el curso: mecánica del mercado, gráficos, indicadores, riesgo, opciones, backtesting, replay y el propio plan. La nota de aprobación es el mismo 80% que en cada cuestionario de módulo, y se conserva tu mejor puntaje."
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción cotiza con bid $84.20 y ask $84.26. Compras 200 acciones con una orden a mercado y las vendes de inmediato con otra orden a mercado. Ignorando comisiones, ¿cuál es tu resultado?",
+              "choices": [
+                "Quedas en cero",
+                "Una pérdida de $12, el spread sobre 200 acciones",
+                "Una ganancia de $12",
+                "Una pérdida de $0.06"
+              ],
+              "answer": 1,
+              "explain": "Compras al ask ($84.26) y vendes al bid ($84.20), perdiendo $0.06 por acción x 200 = $12. El spread es un costo que se paga en cada ida y vuelta antes de que el precio se mueva siquiera."
+            },
+            {
+              "q": "En un gráfico diario una acción forma una serie de máximos más altos y mínimos más altos por encima de una media móvil de 50 días ascendente. ¿Qué descripción encaja?",
+              "choices": [
+                "Una tendencia bajista",
+                "Un rango",
+                "Una tendencia alcista; un plan de seguimiento de tendencia busca entradas en retrocesos, un plan de reversión a la media se queda fuera",
+                "Un techo de hombro-cabeza-hombro"
+              ],
+              "answer": 2,
+              "explain": "Máximos más altos y mínimos más altos con una media ascendente definen una tendencia alcista. Las entradas de reversión a la media contra una tendencia fuerte son exactamente las operaciones contra las que advirtió la lección."
+            },
+            {
+              "q": "El RSI(14) de una acción cae a 22 mientras la acción está en una tendencia bajista pronunciada y persistente, por debajo de una media de 200 días descendente. ¿Cuál es la lectura correcta para un plan que usa un setup de reversión a la media con RSI?",
+              "choices": [
+                "Comprar de inmediato; lo sobrevendido siempre rebota",
+                "Lo sobrevendido puede seguir sobrevendido en una tendencia; el setup requiere una acción en rango, así que no hay operación",
+                "Vender en corto porque el RSI está bajo",
+                "El RSI es irrelevante en gráficos diarios"
+              ],
+              "answer": 1,
+              "explain": "Los osciladores miden impulso, no valor. En una tendencia bajista fuerte el RSI puede quedarse por debajo de 30 durante semanas. Las condiciones del setup, no el disparador solo, deciden si una señal es válida."
+            },
+            {
+              "q": "El capital de tu cuenta es de $12,000, el riesgo por operación es del 1%, la entrada $36.00, el stop $34.50. ¿Tamaño de la posición?",
+              "choices": [
+                "333 acciones",
+                "80 acciones",
+                "120 acciones",
+                "8 acciones"
+              ],
+              "answer": 1,
+              "explain": "Riesgo = $120. Distancia al stop = $1.50. Acciones = $120 / $1.50 = 80. El valor de la posición es $2,880, pero solo $120 están en riesgo si se respeta el stop."
+            },
+            {
+              "q": "Una estrategia gana el 40% de las veces con una ganancia promedio de 2.5R y una pérdida promedio de 1.0R. ¿Cuál es su expectativa por operación, y es una buena señal?",
+              "choices": [
+                "-0.1R; pierde",
+                "+0.4R; positiva, así que el método puede ser rentable a pesar de perder la mayoría de las operaciones",
+                "+1.5R; excepcional",
+                "No se puede calcular sin el número de operaciones ganadoras"
+              ],
+              "answer": 1,
+              "explain": "Expectativa = 0.4 x 2.5 - 0.6 x 1.0 = 1.0 - 0.6 = +0.4R por operación. Una tasa de acierto inferior al 50% con ganancias grandes es típica de un plan de seguimiento de tendencia saludable."
+            },
+            {
+              "q": "Una acción cotiza a $100. Compras un call con strike $105 que vence en 30 días por $2.00. Al vencimiento la acción está en $104. ¿Cuál es tu resultado?",
+              "choices": [
+                "Una ganancia de $200",
+                "Una pérdida de $200, toda la prima",
+                "Una pérdida de $100",
+                "Quedas en cero"
+              ],
+              "answer": 1,
+              "explain": "El call está fuera del dinero al vencimiento ($104 está por debajo del strike de $105), así que vence sin valor y se pierde toda la prima de $2.00 x 100 = $200. Esa es la pérdida máxima definida de un call largo."
+            },
+            {
+              "q": "El backtest de una regla devuelve 60% anual, pero la estrategia usa el cierre del día para decidir si compra en la apertura de ese mismo día. ¿Qué está mal?",
+              "choices": [
+                "Nada; es un buen resultado",
+                "Sesgo de anticipación (look-ahead bias): la regla usa información que no estaba disponible en el momento de la decisión, así que el resultado no significa nada",
+                "Sesgo de supervivencia",
+                "El rendimiento es demasiado bajo para ser interesante"
+              ],
+              "answer": 1,
+              "explain": "Cualquier regla que use datos posteriores al momento de la decisión está haciendo trampa. Las reglas honestas actúan en la apertura de la vela siguiente usando únicamente velas completadas. Las estrategias integradas del laboratorio están escritas así."
+            },
+            {
+              "q": "En una sesión de replay estás en largo, el precio se acerca a tu stop y cambias el gráfico al intervalo de 15 minutos para \"ver qué está haciendo realmente\". Según tu plan, ¿qué acaba de pasar?",
+              "choices": [
+                "Buena gestión del riesgo",
+                "Una ruptura de regla: cambiar de marco temporal durante una operación, normalmente para encontrar una razón para no tomar el stop",
+                "Un filtro válido de marco superior",
+                "Nada, ya que el replay es práctica"
+              ],
+              "answer": 1,
+              "explain": "El plan prohíbe cambiar de marco temporal a mitad de una operación en una sola frase porque es una de las formas más comunes de racionalizar los stops hasta ignorarlos. El replay existe para detectar este hábito antes de que haya dinero en juego."
+            },
+            {
+              "q": "Después de 30 operaciones en papel tu cumplimiento es del 72% y la columna de operaciones que siguieron el plan tiene expectativa positiva mientras que la de las que lo rompieron es fuertemente negativa. ¿Qué te dice esto y cuál es el siguiente paso?",
+              "choices": [
+                "El método está roto; rediseña las reglas",
+                "El método funciona y la disciplina es el problema; las siguientes 30 operaciones siguen en papel con un arreglo conductual, como un tamaño menor o una lista de verificación previa a cada operación",
+                "Pasar a dinero real de inmediato ya que las operaciones que siguieron el plan fueron rentables",
+                "Agregar un segundo setup para diversificar"
+              ],
+              "answer": 1,
+              "explain": "La prueba de dos columnas separa el método del comportamiento. Positiva cuando se sigue y negativa cuando se rompe significa que las reglas están bien y que no las estás siguiendo; eso se arregla en lo conductual, no editando las reglas."
+            },
+            {
+              "q": "Según el plan, ¿cuándo puedes editar las reglas?",
+              "choices": [
+                "Siempre que una operación vaya mal",
+                "A diario, después del cierre",
+                "Solo en la revisión trimestral programada, un cambio a la vez, con la evidencia registrada y la puerta de backtest vuelta a correr antes de adoptarlo",
+                "Solo después de una racha de cinco pérdidas"
+              ],
+              "answer": 2,
+              "explain": "Las revisiones semanales cambian el comportamiento, las mensuales ajustan el riesgo según la regla de escalado, y solo la revisión trimestral puede cambiar una regla. Cada cambio es de uno en uno, por escrito, y se vuelve a probar primero a través de la puerta 1."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

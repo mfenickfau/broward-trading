@@ -22,6 +22,8 @@
 (function () {
   'use strict';
   window.BT = window.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
   if (typeof document === 'undefined') return;
 
   var paper = BT.paper, data = BT.data, opt = BT.options;
@@ -261,7 +263,7 @@
       paper.processOrders(o.symbol, bar).forEach(function (f) { fills.push(f); });
     });
     fills.forEach(function (f) {
-      toast(paper.describeOrder(f.order) + ' Filled at ' + money(f.trade.price) + '.', 'ok', 'Order filled');
+      toast(paper.describeOrder(f.order) + ' ' + T('Filled at {price}.', { price: money(f.trade.price) }), 'ok', 'Order filled');
     });
     return fills;
   }
@@ -280,10 +282,10 @@
       mtm = paper.markToMarket(pricesFromMarks(), lastMarkAt);
       renderAll();
       if (ui.tab === 'options' && ui.labSymbol && isNum(marks[ui.labSymbol]) && labLoaded) updateLabSpot(marks[ui.labSymbol]);
-      if (info.skipped > 0) setMsg('msg', 'Quote budget: refreshed ' + info.requested + ' of ' + info.total + ' symbols this cycle to stay inside the free-tier limit; the rest rotate in next cycle.', '');
+      if (info.skipped > 0) setMsg('msg', T('Quote budget: refreshed {n} of {total} symbols this cycle to stay inside the free-tier limit; the rest rotate in next cycle.', { n: info.requested, total: info.total }), '');
       else if (manual) setMsg('msg', '');
     } catch (e) {
-      setMsg('msg', 'Could not refresh marks: ' + (e && e.message ? e.message : e), 'err');
+      setMsg('msg', T('Could not refresh marks: {error}', { error: e && e.message ? e.message : e }), 'err');
     } finally {
       refreshing = false;
       if (btn) btn.disabled = false;
@@ -311,14 +313,14 @@
     }
     var mp = $('marketpill');
     if (mp && mk) {
-      var phase = { pre: 'pre-market', open: 'market open', after: 'after hours', closed: 'market closed' }[mk.phase] || mk.phase;
-      mp.textContent = phase + ' · ' + mk.nyTime + ' ET';
+      var phase = { pre: T('pre-market'), open: T('market open'), after: T('after hours'), closed: T('market closed') }[mk.phase] || mk.phase;
+      mp.textContent = phase + ' · ' + mk.nyTime;   // nyTime already carries the ' ET' suffix
       mp.className = 'pill ' + (mk.open ? 'live' : '');
       mp.title = mk.isTradingDay ? (mk.earlyClose ? 'Early close today at ' + mk.closesAt : 'NYSE regular session 9:30–16:00 ET') : (mk.holiday ? 'Holiday: ' + mk.holiday : 'Weekend. Next open ' + (mk.nextOpenDate || ''));
     }
     var rp = $('refreshpill');
     if (rp) {
-      rp.textContent = lastMarkAt ? 'marks ' + fmtTime(lastMarkAt) : 'marks —';
+      rp.textContent = lastMarkAt ? T('marks {t}', { t: fmtTime(lastMarkAt) }) : T('marks —');
       rp.title = lastMarkAt ? 'Positions last marked at ' + new Date(lastMarkAt).toLocaleTimeString() + '. Auto-refresh every ' + Math.round(refreshIntervalMs() / 1000) + ' s while this tab is visible.' : 'Not yet marked';
     }
   }
@@ -328,14 +330,14 @@
     var v = mtm || Object.assign({ equity: st.cash + paper.valuation({}).marketValue, cash: st.cash, realized: st.realized, unrealized: paper.valuation({}).unrealized, dayPnL: 0 }, {});
     var equity = v.equity, total = equity - st.startingCash, totalPct = st.startingCash ? total / st.startingCash * 100 : 0;
     $('t-equity').textContent = money(equity);
-    $('t-equity-sub').textContent = 'Started with ' + money(st.startingCash, 0) + (st.createdAt ? ' on ' + new Date(st.createdAt).toLocaleDateString() : '');
+    $('t-equity-sub').textContent = st.createdAt ? T('Started with {cash} on {date}', { cash: money(st.startingCash, 0), date: new Date(st.createdAt).toLocaleDateString() }) : T('Started with {cash}', { cash: money(st.startingCash, 0) });
     $('t-cash').textContent = money(v.cash);
-    $('t-cash-sub').textContent = 'Buying power ' + money(isNum(v.buyingPower) ? v.buyingPower : Math.max(0, v.cash)) + (v.marginUsed ? ' · margin held ' + money(v.marginUsed) : '');
+    $('t-cash-sub').textContent = T('Buying power {bp}', { bp: money(isNum(v.buyingPower) ? v.buyingPower : Math.max(0, v.cash)) }) + (v.marginUsed ? ' · ' + T('margin held {amount}', { amount: money(v.marginUsed) }) : '');
     var day = $('t-day'); day.textContent = signed(v.dayPnL); day.className = 'value num ' + pnlClass(v.dayPnL);
     var dayPct = st.dayStart && st.dayStart.equity ? v.dayPnL / st.dayStart.equity * 100 : 0;
-    $('t-day-sub').textContent = (isNum(dayPct) ? pct(dayPct) : '—') + ' since the start of today';
+    $('t-day-sub').textContent = T('{pct} since the start of today', { pct: isNum(dayPct) ? pct(dayPct) : '—' });
     var tot = $('t-total'); tot.textContent = signed(total); tot.className = 'value num ' + pnlClass(total);
-    $('t-total-sub').textContent = pct(totalPct) + ' · realized ' + signed(v.realized) + ' · unrealized ' + signed(v.unrealized);
+    $('t-total-sub').textContent = T('{pct} · realized {realized} · unrealized {unrealized}', { pct: pct(totalPct), realized: signed(v.realized), unrealized: signed(v.unrealized) });
   }
 
   /* ------------------------------------------------------------------ *
@@ -388,7 +390,7 @@
     var eq = mtm ? mtm.equity : (st.equityHistory.length ? st.equityHistory[st.equityHistory.length - 1].equity : st.cash);
     $('eq-tag').textContent = money(eq, 0);
     var diff = eq - st.startingCash;
-    $('eq-tag2').textContent = signed(diff, 0) + ' (' + pct(st.startingCash ? diff / st.startingCash * 100 : 0) + ') since start';
+    $('eq-tag2').textContent = T('{diff} ({pct}) since start', { diff: signed(diff, 0), pct: pct(st.startingCash ? diff / st.startingCash * 100 : 0) });
   }
   function renderEquity() {
     var st = paper.state;
@@ -401,7 +403,7 @@
     });
     var ov = $('eq-overlay');
     if (ov) ov.hidden = pts.length >= 2;
-    $('eq-points').textContent = pts.length ? pts.length + ' point' + (pts.length === 1 ? '' : 's') : '';
+    $('eq-points').textContent = pts.length ? T(pts.length === 1 ? '{n} point' : '{n} points', { n: pts.length }) : '';
     renderEquityTag();
     if (!eqSeries) return;
     eqSeries.setData(pts);
@@ -436,7 +438,7 @@
     rows = rows.slice().sort(function (a, b) { return Math.abs(b.marketValue) - Math.abs(a.marketValue); });
     var tb = $('positions'); tb.innerHTML = '';
     $('pos-empty').hidden = rows.length > 0;
-    $('pos-count').textContent = rows.length ? rows.length + ' position' + (rows.length === 1 ? '' : 's') + ' · market value ' + money(rows.reduce(function (s, r) { return s + r.marketValue; }, 0)) : '';
+    $('pos-count').textContent = rows.length ? T(rows.length === 1 ? '{n} position · market value {mv}' : '{n} positions · market value {mv}', { n: rows.length, mv: money(rows.reduce(function (s, r) { return s + r.marketValue; }, 0)) }) : '';
     rows.forEach(function (r) {
       var u = underlyingOf(r.symbol, r), m = markMeta[u];
       var srcPill = m && m.fallback ? ' <span class="pill demo" style="font-size:9px;padding:0 5px">demo</span>' : (r.kind === 'option' ? ' <span class="pill" style="font-size:9px;padding:0 5px" title="Model price">model</span>' : '');
@@ -458,7 +460,7 @@
         if (b.dataset.arm) {
           var row = rows.filter(function (r) { return r.symbol === sym; })[0];
           var o = paper.closePosition(sym, row ? row.price : undefined);
-          if (o.status === 'filled') { toast(o.reason || ('Closed ' + sym + ' at ' + money(o.fillPrice) + '.'), 'ok', 'Position closed'); }
+          if (o.status === 'filled') { toast(o.reason || T('Closed {symbol} at {price}.', { symbol: sym, price: money(o.fillPrice) }), 'ok', 'Position closed'); }
           else toast(o.reason || 'Could not close.', 'err', 'Not closed');
           mtm = paper.markToMarket(pricesFromMarks()); renderAll();
         } else {
@@ -473,7 +475,7 @@
     var orders = paper.openOrders().slice().sort(function (a, b) { return b.placedAt - a.placedAt; });
     var tb = $('orders'); tb.innerHTML = '';
     $('ord-empty').hidden = orders.length > 0;
-    $('ord-count').textContent = orders.length ? orders.length + ' working' : '';
+    $('ord-count').textContent = orders.length ? T('{n} working', { n: orders.length }) : '';
     orders.forEach(function (o) {
       var tr = document.createElement('tr');
       var typeLabel = o.type.replace('_', '-');
@@ -501,7 +503,7 @@
     tb.querySelectorAll('[data-cancel]').forEach(function (b) {
       b.onclick = function () {
         var o = paper.cancelOrder(Number(b.dataset.cancel));
-        if (o) toast(paper.describeOrder(o) + ' Cancelled.', '', 'Order cancelled');
+        if (o) toast(paper.describeOrder(o) + ' ' + T('Cancelled.'), '', 'Order cancelled');
         renderOrders();
       };
     });
@@ -532,7 +534,7 @@
     var tb = $('history'); tb.innerHTML = '';
     $('hist-empty').hidden = trades.length > 0;
     var realized = trades.reduce(function (s, t) { return s + (t.realized || 0); }, 0);
-    $('hist-count').textContent = trades.length ? trades.length + ' fill' + (trades.length === 1 ? '' : 's') + ' · realized ' + signed(realized) : '';
+    $('hist-count').textContent = trades.length ? T(trades.length === 1 ? '{n} fill · realized {realized}' : '{n} fills · realized {realized}', { n: trades.length, realized: signed(realized) }) : '';
     trades.slice(0, 500).forEach(function (t) {
       var tr = document.createElement('tr');
       tr.innerHTML =
@@ -561,7 +563,7 @@
       lines.push([isoDate(t.time), t.symbol, t.kind || 'stock', t.side, t.qty, t.price, t.multiplier || 1, t.value, t.commission || 0, t.closedQty || 0, t.openedQty || 0, t.closedQty > 0 ? t.realized : '', t.orderId == null ? '' : t.orderId, t.note || ''].map(csvCell).join(','));
     });
     $('csvbox').value = lines.join('\n');
-    $('csvnote').textContent = trades.length + ' row' + (trades.length === 1 ? '' : 's') + ' of the filtered fills as CSV. Downloads are blocked in some viewers, so copy the text and paste it into a spreadsheet.';
+    $('csvnote').textContent = T(trades.length === 1 ? '{n} row of the filtered fills as CSV. Downloads are blocked in some viewers, so copy the text and paste it into a spreadsheet.' : '{n} rows of the filtered fills as CSV. Downloads are blocked in some viewers, so copy the text and paste it into a spreadsheet.', { n: trades.length });
   }
   ['f-sym', 'f-side', 'f-kind', 'f-result', 'f-range'].forEach(function (id) { $(id).addEventListener('input', renderHistory); });
   $('csv').onclick = function () {
@@ -642,7 +644,7 @@
     var v = Number($('commission').value);
     if (!isNum(v) || v < 0) { setMsg('settings-msg', 'Commission must be zero or a positive number.', 'err'); return; }
     paper.setSettings({ commission: v });
-    setMsg('settings-msg', 'Saved. New fills will be charged ' + money(v) + ' each.', 'ok');
+    setMsg('settings-msg', T('Saved. New fills will be charged {fee} each.', { fee: money(v) }), 'ok');
   };
   var resetTimer = null;
   function hideReset() { $('reset-confirm').hidden = true; $('reset').textContent = 'Reset paper account…'; clearTimeout(resetTimer); }
@@ -662,8 +664,8 @@
     paper.reset(cash);
     marks = {}; markMeta = {}; mtm = null; lastMarkAt = 0;
     hideReset();
-    setMsg('reset-msg', 'Account reset. You are starting over with ' + money(cash, 0) + '.', 'ok');
-    toast('Fresh start with ' + money(cash, 0) + '. Your course progress and API keys were kept.', 'ok', 'Account reset');
+    setMsg('reset-msg', T('Account reset. You are starting over with {cash}.', { cash: money(cash, 0) }), 'ok');
+    toast(T('Fresh start with {cash}. Your course progress and API keys were kept.', { cash: money(cash, 0) }), 'ok', 'Account reset');
     renderAll();
     refreshMarks(true);
   };
@@ -737,7 +739,7 @@
     symbol = String(symbol || '').trim().toUpperCase();
     if (!symbol) return;
     labLoading = true;
-    $('opt-src').textContent = 'Loading ' + symbol + '…';
+    $('opt-src').textContent = T('Loading {symbol}…', { symbol: symbol });
     try {
       var q = await data.quote(symbol);
       if (!q || !isNum(q.price) || q.price <= 0) throw new Error('No price for ' + symbol);
@@ -754,7 +756,7 @@
       renderLegs();
       saveUi();
     } catch (e) {
-      $('opt-src').textContent = 'Could not load ' + symbol + ': ' + (e && e.message ? e.message : e);
+      $('opt-src').textContent = T('Could not load {symbol}: {error}', { symbol: symbol, error: e && e.message ? e.message : e });
     } finally { labLoading = false; }
   }
   function buildChain() {
@@ -1106,7 +1108,7 @@
       else o = paper.placeOptionOrder({ contract: l.contract, side: side, qty: qty }, l.premium);
       (o.status === 'filled' ? ok : bad).push({ leg: l, order: o });
     });
-    if (ok.length) { toast(ok.length + ' leg' + (ok.length === 1 ? '' : 's') + ' filled' + (bad.length ? ', ' + bad.length + ' rejected' : '') + '. Track it under Positions; the marks update with the model each refresh.', bad.length ? 'warn' : 'ok', 'Strategy placed'); }
+    if (ok.length) { toast(T(ok.length === 1 ? '{n} leg filled' : '{n} legs filled', { n: ok.length }) + (bad.length ? ', ' + T('{n} rejected', { n: bad.length }) : '') + '. ' + T('Track it under Positions; the marks update with the model each refresh.'), bad.length ? 'warn' : 'ok', 'Strategy placed'); }
     if (bad.length) setMsg('trade-msg', bad.map(function (b) { return legLabel(b.leg).replace(/<[^>]+>/g, '') + ': ' + b.order.reason; }).join(' '), 'err');
     else setMsg('trade-msg', 'Filled ' + ok.length + ' leg' + (ok.length === 1 ? '' : 's') + ' × ' + lots + ' lot' + (lots === 1 ? '' : 's') + '. Net ' + (function () { var n = ok.reduce(function (s, b) { return s + (b.order.side === 'buy' ? -1 : 1) * b.order.fillPrice * b.order.qty * (b.order.kind === 'option' ? 100 : 1); }, 0); return (n < 0 ? 'debit ' : 'credit ') + money(Math.abs(n)); })() + '.', 'ok');
     mtm = paper.markToMarket(pricesFromMarks()); renderAll();

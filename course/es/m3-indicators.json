@@ -1,0 +1,576 @@
+{
+  "id": "m3-indicators",
+  "title": "Indicadores técnicos",
+  "level": "intermediate",
+  "minutes": 58,
+  "summary": "Medias móviles, RSI, MACD, Bandas de Bollinger, ATR, ADX, VWAP e Ichimoku: qué mide cada uno, la aritmética detrás, cómo combinarlos sin redundancia y exactamente cómo el panel calcula su señal compuesta de COMPRA / VENTA / MANTENER.",
+  "lessons": [
+    {
+      "id": "m3-l1",
+      "title": "Medias móviles y cruces",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Qué es un indicador, y qué no es\n\nUn indicador es aritmética aplicada al precio (y a veces al volumen) y dibujada sobre el gráfico. Esa es toda la definición. Una media móvil es un promedio. El RSI es una razón entre ganancias recientes y pérdidas recientes. Las Bandas de Bollinger son una desviación estándar. Ninguno de ellos sabe nada que las velas no contengan ya; simplemente hacen más fácil de ver una característica de las velas.\n\nSuena desalentador, pero es el marco correcto. Los indicadores hacen dos trabajos útiles. **Resumen**: una media de 50 días te dice en una sola línea si las últimas diez semanas han sido de subida o de bajada, algo difícil de juzgar mirando 50 velas individuales. Y **estandarizan**: \"el RSI está en 28\" significa lo mismo en Apple que en una pequeña biotecnológica, así que puedes construir reglas que funcionen en muchas acciones.\n\nLo que los indicadores no pueden hacer es predecir. Todos se calculan a partir de barras pasadas, así que todos van con retraso (lag). Cuanto más rápido haces responder a un indicador, más falsas alarmas da; cuanto más lento lo haces, más tarde te avisa. No existe una configuración que escape a este dilema, solo configuraciones que eligen un punto distinto dentro de él.\n\nEste módulo enseña los indicadores que dibuja el panel de Broward Trading, más o menos en el orden en que un trader los aprende: primero las medias móviles, porque todas las demás herramientas toman algo de ellas; luego los osciladores de momentum (RSI, estocástico, MACD); después la volatilidad (Bandas de Bollinger, ATR); y por último las herramientas de fuerza de tendencia y contexto (ADX, VWAP, Ichimoku). La lección final explica cómo el panel combina seis de ellos en la puntuación compuesta de COMPRA / VENTA / MANTENER de la barra lateral derecha, para que al terminar puedas leer esa puntuación, no estar de acuerdo con ella y saber por qué."
+        },
+        {
+          "type": "text",
+          "md": "### La media móvil simple\n\nLa **media móvil simple (SMA)** de longitud n es el promedio corriente de los últimos n precios de cierre. Una SMA de 20 días en un gráfico diario suma los últimos 20 cierres y divide entre 20. Mañana, el cierre más antiguo sale, el más nuevo entra, y vuelves a dividir entre 20. La línea \"se mueve\" porque la ventana se mueve.\n\nUn ejemplo resuelto con una SMA de 5 días. Cierres de cinco días: $100, $102, $101, $104, $108. La suma es $515, dividida entre 5 da una SMA de **$103.00**. Al día siguiente la acción cierra en $110. Quitas el $100, agregas el $110: $525 / 5 = **$105.00**. Observa que el cierre más nuevo ($110) estuvo $10 por encima del cierre que reemplazó ($100), y sin embargo la media se movió solo $2: una quinta parte de esa diferencia, porque cada cierre carga una quinta parte del peso. Ese amortiguamiento es el objetivo. También es el retraso.\n\nLas tres longitudes que verás en todas partes son **20** (aproximadamente un mes de negociación), **50** (aproximadamente un trimestre) y **200** (aproximadamente un año de negociación, ya que hay unos 252 días hábiles de mercado). El panel dibuja la SMA 20 en ámbar y la SMA 50 en azul, y la señal compuesta usa ambas.\n\nLeer una SMA es sencillo:\n\n- Precio por encima de una media que sube: tendencia alcista en ese horizonte.\n- Precio por debajo de una media que baja: tendencia bajista.\n- Precio zigzagueando de un lado a otro de una media plana: sin tendencia, y la mayoría de las herramientas de tendencia se portarán mal.\n\nLa pendiente de la media importa tanto como el lado en que está el precio. Una acción apenas por encima de una media de 50 días que cae con fuerza está en una tendencia bajista que hizo una pausa, no en una tendencia alcista."
+        },
+        {
+          "type": "text",
+          "md": "### La media móvil exponencial\n\nLa **media móvil exponencial (EMA)** da más peso a los cierres recientes, así que gira más rápido que una SMA de la misma longitud. Cada día se desplaza una fracción fija del camino desde la EMA de ayer hacia el cierre de hoy:\n\nEMA de hoy = cierre × k + EMA de ayer × (1 − k), donde k = 2 / (n + 1).\n\nPara una EMA de 9 períodos, k = 2 / 10 = **0.20**: cada cierre nuevo recibe el 20% del peso y toda la historia anterior comparte el otro 80%. Para una EMA de 21 períodos, k = 2 / 22 ≈ **0.091**. Para una EMA de 20 períodos, k ≈ 0.095.\n\nEjemplo con la EMA 9. La EMA de ayer era $100.00 y el cierre de hoy es $105.00. Nueva EMA = 105 × 0.20 + 100 × 0.80 = 21 + 80 = **$101.00**. Una SMA de 9 días ante el mismo salto de $5 subiría aproximadamente $5 / 9 ≈ $0.56. La EMA se movió casi el doble, y por eso exactamente la prefieren los traders de corto plazo.\n\nEl primer valor de la EMA necesita un punto de partida. Broward Trading lo inicializa con la SMA de los primeros n cierres, que es la convención habitual; otras plataformas lo inicializan solo con el primer cierre, así que las primeras docenas de valores pueden diferir un poco entre herramientas. Después, las dos convergen.\n\nEl panel ofrece **EMA 9** (morado) y **EMA 21** (verde azulado), un par de corto plazo muy popular entre los swing traders en gráficos diarios y entre los traders intradía en barras de 5 y 15 minutos. La **media móvil ponderada (WMA)**, también en la biblioteca de indicadores, pondera los últimos n cierres de forma lineal (n, n−1, …, 1); se comporta a medio camino entre la SMA y la EMA y rara vez hace falta una vez que entiendes esas dos."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El retraso es el precio del suavizado.** Una SMA de n períodos en la práctica te habla del mercado como estaba hace n/2 barras. Una SMA de 50 días está centrada unos 25 días de mercado en el pasado. Cuando una media móvil \"confirma\" una tendencia, esa tendencia ya tiene cinco semanas. Eso está bien para un seguidor de tendencias y es inútil para quien intenta comprar justo en el piso."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Apple, diario, con SMA 20 (ámbar) y SMA 50 (azul). Busca un tramo donde la línea ámbar esté por encima de la azul y ambas suban: eso es alineación alcista, y la señal compuesta le da un punto. Busca un lugar donde la línea ámbar cruce hacia abajo la azul, y luego pasa el cursor por las barras cercanas para ver cuánto había caído ya el precio antes de que el cruce apareciera. Con datos simulados las formas son realistas pero las fechas no corresponden a la historia de Apple."
+        },
+        {
+          "type": "text",
+          "md": "### Cruces: dorado, de la muerte y el problema del latigazo\n\nUn **cruce** (crossover) ocurre cuando una media rápida cruza una lenta. La rápida cruzando por encima de la lenta es alcista: los precios recientes han subido lo suficiente para empujar la media de corto plazo por encima de la de largo plazo. La rápida cruzando por debajo de la lenta es bajista.\n\nLa versión famosa es el **cruce dorado** (golden cross: la SMA de 50 días cruzando por encima de la de 200) y su reflejo, el **cruce de la muerte** (death cross). A las noticias financieras les encantan. Broward Trading usa un par más rápido, **SMA 20 cruzando SMA 50**, y otorga ±2 puntos en la única barra donde ocurre el cruce, más ±1 por la alineación posterior. Los pares más rápidos cruzan más a menudo, lo que da más operaciones y más señales falsas. Cuál par es el \"correcto\" se debate de verdad y depende de cuánto tiempo pienses mantener la posición.\n\nAquí va el problema, dicho con honestidad. Imagina una acción que se negocia en un rango entre $48 y $52 durante tres meses. Cada vez que sube a $52 la media rápida trepa por encima de la lenta (compra), y cada vez que cae a $48 la media rápida vuelve a caer por debajo (venta). Compras cerca del techo del rango y vendes cerca del piso, una y otra vez, perdiendo uno o dos dólares por ciclo más los costos. Eso es un **latigazo** (whipsaw), y es la forma característica en que un sistema de cruces pierde dinero. Los cruces se ganan su lugar solo en mercados que realmente tienen tendencia, y por eso la lección 4 dedica tiempo al ADX.\n\nDos comprobaciones de sentido común hacen más útiles los cruces:\n\n- **Filtro de pendiente.** Toma un cruce alcista solo si la media lenta está plana o subiendo. Una línea rápida que asoma por encima de una línea lenta en fuerte caída suele ser un rebote, no una reversión.\n- **Filtro de distancia.** Ignora los cruces en los que las dos medias están a una fracción pequeña de un por ciento entre sí; espera a que se separen. El puntuador de Broward Trading no hace esto, y puedes comprobarlo en el backtester contando cuántas operaciones de la señal compuesta duran apenas unas barras.\n\nEn el ejercicio harás un backtest del cruce 20/50 y lo compararás con el 50/200 en la misma acción. Espera que el sistema más rápido haga más operaciones y, con frecuencia, pierda más por latigazos."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo usar bien las medias móviles\n\nLos traders con experiencia rara vez usan una media móvil como disparador por sí sola. Los papeles habituales son:\n\n**Filtro de tendencia.** Toma posiciones largas solo cuando el precio está por encima de la media de 50 o de 200 días; toma cortos solo por debajo. Esta única regla elimina una buena parte de las pérdidas contra tendencia de casi cualquier estrategia, a costa de perderte el primer tramo de cada reversión. El primer componente de la señal compuesta (precio frente a SMA 50) es exactamente esto.\n\n**Soporte y resistencia dinámicos.** En una tendencia alcista estable, los retrocesos suelen detenerse cerca de la media de 20 o de 50 días porque hay suficientes traders mirando esas líneas para que se cumplan solas. Ahí no pasa nada mágico; simplemente es un lugar visible donde los compradores que se perdieron el movimiento deciden actuar. Trátalo como una zona, no como un precio exacto.\n\n**Cintas (ribbons).** Dibujar varias EMA juntas (por ejemplo 8, 13, 21, 34, 55) muestra la calidad de la tendencia de un vistazo. Abiertas en abanico y todas con la misma pendiente significa una tendencia fuerte y ordenada. Enredadas entre sí significa mercado lateral.\n\nUn ejemplo concreto de una operación filtrada. Una acción está en $71, su SMA de 50 días está en $65 y subiendo, y su SMA de 20 días está en $69. El precio retrocede durante una semana hasta $68.50, toca la línea de 20 días y luego imprime una vela alcista. Un trader de tendencia compra en $69.20 con un stop (stop loss) justo debajo de la línea de 50 días, en $64.50 (riesgo de $4.70 por acción), y un objetivo en el máximo anterior de $78 (recompensa de $8.80), una relación recompensa-riesgo de aproximadamente 1.9 a 1. Las medias no predijeron nada; organizaron dónde entrar, dónde reconocer el error y dónde tomar la ganancia. Ese es el trabajo realista de una media móvil."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Ninguna configuración es \"la mejor\".** En todos los foros hay un hilo que asegura que la EMA 8/21 o la SMA 10/30 es el secreto. Cualquier par puede hacerse ver brillante en una acción durante un período. En el módulo 6 verás qué tan rápido se evaporan esos resultados con datos distintos. Elige configuraciones que coincidan con tu horizonte de inversión y mantenlas."
+        },
+        {
+          "type": "exercise",
+          "md": "Dos tareas, una en el panel y otra en el Laboratorio de estrategias.\n\n**Panel.** Abre Apple en el gráfico diario con SMA 20, SMA 50 y las flechas de Señales activadas.\n\n- Retrocede y encuentra al menos dos lugares donde la SMA 20 ámbar cruce la SMA 50 azul. Para cada uno, pasa el cursor por la vela donde apareció el cruce y por la vela donde realmente empezó el movimiento (el mínimo o máximo del impulso). ¿Cuántas barras tarde llegó el cruce y cuántos dólares se había movido ya el precio?\n- Encuentra un tramo donde las dos medias se entrelacen. Cuenta cuántos cruces ocurren en ese tramo. Esos son latigazos.\n\n**Laboratorio de estrategias.** El enlace de abajo abre el backtester con la estrategia de cruce de SMA en Apple, 20/50, y la ejecuta.\n\n- Anota el número de operaciones, la tasa de acierto, el retorno total y el retorno de comprar y mantener (buy and hold).\n- Cambia los parámetros a rápida 50, lenta 200 y ejecuta de nuevo. Compara el número de operaciones y el retorno.\n- Abre la lista de operaciones. ¿Cuántas duraron menos de 10 barras? Esos son los latigazos del gráfico, puestos en dólares.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Los últimos cinco cierres diarios son $40, $42, $41, $44 y $43. ¿Cuál es la media móvil simple de 5 días?",
+              "choices": [
+                "$41.00",
+                "$42.00",
+                "$43.00",
+                "$44.00"
+              ],
+              "answer": 1,
+              "explain": "Suma los cinco cierres (40 + 42 + 41 + 44 + 43 = 210) y divide entre 5: $42.00. En una media móvil simple todos los cierres tienen el mismo peso."
+            },
+            {
+              "q": "¿Cuál es la constante de suavizado k para una media móvil exponencial de 9 períodos?",
+              "choices": [
+                "1 / 9 ≈ 0.111",
+                "2 / 9 ≈ 0.222",
+                "2 / 10 = 0.200",
+                "9 / 10 = 0.900"
+              ],
+              "answer": 2,
+              "explain": "k = 2 / (n + 1) = 2 / 10 = 0.20. Cada cierre nuevo recibe el 20% del peso; la EMA anterior carga el otro 80%."
+            },
+            {
+              "q": "La EMA de 9 períodos de ayer era $50.00 y el cierre de hoy es $55.00. ¿Cuál es la EMA de hoy?",
+              "choices": [
+                "$50.50",
+                "$51.00",
+                "$52.50",
+                "$55.00"
+              ],
+              "answer": 1,
+              "explain": "EMA = 55 × 0.20 + 50 × 0.80 = 11 + 40 = $51.00. La EMA se movió $1 ante un salto de $5, más rápido de lo que lo habría hecho una SMA de 9 días (unos $0.56)."
+            },
+            {
+              "q": "¿En qué tipo de mercado un sistema de cruce de medias móviles suele perder dinero mediante pequeñas pérdidas repetidas?",
+              "choices": [
+                "Una tendencia alcista fuerte",
+                "Una tendencia bajista fuerte",
+                "Un mercado lateral, encerrado en un rango",
+                "Un mercado con volumen alto"
+              ],
+              "answer": 2,
+              "explain": "En un rango la media rápida cruza la lenta de ida y vuelta, generando compras cerca del techo y ventas cerca del piso: el latigazo. Los cruces necesitan una tendencia para rendir."
+            },
+            {
+              "q": "¿Qué par de medias usa la señal compuesta de Broward Trading para su componente de cruce?",
+              "choices": [
+                "SMA 50 y SMA 200",
+                "EMA 9 y EMA 21",
+                "SMA 20 y SMA 50",
+                "SMA 10 y SMA 30"
+              ],
+              "answer": 2,
+              "explain": "El panel puntúa un cruce dorado o de la muerte de la SMA 20 sobre la SMA 50 con ±2 puntos en la barra en que ocurre, y ±1 por la alineación posterior. El cruce dorado clásico de los titulares es el de 50 sobre 200."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l2",
+      "title": "Osciladores de momentum: RSI y estocástico",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Momentum: qué tan rápido, no hacia dónde\n\nLas medias móviles describen la dirección. El **momentum** (impulso) describe la velocidad. Una acción puede estar en tendencia alcista y, aun así, estar perdiendo momentum: cada máximo nuevo un poco más pequeño que el anterior, cada retroceso un poco más profundo. Las herramientas de momentum intentan captar ese cambio de velocidad antes de que cambie la dirección, y por eso se les llama indicadores **adelantados** (leading), una etiqueta halagadora que debe leerse como \"más temprano pero con más ruido\".\n\nLa mayoría de los indicadores de momentum son **osciladores**: se reescalan para oscilar dentro de una banda fija, normalmente de 0 a 100, de modo que \"alto\" y \"bajo\" signifiquen lo mismo en cualquier acción a cualquier precio. Un oscilador cerca del techo de su rango dice que el movimiento reciente ha sido inusualmente fuerte al alza; los traders lo llaman **sobrecompra** (overbought). Cerca del piso es **sobreventa** (oversold). Estas palabras engañan. No significan que el precio esté demasiado alto o demasiado bajo; significan que la *tasa* de cambio reciente ha sido extrema. Las tendencias fuertes están en sobrecompra durante semanas. Trata los términos como \"estirado\" y evitarás el error de principiante más común, que es ponerse corto en una acción simplemente porque un oscilador está alto.\n\nLos dos osciladores clásicos son el **Índice de Fuerza Relativa (RSI)**, publicado por J. Welles Wilder en 1978, y el **oscilador estocástico**, popularizado por George Lane en los años cincuenta. Miden el momentum de maneras distintas y se complementan menos de lo que la gente supone, porque ambos reaccionan al final a los mismos cierres. El panel dibuja el RSI en un recuadro debajo del gráfico de precio y lo puntúa en la señal compuesta; el estocástico está disponible como recuadro en el panel (el botón Stoch) y en la biblioteca de indicadores para el backtester."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo se calcula el RSI\n\nEl RSI mira las últimas n barras (14 por defecto), separa los días de subida de los días de bajada y compara la ganancia promedio con la pérdida promedio:\n\nRS = ganancia promedio / pérdida promedio, y RSI = 100 − 100 / (1 + RS).\n\nEjemplo. Durante 14 días, los días de subida de una acción promediaron una ganancia de $1.20 y sus días de bajada promediaron una pérdida de $0.60 (contando cero en los días que se movieron en la otra dirección). RS = 1.20 / 0.60 = 2.0, así que RSI = 100 − 100 / 3 = **66.7**. Si las ganancias y las pérdidas fueran iguales, RS = 1 y RSI = 50. Si no hubiera ningún día de bajada, RSI = 100.\n\nWilder no usó promedios simples. Después de las primeras 14 barras los suavizó: ganancia promedio de hoy = (ganancia promedio de ayer × 13 + ganancia de hoy) / 14, y lo mismo para las pérdidas. Eso hace que el RSI responda de forma gradual, como una EMA, y es la razón por la que dos plataformas con la misma configuración pueden mostrar valores de RSI con uno o dos puntos de diferencia si empezaron su cálculo en fechas distintas. Broward Trading sigue el método de Wilder al pie de la letra; el archivo de pruebas del repositorio verifica el ejemplo de los libros de texto.\n\nReglas prácticas que acompañan al RSI:\n\n- Por encima de **70**: sobrecompra (estirado hacia arriba). Por debajo de **30**: sobreventa (estirado hacia abajo).\n- Algunos traders usan 80/20 en acciones volátiles o marcos temporales cortos para reducir las señales falsas.\n- En una tendencia alcista fuerte el RSI tiende a moverse entre 40 y 80 aproximadamente; en una tendencia bajista fuerte, entre 20 y 60. La analista Constance Brown popularizó esta observación del \"desplazamiento del rango\", y es un correctivo útil a la regla 70/30: un RSI de 40 en un mercado alcista suele ser una zona de compra, no una lectura neutral.\n\nLa señal compuesta otorga **+2 cuando el RSI está por debajo de 30 y −2 cuando está por encima de 70**, el mayor peso de cualquier componente individual, y 0 en cualquier otro caso."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Sobrecompra no es una señal de venta.** Durante los repuntes más fuertes el RSI se queda por encima de 70 durante semanas mientras el precio sigue subiendo. Vender en la primera lectura de 70 es una forma confiable de perderse la mejor parte del movimiento. Espera a que el RSI vuelva a cruzar hacia abajo el 70, o a que el precio lo confirme, antes de actuar."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": [
+            "ema9",
+            "ema21",
+            "rsi"
+          ],
+          "caption": "Amazon, diario, con EMA 9 (morado) y EMA 21 (verde azulado) arriba y el RSI de 14 días abajo con sus líneas de 70 y 30. Busca tramos donde el precio marque un máximo nuevo pero el pico del RSI sea más bajo que su pico anterior: eso es divergencia bajista, el momentum se desvanece mientras el precio todavía sube. Luego busca lecturas del RSI en los 30 que ocurrieran mientras las EMA seguían subiendo: esas son las compras en retroceso que busca un trader que usa el desplazamiento del rango."
+        },
+        {
+          "type": "text",
+          "md": "### Divergencia y oscilaciones de fallo\n\nLa señal del RSI más respetada es la **divergencia**. El precio marca un máximo más alto pero el RSI marca un máximo más bajo: los compradores empujaron el precio a un pico nuevo con menos fuerza que antes. Eso es divergencia bajista. Su reflejo, el precio marcando un mínimo más bajo mientras el RSI marca un mínimo más alto, es divergencia alcista.\n\nUn ejemplo numérico. En marzo una acción hace pico en $120 con el RSI en 78. Retrocede a $108 y luego, en abril, repunta hasta $126 (un máximo más alto) pero el RSI solo llega a 68 (un máximo más bajo). El segundo repunte recorrió más terreno con menos momentum, lo que a menudo significa que la tendencia se está cansando. La divergencia no dice *cuándo* llegará el giro; dice que las probabilidades de un giro han aumentado. Los traders de tendencia la usan para ajustar sus stops, no para invertir la posición.\n\nLa favorita del propio Wilder era la **oscilación de fallo** (failure swing). El RSI sube por encima de 70, retrocede, rebota pero no logra volver por encima de 70, y luego rompe por debajo de su propio mínimo anterior. Es una señal de venta que proviene por completo de la línea del RSI y no necesita que el precio la confirme, lo cual es a la vez su atractivo y su riesgo.\n\n### El oscilador estocástico\n\nEl estocástico hace una pregunta distinta: *¿dónde quedó el cierre de hoy dentro del rango reciente?*\n\n%K = 100 × (cierre − mínimo más bajo de las últimas k barras) / (máximo más alto − mínimo más bajo), con k = 14 por defecto. %D es una SMA de 3 barras de %K, dibujada como línea de señal.\n\nEjemplo: en las últimas 14 barras el máximo más alto fue $110 y el mínimo más bajo $100. El cierre de hoy es $108, así que %K = 100 × 8 / 10 = **80**. Un cierre en $101 daría 10. Cerrar cerca del techo del rango día tras día es justo el aspecto de una tendencia alcista fuerte, así que el estocástico, igual que el RSI, vive por encima de 80 en tendencias fuertes. Las lecturas por encima de **80** se llaman sobrecompra y por debajo de **20** sobreventa. El disparador habitual es que %K cruce %D mientras está en una de esas zonas. Como usa máximos y mínimos, y no solo cierres, el estocástico es más nervioso que el RSI, y la mayoría de los traders lo suavizan (el \"estocástico lento\") antes de usarlo."
+        },
+        {
+          "type": "text",
+          "md": "### El RSI como estrategia: reversión a la media y su trampa\n\nLa estrategia de RSI más simple, que el Laboratorio de estrategias llama **Reversión del RSI**, compra cuando el RSI baja de 30 y vende cuando sube de 70. Es una estrategia de **reversión a la media** (mean reversion): apuesta a que los movimientos estirados regresan. En acciones que oscilan dentro de un rango funciona de maravilla. En una acción que cae con fuerza es un desastre, porque el RSI baja de 30, compras, y la acción sigue cayendo mientras el RSI se queda clavado en 20 durante un mes.\n\nLos números lo hacen vívido. Supón que una acción cae de $60 a $52 en dos semanas y el RSI imprime 27. Compras en $52. Rebota a $55 (ganancia, +5.8%). El mes siguiente se desliza de $55 a $44 y el RSI imprime 24. Compras en $44. Sigue cayendo hasta $36 antes de que el RSI siquiera vuelva por encima de 30. Un solo tramo de tendencia ha borrado tres rebotes ganadores.\n\nPor eso la señal compuesta combina el RSI con los dos componentes de tendencia. Un RSI en sobreventa *por encima de una SMA 50 que sube* (un retroceso dentro de una tendencia alcista) acumula +2 por el RSI, más +1 por la tendencia, más +1 por la alineación: una COMPRA en +4. La misma lectura del RSI *por debajo de una SMA 50 que baja* queda en +2 −1 −1 = 0, un MANTENER. El filtro de tendencia no convierte al RSI en un mejor oscilador; evita que lo uses en el mercado equivocado.\n\nEn el ejercicio ejecutarás la Reversión del RSI en el backtester y luego mirarás específicamente su peor operación. Casi siempre será una compra hecha dentro de una tendencia bajista. La lección no es que el RSI falla; es que ningún oscilador puede leerse sin conocer la tendencia en la que está metido, y ahí es donde entran el ADX (lección 4) y las reglas de combinación de la lección 5."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Lee el recuadro del RSI como una historia, no como un número.** Haz tres preguntas en orden: ¿En qué rango ha vivido el RSI los últimos meses (40–80 dice alcista, 20–60 dice bajista)? ¿Está divergiendo del precio? Y solo entonces, ¿está en un extremo? Un trader que revisa primero el extremo y nada más está usando más o menos un tercio de la herramienta."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre Nvidia en el gráfico diario con EMA 9, EMA 21 y el recuadro del RSI (el enlace lo hace por ti).\n\n- Encuentra las últimas tres veces que el RSI bajó de 30. Para cada una, anota el cierre de ese día y el cierre 10 barras después. ¿Cuántas de las tres lecturas de \"sobreventa\" fueron seguidas por un precio más alto?\n- Encuentra una divergencia bajista (máximo de precio más alto, máximo del RSI más bajo) y una divergencia alcista. Anota cuántas barras pasaron entre la divergencia y el giro real del precio.\n- Ahora ve al Laboratorio de estrategias, elige **Reversión del RSI** con bajo 30 y alto 70 en el mismo símbolo y ejecútala. Abre la lista de operaciones (cópiala como CSV en una hoja de cálculo para ordenarla por P&L) y encuentra la peor operación. Mira esa operación en el gráfico: ¿la acción estaba por encima o por debajo de su media de 50 días cuando ocurrió la entrada?\n- Cambia los umbrales a 20 y 80 y ejecuta de nuevo. Hay menos operaciones, pero ¿son mejores?",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=NVDA&interval=1day&ov=ema9,ema21&pane=rsi"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "En los últimos 14 días una acción promedió una ganancia de $0.90 en los días de subida y una pérdida de $0.30 en los días de bajada. ¿Cuál es su RSI?",
+              "choices": [
+                "25",
+                "50",
+                "75",
+                "90"
+              ],
+              "answer": 2,
+              "explain": "RS = 0.90 / 0.30 = 3. RSI = 100 − 100 / (1 + 3) = 100 − 25 = 75. Ganancias del triple del tamaño de las pérdidas ponen al RSI con firmeza en la zona de sobrecompra."
+            },
+            {
+              "q": "Una acción marca un máximo más alto en el precio mientras el RSI marca un máximo más bajo. ¿Cómo se llama esto y qué sugiere?",
+              "choices": [
+                "Divergencia alcista; la tendencia alcista se está fortaleciendo",
+                "Divergencia bajista; el momentum alcista se está desvaneciendo",
+                "Una oscilación de fallo; compra de inmediato",
+                "Un cruce dorado; la tendencia se ha confirmado"
+              ],
+              "answer": 1,
+              "explain": "Precio arriba, momentum abajo es divergencia bajista. Advierte que el repunte se está impulsando con menos fuerza, lo que aumenta las probabilidades de un retroceso, aunque no indica el momento del giro."
+            },
+            {
+              "q": "En las últimas 14 barras el máximo más alto fue $84 y el mínimo más bajo $76. Hoy cerró en $82. ¿Cuál es el %K del estocástico?",
+              "choices": [
+                "25",
+                "50",
+                "75",
+                "82"
+              ],
+              "answer": 2,
+              "explain": "%K = 100 × (82 − 76) / (84 − 76) = 100 × 6 / 8 = 75. El cierre está a tres cuartas partes de la altura del rango reciente."
+            },
+            {
+              "q": "¿Cuántos puntos otorga la señal compuesta cuando el RSI está en 26?",
+              "choices": [
+                "+1",
+                "+2",
+                "−2",
+                "0, porque 26 es apenas una sobreventa leve"
+              ],
+              "answer": 1,
+              "explain": "Un RSI por debajo de 30 puntúa +2, el mayor peso individual de la señal compuesta. Por encima de 70 puntúa −2; cualquier valor intermedio puntúa 0."
+            },
+            {
+              "q": "¿Por qué una estrategia simple de \"comprar por debajo de RSI 30\" tiende a fallar en una tendencia bajista fuerte?",
+              "choices": [
+                "El RSI no se puede calcular cuando los precios caen",
+                "El RSI se queda en sobreventa durante tramos largos mientras el precio sigue cayendo, así que cada compra llega antes de tiempo",
+                "Las tendencias bajistas no tienen volumen",
+                "El RSI solo funciona en gráficos semanales"
+              ],
+              "answer": 1,
+              "explain": "La sobreventa describe una tasa de caída estirada, no un piso. En una tendencia bajista persistente el RSI puede quedarse por debajo de 30 durante semanas, y cada compra es una apuesta contra la tendencia. Un filtro de tendencia como el precio frente a la SMA 50 es la solución habitual."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l3",
+      "title": "MACD, Bandas de Bollinger y ATR",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### MACD: tendencia y momentum en un solo recuadro\n\nEl **MACD** (Moving Average Convergence Divergence, convergencia/divergencia de medias móviles), desarrollado por Gerald Appel a finales de los años setenta, se construye a partir de las EMA que conociste en la lección 1. Tres líneas:\n\n- **Línea MACD** = EMA 12 − EMA 26 de los cierres.\n- **Línea de señal** = EMA 9 de la línea MACD.\n- **Histograma** = línea MACD − línea de señal, dibujado como barras.\n\nLa línea MACD es positiva cuando la media rápida está por encima de la lenta, así que su signo es la misma información que un cruce de EMA 12/26. Su *distancia respecto a cero* agrega algo que un cruce no puede: qué tan separadas están las medias, que es una medida de momentum. La línea de señal y el histograma miden entonces el momentum del momentum.\n\nEjemplo resuelto. La EMA 12 está en $101.50 y la EMA 26 en $100.00, así que MACD = **+1.50**. La línea de señal (EMA 9 de los valores recientes del MACD) está en 1.20. Histograma = 1.50 − 1.20 = **+0.30**. Ayer el histograma estaba en +0.20, así que es positivo y creciente: la brecha alcista sigue ensanchándose. Si mañana el MACD está en 1.55 pero la señal lo ha alcanzado hasta 1.35, el histograma se encoge a +0.20. Sigue positivo, pero se desvanece; un trader lo lee como \"el repunte continúa pero está perdiendo aceleración\".\n\nTres señales estándar, de la más frecuente a la menos frecuente:\n\n1. **Giro del histograma** (se encoge después de crecer): la más temprana y la más ruidosa.\n2. **Cruce de la línea de señal** (el MACD cruza la línea de señal): el disparador de operación habitual; la estrategia **Cruce de MACD** del Laboratorio de estrategias usa este.\n3. **Cruce de la línea cero** (el MACD cruza cero): equivale al cruce de EMA 12/26; lento pero significativo.\n\nLa señal compuesta usa el histograma: **+1 cuando es positivo y creciente, −1 cuando es negativo y decreciente, 0 en cualquier otro caso**. Fíjate en lo que eso excluye: un histograma positivo pero que se encoge puntúa cero, así que el panel deja de premiar un repunte tan pronto como se desacelera. El MACD no está acotado (está en dólares, no en 0–100), así que \"sobrecompra\" no tiene un nivel fijo; compáralo solo con su propia historia en la misma acción."
+        },
+        {
+          "type": "text",
+          "md": "### Bandas de Bollinger: volatilidad que puedes ver\n\nLas **Bandas de Bollinger**, creadas por John Bollinger en los años ochenta, envuelven una media móvil en una envoltura de volatilidad:\n\n- Banda media = SMA de 20 períodos.\n- Banda superior = media + 2 desviaciones estándar de los últimos 20 cierres.\n- Banda inferior = media − 2 desviaciones estándar.\n\nEjemplo. La SMA de 20 días está en $100 y la desviación estándar de esos 20 cierres es $2. Las bandas quedan en **$96 y $104**. Si la acción se vuelve dos veces más volátil y la desviación estándar sube a $4, las bandas se ensanchan a $92 y $108 aunque la media no se haya movido. Las bandas respiran con la volatilidad; ese es todo su propósito.\n\n**Ancho de banda** (bandwidth) = (superior − inferior) / media, aquí (104 − 96) / 100 = 8%. Seguir el ancho de banda a lo largo del tiempo muestra cuándo una acción está inusualmente tranquila. Un **estrechamiento** (squeeze: ancho de banda en un mínimo de varios meses) suele preceder a un movimiento grande, porque la volatilidad tiende a agruparse: los períodos tranquilos van seguidos de períodos ruidosos y viceversa. El estrechamiento no te dice la dirección; los traders esperan la ruptura y la acompañan.\n\nSi los retornos diarios siguieran una campana de Gauss, alrededor del 95% de los cierres quedarían dentro de bandas de dos desviaciones estándar. Los retornos reales tienen colas más gordas y volatilidad cambiante, y en la práctica bastantes menos cierres se quedan dentro, por lo que un cierre fuera de las bandas es común en vez de raro. El propio Bollinger insiste en que tocar una banda **no** es una señal por sí mismo. Dos formas en que los traders usan las bandas:\n\n- **Reversión a la media** en rangos: comprar cerca de la banda inferior, vender cerca de la superior. El **Rebote de Bollinger** del Laboratorio de estrategias hace esto. Funciona en mercados laterales y se desangra en tendencias, exactamente como la Reversión del RSI y por la misma razón.\n- **Caminar por la banda** (band walking) en tendencias: una tendencia fuerte avanza pegada a la banda superior durante semanas. Aquí tocar la banda superior es una señal de fuerza, no de venta.\n\nLa señal compuesta puntúa **+1 por un cierre debajo de la banda inferior y −1 por un cierre encima de la banda superior**, una lectura de reversión a la media que los componentes de tendencia pueden anular."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**La misma lectura significa cosas opuestas en regímenes distintos.** Un cierre por encima de la banda superior de Bollinger es una oportunidad para operar en contra en un rango y una confirmación en una tendencia. Un RSI de 75 es una advertencia en un rango y algo normal en un mercado alcista. Antes de interpretar cualquier indicador, decide en qué régimen estás. El ADX, en la próxima lección, es la herramienta para esa decisión."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "macd"
+          ],
+          "caption": "Microsoft, diario, con Bandas de Bollinger (20, 2) alrededor del precio y el recuadro del MACD (12, 26, 9) abajo: línea MACD azul, línea de señal ámbar, histograma verde/rojo. Busca un estrechamiento, donde las bandas se pegan entre sí, y observa qué pasó con el precio en las semanas siguientes. Luego busca un tramo donde el precio camine por la banda superior; comprueba si el histograma crecía (aceleración) o se encogía (un repunte perdiendo velocidad) durante ese recorrido."
+        },
+        {
+          "type": "text",
+          "md": "### ATR: medir el tamaño de un día normal\n\nEl **Rango Verdadero Promedio (ATR)**, otro indicador de Wilder de 1978, responde a una pregunta simple: ¿cuánto se mueve normalmente esta acción en una barra? No le importa la dirección.\n\nEl **rango verdadero** (true range) de cada barra es la mayor de tres distancias: máximo − mínimo; |máximo − cierre anterior|; |mínimo − cierre anterior|. El segundo y el tercer término capturan los gaps. Si una acción cerró ayer en $50 y hoy se negocia entre $53 y $54, el rango simple es $1 pero el rango verdadero es $4 (de $50 a $54), porque quien mantuvo la posición de un día para otro vivió esos $4. El ATR es el promedio suavizado de Wilder del rango verdadero sobre 14 barras por defecto: ATR de hoy = (ATR de ayer × 13 + rango verdadero de hoy) / 14.\n\nEl ATR está en dólares, así que una acción de $500 tendrá un ATR mucho mayor que una de $20. Para comparar entre acciones, divide entre el precio: un ATR de $7.50 en una acción de $500 es 1.5% al día; un ATR de $0.90 en una acción de $20 es 4.5%, tres veces más volátil en la forma que importa para tu cuenta.\n\nEl ATR tiene tres usos cotidianos, y ninguno es predecir la dirección:\n\n**Colocación del stop.** Un stop a menos de aproximadamente un ATR de la entrada está dentro del ruido diario normal de la acción y lo va a tocar el azar. Una regla común es **2 × ATR**. Una entrada en $50.00 con un ATR de $1.50 coloca el stop en $47.00. El múltiplo exacto es cuestión de gusto y de horizonte de inversión, y se debate ampliamente; lo que no se debate es que los stops deben escalar con la volatilidad y no ser un porcentaje fijo.\n\n**Tamaño de la posición.** Decide los dólares que vas a arriesgar y divídelos entre la distancia al stop. Arriesgar $500 con un stop de $3.00 (el 2 × ATR de arriba) significa 500 / 3 ≈ **166 acciones**. Una acción más tranquila con un ATR de $0.75 y un stop de $1.50 permite 333 acciones por el mismo riesgo de $500. Las acciones volátiles reciben posiciones más pequeñas de forma automática. El módulo 4 construye sobre esto.\n\n**Chequeo de régimen.** Un ATR en ascenso significa días más grandes: amplía los stops, reduce el tamaño, espera gaps. Un ATR que se desploma es el mismo mensaje que un estrechamiento de Bollinger."
+        },
+        {
+          "type": "text",
+          "md": "### Juntar las tres en una sola operación\n\nEstas tres herramientas responden a tres preguntas distintas: el MACD, *¿el momentum está creciendo o desvaneciéndose?*; las Bandas de Bollinger, *¿el precio está estirado respecto a su media reciente?*; el ATR, *¿cuánto espacio necesita un día normal?* Como responden a preguntas distintas se combinan bien, a diferencia del RSI y el estocástico, que en gran medida se repiten entre sí.\n\nUna operación resuelta. Una acción ha estado en un rango tranquilo: el ancho de banda de Bollinger está en un mínimo de seis meses (un estrechamiento), el ATR es $1.10 en una acción de $55 (2%). Entonces cierra en $57.20, por encima de la banda superior, con volumen alto, y el histograma del MACD pasa de −0.15 a +0.25, positivo y creciente. Un trader de tendencia lo lee como una ruptura del estrechamiento con el momentum confirmando.\n\n- Entrada: $57.30 a la mañana siguiente.\n- Stop: 2 × ATR = $2.20 por debajo, en $55.10. Eso está de vuelta dentro del rango anterior; si el precio regresa ahí, la ruptura fracasó.\n- Tamaño: dispuesto a arriesgar $440, así que 440 / 2.20 = 200 acciones.\n- Gestión: mantener mientras el histograma siga creciendo y el precio se mantenga por encima de la banda media. La primera advertencia es un histograma que se encoge; la salida es un cierre por debajo de la banda media de 20 días.\n\nNada de esto requirió un pronóstico. El estrechamiento dijo que un movimiento estaba por llegar, la ruptura de la banda y el MACD dijeron en qué dirección había empezado, el ATR dijo cuánto arriesgar. Un trader de reversión a la media leería el mismo cierre por encima de la banda superior como una venta; la diferencia es el estrechamiento, que dice que la volatilidad se está expandiendo y que la reversión es la apuesta equivocada. La lección 5 convierte este tipo de razonamiento en una lista de verificación."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Convierte el ATR a porcentaje en tu cabeza.** Antes de cualquier operación, divide el ATR entre el precio. Menos de 1% al día es una empresa grande y tranquila; 2–3% es típico de una acción de crecimiento volátil; por encima de 5% deberías operar con tamaños muy pequeños. La cartera de práctica te dejará comprar con gusto una acción que se mueve 6% al día con la mitad de tu cuenta; la lección sale más barata si el ATR te detiene primero."
+        },
+        {
+          "type": "exercise",
+          "md": "El enlace abre el Laboratorio de estrategias con **Rebote de Bollinger** (20, 2) en Microsoft.\n\n- Ejecútalo y registra operaciones, tasa de acierto, factor de beneficio (profit factor) y drawdown máximo. Mira la curva de capital: ¿dónde se desangra? Pasa el cursor por esas operaciones y comprueba si el precio estaba en tendencia en ese momento.\n- Cambia a **Cruce de MACD** (12, 26, 9) en el mismo símbolo. Compara. Una es una estrategia de reversión a la media y la otra una estrategia de tendencia, y normalmente tendrán períodos buenos y malos opuestos.\n- Ahora ve al panel, carga cualquier acción de la lista de seguimiento en el gráfico diario y estima su ATR a mano: pasa el cursor por las últimas cinco velas, calcula cada máximo menos mínimo y promédialos (ignora los gaps para esta comprobación aproximada). Divide entre el cierre para obtener un porcentaje.\n- Por último, en la boleta de operación, ingresa una compra de práctica de esa acción con un tamaño tal que un stop 2 × ATR por debajo del precio arriesgue no más de $500 de la cuenta. Coloca el stop de venta en ese nivel con vigencia GTC. Escribe el ATR, el stop y el número de acciones en tu diario.",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=MSFT&tf=1day&strategy=bollingerBounce&n=20&k=2&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "La EMA 12 está en $48.60 y la EMA 26 en $47.40. La línea de señal está en 0.90. ¿Cuál es el histograma del MACD?",
+              "choices": [
+                "+1.20",
+                "+0.30",
+                "−0.30",
+                "+2.10"
+              ],
+              "answer": 1,
+              "explain": "MACD = 48.60 − 47.40 = 1.20. Histograma = MACD − señal = 1.20 − 0.90 = +0.30. Un histograma positivo significa que la línea MACD está por encima de su línea de señal."
+            },
+            {
+              "q": "La SMA de 20 días está en $80 y la desviación estándar de los últimos 20 cierres es $3. ¿Dónde están las Bandas de Bollinger estándar?",
+              "choices": [
+                "$77 y $83",
+                "$74 y $86",
+                "$71 y $89",
+                "$78.50 y $81.50"
+              ],
+              "answer": 1,
+              "explain": "Las bandas estándar son la media ± 2 desviaciones estándar: 80 ± 6, es decir $74 y $86. El ancho de banda es 12 / 80 = 15%."
+            },
+            {
+              "q": "Una acción cerró ayer en $100. Hoy su máximo es $99 y su mínimo $95. ¿Cuál es el rango verdadero de hoy?",
+              "choices": [
+                "$4",
+                "$5",
+                "$1",
+                "$99"
+              ],
+              "answer": 1,
+              "explain": "El rango verdadero es la mayor de: máximo − mínimo ($4), |máximo − cierre anterior| ($1) y |mínimo − cierre anterior| ($5). El gap a la baja desde $100 hasta el mínimo de $95 es la distancia más grande, así que TR = $5."
+            },
+            {
+              "q": "Vas a arriesgar $600 en una operación. La entrada es $42 y el ATR es $1.50. Con un stop de 2 × ATR, ¿cuántas acciones compras?",
+              "choices": [
+                "100",
+                "200",
+                "400",
+                "600"
+              ],
+              "answer": 1,
+              "explain": "Distancia al stop = 2 × 1.50 = $3.00. Acciones = 600 / 3 = 200. El stop va en $39.00."
+            },
+            {
+              "q": "El precio cierra por encima de la banda superior de Bollinger justo después de un estrechamiento de varios meses en el ancho de banda. ¿Cómo lo lee un trader de tendencia?",
+              "choices": [
+                "Una señal de venta, porque el precio está en sobrecompra",
+                "Una ruptura con volatilidad en expansión, probablemente el inicio de un movimiento",
+                "Una señal para cambiar a una banda de 50 días",
+                "Nada; los toques de banda son aleatorios"
+              ],
+              "answer": 1,
+              "explain": "Un estrechamiento significa que la volatilidad estaba inusualmente baja; el primer cierre fuera de las bandas después de un estrechamiento se lee como el inicio de una expansión, no como una reversión. La señal compuesta igual lo puntúa −1, lo cual es una razón para leer el contexto y no solo la puntuación."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l4",
+      "title": "Fuerza de tendencia y contexto: ADX, VWAP e Ichimoku",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### ADX: ¿hay tendencia siquiera?\n\nLas lecciones anteriores chocaron una y otra vez con el mismo muro: las herramientas de tendencia fallan en los rangos y las herramientas de reversión a la media fallan en las tendencias. El **Índice Direccional Promedio (ADX)**, otro de los indicadores de Wilder de 1978, existe para decirte en qué régimen estás. Mide la **fuerza** de la tendencia, no su dirección, y va de 0 a 100.\n\nLa construcción tiene tres pasos. Primero, el **movimiento direccional**: en cada barra, compara el máximo de hoy con el de ayer (un movimiento al alza) y el mínimo de ayer con el de hoy (un movimiento a la baja). El que sea mayor cuenta; el otro se pone en cero. Segundo, divide los movimientos al alza y a la baja suavizados entre el rango verdadero suavizado para obtener **+DI** y **−DI**, dos líneas que dicen qué bando ha estado ganando. Tercero, calcula DX = 100 × |+DI − −DI| / (+DI + −DI) y suavízalo sobre 14 barras para obtener el **ADX**.\n\nEjemplo: +DI es 30 y −DI es 10. DX = 100 × 20 / 40 = 50, una tendencia fuerte. Si +DI es 22 y −DI es 18, DX = 100 × 4 / 40 = 10: compradores y vendedores están casi equilibrados, sin tendencia. El ADX es la versión suavizada de ese número, así que necesita unas 27 barras antes de imprimir siquiera un valor (14 para construir los DI y luego 14 más para promediar el DX).\n\nReglas prácticas comunes, todas debatidas en los márgenes:\n\n- **ADX por debajo de 20**: sin tendencia clara; espera un mercado lateral. Los cruces darán latigazos; la reversión a la media tiene la ventaja.\n- **ADX por encima de 25**: en tendencia; las señales de seguimiento de tendencia son más confiables, y las lecturas de \"sobrecompra\" significan menos.\n- **ADX en ascenso**: la tendencia (en cualquier dirección) se está fortaleciendo. **ADX en descenso** desde un nivel alto: la tendencia se está cansando, aunque el precio no haya girado.\n\nComo el ADX es ciego a la dirección, una lectura de 40 puede significar un repunte poderoso o un desplome poderoso. Lee **+DI frente a −DI** para la dirección: +DI por encima de −DI significa que los compradores tienen el control. La señal compuesta de Broward Trading reporta el ADX en la lista de razones como **contexto con cero puntos**, etiquetado como \"tendencia fuerte\", \"tendencia en formación\" o \"sin tendencia clara\", precisamente para que puedas decidir cuánto confiar en los demás componentes."
+        },
+        {
+          "type": "text",
+          "md": "### VWAP: el precio que pagó todo el día\n\nEl **Precio Promedio Ponderado por Volumen (VWAP)** es el precio promedio al que una acción realmente se negoció, ponderando cada barra por su volumen. Se calcula de forma acumulada desde la apertura: suma de (precio típico × volumen) dividida entre la suma del volumen, donde el precio típico es (máximo + mínimo + cierre) / 3. Se reinicia desde cero en cada sesión, así que en los gráficos intradía es una línea nueva cada día.\n\nEjemplo, tres barras de 5 minutos después de la apertura. Barra 1: precio típico $100, volumen 10,000. Barra 2: $101, volumen 30,000. Barra 3: $102, volumen 10,000. VWAP después de tres barras = (100 × 10,000 + 101 × 30,000 + 102 × 10,000) / 50,000 = 5,050,000 / 50,000 = **$101.00**. Un promedio simple de los tres precios también daría $101 aquí, pero si la barra de 30,000 acciones hubiera estado en $100 y las barras de 10,000 acciones en $101 y $102, el VWAP quedaría en $100.60 mientras el promedio simple seguiría en $101. El VWAP se inclina hacia donde estuvo el volumen.\n\nPor qué les importa a las instituciones: un fondo que compra dos millones de acciones a lo largo de un día es evaluado según si pagó menos que el VWAP. Eso convierte al VWAP en un precio de referencia que muchos participantes grandes intentan activamente superar, y por eso el precio intradía reacciona tan a menudo frente a él. Lecturas intradía comunes:\n\n- Precio por encima del VWAP y VWAP subiendo: los compradores tienen el control hoy; las caídas hasta el VWAP suelen comprarse.\n- Precio por debajo de un VWAP que baja: los vendedores tienen el control; los repuntes hasta el VWAP suelen venderse.\n- Precio cruzando el VWAP repetidamente: un día equilibrado, de dos bandos, difícil de operar en una dirección.\n\nEl VWAP es una herramienta **intradía**. En barras diarias no hay sesión a la que reiniciarse, así que Broward Trading dibuja un VWAP acumulado a lo largo de toda la historia cargada, que es una línea muy distinta (un VWAP anclado desde la primera barra) y debe leerse como un costo promedio de largo plazo, no como una referencia de day trading. El botón VWAP del panel es más útil en los intervalos de 5 y 15 minutos."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "15min",
+          "overlays": [
+            "vwap"
+          ],
+          "caption": "Tesla en barras de 15 minutos con VWAP (rosa). Cada sesión tiene 26 barras y el VWAP se reinicia en la primera. Elige un día en que el precio abrió por encima del VWAP y se mantuvo ahí: observa cómo los retrocesos hasta la línea se compraron. Elige un día en que el precio la cruzó varias veces: ese es un día equilibrado sin ventaja para un trader direccional. Los datos en vivo mostrarán sesiones reales; los datos de demostración siguen el calendario de la NYSE con precios simulados."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**El VWAP es un espejo de la multitud de hoy, no un pronóstico.** Te dice si el comprador promedio hasta ahora va ganando o perdiendo. Quien compró en la apertura por encima del VWAP está bajo el agua; quien compró por debajo va adelante. El precio tiende a reaccionar en el VWAP porque esos dos grupos se comportan de manera distinta cuando llega ahí."
+        },
+        {
+          "type": "text",
+          "md": "### Ichimoku: cinco líneas, un vistazo\n\nEl **Ichimoku Kinko Hyo** (\"gráfico de equilibrio de un vistazo\") fue desarrollado por el periodista japonés Goichi Hosoda y publicado en 1969 tras décadas de trabajo. Es un sistema de tendencia completo en cinco líneas, y su rasgo inusual es que dos de ellas se dibujan **hacia el futuro** y una **hacia el pasado**.\n\n- **Tenkan-sen** (línea de conversión): punto medio entre el máximo más alto y el mínimo más bajo de las últimas **9** barras. Una línea de tendencia rápida, de papel similar a una media móvil corta pero usando el rango, no los cierres.\n- **Kijun-sen** (línea base): el mismo punto medio sobre **26** barras. Más lenta; los traders la tratan como el centro de gravedad de la tendencia y un nivel natural de stop.\n- **Senkou Span A**: promedio de Tenkan y Kijun, dibujado **26 barras hacia adelante**.\n- **Senkou Span B**: punto medio del rango de **52** barras, también dibujado 26 barras hacia adelante.\n- **Chikou Span** (línea rezagada): el cierre de hoy dibujado **26 barras hacia atrás**.\n\nEl espacio entre Senkou A y B es la **nube** (kumo), sombreada en verde cuando A está por encima de B (alcista) y en rojo cuando B está por encima de A. Como se proyecta hacia adelante, la nube muestra dónde *deberían* estar el soporte y la resistencia el mes que viene con base en dónde están hoy los puntos medios. Las configuraciones 9/26/52 vienen de la semana de negociación japonesa de seis días de la época de Hosoda (aproximadamente una semana y media, un mes, dos meses), y la mayoría de los traders las dejan sin cambios en los gráficos diarios; algunos las ajustan a 7/22/44 para una semana de cinco días, un debate sin respuesta definitiva.\n\nLa lectura de un vistazo:\n\n- Precio **por encima de la nube**: tendencia alcista. **Por debajo**: tendencia bajista. **Dentro**: sin tendencia, mantente al margen.\n- Tenkan por encima de Kijun: momentum alcista (un cruce funciona como un cruce de medias rápida/lenta).\n- Chikou por encima del precio de hace 26 barras: la tendencia se ha confirmado desde atrás.\n- Nube gruesa: soporte/resistencia fuerte por delante. Nube delgada: fácil de atravesar, la tendencia puede voltearse.\n\nEjemplo: una acción en $150 está por encima de una nube verde que va de $138 a $144, con Tenkan en $147 por encima de Kijun en $143. Todas las señales coinciden: tendencia al alza, Kijun en $143 como stop lógico, techo de la nube en $144 como el nivel que un retroceso debería respetar. Un cierre de vuelta dentro de la nube diría que la tendencia está en duda. El panel dibuja Tenkan, Kijun, Chikou y la nube proyectada con su botón Ichimoku; el gráfico de la lección de abajo puede mostrar las otras superposiciones, pero la nube se estudia mejor en el panel completo."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "caption": "Apple, diario, con SMA 20 y SMA 50 para orientarte. El recuadro de la lección dibuja medias simples; para ver el sistema Ichimoku en sí, incluida la nube proyectada 26 barras hacia adelante, abre el mismo símbolo en el panel con el enlace del ejercicio de abajo. Busca los tres estados: precio por encima de una nube verde, precio por debajo de una nube roja y precio dentro de la nube. Luego comprueba si el cruce Tenkan/Kijun llegó antes o después de que el precio saliera de la nube."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo elegir una herramienta de contexto\n\nADX, VWAP e Ichimoku son cada uno **contexto**, no disparadores. Te dicen en qué tipo de mercado estás para que puedas decidir a cuál de las herramientas de las lecciones 1 a 3 creerle. Así se reparten el trabajo los tres.\n\nEl **ADX** es el medidor universal de régimen. Funciona en cualquier marco temporal y se reduce a un solo número. Su debilidad es el retraso: tarda dos períodos completos de observación en construirse, y confirma una tendencia cuando la tendencia ya está bien establecida. Una rutina práctica en el gráfico diario es revisar el ADX antes de elegir una estrategia: por debajo de 20, favorece el Rebote de Bollinger o la Reversión del RSI; por encima de 25 con el ADX subiendo, favorece los cruces, el MACD y las rupturas. Justo por eso la señal compuesta lo reporta junto a la puntuación.\n\nEl **VWAP** es la herramienta de contexto intradía. No tiene sentido entre días y casi no tiene retraso porque es un promedio corriente de hoy. Los day traders lo usan como los swing traders usan la SMA de 20 días: el lado en que está el precio define el sesgo de la sesión.\n\nEl **Ichimoku** es la herramienta más pesada, y los estudiantes la aman o la odian. Su fortaleza es que tendencia, momentum, soporte/resistencia y confirmación están todos en un solo gráfico, con la nube dándote niveles por adelantado. Sus debilidades son el desorden visual y la tentación de sobreinterpretarlo. Funciona mejor en gráficos diarios y semanales de acciones e índices líquidos; en un gráfico de 5 minutos su tramo de 52 barras apenas cubre cuatro horas y la nube se voltea constantemente.\n\nEn términos de backtesting, ninguno de estos es una estrategia por sí solo en el Laboratorio de estrategias; son los filtros que agregarías a una. El módulo 6 muestra cómo programar un filtro (por ejemplo, \"tomar señales de cruce de SMA solo cuando el ADX está por encima de 25\") y medir si de verdad ayuda con tus datos en lugar de suponerlo."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el panel con Apple, diario, con la superposición Ichimoku (el enlace lo hace por ti). Luego haz lo mismo con Tesla y con una acción tranquila de la lista de seguimiento (una empresa de servicios públicos o de consumo básico).\n\n- Para cada acción anota: ¿el precio está por encima, por debajo o dentro de la nube ahora mismo? ¿Tenkan está por encima o por debajo de Kijun? ¿Cuáles son los precios del techo y del piso de la nube 26 barras hacia adelante?\n- Haz clic en **¿Por qué?** (Why?) debajo de la insignia de la señal y lee la línea de contexto del ADX. ¿La etiqueta del ADX (\"tendencia fuerte\", \"tendencia en formación\", \"sin tendencia clara\") coincide con lo que muestra la nube? Anota cualquier desacuerdo y mira el gráfico para decidir quién tiene razón.\n- Cambia la acción tranquila al intervalo de 15 minutos, apaga Ichimoku y enciende VWAP. Cuenta cuántas veces el precio cruzó el VWAP en la última sesión completa. Más de cuatro cruces es un día equilibrado.\n- Por último, para la acción con el ADX más alto, abre el Laboratorio de estrategias y ejecuta el Cruce de SMA; para la acción con el ADX más bajo, ejecuta el Rebote de Bollinger. Registra ambos retornos. ¿La estrategia que correspondía al régimen rindió mejor de lo que esperarías de la que no correspondía?",
+          "action": {
+            "page": "index.html",
+            "hash": "symbol=AAPL&interval=1day&ov=ichimoku"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "+DI es 35 y −DI es 15 en un gráfico diario. ¿Cuál es el índice direccional (DX) de esa barra, antes del suavizado?",
+              "choices": [
+                "20",
+                "40",
+                "50",
+                "70"
+              ],
+              "answer": 1,
+              "explain": "DX = 100 × |35 − 15| / (35 + 15) = 100 × 20 / 50 = 40. Suavizar esto sobre 14 barras da el ADX; las propias líneas DI dan la dirección (aquí lideran los compradores)."
+            },
+            {
+              "q": "El ADX marca 42 en una acción. ¿Qué afirmación es correcta?",
+              "choices": [
+                "La acción está en una tendencia alcista fuerte",
+                "La acción está en una tendencia bajista fuerte",
+                "La acción está en una tendencia fuerte; revisa +DI frente a −DI para la dirección",
+                "La acción está en sobrecompra"
+              ],
+              "answer": 2,
+              "explain": "El ADX mide solo la fuerza. Un ADX alto puede acompañar a un repunte o a un desplome. +DI por encima de −DI significa al alza; −DI por encima de +DI significa a la baja."
+            },
+            {
+              "q": "Tres barras de 5 minutos después de la apertura: precios típicos $50, $51, $52 con volúmenes de 20,000, 10,000 y 10,000. ¿Cuál es el VWAP?",
+              "choices": [
+                "$50.50",
+                "$50.75",
+                "$51.00",
+                "$51.50"
+              ],
+              "answer": 1,
+              "explain": "VWAP = (50 × 20,000 + 51 × 10,000 + 52 × 10,000) / 40,000 = 2,030,000 / 40,000 = $50.75. El volumen alto en $50 lo jala por debajo del promedio simple de $51."
+            },
+            {
+              "q": "En el sistema Ichimoku, ¿cómo se calcula el Senkou Span B y dónde se dibuja?",
+              "choices": [
+                "Punto medio de 9 barras, dibujado en la barra actual",
+                "Promedio de Tenkan y Kijun, dibujado 26 barras hacia adelante",
+                "Punto medio del rango máximo–mínimo de 52 barras, dibujado 26 barras hacia adelante",
+                "El cierre de hoy, dibujado 26 barras hacia atrás"
+              ],
+              "answer": 2,
+              "explain": "El Senkou B es el punto medio del rango de 52 barras, desplazado 26 barras hacia adelante. El Senkou A es el promedio Tenkan/Kijun desplazado hacia adelante; el Chikou es el cierre desplazado hacia atrás."
+            },
+            {
+              "q": "El ADX está en 15 en el gráfico diario. ¿Qué familia de estrategias favorece esta lectura?",
+              "choices": [
+                "Cruces de medias móviles",
+                "Rupturas de canal",
+                "Herramientas de reversión a la media como la Reversión del RSI o el Rebote de Bollinger",
+                "Ninguna; es imposible operar con un ADX por debajo de 20"
+              ],
+              "answer": 2,
+              "explain": "Un ADX por debajo de 20 es la firma clásica, según la regla práctica, de un rango. Las herramientas de tendencia dan latigazos en los rangos; operar en contra de los extremos tiene mejores probabilidades. Los umbrales son convenciones, no leyes, pero la dirección del consejo tiene amplio consenso."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3-l5",
+      "title": "Cómo combinar indicadores y la señal compuesta",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Redundancia: la pila de indicadores del principiante\n\nEl primer gráfico típico de un trader nuevo tiene RSI, estocástico, MACD y el Índice del Canal de Materias Primas (CCI) apilados debajo del precio, todos apuntando en la misma dirección, y el trader se siente cuatro veces más seguro. En realidad tiene una sola opinión, medida de cuatro maneras. Todas esas herramientas se calculan a partir de los mismos cierres recientes y todas son osciladores de momentum. Cuando los cierres suben rápido, las cuatro suben. Coinciden porque son la misma cosa.\n\nEsto es **redundancia**, y es peligrosa porque se siente como confirmación. La confirmación real viene de indicadores que miden cosas *distintas* y aun así coinciden. El hábito útil es clasificar los indicadores en familias y tomar como máximo uno de cada una:\n\n- **Tendencia / dirección**: medias móviles y cruces, Ichimoku, el signo de la *línea* MACD, +DI frente a −DI.\n- **Momentum / velocidad**: RSI, estocástico, *histograma* del MACD, tasa de cambio.\n- **Volatilidad**: Bandas de Bollinger y ancho de banda, ATR.\n- **Volumen / participación**: VWAP, volumen en balance (OBV), barras de volumen puras.\n- **Fuerza de tendencia / régimen**: ADX.\n\nUn gráfico con SMA 50 (tendencia), RSI (momentum), ATR (volatilidad) y ADX (régimen) lleva cuatro piezas de información independientes. Un gráfico con RSI, estocástico, MACD y CCI lleva una. Menos herramientas, mejor elegidas, le ganan siempre a más herramientas, en parte por la razón estadística de arriba y en parte porque un gráfico saturado se lee más despacio y se presta más a racionalizar.\n\nUn segundo tipo de redundancia es más difícil de detectar: **la misma entrada disfrazada de filtro**. \"Compra con una lectura de sobreventa del RSI, pero solo si el estocástico también está en sobreventa\" suena a filtro. En su mayor parte solo retrasa la misma señal una barra. Un filtro real viene de una familia distinta: \"Compra con el RSI en sobreventa, pero solo si el precio está por encima de la SMA de 50 días\" usa el momentum como disparador y la tendencia como permiso. Esa combinación, como viste en la lección 2, es lo que convierte una estrategia que falla en tendencias bajistas en una que casi siempre se mantiene fuera de ellas."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo se puntúa la señal compuesta de Broward Trading\n\nLa insignia de la barra lateral del panel (COMPRA / VENTA / MANTENER) y la puntuación debajo de ella provienen de seis reglas, cada una explicada en la lista **¿Por qué?** (Why?), que suman un máximo de ±8:\n\n1. **Precio frente a SMA 50**: +1 si el cierre está por encima de la SMA de 50 barras, −1 si está por debajo. *Familia: tendencia.*\n2. **SMA 20 frente a SMA 50**: +1 si la SMA 20 está por encima de la SMA 50 (alineación alcista), −1 si está por debajo. *Tendencia.*\n3. **RSI 14**: +2 si está por debajo de 30 (sobreventa), −2 si está por encima de 70 (sobrecompra), 0 en medio. *Momentum, leído como reversión a la media.*\n4. **Histograma del MACD**: +1 si es positivo y no se encoge respecto a la barra anterior, −1 si es negativo y no se recupera, 0 en cualquier otro caso. *Momentum, leído como aceleración de la tendencia.*\n5. **Posición en Bollinger**: +1 si el cierre está debajo de la banda inferior, −1 si está encima de la banda superior, 0 dentro. *Volatilidad, leída como reversión a la media.*\n6. **Evento de cruce**: +2 si la SMA 20 cruzó por encima de la SMA 50 **en esta barra** (cruce dorado), −2 por un cruce de la muerte, 0 en cualquier otra barra. *Cambio de tendencia.*\n\nEl estado es **COMPRA en +3 o más, VENTA en −3 o menos, MANTENER en cualquier otro caso.** Dos líneas más aparecen en las razones con **cero puntos**: la etiqueta de régimen del ADX y el patrón de velas más reciente que termina en esta barra. Están ahí para leerse, no para contarse. Antes de que existan 50 barras de historia, los componentes que necesitan la SMA 50 se omiten.\n\nObserva la tensión deliberada. Los componentes 1, 2, 4 y 6 son de seguimiento de tendencia: les gusta una acción que ha estado subiendo. Los componentes 3 y 5 son de reversión a la media: les gusta una acción que ha estado cayendo con fuerza. En un repunte en línea recta las partes de tendencia puntúan +3 mientras el RSI y Bollinger restan hasta 3, lo que da un neto de alrededor de 0 a +1: MANTENER. La puntuación está diseñada para ser **más alta en un retroceso dentro de una tendencia alcista** (tendencia positiva, momentum estirado hacia abajo) y más baja en un rebote dentro de una tendencia bajista. Es la regla clásica de \"comprar la caída en un mercado alcista\" escrita como aritmética, y también es la razón por la que la insignia rara vez grita COMPRA en el techo de una subida."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**La puntuación es una herramienta de enseñanza, no un sistema de trading.** Seis reglas de libro de texto, pesos más o menos iguales, sin ajuste a ninguna acción en particular. Su propósito es mostrarte *por qué* un gráfico se ve alcista o bajista, con palabras, para que puedas estar de acuerdo o no. Los estudiantes que aprenden a discutir con la insignia son los que aprenden a operar."
+        },
+        {
+          "type": "text",
+          "md": "### Dos puntuaciones resueltas\n\n**Ejemplo A: retroceso en una tendencia alcista.** Una acción cierra en $92.00. La SMA 50 está en $85 y la SMA 20 en $90, ambas subiendo. El RSI ha caído a 28 tras una semana de ventas. El histograma del MACD está en −0.40, abajo desde −0.30 ayer. La banda inferior de Bollinger está en $91.50 y el cierre está dentro de las bandas. No hay cruce en esta barra.\n\n- Precio por encima de la SMA 50: **+1**\n- SMA 20 por encima de la SMA 50: **+1**\n- RSI 28, sobreventa: **+2**\n- Histograma negativo y decreciente: **−1**\n- Dentro de las bandas: **0**\n- Sin cruce: **0**\n\nTotal **+3 → COMPRA**. Leído en voz alta: la tendencia es alcista, el retroceso ha estirado el momentum, y la única voz en contra es el MACD diciendo que la caída todavía se acelera. Un trader podría esperar una barra más a que el histograma deje de caer. Fíjate en que la línea de contexto del ADX probablemente dirá \"tendencia fuerte\", lo que aumenta la confianza en los componentes de tendencia.\n\n**Ejemplo B: rebote en una tendencia bajista.** Una acción cierra en $41.00. La SMA 50 está en $47, la SMA 20 en $43, ambas bajando. El RSI está en 56. El histograma del MACD está en +0.20, arriba desde +0.05. El cierre está dentro de las bandas. Ayer la SMA 20 estaba por debajo de la SMA 50 y hoy sigue igual, así que no hay cruce.\n\n- Precio por debajo de la SMA 50: **−1**\n- SMA 20 por debajo de la SMA 50: **−1**\n- RSI 56, neutral: **0**\n- Histograma positivo y creciente: **+1**\n- Dentro de las bandas: **0**\n- Sin cruce: **0**\n\nTotal **−1 → MANTENER**. El rebote tiene momentum, pero es un rebote dentro de una tendencia bajista, y la puntuación se niega a llamarlo compra. Si el RSI llega a 72 en el rebote, la puntuación cae a −3 y cambia a VENTA: un repunte estirado contra la tendencia es exactamente lo que los dos componentes de reversión a la media están hechos para señalar.\n\nAhora el defecto. En el ejemplo A, si la barra de ayer hubiera sido también el día en que la SMA 20 cruzó hacia arriba la SMA 50 (poco probable durante un retroceso, pero posible después de una base larga), el bono de +2 del cruce habría llevado la puntuación a +5. Al día siguiente el mismo gráfico puntúa +3 porque el cruce solo cuenta una vez. Una caída de +5 a +3 en un día sin que nada cambie en el gráfico es un artefacto de puntuar un *evento* junto con *estados*. Hacer el backtest de la señal compuesta en el ejercicio te mostrará cuánto de su comportamiento viene de ese único componente."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "bb",
+            "rsi",
+            "macd"
+          ],
+          "caption": "Nvidia, diario, con todo lo que lee la señal compuesta: SMA 20 y SMA 50 sobre el precio, Bandas de Bollinger alrededor, RSI debajo y MACD al fondo. Elige cualquier barra y puntúala a mano con las seis reglas, luego abre el mismo símbolo en el panel y compara con la insignia. Si obtienes un número distinto, haz clic en ¿Por qué? y encuentra qué componente leíste de otra forma; lo más común es la regla de \"creciente frente a encogiéndose\" del histograma del MACD."
+        },
+        {
+          "type": "text",
+          "md": "### Ponderar, no contar\n\nUna señal compuesta como esta suma puntos. Los profesionales rara vez lo hacen; **ponderan según el régimen**. La línea del ADX que el panel reporta con cero puntos es la pista. Una mejora mental razonable de la puntuación:\n\n- **ADX ≥ 25 (en tendencia)**: confía en los componentes 1, 2, 4 y 6. Descuenta el 3 y el 5, porque la sobrecompra sigue en sobrecompra y caminar por la banda es normal. Un RSI de 74 en una tendencia alcista con ADX de 40 no es una razón para vender.\n- **ADX < 20 (en rango)**: confía en los componentes 3 y 5. Descuenta el 1, el 2 y el 6, porque cada cruce en un rango es un latigazo esperando a ocurrir.\n- **En medio**: usa la puntuación tal cual, que es lo que hace el panel.\n\nIgual de importante es lo que la señal compuesta **no** incluye, y donde tú debes aportarlo:\n\n**Volumen.** Ninguna de las seis reglas mira el volumen. Una ruptura con el triple del volumen promedio y una con la mitad del volumen promedio puntúan idéntico. Activa el histograma de volumen o el VWAP y léelo tú.\n\n**Múltiples marcos temporales.** La puntuación se calcula sobre el intervalo que esté cargado. Una COMPRA en el gráfico de 5 minutos dentro de una tendencia bajista diaria es, a lo sumo, un scalp. Una disciplina común es exigir que los componentes de tendencia diarios (1 y 2) estén de acuerdo antes de tomar una señal intradía.\n\n**Riesgo.** La puntuación no dice nada sobre dónde va tu stop ni cuántas acciones comprar. Ese es el trabajo del ATR (lección 3) y el tema del módulo 4.\n\n**Fundamentales y eventos.** Las fechas de resultados, las reuniones de la Fed y los rebalanceos de índices no aparecen en ningún indicador hasta después de haber movido el precio. Revisa el calendario antes de confiar en una señal que seguirá viva durante un anuncio.\n\nPor último, la forma más limpia de decidir si una combinación de indicadores es mejor que uno solo no es discutirlo sino **hacer el backtest de la diferencia**. El Laboratorio de estrategias puede ejecutar la señal compuesta como estrategia y compararla con las estrategias de un solo indicador en la misma acción y el mismo período. Esa comparación, no el color de la insignia, es donde este módulo le pasa la posta al módulo 6."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**La coincidencia no es evidencia cuando las entradas son las mismas.** Antes de agregar cualquier indicador a tu gráfico pregúntate: ¿en qué familia está, y ya tengo uno de esa familia? Si la respuesta es sí, la nueva línea casi siempre coincidirá con la anterior, y esa coincidencia no te dirá nada que no supieras ya."
+        },
+        {
+          "type": "exercise",
+          "md": "El enlace abre el Laboratorio de estrategias con la estrategia **Señal compuesta** (COMPRA en +3, VENTA en −3) en Apple, diario, y la ejecuta.\n\n- Registra el retorno total, las operaciones, la tasa de acierto, el factor de beneficio y el drawdown máximo, además del retorno de comprar y mantener que aparece al lado.\n- Abre la lista de operaciones. Para las tres mayores ganadoras y las tres mayores perdedoras, ve al panel, encuentra la barra de entrada y haz clic en **¿Por qué?** (Why?) para ver qué componentes produjeron el +3. ¿Las ganadoras fueron sobre todo puntuaciones de \"retroceso en tendencia alcista\" (tendencia +2, RSI +2) o de \"evento de cruce\" (+2 de un cruce dorado)?\n- Usa **Comparar estrategias** para ejecutar Cruce de SMA, Reversión del RSI, Cruce de MACD y Rebote de Bollinger en el mismo símbolo y período. Ordénalas por factor de beneficio. ¿Combinarlas en la señal compuesta le ganó a la mejor estrategia individual? Con frecuencia no, y entender por qué es el punto.\n- Abre **Optimizar parámetros** y deja que pruebe buyAt 2, 3 y 4 contra sellAt −2, −3 y −4. Mira el gráfico de meseta: una colina amplia significa que los umbrales apenas importan; un pico solitario significa una configuración con suerte.\n- Escribe un párrafo en tu diario: ¿qué dos o tres indicadores, de familias distintas, dejarías *tú* en un gráfico limpio, y qué le permitirías decidir a cada uno?",
+          "action": {
+            "page": "backtest.html",
+            "hash": "sym=AAPL&tf=1day&strategy=compositeSignal&buyAt=3&sellAt=-3&run=1"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Qué conjunto de indicadores proviene de cuatro familias distintas y, por lo tanto, da la imagen menos redundante?",
+              "choices": [
+                "RSI, estocástico, histograma del MACD, CCI",
+                "SMA 50, RSI, ATR, ADX",
+                "EMA 9, EMA 21, SMA 50, SMA 200",
+                "Bandas de Bollinger, ATR, ancho de banda, desviación estándar"
+              ],
+              "answer": 1,
+              "explain": "La SMA 50 es tendencia, el RSI es momentum, el ATR es volatilidad y el ADX es régimen. Los otros conjuntos son cuatro versiones de una misma familia y coincidirán entre sí casi por construcción."
+            },
+            {
+              "q": "El cierre está por encima de la SMA 50, la SMA 20 está por encima de la SMA 50, el RSI es 27, el histograma del MACD es positivo y creciente, el cierre está dentro de las Bandas de Bollinger y no hubo cruce en esta barra. ¿Qué puntúa la señal compuesta?",
+              "choices": [
+                "+3, COMPRA",
+                "+4, COMPRA",
+                "+5, COMPRA",
+                "+2, MANTENER"
+              ],
+              "answer": 2,
+              "explain": "+1 (precio frente a SMA 50) +1 (alineación) +2 (RSI en sobreventa) +1 (histograma positivo y creciente) +0 (dentro de las bandas) +0 (sin cruce) = +5, una COMPRA."
+            },
+            {
+              "q": "El precio está por debajo de una SMA 50 que baja, la SMA 20 está por debajo de la SMA 50, el RSI es 73, el histograma del MACD es positivo y creciente, y el cierre está por encima de la banda superior de Bollinger. ¿Cuál es la puntuación y el estado?",
+              "choices": [
+                "−2, MANTENER",
+                "−3, VENTA",
+                "−4, VENTA",
+                "0, MANTENER"
+              ],
+              "answer": 2,
+              "explain": "−1 (debajo de la SMA 50) −1 (alineación bajista) −2 (RSI en sobrecompra) +1 (histograma creciente) −1 (encima de la banda superior) = −4, VENTA. Un rebote brusco en una tendencia bajista es exactamente lo que señalan los componentes de reversión a la media."
+            },
+            {
+              "q": "¿Cuál de estos NO toma en cuenta la señal compuesta?",
+              "choices": [
+                "La media móvil simple de 50 barras",
+                "La zona del RSI",
+                "El volumen negociado",
+                "El histograma del MACD"
+              ],
+              "answer": 2,
+              "explain": "Ninguna de las seis reglas puntuadas usa el volumen. El ADX y los patrones de velas se muestran como contexto con cero puntos; el volumen no se muestra en absoluto, así que debes leerlo tú en las barras de volumen o en el VWAP."
+            },
+            {
+              "q": "La insignia mostró COMPRA en +5 ayer y +3 hoy, aunque el gráfico se ve igual. ¿Cuál es la explicación más probable?",
+              "choices": [
+                "El RSI debe haber subido por encima de 70",
+                "El bono del cruce dorado (+2) cuenta solo en la barra en que ocurre",
+                "El proveedor de datos cambió",
+                "El ADX bajó de 20 y quitó dos puntos"
+              ],
+              "answer": 1,
+              "explain": "El componente 6 puntúa un evento: ±2 en la única barra en que la SMA 20 cruza la SMA 50. Al día siguiente la alineación todavía gana +1, pero el bono del cruce desaparece, así que la puntuación cae 2 sin ningún cambio en la imagen. El ADX nunca suma ni quita puntos."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

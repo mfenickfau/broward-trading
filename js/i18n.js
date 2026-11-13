@@ -28,7 +28,9 @@
  *   - Performance: one Map lookup per text node; nodes already translated for the current
  *     language are skipped in O(1), so a 2,000-node page re-translates in a few ms.
  *   - js/nav.js injects this file before the page's own scripts when a page does not
- *     include it itself, so BT.t exists for every UI module.
+ *     include it itself, so BT.t exists for every UI module. The fetched dictionary is
+ *     cached in localStorage ('bt.i18n.<code>') and registered synchronously on the next
+ *     load, so BT.t() translates JS-built strings from the first render.
  *
  * Plain ES2020, no imports; loadable in Node for tests (no DOM needed for the pure parts).
  */
@@ -68,6 +70,7 @@
   // code -> { ui: Map, attrs: Map }
   var dicts = {};
   var current = DEFAULT;
+  var gen = 0;   // bumped when a dictionary is replaced, so already-translated nodes are revisited
   var loading = {};
   var baseUrl = 'i18n/';
 
@@ -101,6 +104,7 @@
   function register(code, dict) {
     if (!code || !dict || typeof dict !== 'object') return false;
     var d = dicts[code] || (dicts[code] = { ui: new Map(), attrs: new Map() });
+    gen++;
     toMap(dict.ui).forEach(function (v, k) { d.ui.set(k, v); });
     toMap(dict.attrs).forEach(function (v, k) { d.attrs.set(k, v); });
     if (!langInfo(code)) addLang({ code: code });
@@ -189,17 +193,53 @@
   /* ------------------------------------------------------------------ *
    * Dictionary loading (fetch i18n/<code>.json; window.BT_I18N[code] wins)
    * ------------------------------------------------------------------ */
+  /* A copy of the last fetched dictionary is kept in localStorage ('bt.i18n.<code>') so
+   * that on the next page load it is registered synchronously, before the page's own
+   * scripts run: BT.t() then translates JS-built strings from the very first render
+   * instead of only after the fetch. The file is still re-fetched in the background
+   * (HTTP cache / service worker make that cheap) and the copy refreshed when it changed. */
+  var CACHE_KEY = 'bt.i18n.';
+  function readCache(code) {
+    try {
+      var raw = root.localStorage && root.localStorage.getItem(CACHE_KEY + code);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      return obj && obj.dict && obj.dict.ui ? obj : null;
+    } catch (e) { return null; }
+  }
+  function writeCache(code, json) {
+    try { root.localStorage.setItem(CACHE_KEY + code, JSON.stringify({ at: Date.now(), dict: { ui: json.ui || {}, attrs: json.attrs || {}, _meta: json._meta || null } })); }
+    catch (e) { /* quota or private mode: translations still work for this view */ }
+  }
+  function sameMeta(a, b) {
+    try { return JSON.stringify(a && a._meta) === JSON.stringify(b && b._meta) && Object.keys(a.ui || {}).length === Object.keys(b.ui || {}).length; } catch (e) { return false; }
+  }
+  function fetchDict(code) {
+    if (typeof fetch !== 'function') return Promise.resolve(null);
+    return fetch(baseUrl + code + '.json', { cache: 'default' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (json) { return json && json.ui ? json : null; })
+      .catch(function () { return null; });
+  }
   function load(code) {
     if (code === DEFAULT) return Promise.resolve(true);
     if (hasDict(code)) return Promise.resolve(true);
     if (loading[code]) return loading[code];
     var inline = root.BT_I18N && root.BT_I18N[code];
     if (inline) { register(code, inline); return Promise.resolve(true); }
-    if (typeof fetch !== 'function') return Promise.resolve(false);
-    var p = fetch(baseUrl + code + '.json', { cache: 'default' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (json) { register(code, json); return true; })
-      .catch(function () { return false; })
+    var cached = readCache(code);
+    if (cached) {
+      register(code, cached.dict);
+      // Stale-while-revalidate: refresh the copy when the published file changed.
+      fetchDict(code).then(function (json) {
+        if (!json || sameMeta(json, cached.dict)) return;
+        dicts[code] = null; register(code, json); writeCache(code, json);
+        if (current === code && hasDOM) { try { translatePage(); } catch (e) { /* ignore */ } }
+      });
+      return Promise.resolve(true);
+    }
+    var p = fetchDict(code)
+      .then(function (json) { if (!json) return false; register(code, json); writeCache(code, json); return true; })
       .then(function (ok) { delete loading[code]; return ok; });
     loading[code] = p;
     return p;
@@ -232,7 +272,7 @@
     var st = node.__bt;
     if (st) {
       if (st.out !== cur) st = null;                 // someone rewrote it: treat as fresh English
-      else if (st.lang === lang) return;             // already translated for this language
+      else if (st.lang === lang && st.gen === gen) return;   // already translated with this dictionary
     }
     var src = st ? st.orig : cur;
     if (!dict) { if (st) { node.nodeValue = src; node.__bt = null; } return; }
@@ -243,7 +283,7 @@
     var lead = /^\s*/.exec(src)[0], trail = /\s*$/.exec(src)[0];
     var out = lead + tr + trail;
     node.nodeValue = out;
-    node.__bt = { orig: src, out: out, lang: lang };
+    node.__bt = { orig: src, out: out, lang: lang, gen: gen };
   }
   function translateAttrs(el, lang, dict) {
     var st = el.__btA;
@@ -254,7 +294,7 @@
       if (cur == null) { if (rec) delete st[a]; continue; }
       if (rec) {
         if (rec.out !== cur) rec = null;
-        else if (rec.lang === lang) continue;
+        else if (rec.lang === lang && rec.gen === gen) continue;
       }
       var src = rec ? rec.orig : cur;
       if (!dict) { if (rec) { el.setAttribute(a, src); delete st[a]; } continue; }
@@ -264,19 +304,19 @@
       if (tr == null) { if (rec) { el.setAttribute(a, src); delete st[a]; } continue; }
       el.setAttribute(a, tr);
       if (!st) st = el.__btA = {};
-      st[a] = { orig: src, out: tr, lang: lang };
+      st[a] = { orig: src, out: tr, lang: lang, gen: gen };
     }
     // Visible button labels held in value= (never other inputs' values).
     if (el.nodeName === 'INPUT' && /^(button|submit|reset)$/i.test(el.type || '')) {
       var vrec = st && st.value, vcur = el.getAttribute('value');
       if (vcur != null) {
-        if (vrec && vrec.out === vcur && vrec.lang === lang) return;
+        if (vrec && vrec.out === vcur && vrec.lang === lang && vrec.gen === gen) return;
         var vsrc = vrec && vrec.out === vcur ? vrec.orig : vcur;
         var vtr = dict && LETTER.test(vsrc) ? dict.ui.get(norm(vsrc)) : null;
         if (vtr == null) { if (vrec && vrec.out === vcur) { el.setAttribute('value', vsrc); delete st.value; } return; }
         el.setAttribute('value', vtr);
         if (!st) st = el.__btA = {};
-        st.value = { orig: vsrc, out: vtr, lang: lang };
+        st.value = { orig: vsrc, out: vtr, lang: lang, gen: gen };
       }
     }
   }
@@ -319,9 +359,9 @@
     var src = titleState ? titleState.orig : cur;
     var tr = dict ? dict.ui.get(norm(src)) : null;
     if (tr == null) { if (titleState) { document.title = src; titleState = null; } return; }
-    if (titleState && titleState.lang === lang && titleState.out === cur) return;
+    if (titleState && titleState.lang === lang && titleState.out === cur && titleState.gen === gen) return;
     document.title = tr;
-    titleState = { orig: src, out: tr, lang: lang };
+    titleState = { orig: src, out: tr, lang: lang, gen: gen };
   }
   /** Translate the whole page (or a subtree) for the active language. Returns text nodes visited. */
   function translatePage(rootNode) {

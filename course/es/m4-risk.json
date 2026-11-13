@@ -1,0 +1,402 @@
+{
+  "id": "m4-risk",
+  "title": "Gestión del riesgo y paper trading",
+  "level": "intermediate",
+  "minutes": 56,
+  "summary": "Tamaño de posición y la regla del 1%, stops y riesgo/beneficio, expectativa, drawdowns y la psicología que arruina los buenos planes, ventas en corto y margen, y cómo construir un plan de trading y un diario, todo practicado en tu cuenta de paper trading.",
+  "lessons": [
+    {
+      "id": "m4-l1",
+      "title": "Tamaño de posición y la regla del 1%",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### La gestión del riesgo es la parte del trading que sí controlas\n\nTú no controlas si la próxima operación gana. Nadie lo controla. Una acción puede abrir con un gap del 15% a la baja después de un mal reporte de ganancias, un sector entero puede venderse por un titular sobre una empresa de la que nunca oíste hablar, y la configuración de gráfico más limpia del mundo falla, para la mayoría de las personas la mayor parte del tiempo, casi tan a menudo como lanzar una moneda. Lo que *sí* controlas, por completo y de antemano, es cuánto pierdes cuando sale mal.\n\nEsa es toda la idea de la gestión del riesgo: decidir el tamaño de cada pérdida *antes* de entrar, de modo que ninguna operación individual, ni ninguna racha realista de operaciones, pueda sacarte del juego. Los traders que sobreviven lo suficiente para volverse buenos no son los que tienen las mejores entradas. Son los que siguen operando en el tercer año porque nunca tomaron la única pérdida que lo termina todo.\n\nEsta lección trata de la primera y más importante herramienta: el **tamaño de posición** (position sizing), es decir, cuántas acciones comprar. La mayoría de los principiantes lo decide por intuición (\"tengo $5,000, voy a poner $2,000\"). Los profesionales lo hacen al revés. Deciden cuántos dólares están dispuestos a perder si la operación falla, deciden dónde quedará demostrado que la operación estaba equivocada (el stop), y solo entonces calculan la cantidad de acciones. La cantidad de acciones es un *resultado*, nunca un punto de partida.\n\nDos números lo determinan todo:\n\n- **Riesgo por operación**: los dólares que aceptas perder si se activa el stop. Normalmente se expresa como porcentaje del capital de la cuenta.\n- **Distancia al stop**: qué tan lejos está el precio del stop de tu entrada, en dólares por acción.\n\nAcciones a comprar = riesgo por operación ÷ distancia al stop. Todo lo demás en esta lección son detalles alrededor de esa única división."
+        },
+        {
+          "type": "text",
+          "md": "### La regla del 1%, paso a paso\n\nLa **regla del 1%** dice: nunca arriesgues más del 1% del capital de tu cuenta en una sola operación. Con una cuenta de paper trading de $100,000, eso son $1,000. No $1,000 *invertidos*; $1,000 *perdidos si se activa el stop*.\n\nSupón que quieres comprar una acción a $50.00 y tu análisis dice que la idea está equivocada si el precio cierra por debajo de $47.50. La distancia al stop es $2.50 por acción. Tu presupuesto de riesgo es $1,000. Entonces:\n\n- Acciones = $1,000 ÷ $2.50 = **400 acciones**\n- Valor de la posición = 400 × $50 = **$20,000**, que es el 20% de la cuenta\n\nFíjate en cómo difieren los dos números. Tienes el 20% de tu dinero *dentro* de la operación, pero solo el 1% de tu dinero *en riesgo*, porque saldrás a $47.50 a menos que la acción abra con un gap por debajo. Si se activa el stop pierdes 400 × $2.50 = $1,000, tal como estaba planeado.\n\nAhora cambia una sola cosa: un stop más amplio en $45.00, distancia $5.00. Acciones = $1,000 ÷ $5.00 = 200 acciones, una posición de $10,000. Mismo riesgo en dólares, la mitad de las acciones. Un stop más ajustado en $49.00 da $1,000 ÷ $1.00 = 1,000 acciones, una posición de $50,000. Esta es la idea clave que la mayoría de los principiantes pasa por alto: **un stop ajustado no hace la operación más segura si respondes comprando más acciones.** Solo cambia con qué frecuencia te sacan del mercado.\n\n¿Por qué 1%? Es una regla práctica, no una ley de la naturaleza, y se debate. Muchas mesas de riesgo profesionales usan de 0.25% a 0.5% por posición; muchos libros de swing trading sugieren de 1% a 2%; algunos traders agresivos usan más. La aritmética detrás de los números bajos tiene que ver con la supervivencia. Al 1% por operación, diez pérdidas seguidas (que tarde o temprano te ocurrirán; la Lección 3 muestra con qué frecuencia) cuestan alrededor del 9.6% de la cuenta. Al 5% por operación, la misma racha cuesta alrededor del 40%. Al 10%, cuesta el 65%, y necesitas una ganancia del 186% solo para volver al punto de partida.\n\nPara este curso, usa **1% en la cuenta de paper trading**. Es lo bastante pequeño para sobrevivir tu curva de aprendizaje y lo bastante grande para que los resultados signifiquen algo."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**La fórmula del tamaño.** Acciones = (capital de la cuenta × % de riesgo) ÷ (precio de entrada − precio del stop). Redondea *hacia abajo* a un número entero de acciones y luego verifica que el valor de la posición no sea mayor de lo que te sientes cómodo manteniendo en un solo nombre. En una cuenta de $100,000 con 1% de riesgo, comprando a $120 con un stop en $114: $1,000 ÷ $6 = 166 acciones, con un valor de unos $19,920."
+        },
+        {
+          "type": "text",
+          "md": "### Dejar que la volatilidad elija el stop: tamaño por ATR\n\nUn stop en un número redondo como $47.50 está bien si además queda por debajo de un soporte real. Pero una forma más limpia y mecánica de fijar la distancia al stop es usar la propia volatilidad de la acción, medida con el **rango verdadero promedio (Average True Range, ATR)**. El ATR es el tamaño promedio del rango verdadero de una barra (del máximo al mínimo, incluyendo cualquier gap respecto al cierre anterior) durante un período de referencia, normalmente 14 barras. Una acción con un ATR de 14 días de $3.00 suele recorrer unos $3 al día.\n\nUna regla común es colocar el stop a **2 ATR** por debajo de la entrada en una operación de swing (algunos traders usan 1.5, otros 3; el número es una preferencia, no un descubrimiento). La lógica: un stop dentro del ruido ordinario de un día será activado por el ruido, no por un cambio real en la tendencia. Dos ATR le dan a la operación espacio para respirar.\n\nEjemplo. La acción A cotiza a $50 con un ATR de $1.00. La acción B cotiza a $50 con un ATR de $3.00. Mismo precio, animales muy distintos.\n\n- Acción A: stop = 50 − 2 × 1.00 = $48.00, distancia $2.00. Acciones = $1,000 ÷ $2 = 500 acciones ($25,000).\n- Acción B: stop = 50 − 2 × 3.00 = $44.00, distancia $6.00. Acciones = $1,000 ÷ $6 = 166 acciones ($8,300).\n\nTerminas con tres veces más acciones de la acción tranquila que de la salvaje, y ambas posiciones amenazan la cuenta con exactamente $1,000. Esto es lo que significa el *tamaño ajustado por volatilidad*, y es como la mayoría de los fondos sistemáticos piensa sobre el tamaño de posición. Evita que tomes por accidente tres veces más riesgo solo porque una acción resulta emocionante.\n\nEn el panel, el indicador ATR muestra el ATR actual de 14 barras y, en su lectura, ese valor como porcentaje del precio. Una acción cuyo ATR es el 2% del precio es aproximadamente dos veces más volátil que una al 1%."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50"],
+          "caption": "Un nombre de alta volatilidad en velas diarias con las SMA de 20 y 50 días. En el panel, activa el indicador ATR y lee el ATR actual como porcentaje del precio; luego compáralo con una acción más estable como KO o PG. El tamaño de una posición con 1% de riesgo en cada una debería diferir aproximadamente en la misma proporción. (Los precios de demostración son simulados.)"
+        },
+        {
+          "type": "text",
+          "md": "### Calor del portafolio y correlación\n\nDimensionar bien una operación no es el final. Si mantienes ocho posiciones, cada una arriesgando 1%, tu **calor del portafolio** (portfolio heat), el total que pierdes si todos los stops se activan a la vez, es 8%. Suena improbable hasta que recuerdas lo que le pasó a cualquiera que tuviera ocho acciones tecnológicas en una venta masiva de todo el mercado: todas activaron sus stops la misma semana. Las posiciones en el mismo sector, o en acciones que simplemente se mueven con el índice, no son ocho apuestas independientes. Se parecen más a una gran apuesta con ocho sombreros distintos.\n\nDos controles sencillos ayudan:\n\n- **Limita el calor total.** Muchos traders limitan el riesgo abierto al 5% o 6% del capital. Con 1% por operación, eso significa como máximo cinco o seis posiciones abiertas, o un tamaño menor en cada una cuando estás cerca del límite.\n- **Limita la exposición correlacionada.** Trata dos acciones de semiconductores como una sola posición para efectos del calor. Si ya tienes NVDA y quieres AMD, dimensiona la segunda de modo que el par en conjunto arriesgue lo que arriesgaría una sola posición.\n\nUna prueba rápida de correlación: abre ambos gráficos en el panel y compara los últimos meses. Si los grandes días al alza y a la baja coinciden, estás viendo una sola operación, no dos.\n\nTambién existe el fallo contrario: posiciones tan pequeñas que ni siquiera una operación perfecta cambia nada. Si tu distancia al stop es el 10% del precio de entrada y tu presupuesto de riesgo es 1%, la posición es solo el 10% del capital; una ganancia del 20% en esa posición mueve la cuenta un 2%. Eso está bien. Se supone que la gestión del riesgo hace que las operaciones individuales se sientan un poco aburridas. La cuenta crece con muchas operaciones aburridas, no con una dramática."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Los gaps rompen la aritmética.** Una orden stop es una instrucción, no una garantía. Si una acción cierra a $48 y abre la mañana siguiente a $40 tras una mala noticia, tu stop en $47.50 se convierte en una orden de mercado que se ejecuta cerca de $40, y la pérdida es de $10 por acción, cuatro veces lo que planeaste. Las fechas de reporte de ganancias son la causa habitual. Muchos traders cierran o reducen a la mitad sus posiciones antes de los reportes, o las dimensionan asumiendo que es posible un gap de dos a tres veces el ATR normal. El paper trading es un buen lugar para ver que esto ocurra sin que duela."
+        },
+        {
+          "type": "exercise",
+          "md": "Dimensiona una operación real de paper trading con la fórmula. Abre el panel en AAPL con el indicador ATR activado y lee el ATR de 14 días. Luego:\n\n- Calcula un stop a 2 × ATR por debajo del precio actual y anota la distancia al stop en dólares.\n- Tu cuenta de paper trading empieza con $100,000 (revisa la pestaña de Ajustes en la página del portafolio si la cambiaste). Calcula el 1% del capital, divídelo por la distancia al stop y redondea hacia abajo: esa es tu cantidad de acciones.\n- Coloca una **compra a mercado** por esa cantidad de acciones en el panel y, de inmediato, coloca un **stop de venta** a tu precio de stop por la misma cantidad. Ambos deberían aparecer bajo Posiciones y órdenes en la página del portafolio.\n- Repite el cálculo, solo en papel, para TSLA. ¿Qué acción recibe más acciones, y aproximadamente por qué factor?",
+          "action": { "page": "index.html", "hash": "symbol=AAPL&interval=1day&ov=sma20,sma50,sr&pane=atr,rsi", "label": "Abrir AAPL con el indicador ATR" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "El capital de tu cuenta es $100,000 y arriesgas 1% por operación. Compras una acción a $80 con un stop en $76. ¿Cuántas acciones deberías comprar?",
+              "choices": ["1,250 acciones", "250 acciones", "100 acciones", "25 acciones"],
+              "answer": 1,
+              "explain": "El presupuesto de riesgo es $1,000. La distancia al stop es 80 − 76 = $4. $1,000 ÷ $4 = 250 acciones, una posición de $20,000. 1,250 acciones pondrían toda la cuenta en una sola acción."
+            },
+            {
+              "q": "Ajustas tu stop de $4 por debajo de la entrada a $1 por debajo de la entrada y mantienes el mismo presupuesto de riesgo del 1%. ¿Qué pasa con la cantidad de acciones?",
+              "choices": ["Cae a una cuarta parte, lo que hace la operación más segura", "Se mantiene igual", "Se cuadruplica; el riesgo en dólares no cambia pero es mucho más probable que el stop se active", "No se puede calcular sin conocer el ATR"],
+              "answer": 2,
+              "explain": "Acciones = riesgo ÷ distancia. Dividir la distancia por cuatro multiplica la cantidad de acciones por cuatro. La pérdida planeada en dólares sigue siendo 1%, pero un stop a un dólar de distancia queda dentro del ruido diario normal y se activará con mucha más frecuencia."
+            },
+            {
+              "q": "La acción A tiene un ATR de $1 y la acción B un ATR de $4, ambas a $100. Usando un stop de 2 ATR y el mismo presupuesto de riesgo, ¿cómo se comparan los tamaños de posición?",
+              "choices": ["Iguales, porque los precios son iguales", "A recibe cuatro veces más acciones que B", "B recibe cuatro veces más acciones que A", "A recibe el doble de acciones que B"],
+              "answer": 1,
+              "explain": "La distancia al stop de A es $2 y la de B es $8. El mismo presupuesto de riesgo dividido por una distancia cuatro veces menor da cuatro veces más acciones. El tamaño ajustado por volatilidad iguala el riesgo en dólares, no la cantidad de acciones."
+            },
+            {
+              "q": "¿Por qué se describe la regla del 1% como una regla práctica y no como una ley fija?",
+              "choices": ["Porque solo aplica a cuentas de más de $1,000,000", "Porque los profesionales no están de acuerdo: muchas mesas institucionales usan bastante menos del 1% y algunos libros sugieren hasta 2%; la idea compartida es que una racha de pérdidas no debe ser fatal", "Porque la SEC fija la cifra correcta cada año", "Porque solo importa para los day traders"],
+              "answer": 1,
+              "explain": "No hay un único número correcto. La aritmética de las rachas de pérdidas favorece un riesgo pequeño por operación, y la mayoría de las recomendaciones cae entre 0.25% y 2%. La cifra del 1% es un punto de partida sensato para aprender."
+            },
+            {
+              "q": "Mantienes seis posiciones, cada una arriesgando 1%, todas en acciones tecnológicas de gran capitalización. ¿Cuál es el problema principal?",
+              "choices": ["Ninguno; cada posición está dimensionada correctamente", "El calor del portafolio es 6% y las posiciones están muy correlacionadas, así que una venta masiva del sector puede activar todos los stops a la vez", "Seis posiciones son muy pocas para diversificar", "Las acciones tecnológicas no pueden activar un stop"],
+              "answer": 1,
+              "explain": "Dimensionar bien cada operación no te protege de que seis operaciones correlacionadas pierdan juntas. Limitar el riesgo abierto total y tratar los nombres del mismo sector como una sola posición para efectos del calor son las soluciones estándar."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l2",
+      "title": "Stops, riesgo/beneficio y expectativa",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Un stop es el precio en el que tu idea está equivocada\n\nUn **stop de pérdida** (stop loss) es una salida decidida de antemano para una operación perdedora. Mecánicamente, suele ser una *orden stop*: una orden de venta (para una posición larga) que se convierte en orden de mercado cuando la acción se negocia en tu precio de stop o por debajo. El Módulo 1 cubrió los tipos de órdenes; esta lección trata de *dónde* va el stop y *por qué*.\n\nLa forma más clara de pensarlo: el stop es el precio en el que la razón por la que entraste deja de ser válida. Si compraste porque una acción rebotó en el soporte de $47.50, entonces un cierre por debajo de $47.50 significa que el soporte falló y la tesis está muerta. No tiene sentido mantener una operación cuya razón se evaporó, esperando que la suerte te rescate. Ubicaciones comunes del stop:\n\n- **Debajo de un nivel**: justo por debajo de un soporte, de un mínimo relativo (swing low) o de una media móvil que la acción ha respetado. Dale un poco de espacio (unas décimas de porcentaje, o una fracción de ATR), porque los niveles son zonas, no líneas, y los stops agrupados exactamente en el nivel son un blanco fácil.\n- **Basado en volatilidad**: un múltiplo del ATR por debajo de la entrada, como en la Lección 1. Mecánico y sin emociones.\n- **Basado en tiempo**: si el movimiento no ha empezado dentro de un número fijo de barras, sal. El capital estancado en una operación que no va a ningún lado es capital que no trabaja en otra parte.\n- **Dinámico (trailing stop)**: un stop que sube a medida que el precio sube (nunca baja), por ejemplo 2 ATR por debajo del cierre más alto desde la entrada. Deja correr una operación ganadora mientras asegura ganancias.\n\nLo que *no* debes hacer es fijar el stop según los dólares que estás dispuesto a perder con una cantidad de acciones que ya elegiste (\"compré 500 acciones, puedo perder $500, así que mi stop está a $1\"). Eso pone el stop donde lo quiere tu billetera, no donde el gráfico dice que la idea falló. Elige el stop a partir del gráfico y luego dimensiona a partir del stop.\n\nDos advertencias honestas. Primera, los stops no son gratis: en mercados laterales y agitados te sacarán, verás la acción recuperarse y te sentirás tonto. Ese es el precio del seguro. Segunda, los investigadores no están de acuerdo sobre si los stops fijos mejoran los rendimientos en todos los mercados; algunos estudios sobre activos con reversión a la media encuentran que los stops ajustados perjudican. Lo que no se debate es que **un stop limita la pérdida en una sola operación**, y para alguien que está aprendiendo ese límite es lo esencial."
+        },
+        {
+          "type": "text",
+          "md": "### Riesgo/beneficio y el múltiplo R\n\nUna vez fijado el stop, conoces el riesgo por acción: entrada menos stop. Llama a eso una **R**. Todo lo relativo a la operación puede medirse ahora en R.\n\nSupón que compras a $50 con un stop en $47.50. R = $2.50. Si tomas ganancias en $55, la ganancia es $5.00, o **2R**. Si te sacan por el stop, la pérdida es **−1R**. Si un gap te saca en $45, eso es −2R, que es exactamente la razón por la que los gaps importan.\n\nLa **relación riesgo/beneficio** compara la distancia a tu objetivo con la distancia a tu stop. Un objetivo a 2R de distancia es una operación con riesgo/beneficio 1:2 (a veces escrito 2:1 como beneficio-a-riesgo; la convención varía, así que di siempre cuál número es el beneficio). Antes de entrar, deberías poder nombrar un objetivo realista: el siguiente nivel de resistencia, un movimiento medido a partir de un patrón, un máximo anterior. Si el objetivo realista está a solo 0.5R de distancia, la operación necesita una tasa de acierto muy alta para ganar dinero, y la mayoría de las configuraciones no la tiene.\n\nUn mínimo de 1:2 es una regla popular. Es popular por una razón matemática que se explica en la siguiente sección, no porque el mercado le deba a nadie dos por uno. Algunas estrategias, como el seguimiento de tendencia, funcionan con relaciones muy superiores a 1:2 y tasas de acierto del 30% al 40%. Otras, como la reversión a la media de corto plazo, toman muchas ganancias pequeñas de 0.5R a 1R con una tasa de acierto alta. Ambas pueden ser rentables. Lo que no puede ser rentable por mucho tiempo es una estrategia que gana poco y pierde mucho, y eso, por desgracia, es lo que el trading humano sin reglas tiende a producir: tomar ganancias rápido porque la ganancia se siente bien, y dejar correr las pérdidas porque vender las hace reales.\n\nLos múltiplos R también hacen honesto tu diario. Una ganancia de $400 en una operación que arriesgó $2,000 es una ganancia de 0.2R, un resultado pequeño para el riesgo asumido; una ganancia de $400 en una operación que arriesgó $200 es 2R. Los dólares ocultan esto; la R lo muestra."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Tasa de acierto de equilibrio.** Para una relación riesgo/beneficio dada, la tasa de acierto con la que ni ganas ni pierdes dinero (ignorando costos) es 1 ÷ (1 + beneficio/riesgo). Con 1:1 necesitas 50%. Con 1:2 necesitas 33.3%. Con 1:3 necesitas 25%. Con 2:1 al revés (arriesgar 2 para ganar 1) necesitas 66.7%. Cualquier ventaja por encima de la línea de equilibrio es ganancia; cualquier cosa por debajo es una fuga lenta."
+        },
+        {
+          "type": "text",
+          "md": "### Expectativa: lo que vale una operación en promedio\n\nLa **expectativa** (expectancy) es la cantidad promedio que esperas ganar por operación, a lo largo de muchas operaciones. Combina la tasa de acierto y el tamaño de las ganancias y las pérdidas en un solo número:\n\nExpectativa = (tasa de acierto × ganancia promedio) − (tasa de pérdida × pérdida promedio)\n\nEn unidades de R, con la pérdida promedio normalizada a 1R, se convierte en: Expectativa = (W × ganancia promedio en R) − (1 − W), donde W es la tasa de acierto.\n\nEjemplo 1. Ganas el 40% de las veces; las ganadoras promedian 2.5R y las perdedoras promedian 1R. Expectativa = 0.40 × 2.5 − 0.60 × 1 = 1.00 − 0.60 = **+0.40R por operación**. Si R es $1,000 (1% de una cuenta de $100,000), cada operación vale unos $400 en promedio, y 100 operaciones deberían producir aproximadamente $40,000 antes de costos, con mucha variación en el camino.\n\nEjemplo 2. Ganas el 70% de las veces, pero tus ganadoras promedian 0.5R porque tomas ganancias temprano, y tus perdedoras promedian 1.5R porque a veces mueves el stop. Expectativa = 0.70 × 0.5 − 0.30 × 1.5 = 0.35 − 0.45 = **−0.10R por operación**. Setenta por ciento de operaciones ganadoras, y la cuenta se encoge. Este perfil es extremadamente común entre principiantes, y no es un problema de conocimiento del mercado; es un problema de disciplina.\n\nEjemplo 3. Una entrada al azar (50% de tasa de acierto) con un riesgo/beneficio estricto de 1:2 y stops siempre respetados: 0.5 × 2 − 0.5 × 1 = **+0.50R**. En mercados reales las entradas aleatorias no alcanzarán un objetivo de 2R la mitad de las veces, porque el stop más cercano se activa primero con mayor frecuencia; la idea es que la disciplina en la salida carga con buena parte del peso.\n\nAlgunas estadísticas relacionadas que verás en las páginas del portafolio y del backtest:\n\n- **Factor de beneficio** (profit factor) = ganancia bruta ÷ pérdida bruta. Por encima de 1.0 es rentable; muchos traders consideran bueno 1.5 o más y tratan cualquier valor por encima de 3 en un backtest como señal de sobreajuste. Si no hay operaciones perdedoras el número no está definido y la página muestra un guion.\n- La **tasa de acierto** por sí sola no significa nada sin la ganancia y la pérdida promedio. Una estrategia con 90% de acierto que vende opciones descubiertas puede perderlo todo en el 10% restante.\n- **Ganancia promedio / pérdida promedio** es la relación de pago (payoff ratio). La expectativa es la tasa de acierto y la relación de pago combinadas.\n\nLas comisiones y el deslizamiento (slippage) se restan directamente de la expectativa, razón por la cual las estrategias de scalping que se ven bien en papel a menudo mueren en cuentas reales."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": ["sma50", "sr"],
+          "caption": "Velas diarias con niveles automáticos de soporte y resistencia y la SMA de 50 días. Elige una entrada larga hipotética al precio actual: pon el stop un poco por debajo del soporte más cercano y el objetivo en la resistencia más cercana, y luego calcula el riesgo/beneficio en R. Si es peor que 1:1.5, la operación necesitaría una tasa de acierto inusualmente alta para pagar."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Alejar un stop del precio es como las pérdidas pequeñas se convierten en grandes.** Está bien mover un stop *hacia* el precio (subirlo en una posición larga). Moverlo en la otra dirección, \"para darle un poco más de espacio\", convierte una operación de −1R en −2R o −3R y destruye silenciosamente la expectativa que calculaste. Decide una vez, en la entrada, y deja que la orden haga su trabajo. Si sigues queriendo mover stops, la verdadera solución es un stop inicial más amplio con menos acciones."
+        },
+        {
+          "type": "text",
+          "md": "### Leer la expectativa en un backtest\n\nEl laboratorio de estrategias es el lugar más rápido para ver estos números en listas de operaciones reales. Ejecuta cualquier estrategia incluida y mira la tabla de operaciones: cada fila tiene una entrada, una salida y la ganancia o pérdida (P&L) en dólares y en porcentaje. A partir de esas filas puedes calcular a mano todo lo de esta lección:\n\n- Tasa de acierto = filas ganadoras ÷ total de filas.\n- Ganancia promedio = ganancia total de las filas ganadoras ÷ número de ganadoras. La pérdida promedio, igual.\n- Expectativa por operación = (tasa de acierto × ganancia promedio) − (tasa de pérdida × pérdida promedio), en dólares. Divide por el monto típico arriesgado para obtenerla en R.\n- Factor de beneficio = ganancia total de las ganadoras ÷ pérdida total de las perdedoras.\n\nUna precaución antes de confiar en lo que calcules: un backtest con 12 operaciones casi no te dice nada. La estadística de las muestras pequeñas es brutal; una estrategia con una expectativa genuina de +0.3R puede mostrar fácilmente un tramo perdedor de 12 operaciones, y una inservible puede mostrar un tramo ganador. Treinta operaciones es el mínimo indispensable para tener una opinión, cien o más es donde los números empiezan a asentarse, y aun así el Módulo 6 te mostrará cómo comprobar si el resultado sobrevive con datos que la estrategia nunca vio.\n\nUna segunda precaución: las estrategias incluidas salen por una señal, no por un stop fijo, así que sus peores operaciones pueden ser mayores que 1R. Es útil notarlo. Compara la mayor pérdida de la tabla con la pérdida promedio. Si la peor operación es cinco veces el promedio, un stop habría cambiado el resultado de forma importante, para bien o para mal, y esa es una pregunta que puedes poner a prueba agregando uno en el Módulo 6."
+        },
+        {
+          "type": "exercise",
+          "md": "Calcula la expectativa a partir de una lista real de operaciones. En el laboratorio de estrategias, ejecuta el **Cruce de SMA (20/50)** en AAPL diario con el período completo. Luego, a partir de la tabla de operaciones (cópiala como CSV a una hoja de cálculo si lo prefieres):\n\n- Cuenta las operaciones, las ganadoras y las perdedoras. Calcula la tasa de acierto.\n- Calcula el P&L promedio de las ganadoras y el P&L promedio de las perdedoras en dólares.\n- Calcula la expectativa por operación y compárala con el factor de beneficio que muestra el laboratorio: si tu tasa de acierto y tu relación de pago implican un factor de beneficio mayor que 1, el laboratorio debería coincidir.\n- Encuentra la peor operación individual. ¿Cuántas veces mayor que la pérdida promedio es? ¿Un stop a 2 × ATR la habría recortado?\n- Ahora cambia a **Reversión del RSI (30/70)** y repite. ¿Qué estrategia tiene la mayor tasa de acierto, y cuál tiene la mayor expectativa? ¿Son la misma?",
+          "action": { "page": "backtest.html", "hash": "sym=AAPL&tf=1day&strategy=smaCross&fast=20&slow=50&run=1", "label": "Ejecutar el backtest del cruce de SMA" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Compras a $60 con un stop en $57 y un objetivo en $66. ¿Cuál es el beneficio de la operación en R?",
+              "choices": ["0.5R", "1R", "2R", "3R"],
+              "answer": 2,
+              "explain": "R es el riesgo por acción, 60 − 57 = $3. El objetivo está $6 por encima de la entrada, lo que es 6 ÷ 3 = 2R. El riesgo/beneficio es 1:2."
+            },
+            {
+              "q": "¿Cuál es la tasa de acierto de equilibrio para una estrategia cuyas ganadoras son siempre 3R y sus perdedoras siempre 1R, ignorando costos?",
+              "choices": ["25%", "33%", "50%", "75%"],
+              "answer": 0,
+              "explain": "Equilibrio = 1 ÷ (1 + 3) = 25%. Con una tasa de acierto del 25%, una ganancia de 3R paga exactamente tres pérdidas de 1R."
+            },
+            {
+              "q": "Un trader gana el 65% de las operaciones, con una ganadora promedio de 0.6R y una perdedora promedio de 1.4R. ¿Cuál es la expectativa?",
+              "choices": ["+0.39R", "+0.10R", "−0.10R", "−0.49R"],
+              "answer": 2,
+              "explain": "0.65 × 0.6 = 0.39R de las ganadoras; 0.35 × 1.4 = 0.49R perdidos en las perdedoras. 0.39 − 0.49 = −0.10R por operación. Una tasa de acierto alta no puede rescatar una mala relación de pago."
+            },
+            {
+              "q": "¿Cuál de estas es la forma recomendada de fijar un stop?",
+              "choices": ["Decidir primero la cantidad de acciones y luego poner el stop donde la pérdida iguale tu presupuesto", "Poner el stop donde el gráfico muestra que la idea de la operación falló, y luego dimensionar la posición a partir de esa distancia", "Usar siempre exactamente 5% por debajo de la entrada", "Fijarlo después de que la operación empiece a perder, una vez que sepas cómo se siente"],
+              "answer": 1,
+              "explain": "El stop debe marcar dónde la tesis está equivocada (debajo del soporte, un mínimo relativo o un múltiplo del ATR). La cantidad de acciones se deriva entonces de la distancia al stop y del presupuesto de riesgo, nunca al revés."
+            },
+            {
+              "q": "Un backtest muestra un factor de beneficio de 1.8 en 11 operaciones. ¿Cuál es la precaución más importante?",
+              "choices": ["1.8 es demasiado bajo para ser interesante", "Once operaciones es una muestra demasiado pequeña; el número podría revertirse fácilmente en la siguiente docena de operaciones", "El factor de beneficio debe ser mayor que 3 para contar", "Los backtests no pueden calcular el factor de beneficio"],
+              "answer": 1,
+              "explain": "Las muestras pequeñas están dominadas por el azar. Una ventaja genuina puede mostrar tramos perdedores de una docena de operaciones y una estrategia inservible puede mostrar tramos ganadores. Treinta operaciones es el mínimo indispensable, y más es mejor."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l3",
+      "title": "Drawdowns, rachas y psicología del trading",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Drawdown: el número que decide si sigues operando\n\nUn **drawdown** es la caída desde un pico en el capital de tu cuenta hasta el siguiente valle, normalmente expresada como porcentaje del pico. Si tu cuenta de paper trading crece de $100,000 a $112,000 y luego baja a $100,800, el drawdown es (112,000 − 100,800) ÷ 112,000 = 10%. El **drawdown máximo** en un período es la mayor de esas caídas, y es la estadística de riesgo más útil tanto en la página del portafolio como en el laboratorio de estrategias, porque mide lo que de verdad tuviste que soportar.\n\nLos drawdowns importan por una asimetría que todos aprenden a la mala: **la ganancia necesaria para recuperarse es mayor que la pérdida**. La fórmula es ganancia necesaria = pérdida ÷ (1 − pérdida).\n\n- Pierde 10%, necesitas 11.1% para recuperarte.\n- Pierde 20%, necesitas 25%.\n- Pierde 33%, necesitas 50%.\n- Pierde 50%, necesitas 100%.\n- Pierde 75%, necesitas 300%.\n\nLa curva se dobla con fuerza por encima del 20%, razón por la cual la mayoría de los límites de riesgo profesionales tratan un drawdown del 20% como una crisis y uno del 50% como el final. También es la razón por la que existe la regla del 1%: mantiene la cuenta fuera de la parte empinada de esta curva durante las rachas de pérdidas que toda estrategia tiene.\n\nDos ideas más sobre drawdowns que vale la pena conocer:\n\n- La **duración** importa tanto como la profundidad. Un drawdown del 15% que dura una semana es incómodo; uno que dura dieciocho meses pone a prueba si de verdad crees en tu método, y la mayoría de la gente abandona durante los largos tramos planos, no en los mínimos.\n- **Drawdown de una posición abierta** frente a **drawdown de la cuenta**. Una acción que tienes puede caer 30% mientras tu cuenta cae 1%, si la dimensionaste bien. La gestión del riesgo trata del segundo número.\n\nEn el laboratorio de estrategias, el panel de drawdown bajo la curva de capital grafica esto directamente: qué tan por debajo de su pico anterior estuvo la estrategia en cada barra. La curva de comprar y mantener de una acción volátil es algo serio de ver ahí."
+        },
+        {
+          "type": "text",
+          "md": "### Las rachas de pérdidas son normales, y la aritmética lo dice\n\nLos traders nuevos viven su primera racha de cinco o seis pérdidas como prueba de que algo está roto. Por lo general nada lo está. Las rachas son una propiedad de la probabilidad, no de la habilidad.\n\nSi tu tasa de acierto es 50%, la probabilidad de que una secuencia dada de cinco operaciones sean todas perdedoras es 0.5⁵ = 1 en 32, alrededor del 3%. Suena raro. Pero en 100 operaciones tienes aproximadamente 96 ventanas superpuestas de cinco, y la probabilidad de ver *al menos una* racha de cinco pérdidas en algún punto de esas 100 operaciones es de alrededor del 80%. A lo largo de una carrera de trading verás rachas de siete, ocho y nueve pérdidas con una tasa de acierto del 50%, y mucho más largas si tu tasa de acierto es del 35% (común en enfoques de seguimiento de tendencia, donde se espera de 10 a 12 pérdidas seguidas en unos cientos de operaciones).\n\nLas consecuencias prácticas:\n\n- **Dimensiona para la racha, no para la operación.** Si una racha de diez pérdidas es plausible para tu método, tu riesgo por operación debe dejar la cuenta intacta después de diez pérdidas. Al 1%, diez pérdidas cuestan 9.6%. Al 2%, 18.3%. Al 3%, 26.3%, y ya estás en la parte empinada de la curva de recuperación.\n- **No cambies el método en medio de una racha normal.** Decide de antemano qué cuenta como anormal. Una regla simple: calcula la racha más larga que produjo tu backtest, súmale dos o tres, y revisa el método solo si los resultados en vivo la superan.\n- **No aumentes el tamaño para recuperar lo perdido.** Este es el momento más peligroso de la racha, y tiene nombre en la siguiente sección.\n\nLa imagen en espejo también se cumple: una racha de ocho ganadoras es en parte suerte, y aumentar el tamaño después de ella es como los traders devuelven un buen trimestre en una semana. Si acaso, muchos traders sistemáticos reducen un poco el tamaño después de una racha ganadora inusual, porque los resultados inusualmente buenos suelen significar que el mercado fue inusualmente amable, no que el método estuvo inusualmente acertado.\n\nEl ratio de Sharpe que ves en las páginas del portafolio y del backtest es una forma de resumir todo esto: rendimiento promedio dividido por la variabilidad de los rendimientos, anualizado. Un Sharpe más alto significa un capital más estable para el rendimiento obtenido. Las reglas prácticas varían (por encima de 1 suele llamarse bueno, por encima de 2 muy bueno), pero un Sharpe sobre un historial corto o un puñado de operaciones es tan poco confiable como cualquier otra estadística de muestra pequeña."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Aritmética de la recuperación.** Ganancia necesaria = pérdida ÷ (1 − pérdida). Un drawdown del 25% necesita una ganancia del 33.3% para volver al máximo anterior; un drawdown del 40% necesita 66.7%. Escríbelo en una tarjeta. El propósito de cada regla de este módulo es mantenerte en la parte suave de esta curva, donde la recuperación es cuestión de semanas y no de años."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": ["bb", "sma50"],
+          "caption": "Una acción volátil con bandas de Bollinger (20 días, 2 desviaciones estándar) y la SMA de 50 días. Sigue el capital de alguien que compró en la vela más alta visible y mantuvo: la caída de pico a valle es el drawdown que tuvo que soportar. Compara el ancho de las bandas aquí con un nombre más estable como JNJ; bandas más anchas significan drawdowns más profundos y frecuentes para el mismo tamaño de posición."
+        },
+        {
+          "type": "text",
+          "md": "### Los sesgos que rompen los buenos planes\n\nLa mayoría de las pérdidas en el trading no las causa un mal análisis. Las causa un buen análisis anulado, en el peor momento posible, por un cerebro que fue construido para otro trabajo. Los economistas conductuales han documentado estos patrones durante décadas, y tú los tienes todos. Conocer sus nombres ayuda a atraparlos en el acto.\n\n- **Aversión a la pérdida.** En experimentos que se remontan a Kahneman y Tversky en los años 70, las personas suelen sentir una pérdida aproximadamente dos veces más intensamente que una ganancia equivalente. En el trading esto significa rechazar una pérdida pequeña (duele) y agarrar una ganancia pequeña (se siente bien): el perfil de pago al revés de la Lección 2.\n- **El efecto disposición.** La tendencia a vender las ganadoras demasiado pronto y a mantener las perdedoras demasiado tiempo. El estudio de Terrance Odean de 1998 sobre miles de cuentas de corredores de descuento encontró que los inversionistas eran notablemente más propensos a vender una acción que había subido que una que había bajado, y las acciones que vendían luego rendían más que las que conservaban.\n- **Pensamiento de costo hundido y anclaje.** \"Vendo cuando vuelva a lo que pagué.\" El mercado no sabe lo que pagaste; tu precio de entrada es irrelevante para decidir si la acción es buena para mantener hoy.\n- **Trading por venganza.** Después de una pérdida, tomar de inmediato una operación más grande y de peor calidad para quedar a mano: la forma más rápida de convertir un día de −1R en uno de −5R. La solución es mecánica: un límite diario de pérdida (por ejemplo −2R o −3R), después del cual cierras la plataforma.\n- **Exceso de confianza y la \"mano caliente\".** Después de una racha ganadora, aumentar el tamaño y relajar las reglas. Se está confundiendo suerte parcial con habilidad.\n- **Sesgo de lo reciente.** Dar mucho más peso a las últimas operaciones que al historial completo. Una estrategia con 200 operaciones de historial no se vuelve mala por las últimas cinco.\n- **Sesgo de confirmación.** Buscar razones para seguir en una posición perdedora e ignorar la evidencia en contra, por ejemplo eligiendo solo los indicadores que están de acuerdo contigo.\n- **Miedo a quedarse afuera (FOMO).** Comprar después de que el movimiento que querías ya ocurrió, sin stop y sin plan, porque quedarse afuera se siente peor que perder.\n\nCada uno de estos es una *desviación de un plan*. La defensa no es la fuerza de voluntad; nadie tiene suficiente a las 3:55 pm de un día en rojo. La defensa es un plan escrito (Lección 5), un tamaño tal que ninguna operación individual se sienta importante (Lección 1) y órdenes stop que se ejecutan sin preguntarte (Lección 2)."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Deja que la computadora sostenga la línea.** La aversión a la pérdida no puede discutir con una orden stop ya colocada. Pon el stop al mismo tiempo que la entrada, siempre, y deja que se ejecute. Si te descubres cancelando stops \"solo por esta vez\", esa es la entrada del diario que más importa esta semana."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**El paper trading oculta la emoción, no el sesgo.** Te resultará fácil aceptar una pérdida de $1,000 en papel. El objetivo de practicar las reglas ahora es convertirlas en hábitos que se disparen automáticamente, de modo que cuando el dinero sea real y el miedo sea real, el hábito actúe antes de que el miedo tenga voto. Si rompes reglas en la cuenta de paper trading, espera romperlas más rápido con dinero real."
+        },
+        {
+          "type": "exercise",
+          "md": "Observa un drawdown y calcula su recuperación. En el laboratorio de estrategias, ejecuta **Comprar y mantener** en TSLA con el período diario más largo disponible, y luego en KO.\n\n- Lee el drawdown máximo de cada una en las estadísticas. Usando ganancia = pérdida ÷ (1 − pérdida), calcula la ganancia que cada una necesitó para recuperar su máximo anterior.\n- Mira el panel de drawdown. Estima cuántos meses duró el drawdown más largo de TSLA. ¿Lo habrías aguantado?\n- Ahora ejecuta el **Cruce de SMA (20/50)** en TSLA. ¿La estrategia redujo el drawdown máximo en comparación con comprar y mantener? ¿Le costó rendimiento hacerlo? Ese intercambio es todo el tema de la gestión del riesgo en un solo gráfico.\n- Por último, abre tu portafolio de paper trading y anota su drawdown máximo actual. Escribe, en una sola oración, qué drawdown te haría detenerte y revisar tu método.",
+          "action": { "page": "backtest.html", "hash": "sym=TSLA&tf=1day&strategy=buyAndHold&run=1", "label": "Ejecutar comprar y mantener en TSLA" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una cuenta cae de un pico de $120,000 a $90,000. ¿Cuál es el drawdown, y qué ganancia se necesita para recuperarse?",
+              "choices": ["25% de drawdown; 25% de ganancia", "25% de drawdown; 33.3% de ganancia", "33% de drawdown; 25% de ganancia", "30% de drawdown; 30% de ganancia"],
+              "answer": 1,
+              "explain": "Drawdown = 30,000 ÷ 120,000 = 25%. La recuperación necesita 0.25 ÷ 0.75 = 33.3%, porque la ganancia se mide sobre la base más pequeña de $90,000."
+            },
+            {
+              "q": "Con una tasa de acierto del 50%, ¿aproximadamente qué tan probable es que un trader vea al menos una racha de cinco pérdidas consecutivas en algún punto de 100 operaciones?",
+              "choices": ["Alrededor del 3%", "Alrededor del 20%", "Alrededor del 80%", "Prácticamente imposible"],
+              "answer": 2,
+              "explain": "Cualquier ventana individual de cinco operaciones tiene una probabilidad de 1 en 32 de ser toda perdedora, pero hay casi 100 ventanas superpuestas en 100 operaciones. La probabilidad de al menos una racha así es de aproximadamente 80%. Las rachas son normales."
+            },
+            {
+              "q": "Después de tres operaciones perdedoras seguidas, un trader duplica el tamaño de la siguiente operación para quedar a mano rápido. ¿Qué sesgo es este?",
+              "choices": ["Sesgo de confirmación", "Sesgo de lo reciente", "Trading por venganza", "El efecto disposición"],
+              "answer": 2,
+              "explain": "Aumentar el tamaño después de pérdidas para recuperar el dinero es trading por venganza. Convierte una racha normal y sobrevivible en un gran drawdown. Un límite diario de pérdida fijo es la defensa habitual."
+            },
+            {
+              "q": "¿Qué encontró el estudio de Odean de 1998 sobre cuentas de corredores de bolsa?",
+              "choices": ["Los inversionistas mantenían las ganadoras demasiado tiempo y vendían las perdedoras rápido", "Los inversionistas eran más propensos a vender acciones que habían subido que acciones que habían bajado, y las acciones que vendían luego rendían más que las que conservaban", "Los inversionistas que operaban más ganaban más", "La mayoría de los inversionistas minoristas usaba stops"],
+              "answer": 1,
+              "explain": "Este es el efecto disposición: vender las ganadoras y mantener las perdedoras. Es la cara práctica de la aversión a la pérdida y lo contrario del perfil de pago que produce una expectativa positiva."
+            },
+            {
+              "q": "¿Por qué dimensionar al 1% por operación ayuda específicamente con las rachas de pérdidas?",
+              "choices": ["Evita que ocurran las rachas", "Garantiza un rendimiento del 1% por operación", "Diez pérdidas consecutivas del 1% cuestan menos del 10% del capital, manteniendo la cuenta en la parte suave de la curva de recuperación, mientras que diez pérdidas del 5% cuestan alrededor del 40%", "Lo exigen las bolsas"],
+              "answer": 2,
+              "explain": "Las rachas no se pueden evitar, solo sobrevivir. Un riesgo pequeño por operación impide que la racha inevitable empuje la cuenta a drawdowns que necesitan ganancias enormes para recuperarse."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l4",
+      "title": "Venta en corto, margen y apalancamiento",
+      "minutes": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Vender algo que no tienes\n\nTodo lo visto hasta ahora asumía que compras primero y vendes después. La **venta en corto** (short selling) invierte el orden: vendes acciones que tomaste prestadas, con la esperanza de recomprarlas más baratas y devolverlas, quedándote con la diferencia. Es como los traders ganan con un precio que cae, y también es como se cubre un portafolio bien dimensionado: un corto en una acción débil puede compensar pérdidas en las posiciones largas durante una caída del mercado.\n\nLa mecánica en un corredor de bolsa real:\n\n1. Pides vender 100 acciones de una empresa que no tienes. El corredor localiza 100 acciones para prestártelas, normalmente de la cuenta de margen de otro cliente o de una institución.\n2. Las acciones se venden en el mercado y el efectivo llega a tu cuenta, pero no puedes gastarlo: es garantía (colateral).\n3. Mientras la posición está abierta pagas una **comisión por préstamo** (borrow fee), minúscula en acciones grandes y líquidas, enorme en acciones que mucha gente quiere vender en corto, y le debes al prestamista cualquier **dividendo** que la acción pague.\n4. Para cerrar, **compras para cubrir** (buy to cover): compras 100 acciones y las devuelves. Si vendiste a $50 y cubriste a $42, ganaste $8 por acción, $800, menos comisiones. Si cubriste a $58, perdiste $800.\n\nEl perfil de riesgo está invertido respecto a una posición larga. El peor caso de una posición larga es que la acción llegue a cero: pierdes lo que pagaste, y nada más. El peor caso de una posición corta es que la acción *suba*, y no hay techo. Vende en corto una acción de $50 y puede ir a $100 (una pérdida del 100% sobre la posición), a $200 (una pérdida del 300%) o más. En octubre de 2008, las acciones de Volkswagen se multiplicaron brevemente varias veces en dos días cuando los vendedores en corto se apresuraron a cubrir una posición saturada; en enero de 2021, GameStop subió más de diez veces en pocas semanas por razones similares. Estos **short squeezes** (estrangulamientos de cortos) ocurren cuando un precio al alza obliga a los cortos a comprar, lo que empuja el precio más arriba, lo que obliga a más cortos a comprar.\n\nTambién hay reglas. En EE. UU., los reguladores pueden imponer una **restricción de venta en corto** a una acción que haya caído 10% en un día, permitiendo cortos solo en un repunte (uptick) durante el resto de ese día y el siguiente. La venta en corto descubierta (naked shorting, vender sin localizar las acciones) está prohibida para los inversionistas ordinarios. Y algunas acciones simplemente son **difíciles de tomar prestadas** (hard to borrow): no hay acciones disponibles, o la comisión hace que la operación no tenga sentido."
+        },
+        {
+          "type": "text",
+          "md": "### Margen: pedir prestado para operar\n\nUna **cuenta de margen** (margin account) te permite pedirle prestado al corredor contra los valores que tienes. Es obligatoria para vender en corto (porque estás tomando acciones prestadas) y te permite comprar más acciones de las que tu efectivo permitiría. El vocabulario:\n\n- El **margen inicial** es la fracción de una compra que debes financiar tú mismo. En EE. UU., la Regulación T de la Reserva Federal la fija en 50% para la mayoría de las acciones: con $50,000 en efectivo puedes comprar hasta $100,000 en acciones, pidiendo prestados los otros $50,000.\n- El **margen de mantenimiento** es el capital mínimo que debes conservar en la cuenta como fracción del valor de la posición. El mínimo de FINRA es 25%; la mayoría de los corredores exige más (de 30% a 40% es común, y más en acciones volátiles).\n- Una **llamada de margen** (margin call) ocurre cuando el capital cae por debajo del nivel de mantenimiento. El corredor exige más efectivo y, si no lo aportas rápido, vende posiciones por ti, al precio que ofrezca el mercado, sin preguntarte cuáles.\n- El **interés de margen** se cobra diariamente sobre lo que pides prestado, a tasas que varían mucho entre corredores.\n\nHagamos el cálculo del apalancamiento. Tienes $50,000 y compras $100,000 de una acción a $100 (1,000 acciones) con 50% de margen. Si la acción sube 10% a $110, la posición vale $110,000, debes $50,000, así que tu capital es $60,000: una **ganancia del 20%** sobre tu dinero. Si cae 10% a $90, el capital es $40,000: una **pérdida del 20%**. Un apalancamiento de 2× duplica ambos resultados. Si cae 30% a $70, la posición vale $70,000, el capital es $20,000 y estás en 28.6% de capital, por debajo de la línea de mantenimiento de muchos corredores. Llega la llamada de margen y te ves obligado a vender cerca del mínimo.\n\nPara las ventas en corto, el requisito inicial en EE. UU. es **150% del valor del corto**: el 100% de los ingresos de la venta más 50% de tu propio dinero como margen. Vende en corto $20,000 en acciones y debes tener al menos $10,000 de otro capital respaldándolo. A medida que la acción sube, el requisito sube con ella, que es el mecanismo que fuerza la cobertura en un squeeze.\n\nUna regla más: históricamente, los corredores de EE. UU. han marcado las cuentas de margen que hacen cuatro o más operaciones intradía en cinco días hábiles como **pattern day traders** (operadores intradía habituales), exigiendo $25,000 de capital. FINRA ha propuesto cambiar esto; verifica la regla vigente con tu corredor."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**El apalancamiento multiplica todo, incluidos los errores de las Lecciones 1 a 3.** Con apalancamiento de 2×, la regla del 1% de riesgo sigue funcionando, pero tu distancia al stop en términos de precio debe ser la mitad para la misma cantidad de acciones, o tu cantidad de acciones la mitad para el mismo stop. La mayoría de quienes están aprendiendo no debería usar apalancamiento en absoluto hasta que su historial de paper trading sin apalancamiento muestre expectativa positiva en cien o más operaciones."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo maneja la cuenta de paper trading los cortos y el margen\n\nEl simulador te permite practicar ventas en corto sin una mesa de préstamo real, y aplica reglas de margen simplificadas para que aprendas la forma de las restricciones:\n\n- Vender más acciones de las que tienes abre una **posición corta**, que se muestra con una cantidad negativa en la página del portafolio.\n- Un corto requiere **efectivo igual al 150% del valor de mercado del corto**, reflejando el requisito inicial de la Reg T. Si no lo tienes, la orden se rechaza indicando el motivo.\n- Las posiciones cortas se **valoran a mercado** (mark to market) con cada cotización. A medida que la acción sube, tu capital baja y el requisito de margen crece.\n- Para cerrar, coloca una orden de **compra** por la misma cantidad. Un **stop de compra** (buy stop) por encima de tu entrada es el stop de pérdida del vendedor en corto: se activa cuando el precio *sube* hasta el nivel del stop.\n- Emitir (vender) opciones en el laboratorio de opciones también requiere margen, fijado como una fracción del nocional del strike, porque una opción vendida puede perder mucho más que la prima recibida.\n\nEl simulador no cobra comisiones por préstamo ni interés de margen, y nunca emite llamadas de margen ni fuerza liquidaciones; solo se niega a abrir posiciones que no puedes respaldar. Tenlo en cuenta: un corto real que sale muy mal te lo cierran *a ti*, en el peor momento.\n\nDimensionar un corto usa la misma fórmula que un largo, con el stop por encima de la entrada. Vende en corto 400 acciones a $50 con un stop de compra en $52.50: el riesgo es $2.50 por acción, $1,000 en total, 1% de una cuenta de $100,000. La posición necesita 400 × $50 × 1.5 = $30,000 de efectivo como respaldo. Si la acción abre con un gap a $60 de la noche a la mañana por un rumor de adquisición, la pérdida es $4,000, cuatro veces el plan, que es exactamente el riesgo de gap de la Lección 1 con el signo invertido y sin techo. Muchos traders mantienen los cortos más pequeños que los largos por esta razón, o solo venden en corto a través de opciones como puts largos, cuya pérdida máxima es la prima pagada (Módulo 5)."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMD",
+          "interval": "1day",
+          "overlays": ["ema21", "sr"],
+          "caption": "Velas diarias con la EMA de 21 días y soporte y resistencia automáticos. Un vendedor en corto busca lo contrario de una configuración larga: precio por debajo de una EMA descendente, fallando en la resistencia. Coloca un corto hipotético al precio actual, un stop de compra justo por encima de la resistencia más cercana, y calcula la cantidad de acciones para 1% de riesgo y el 150% de efectivo que exigiría el simulador."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Pérdida ilimitada no es una figura retórica.** Una posición larga no puede perder más de lo que pagaste. Una posición corta no tiene ese piso por encima, y una acción difícil de tomar prestada puede ser reclamada por el prestamista en cualquier momento, obligándote a cubrir sin importar tu plan. Acompaña siempre un corto con un stop de compra ya colocado, y trata con precaución extra las fechas de reporte de ganancias y los nombres propensos a adquisiciones."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre un corto pequeño y bien dimensionado en paper trading y protégelo. En el panel, abre AMD en el gráfico diario con las superposiciones EMA 21 y S/R. Luego:\n\n- Identifica la resistencia más cercana por encima del precio actual. Fija un nivel de **stop de compra** un poco por encima de ella y calcula el riesgo por acción.\n- Dimensiona para el **0.5%** del capital (en este ejercicio los cortos reciben la mitad del presupuesto habitual, por el riesgo de gap). Acciones = $500 ÷ riesgo por acción, redondeado hacia abajo.\n- Coloca una **venta a mercado** por esa cantidad. El simulador la aceptará si tu efectivo cubre el 150% del valor del corto; si rechaza la orden, lee el motivo y reduce el tamaño.\n- Coloca el **stop de compra** por la misma cantidad a tu nivel de stop. Revisa la página del portafolio: la posición debería mostrar una cantidad negativa y el stop debería estar esperando bajo órdenes pendientes.\n- Calcula, en papel, cuánto te costaría un gap alcista del 20% de la noche a la mañana, en dólares y en R.",
+          "action": { "page": "index.html", "hash": "symbol=AMD&interval=1day&ov=ema21,sr", "label": "Abrir AMD en el panel" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Vendes en corto 200 acciones a $40 y cubres a $46. Ignorando comisiones, ¿cuál es tu resultado?",
+              "choices": ["+$1,200", "−$1,200", "+$800", "−$800"],
+              "answer": 1,
+              "explain": "Un corto gana cuando el precio cae. Aquí el precio subió $6, así que perdiste $6 × 200 = $1,200. Cubrir más alto de lo que vendiste es una pérdida."
+            },
+            {
+              "q": "Bajo la Regulación T de EE. UU., ¿aproximadamente cuánto de tu propio dinero debe respaldar una venta en corto de $20,000 al inicio?",
+              "choices": ["$0, porque los ingresos de la venta lo cubren", "$5,000", "$10,000, de modo que la garantía total sea el 150% del valor del corto", "$30,000"],
+              "answer": 2,
+              "explain": "El requisito es el 150% del valor del corto: los $20,000 de ingresos más el 50% ($10,000) de tu propio capital. La cuenta de paper trading aplica la misma regla de efectivo del 150%."
+            },
+            {
+              "q": "Compras $100,000 en acciones con $50,000 en efectivo y $50,000 de margen. La acción cae 15%. ¿Qué pasa con tu capital?",
+              "choices": ["Cae 15% a $42,500", "Cae 30% a $35,000", "Cae 7.5% a $46,250", "No cambia porque el corredor asume la pérdida"],
+              "answer": 1,
+              "explain": "La posición vale $85,000 y sigues debiendo $50,000, así que el capital es $35,000: una pérdida del 30% sobre tu dinero. Un apalancamiento de dos veces duplica el movimiento porcentual en ambas direcciones."
+            },
+            {
+              "q": "¿Qué tipo de orden es el equivalente de un stop de pérdida para el vendedor en corto?",
+              "choices": ["Un stop de venta por debajo de la entrada", "Un stop de compra por encima de la entrada, que se activa si el precio sube hasta ese nivel", "Una compra limitada por debajo de la entrada", "Los cortos no pueden usar stops"],
+              "answer": 1,
+              "explain": "Un corto pierde a medida que el precio sube, así que la orden protectora es un stop de compra colocado por encima de la entrada. Cuando el precio lo alcanza, la orden compra para cubrir y limita la pérdida (salvo gaps)."
+            },
+            {
+              "q": "¿Por qué se describe la pérdida máxima de una posición corta como ilimitada?",
+              "choices": ["Porque los corredores cobran comisiones ilimitadas", "Porque el precio de una acción no tiene límite superior, así que el costo de recomprar las acciones prestadas puede subir sin límite, como en un short squeeze", "Porque las posiciones cortas nunca se pueden cerrar", "Porque la SEC lo exige"],
+              "answer": 1,
+              "explain": "Un largo solo puede caer a cero. La pérdida de un corto crece con el precio, que no tiene techo. Squeezes como el de Volkswagen en 2008 y GameStop en 2021 muestran hasta dónde y qué tan rápido puede llegar."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4-l5",
+      "title": "Tu plan de trading, el diario y cómo usar bien la cuenta de paper trading",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Un plan de trading es un conjunto de decisiones tomadas con calma\n\nCada sesgo de la Lección 3 ataca en el momento: en la apertura, después de una pérdida, cuando una acción se escapa. Un **plan de trading** es el documento que toma esas decisiones por ti de antemano, mientras estás tranquilo y tienes tiempo para pensar. No necesita ser largo. Sí necesita estar escrito, porque un plan que vive en tu cabeza será reescrito silenciosamente por la primera mala tarde.\n\nUn plan completo responde estas preguntas, cada una en una o dos oraciones:\n\n- **¿Qué opero?** Un universo: por ejemplo, acciones de EE. UU. de gran capitalización por encima de $20 con volumen promedio superior a dos millones de acciones, en el marco temporal diario. Una lista de seguimiento de 20 a 40 nombres que conoces es mejor que escanear 5,000 que no conoces.\n- **¿Cuándo entro?** La configuración, en términos comprobables. \"El precio cierra por encima de la SMA de 20 días después de un retroceso hacia una SMA de 50 días ascendente, con el RSI entre 40 y 60\" se puede verificar y someter a backtest. \"Cuando se ve fuerte\" no.\n- **¿Dónde está el stop?** La regla de la Lección 2: debajo de la estructura, o un múltiplo fijo del ATR. Decide cuál y mantente firme.\n- **¿Cuánto arriesgo?** La regla de tamaño de la Lección 1: 1% del capital por operación, un límite al calor total, un límite a la exposición correlacionada.\n- **¿Cuándo salgo de una ganadora?** Un objetivo en R, un trailing stop, una señal de indicador, o una combinación. Decide de antemano si sales por partes o todo de una vez.\n- **¿Qué evito?** Anuncios de resultados, los primeros quince minutos de la sesión, acciones bajo restricción de venta en corto, días en que el índice cae más del 2%: lo que tu experiencia diga que te cuesta dinero.\n- **¿Cuándo paro por el día, la semana, el mes?** Un límite diario de pérdida de 2R o 3R, un límite semanal y un nivel de drawdown en el que reduces el tamaño a la mitad hasta recuperarte.\n- **¿Cuándo reviso?** Semanalmente, con el diario abierto.\n\nEl plan puede cambiar, pero solo en el momento de la revisión, nunca durante una operación. Escribe la fecha en cada versión para que puedas ver cómo evolucionó. Un buen plan después de seis meses de paper trading se verá distinto del primero, y cada diferencia estará respaldada por una observación del diario."
+        },
+        {
+          "type": "text",
+          "md": "### El diario: de donde realmente sale tu ventaja\n\nTu corredor (y la página del portafolio) ya registra qué compraste, cuándo y a qué precio. Eso no es un diario. Un **diario de trading** registra el *por qué*, y lo que estabas pensando, para que los patrones de tu comportamiento se vuelvan visibles. Nadie encuentra su ventaja mirando gráficos; la encuentra mirando su propia lista de operaciones y notando que, por ejemplo, cada pérdida mayor a 1.5R vino de mover un stop, o que las entradas de lunes por la mañana pierden y las de miércoles ganan.\n\nPara cada operación, registra en la entrada:\n\n- Fecha, símbolo, dirección, marco temporal y el nombre de la configuración según tu plan.\n- Precio de entrada, precio del stop, objetivo planeado, cantidad de acciones y el riesgo resultante en dólares y como porcentaje del capital.\n- La razón, en una oración, y una captura de pantalla o una nota de cómo se veía el gráfico.\n- Qué tan seguro te sientes, en una escala de 1 a 5. (Con el tiempo, compara la confianza con los resultados. La mayoría de la gente no encuentra ninguna relación, lo cual es útil en sí mismo.)\n\nEn la salida:\n\n- Precio y fecha de salida, P&L en dólares y en R, y la razón de la salida: stop activado, objetivo alcanzado, señal, stop de tiempo, o \"entré en pánico\".\n- Si seguiste el plan, sí o no. Esta única columna es la más valiosa del diario. Calcula la expectativa de las operaciones que siguieron el plan y de las que lo rompieron por separado. Para casi todo el mundo el segundo número es marcadamente negativo, lo que convierte el consejo vago de \"sé disciplinado\" en una cifra en dólares.\n- La máxima excursión adversa (qué tanto fue la operación en tu contra antes de funcionar, si funcionó). Si las ganadoras rara vez van más de 0.5R en tu contra, tu stop puede ser más amplio de lo necesario.\n\nRevisa semanalmente: tasa de acierto, ganancia y pérdida promedio en R, expectativa, mayor pérdida, drawdown actual y el conteo de reglas rotas. Revisa mensualmente buscando patrones por configuración, por día de la semana, por tiempo de tenencia, por sector. Una hoja de cálculo es suficiente. La pestaña de historial de operaciones de la página del portafolio te da las ejecuciones y el P&L realizado para empezar; cópialos y agrega las columnas que el corredor no puede conocer."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**La prueba de las dos columnas.** Divide tus operaciones cerradas en \"seguí el plan\" y \"rompí el plan\" y calcula la expectativa de cada una. Si la primera columna es positiva y la segunda negativa, tu método funciona y tu disciplina es el problema, que se arregla con reglas y un tamaño menor. Si ambas son negativas, el método necesita trabajo, y el laboratorio de estrategias es donde hay que llevarlo. Si ambas son positivas, o tienes habilidad o tienes suerte, y más operaciones te dirán cuál."
+        },
+        {
+          "type": "text",
+          "md": "### Usar bien la cuenta de paper trading\n\nEl paper trading es la mejor educación gratuita en los mercados, y también es fácil de desperdiciar. La diferencia está en si tratas la cuenta de paper trading como la cuenta real que quieres tener algún día. Formas comunes en que quienes aprenden anulan el propósito:\n\n- **Tamaño irreal.** Tomar posiciones de $50,000 en una cuenta de paper trading de $100,000 porque el dinero no es real, y luego ser incapaz de mantener ni siquiera una posición bien dimensionada cuando sí lo es. Opera la cuenta de paper trading con el tamaño que de verdad vas a usar. Si esperas empezar con $5,000, restablece la cuenta de paper trading a $5,000 en la pestaña de Ajustes y aprende lo que compra el 1% de eso. Es humillante, y es la verdad.\n- **Ignorar los costos.** Configura una comisión realista en los ajustes de paper trading aunque el corredor que piensas usar anuncie cero; muchos corredores sin comisión la recuperan a través de spreads efectivos más amplios, y unos pocos dólares por operación mantienen honestas tus estimaciones de expectativa. En el laboratorio de estrategias, vuelve a ejecutar siempre los resultados prometedores con comisión y deslizamiento (slippage) activados.\n- **Ignorar las ejecuciones.** La cuenta de paper trading ejecuta las órdenes de mercado al precio cotizado. Una orden real de 2,000 acciones de una acción poco líquida mueve el precio. Quédate en nombres líquidos y trata las ejecuciones en papel como ligeramente optimistas.\n- **Elegir a conveniencia.** Descontar mentalmente las perdedoras (\"esa no cuenta, estaba probando\"). Cada operación en papel cuenta, o ninguna lo hace.\n- **Operar muy poco.** Treinta operaciones es el piso para sacar cualquier conclusión y cien es mejor. A unas pocas operaciones por semana eso toma varios meses, y son los meses más baratos de tu vida como trader.\n- **Operar datos de demostración como si fueran el mercado.** Cuando el panel muestra la insignia *Demo*, los precios son un paseo aleatorio simulado. Sirve para aprender la mecánica, pero un historial rentable con datos de demostración no prueba nada sobre tu estrategia. Configura una clave de datos gratuita cuando quieras precios reales, y ten presente que los niveles gratuitos vienen con retraso o con límites de frecuencia.\n\nUna regla de graduación razonable, usada de distintas formas por muchos educadores y firmas de trading propietario (prop firms): al menos 100 operaciones en papel siguiendo un plan escrito, expectativa positiva después de costos realistas, drawdown máximo dentro del límite del plan y una tasa de reglas rotas inferior al 5%. Luego empieza en real con el tamaño más pequeño que tu corredor permita y espera que los resultados sean peores que en papel por un tiempo. Los de todo el mundo lo son, porque ahora el miedo es real, y lo único que hay entre tú y los sesgos es el hábito que construiste aquí."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": ["sma20", "sma50", "rsi"],
+          "caption": "Una configuración comprobable escrita como regla: precio por encima de la SMA de 20 días, la de 20 por encima de la de 50, RSI entre 40 y 60 en un retroceso. Todo en esta descripción puede leerse directamente en estas tres superposiciones. Si la configuración de tu plan no puede expresarse en términos que un gráfico pueda mostrar, tampoco puede registrarse en el diario ni someterse a backtest."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Una lista de verificación previa a la operación** cabe en una tarjeta: ¿Esta configuración está en mi plan? ¿Dónde está el stop, y la posición está dimensionada a partir de él? ¿El calor total está por debajo del límite? ¿Hay una fecha de reporte de ganancias dentro del período de tenencia? ¿Cuál es el objetivo en R, y es al menos el mínimo que exige mi plan? ¿Coloqué la orden stop junto con la entrada? Cinco segundos por operación, y atrapa la mayor parte de la Lección 3."
+        },
+        {
+          "type": "exercise",
+          "md": "Empieza bien tu historial de paper trading. En la página del portafolio:\n\n- Abre **Ajustes y restablecimiento**. Fija el efectivo inicial en el monto con el que realmente esperas operar (o conserva los $100,000 si lo prefieres), configura una comisión de $1 por ejecución y restablece la cuenta. El historial anterior desaparece; a partir de aquí, cada operación cuenta.\n- Escribe tu plan de trading, de una página como máximo, respondiendo las ocho preguntas de esta lección. Ponle fecha.\n- Crea una hoja de cálculo de diario con las columnas de entrada y salida listadas arriba, incluida la columna \"seguí el plan\".\n- Coloca tu primera operación planificada, desde el panel, dimensionada al 1% y con un stop ya colocado, y llena la fila de entrada del diario antes de que la orden se ejecute, no después.\n- Comprométete a al menos 30 operaciones bajo el plan antes de cambiarlo. Programa una revisión semanal y, cuando la muestra llegue a 30, calcula la prueba de expectativa de las dos columnas.",
+          "action": { "page": "portfolio.html", "hash": "settings", "label": "Abrir los ajustes del portafolio" }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "¿Cuál de estas es una regla de entrada comprobable, adecuada para un plan de trading?",
+              "choices": ["Comprar cuando la acción se ve fuerte", "Comprar cuando las noticias son buenas", "Comprar cuando el precio cierra por encima de la SMA de 20 días después de un retroceso hacia una SMA de 50 días ascendente con el RSI entre 40 y 60", "Comprar cada vez que un amigo la recomiende"],
+              "answer": 2,
+              "explain": "Una regla del plan debe ser lo bastante específica para que dos personas coincidan en si se cumplió en un gráfico dado, y para que pueda registrarse en el diario y someterse a backtest. Solo la tercera opción cumple ese estándar."
+            },
+            {
+              "q": "Según esta lección, ¿cuál es la columna más valiosa de un diario de trading?",
+              "choices": ["El sector de la acción", "Si seguiste el plan en esa operación", "La hora del día", "Tu estado de ánimo antes de la apertura del mercado"],
+              "answer": 1,
+              "explain": "Dividir las operaciones entre las que siguieron el plan y las que lo rompieron, y calcular la expectativa de cada grupo, muestra si el problema es el método o la disciplina, y le pone una cifra en dólares a las reglas rotas."
+            },
+            {
+              "q": "Alguien que está aprendiendo opera una cuenta de paper trading de $100,000 con posiciones de $40,000, aunque planea empezar en real con $5,000. ¿Cuál es el problema?",
+              "choices": ["Ninguno; el dinero en papel no es real", "No está aprendiendo a operar con el tamaño y las restricciones que de verdad enfrentará, así que los hábitos no se transferirán", "Las cuentas de paper trading no pueden mantener posiciones de más de $10,000", "Las posiciones deben ser siempre exactamente el 1% del capital"],
+              "answer": 1,
+              "explain": "El paper trading solo construye hábitos útiles si refleja la cuenta real. Restablecer la cuenta de paper trading al tamaño previsto para operar en real y dimensionar al 1% de eso es el enfoque recomendado."
+            },
+            {
+              "q": "¿Por qué los resultados prometedores de un backtest o de paper trading deben volver a comprobarse con comisión y deslizamiento activados?",
+              "choices": ["Porque los costos se restan directamente de la expectativa y pueden convertir una ventaja pequeña en una pérdida, especialmente al operar con frecuencia", "Porque el regulador lo exige", "Porque la comisión aumenta la tasa de acierto", "Porque el deslizamiento solo afecta a las posiciones cortas"],
+              "answer": 0,
+              "explain": "Toda operación paga costos sin importar su resultado. A una estrategia con una expectativa por operación muy delgada puede no quedarle nada después de comisiones y deslizamiento realistas, razón por la cual los enfoques de alta frecuencia suelen fallar en real."
+            },
+            {
+              "q": "Un historial rentable de 40 operaciones se construyó por completo mientras el panel mostraba la insignia de datos Demo. ¿Qué prueba esto sobre la estrategia?",
+              "choices": ["Que será rentable en real", "Que supera a comprar y mantener", "Muy poco sobre la estrategia: los precios de demostración son un paseo aleatorio simulado, así que el historial solo muestra que se practicó la mecánica", "Que la regla del 1% es innecesaria"],
+              "answer": 2,
+              "explain": "Los datos de demostración son generados, no reales. Son ideales para aprender a ingresar órdenes, dimensionar y llevar el diario, pero un historial rentable con ellos no dice nada sobre una ventaja en mercados reales. Usa una fuente de datos real para eso."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

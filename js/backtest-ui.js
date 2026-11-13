@@ -16,6 +16,8 @@
   'use strict';
   window.BT = window.BT || {};
   var BT = window.BT;
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (window.BT && window.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
   var LW = window.LightweightCharts;
   var engine = BT.backtest, data = BT.data, I = BT.ind;
 
@@ -465,7 +467,7 @@
   function renderTrades() {
     var tb = $('tradetable').querySelector('tbody'), tr = result.trades || [];
     var wins = tr.filter(function (t) { return t.pnl > 0; }).length;
-    $('tradesum').textContent = tr.length ? tr.length + ' round trips · ' + wins + ' profitable · net ' + money(tr.reduce(function (a, t) { return a + t.pnl; }, 0), 0) : 'none';
+    $('tradesum').textContent = tr.length ? T('{n} round trips · {wins} profitable · net {net}', { n: tr.length, wins: wins, net: money(tr.reduce(function (a, t) { return a + t.pnl; }, 0), 0) }) : T('none');
     if (!tr.length) { tb.innerHTML = '<tr><td colspan="10" class="muted">No trades. The rules never fired on these bars, or the position size could not buy a single share.</td></tr>'; return; }
     tb.innerHTML = tr.map(function (t, i) {
       var cls = t.pnl >= 0 ? 'up' : 'down';
@@ -561,10 +563,10 @@
       if (result.error) throw new Error(result.error);
       $('empty').hidden = true; $('resultwrap').hidden = false;
       setDataPill(barsInfo);
-      $('barspill').textContent = bars.length + ' bars · ' + fmtTime(bars[0].time) + ' → ' + fmtTime(bars[bars.length - 1].time);
+      $('barspill').textContent = T('{n} bars · {from} → {to}', { n: bars.length, from: fmtTime(bars[0].time), to: fmtTime(bars[bars.length - 1].time) });
       var fb = $('fallbacknote');
       if (barsInfo.fallback || !barsInfo.live) { fb.hidden = false; fb.innerHTML = '<span><b>Simulated prices.</b> ' + esc(barsInfo.reason || 'These bars are a deterministic random walk per symbol, so the same test gives the same answer for every student.') + ' The mechanics and statistics are exactly what they would be on real data; only the price path is invented. Add a free API key on the <a href="index.html">dashboard</a> for real history.</span>'; }
-      else if (barsInfo.stale) { fb.hidden = false; fb.textContent = 'Live refresh failed; showing the last downloaded bars. ' + (barsInfo.reason || ''); }
+      else if (barsInfo.stale) { fb.hidden = false; fb.textContent = T('Live refresh failed; showing the last downloaded bars. {reason}', { reason: barsInfo.reason || '' }); }
       else fb.hidden = true;
       var pn = $('pendingnote');
       if (result.pendingSignal) { pn.hidden = false; pn.innerHTML = '<span><b>A signal fired on the last bar</b> (' + esc(result.pendingSignal === 'long' ? 'go long' : result.pendingSignal === 'short' ? 'go short' : 'exit') + ') and could not fill, because the engine fills at the <em>next</em> open and there is no next bar yet. On the dashboard this is what a live BUY/SELL badge looks like the evening before.</span>'; }
@@ -652,7 +654,7 @@
     var o = lastOpt, res = o.results, metric = o.metric;
     $('optout').hidden = false;
     setMsg('optmsg', res.tested + ' combinations tested in ' + num(o.ms / 1000, 1) + ' s.', 'ok');
-    $('optsummary').textContent = 'In-sample ' + res.inSampleBars + ' bars' + (res.oosBars ? ' · out-of-sample ' + res.oosBars + ' bars' : ' · no out-of-sample hold-out') + ' · ranked by ' + metricLabel(metric) + (res.truncated ? ' · grid thinned to ' + engine.OPTIMIZE_CAP : '');
+    $('optsummary').textContent = T('In-sample {n} bars', { n: res.inSampleBars }) + ' · ' + (res.oosBars ? T('out-of-sample {n} bars', { n: res.oosBars }) : T('no out-of-sample hold-out')) + ' · ' + T('ranked by {metric}', { metric: metricLabel(metric) }) + (res.truncated ? ' · ' + T('grid thinned to {n}', { n: engine.OPTIMIZE_CAP }) : '');
 
     // Overfitting check on the winner
     var top = res[0], warn = [res.warning];
@@ -707,7 +709,7 @@
         renderParams();
         saveSettings();
         run({ fromOpt: true, scroll: true });
-        toast('Loaded ' + paramsLabel(r.params) + ' into the sliders and re-ran on all bars.', '', 'Parameters applied');
+        toast(T('Loaded {params} into the sliders and re-ran on all bars.', { params: paramsLabel(r.params) }), '', 'Parameters applied');
       });
     });
   }

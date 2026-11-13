@@ -1,0 +1,582 @@
+{
+  "id": "m5-options",
+  "title": "Fundamentos de opciones",
+  "level": "advanced",
+  "minutes": 58,
+  "summary": "Calls y puts, valor intrínseco y extrínseco, vencimiento y ejercicio, cómo leer una cadena de opciones, las griegas en lenguaje sencillo, volatilidad implícita y las estrategias de riesgo definido del Laboratorio de opciones: covered calls, protective puts, spreads verticales, straddles, strangles y el iron condor, además de los riesgos de asignación que sorprenden a los principiantes.",
+  "lessons": [
+    {
+      "id": "m5-l1",
+      "title": "Calls, puts y de qué está hecha una prima",
+      "minutes": 12,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Una opción es un contrato, no una acción\n\nCuando compras una acción, eres dueño de una porción de una empresa. Cuando compras una **opción**, eres dueño de un contrato que te da un *derecho* sobre esa acción por un tiempo limitado. Nada más. El contrato tiene cuatro partes, y toda opción que veas en una cadena queda definida por ellas:\n\n- El **subyacente** (underlying): la acción sobre la que trata el contrato (Apple, Tesla, un fondo indexado como SPY).\n- El **tipo**: un **call** te da el derecho a *comprar* la acción; un **put** te da el derecho a *venderla*.\n- El **precio de ejercicio** (strike): el precio fijo al que ocurre esa compra o venta.\n- La **fecha de vencimiento** (expiration): el último día en que existe el derecho. Después, el contrato desaparece.\n\nEl precio que pagas por el contrato se llama **prima** (premium). Las primas se cotizan por acción, pero una opción estándar sobre acciones de EE. UU. cubre **100 acciones**, así que una prima de $3.60 cuesta $360 por un contrato. Este multiplicador es lo primero que hace tropezar a los traders nuevos. El Laboratorio de opciones de tu cuenta de paper trading muestra ambos números para que te acostumbres a verlos juntos.\n\nUn ejemplo rápido. Apple cotiza a $100 (en este módulo usamos números redondos para que la aritmética sea fácil; el Laboratorio mostrará precios de aspecto real). Compras un **call de Apple con strike $105 que vence en 30 días** por $1.65. Has pagado $165 por el derecho, en cualquier momento de los próximos 30 días, a comprar 100 acciones de Apple a $105 cada una, sin importar dónde cotice la acción. Si Apple sube a $115, puedes comprar a $105 y vender a $115: una ganancia de $10 por acción menos los $1.65 que pagaste. Si Apple se queda en $100, simplemente dejas que el derecho venza y pierdes los $165. Ese es todo el atractivo: un costo conocido y limitado a cambio de participar en un movimiento mucho mayor.\n\nLa persona del otro lado, que **vendió** (o \"suscribió\") ese call, recibió los $165 y asumió la *obligación* de entregar 100 acciones de Apple a $105 si tú lo pides. Los compradores tienen derechos; los vendedores tienen obligaciones. Ten presente esa frase durante todo el módulo, porque la mayor parte del riesgo en opciones vive en el lado de la obligación."
+        },
+        {
+          "type": "text",
+          "md": "### Los puts y las cuatro posiciones básicas\n\nUn **put** es la imagen en el espejo. Comprar un put de Apple con strike $95 por $1.35 te da el derecho a *vender* 100 acciones de Apple a $95 durante los próximos 30 días. Si Apple cae a $80, puedes comprar acciones en el mercado a $80 y venderlas a $95 a través de tu put: una ganancia de $15 por acción menos la prima de $1.35. Si Apple se mantiene por encima de $95, el put vence sin valor y pierdes $135.\n\nLos puts son la forma en que los traders de opciones apuestan a una caída sin pedir acciones prestadas para venderlas en corto y, más importante aún, la forma en que los inversionistas de largo plazo compran un seguro sobre una acción que ya tienen. Volveremos a ese segundo uso en la Lección 4.\n\nCon dos tipos de contrato y dos lados, hay exactamente cuatro posiciones básicas:\n\n- **Call largo** (long call): compraste un call. Alcista. La pérdida máxima es la prima. La ganancia es ilimitada en teoría.\n- **Put largo** (long put): compraste un put. Bajista. La pérdida máxima es la prima. La ganancia máxima es el strike menos la prima (la acción solo puede caer hasta cero).\n- **Call corto** (short call): vendiste un call. De neutral a bajista. La ganancia máxima es la prima. La pérdida es ilimitada si la acción sigue subiendo y no tienes las acciones.\n- **Put corto** (short put): vendiste un put. De neutral a alcista. La ganancia máxima es la prima. La pérdida máxima es el strike menos la prima, si la acción cae a cero.\n\nFíjate en la asimetría. Los compradores arriesgan una cantidad pequeña y conocida a cambio de un pago grande e incierto. Los vendedores cobran una cantidad pequeña y conocida y aceptan un riesgo grande e incierto. Ninguno es \"mejor\": la prima es el precio que el mercado pone a cargar con ese riesgo, y a lo largo de muchas operaciones los dos lados quedan más o menos equilibrados después de costos. Los principiantes deberían empezar como compradores de opciones individuales en la cuenta de paper trading, donde el peor caso ya está escrito en el ticket, y pasar a vender solo cuando entiendan la asignación (Lección 5)."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Derechos frente a obligaciones.** Comprar una opción (un call o un put) te da un derecho que puedes usar o ignorar. Vender una opción le da a otra persona ese derecho sobre ti. La pérdida máxima del comprador es la prima pagada. La ganancia máxima del vendedor es la prima recibida, y la pérdida del vendedor puede ser mucho mayor. Toda estrategia de este módulo es alguna combinación de estos cuatro bloques básicos."
+        },
+        {
+          "type": "text",
+          "md": "### Valor intrínseco y valor extrínseco\n\nToda prima se puede dividir en dos partes, y aprender a hacer esa división mentalmente es el hábito más útil que existe en opciones.\n\nEl **valor intrínseco** es lo que valdría la opción si se ejerciera en este mismo segundo. Para un call es el precio de la acción menos el strike, si es positivo; de lo contrario, cero. Para un put es el strike menos el precio de la acción, si es positivo; de lo contrario, cero.\n\n- Acción a $100, call $95: valor intrínseco = 100 − 95 = **$5.00**.\n- Acción a $100, call $105: valor intrínseco = **$0** (no pagarías $105 por algo que se vende a $100).\n- Acción a $100, put $105: valor intrínseco = 105 − 100 = **$5.00**.\n- Acción a $100, put $95: valor intrínseco = **$0**.\n\nEl **valor extrínseco** (también llamado *valor temporal* o time value) es todo lo demás: prima menos valor intrínseco. Es lo que pagas por la *posibilidad* de que la opción llegue a valer más antes de vencer. Con Apple a $100, un call $95 a 30 días podría cotizar alrededor de $6.65. Su valor intrínseco es $5.00, así que su valor extrínseco es $1.65. Un call $105 a 30 días a $1.65 es *todo* valor extrínseco; no tiene ningún valor intrínseco.\n\nTres expresiones describen dónde está un strike respecto a la acción, y se usan constantemente:\n\n- **Dentro del dinero** (in the money, ITM): la opción tiene valor intrínseco. Calls con strike por debajo de la acción, puts con strike por encima.\n- **En el dinero** (at the money, ATM): el strike está en el precio actual (o es el más cercano).\n- **Fuera del dinero** (out of the money, OTM): sin valor intrínseco. Calls por encima de la acción, puts por debajo.\n\nEl valor extrínseco siempre es mayor en las opciones at the money y se reduce a medida que te alejas, muy dentro o muy fuera del dinero. En nuestro ejemplo, el call $100 (ATM) tiene cerca de $3.60 de puro valor extrínseco, el call $95 (ITM) cerca de $1.65 y el call $110 (muy OTM) solo unos $0.65. El valor extrínseco también se reduce cada día conforme se acerca el vencimiento, que es el tema de la lección sobre las griegas. Al vencimiento, el valor extrínseco es exactamente cero y una opción vale únicamente su valor intrínseco."
+        },
+        {
+          "type": "chart",
+          "symbol": "AAPL",
+          "interval": "1day",
+          "overlays": [
+            "sma20",
+            "sma50",
+            "bb"
+          ],
+          "caption": "Apple, diario, con SMA 20, SMA 50 y Bandas de Bollinger. Elige cualquier vela e imagina que compraste un call con strike 5% por encima del cierre de ese día, con vencimiento 30 barras después. Avanza 30 barras: ¿terminó el precio por encima del strike? Cuenta cuántas veces ocurrió en una docena de intentos. Luego observa que el ancho de las bandas cambia con el tiempo; bandas anchas significan más volatilidad, y en la Lección 3 verás que más volatilidad significa opciones más caras. Los datos del feed de demostración son simulados, así que úsalos para las formas, no para las fechas."
+        },
+        {
+          "type": "text",
+          "md": "### Vencimiento, ejercicio y asignación\n\nLa vida de una opción termina en el **vencimiento**. Las opciones mensuales estándar sobre acciones de EE. UU. vencen el **tercer viernes** del mes; la mayoría de las acciones y ETFs líquidos también listan vencimientos **semanales** cada viernes, y los productos sobre índices más grandes listan varios vencimientos por semana. El Laboratorio de opciones ofrece un puñado de vencimientos medidos en días para que puedas compararlos lado a lado.\n\n**Ejercer** una opción es usar el derecho: quien tiene un call ejerce para comprar acciones al strike; quien tiene un put, para venderlas. El vendedor elegido para cumplir ese derecho es **asignado** (assignment). Las opciones sobre acciones listadas en EE. UU. son de **estilo americano**, lo que significa que el titular puede ejercer en cualquier día hábil hasta el vencimiento inclusive. La mayoría de las opciones sobre índices amplios, como las del propio índice S&P 500, son de **estilo europeo** (se ejercen solo al vencimiento) y se **liquidan en efectivo** (cambia de manos dinero en lugar de acciones). Todo en este módulo asume opciones sobre acciones de estilo americano, salvo que indiquemos lo contrario.\n\nAquí está la parte que los principiantes suelen pasar por alto: **casi nunca necesitas ejercer**. Una opción que está dentro del dinero tiene valor intrínseco más algo de valor extrínseco, y puedes simplemente *vender el contrato* de vuelta al mercado por ese total. Ejercer antes de tiempo tira a la basura el valor extrínseco. Los traders cierran posiciones operando la opción en sí; el ejercicio es sobre todo para quienes de verdad quieren las acciones.\n\nAl vencimiento, la cámara de compensación (la Options Clearing Corporation, OCC) **ejerce automáticamente** toda opción sobre acciones que termine dentro del dinero por $0.01 o más, salvo que el titular indique lo contrario. Si tienes un call $105 y la acción cierra en $105.40 el viernes de vencimiento, el lunes te despertarás con 100 acciones compradas a $105, lo que cuesta $10,500 en efectivo o margen que quizá no habías planeado. Si vendiste ese call, te despertarás habiendo entregado 100 acciones, posiblemente acciones que no tenías, lo que te deja en corto. Por eso el consejo permanente es: **cierra o renueva (roll) las posiciones antes del vencimiento, salvo que quieras específicamente que las acciones se muevan**. La Lección 5 cubre los riesgos de asignación en detalle."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Las opciones son un activo que se desgasta.** Una acción puede mantenerse veinte años. Una opción vence, y su valor extrínseco llegará garantizado a cero en una fecha conocida. Si la acción no hace nada, un call o un put largo pierde dinero aunque no te hayas \"equivocado\" en la dirección. Opera en papel varias opciones individuales hasta el vencimiento en el Laboratorio de opciones y observa cómo sucede antes de siquiera pensar en dinero real."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el Laboratorio de opciones en Apple (el enlace lo hace; el Laboratorio es la tercera pestaña de tu página de portafolio).\n\n- Lee el precio spot en la parte superior. Elige el vencimiento más cercano a **30 días**.\n- Encuentra el **strike at the money** (el más cercano al spot) y anota bid y ask del call y del put, y calcula cada mid como (bid + ask) ÷ 2. Ambos son casi en su totalidad valor extrínseco. ¿Cuál es mayor y por cuánto?\n- Baja dos strikes **por debajo** del spot. Para el call de ahí, calcula a mano el valor intrínseco (spot − strike) y el valor extrínseco (mid − intrínseco). Haz lo mismo para el put en ese strike (su valor intrínseco debería ser cero).\n- Sube dos strikes **por encima** del spot y repite. ¿Cuál de las cuatro opciones que miraste tiene más valor extrínseco? Debería ser la más cercana al dinero.\n- Ahora cambia el vencimiento al **más corto** disponible y mira el mismo call ATM. ¿Cuánto valor extrínseco desapareció y qué fracción de la prima a 30 días representa?\n- Por último, compra en papel **un** call ATM al ask (haz clic en el **+** de la cadena y luego usa el panel de paper trading). Anota el costo total en dólares, no por acción. Lo revisarás en lecciones posteriores.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/AAPL"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Una acción cotiza a $52. Compras un call $50 por una prima de $3.10. ¿Cuánto efectivo sale de tu cuenta y cuál es el valor intrínseco de la opción?",
+              "choices": [
+                "Salen $3.10; el valor intrínseco es $2.00",
+                "Salen $310; el valor intrínseco es $2.00 por acción",
+                "Salen $310; el valor intrínseco es $3.10 por acción",
+                "Salen $5,000; el valor intrínseco es cero"
+              ],
+              "answer": 1,
+              "explain": "Un contrato estándar cubre 100 acciones, así que una prima de $3.10 cuesta $310. El valor intrínseco de un call es el precio de la acción menos el strike cuando es positivo: 52 − 50 = $2.00 por acción. Los otros $1.10 de la prima son valor extrínseco (temporal)."
+            },
+            {
+              "q": "¿Qué posición tiene una obligación en lugar de un derecho?",
+              "choices": [
+                "Call largo",
+                "Put largo",
+                "Put corto",
+                "Ninguna; todas las opciones son derechos"
+              ],
+              "answer": 2,
+              "explain": "Comprar un call o un put te da un derecho. Vender (suscribir) una opción le da al comprador un derecho sobre ti, así que el put corto conlleva la obligación de comprar 100 acciones al strike si es asignado."
+            },
+            {
+              "q": "Una acción está en $80. ¿Qué opción está dentro del dinero?",
+              "choices": [
+                "El call $85",
+                "El put $75",
+                "El put $85",
+                "El call $80"
+              ],
+              "answer": 2,
+              "explain": "Un put está dentro del dinero cuando su strike está por encima del precio de la acción: el put $85 tiene 85 − 80 = $5 de valor intrínseco. El call $85 y el put $75 están fuera del dinero, y el call $80 está at the money con valor intrínseco cero."
+            },
+            {
+              "q": "Tienes un call que está $4 dentro del dinero, con 20 días restantes y un precio de mercado de $5.20. ¿Cuál es la mejor forma de tomar tu ganancia?",
+              "choices": [
+                "Ejercerlo ahora para asegurar los $4",
+                "Vender el call en el mercado por $5.20",
+                "Esperar el ejercicio automático al vencimiento",
+                "Comprar un put al mismo strike"
+              ],
+              "answer": 1,
+              "explain": "Ejercer captura solo los $4 de valor intrínseco y desecha $1.20 de valor extrínseco. Vender el contrato captura los $5.20 completos. Esperar te expone a 20 días más de riesgo de precio y de decaimiento temporal."
+            },
+            {
+              "q": "¿Qué ocurre al vencimiento con una opción sobre acciones que termina $0.30 dentro del dinero si el titular no da instrucciones?",
+              "choices": [
+                "Vence sin valor porque el monto es demasiado pequeño",
+                "La cámara de compensación la ejerce automáticamente",
+                "Se convierte en efectivo igual a la prima pagada",
+                "Se renueva automáticamente al siguiente vencimiento"
+              ],
+              "answer": 1,
+              "explain": "La OCC ejerce automáticamente las opciones sobre acciones que terminan dentro del dinero por $0.01 o más, salvo que el titular lo rechace. El titular termina largo (call) o corto (put) en 100 acciones por contrato, y por eso los traders cierran sus posiciones antes del vencimiento si no quieren las acciones."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l2",
+      "title": "Cómo leer una cadena de opciones",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### La estructura de una cadena\n\nUna **cadena de opciones** (option chain) es la tabla que lista todos los contratos sobre un subyacente para un vencimiento. Casi todos los brokers usan la misma disposición, y el Laboratorio de opciones la copia: **calls a la izquierda, strikes en el centro, puts a la derecha**, con una fila por strike. Encima de la tabla eliges la fecha de vencimiento; cambiarla recarga toda la tabla.\n\nLa columna de strikes es la columna vertebral. Los strikes están separados por incrementos fijos que dependen del precio de la acción: normalmente $0.50 o $1 para acciones de precio bajo, $2.50 para las de precio medio, $5 para acciones en los cientos y $10 para las muy caras. Las bolsas pueden listar incrementos más finos en los nombres populares, así que una cadena real de una acción muy operada puede mostrar strikes de $1 incluso a $400. El Laboratorio usa incrementos de $2.50, $5 y $10 según el precio para que la tabla siga siendo legible.\n\nLas filas están sombreadas para mostrar la **posición respecto al dinero** (moneyness) de un vistazo. En el Laboratorio, las celdas dentro del dinero aparecen sombreadas: los calls por debajo del spot y los puts por encima. La frontera sin sombrear entre ambos es el strike at the money. La mayor parte del volumen de cualquier cadena se concentra a pocos strikes de esa frontera, porque ahí es donde el valor extrínseco, y por lo tanto la acción interesante, es mayor.\n\nPara cada contrato la cadena muestra un conjunto de columnas. El conjunto exacto varía según el broker. El Laboratorio muestra bid, ask, IV y las cuatro griegas para cada strike; calcula tú mismo el mid como (bid + ask) ÷ 2. Las cadenas de los brokers reales añaden Último, Volumen e Interés abierto, que una cadena sintética no puede tener. Las columnas que encontrarás casi en todas partes:\n\n- **Bid** y **Ask**: el mejor precio que alguien pagará por el contrato y el mejor precio al que alguien lo venderá.\n- **Mid** (a veces \"mark\"): el punto medio entre bid y ask; la estimación individual más justa del valor de la opción. El Laboratorio no lo imprime como columna, así que calcúlalo a partir de bid y ask.\n- **Último** (last; solo brokers): el precio de la operación más reciente, que puede estar desactualizado en strikes ilíquidos.\n- **Volumen** (solo brokers): contratos operados hoy.\n- **Interés abierto (OI)** (open interest; solo brokers): contratos vigentes en este momento, actualizado de un día para otro.\n- **IV**: volatilidad implícita, la estimación del mercado sobre la volatilidad futura incorporada en ese precio (Lección 3).\n- **Delta, Gamma, Theta, Vega**: las griegas (Lección 3).\n\nLeer bien una cadena significa ignorar la mayor parte de esto la mayor parte del tiempo. Para una primera lectura necesitas el strike, el bid y el ask, y la volatilidad implícita. El resto sirve para afinar una operación que ya decidiste."
+        },
+        {
+          "type": "text",
+          "md": "### El spread es tu primer costo\n\nEn el mercado de acciones, una acción líquida puede tener un bid de $100.00 y un ask de $100.01. En el mercado de opciones, incluso un contrato popular puede mostrar un bid de $3.50 y un ask de $3.70, y uno ilíquido podría mostrar $3.00 y $4.20. Esa brecha es el **spread entre bid y ask** (bid-ask spread), y es el primer costo, y el más seguro, de toda operación con opciones.\n\nSi compras al ask ($3.70) y vendes de inmediato al bid ($3.50) pierdes $0.20 por acción, $20 por contrato, sin que la acción haya hecho nada. Sobre un mid de $3.60 eso es un costo de ida y vuelta del 5.6%. Compáralo con un spread de $20 en una opción de $0.40: necesitarías que la opción ganara 50% solo para volver al punto de partida. Por eso la cadena del Laboratorio dice \"**+** compra al ask, **−** vende al bid\": te obliga a sentir el spread en lugar de fingir que puedes operar al mid.\n\nAlgunas reglas prácticas en las que coinciden la mayoría de los traders con experiencia:\n\n- Prefiere strikes y vencimientos con **alto interés abierto y volumen**; tienen spreads más estrechos.\n- Evita opciones con precio por debajo de unos $0.20–$0.30 a menos que entiendas que el spread puede ser una fracción grande del precio.\n- Usa **órdenes limitadas** (limit orders) cerca del mid en lugar de órdenes de mercado. Las órdenes de mercado en opciones pueden ejecutarse a precios horribles en strikes poco líquidos.\n- El costo del spread se paga **dos veces** en una ida y vuelta y una vez por pata en operaciones de varias patas, así que un iron condor de cuatro patas cruza cuatro spreads para abrir y cuatro para cerrar.\n\nEl interés abierto merece un comentario más. Con frecuencia se malinterpreta como una predicción (\"hay muchos calls abiertos en $110, así que el mercado espera $110\"). En realidad refleja sobre todo dónde ya ocurrió la operativa, incluidas coberturas y spreads cuyos dueños no tienen ninguna visión direccional. Trátalo como un indicador de **liquidez**, no como un pronóstico."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Valora una opción mentalmente antes de mirar.** Para una opción at the money, una aproximación decente es: prima ≈ 0.4 × precio de la acción × volatilidad implícita × raíz cuadrada de (días al vencimiento ÷ 365). Con una acción de $100, IV del 30% y 30 días: 0.4 × 100 × 0.30 × 0.287 ≈ $3.44. El valor exacto de Black-Scholes con tasas de interés incluidas es de unos $3.60. Si la cadena muestra un call ATM a $7, o la IV es mucho más alta de lo que supusiste o algo anda mal con tus datos. Revisar primero el número aproximado detecta muchos errores."
+        },
+        {
+          "type": "text",
+          "md": "### El símbolo del contrato\n\nToda opción listada tiene un identificador estándar fijado por la OCC, y lo verás en estados de cuenta, en confirmaciones de órdenes y en la tabla de posiciones del Laboratorio. Empaqueta los cuatro términos del contrato en una sola cadena de texto:\n\n`AAPL260117C00200000`\n\n- `AAPL`: el símbolo raíz del subyacente (rellenado con espacios hasta seis caracteres en el formato oficial; la mayoría del software omite los espacios).\n- `260117`: el vencimiento como **AAMMDD**, aquí 17 de enero de 2026.\n- `C`: el tipo, **C** para call o **P** para put.\n- `00200000`: el strike × 1000 como ocho dígitos, así que 00200000 = $200.000.\n\nPor lo tanto, `AAPL260117C00200000` es el call de Apple $200 que vence el 17 de enero de 2026, y `TSLA250620P00250000` sería un put de Tesla $250 que vence el 20 de junio de 2025. Una vez que sabes leerlos, puedes verificar cualquier posición sin una tabla de referencia. El Laboratorio guarda las posiciones de opciones en papel bajo estos ids y muestra la versión legible al lado.\n\nDos rarezas que vale la pena conocer. Primero, tras un split de acciones o un dividendo especial, los contratos existentes se **ajustan** y reciben un nuevo símbolo raíz (por ejemplo `AAPL1`) con un entregable no estándar, como 200 acciones más efectivo. Los contratos ajustados suelen ser ilíquidos y confusos; la mayoría de los traders los evita. Segundo, algunos brokers muestran el vencimiento como el sábado siguiente al tercer viernes por razones históricas. De cualquier modo, la negociación termina el viernes."
+        },
+        {
+          "type": "chart",
+          "symbol": "TSLA",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi"
+          ],
+          "caption": "Tesla, diario, con Bandas de Bollinger y el panel de RSI. Tesla es uno de los nombres con opciones más activamente operadas del mercado de EE. UU., y su cadena es amplia: docenas de strikes por vencimiento, varios vencimientos por semana. Observa cómo las Bandas de Bollinger se expanden durante los movimientos rápidos y se contraen en los tramos tranquilos. Las primas de las opciones en la cadena de Tesla del Laboratorio son mucho más altas como porcentaje del precio de la acción que en una empresa de servicios públicos lenta, y este gráfico es la razón: el mercado espera movimientos más grandes. Barras simuladas en el feed de demostración."
+        },
+        {
+          "type": "text",
+          "md": "### Cómo elegir un strike y un vencimiento\n\nUna cadena ofrece cientos de contratos. Elegir uno es un intercambio entre **probabilidad** y **pago**, y la cadena muestra ambos lados si sabes dónde mirar.\n\nToma la columna de delta (la definiremos bien en la próxima lección). Por ahora, lee el delta de un call como una estimación aproximada de la probabilidad de que termine dentro del dinero. Un call $105 sobre una acción de $100 con 30 días restantes podría mostrar un delta cercano a 0.31 y costar unos $1.65; el call $110 muestra un delta cercano a 0.15 y cuesta unos $0.65; el call $95 muestra cerca de 0.75 y cuesta unos $6.65. Los strikes más baratos son más baratos *porque* tienen menos probabilidad de pagar. No existe un strike que sea a la vez barato y probable.\n\nUna forma útil de compararlos es el **punto de equilibrio al vencimiento** (breakeven): para un call largo es strike + prima; para un put largo es strike − prima.\n\n- Call $95 a $6.65: punto de equilibrio $101.65 (la acción necesita subir 1.65%).\n- Call $100 a $3.60: punto de equilibrio $103.60 (3.6%).\n- Call $105 a $1.65: punto de equilibrio $106.65 (6.65%).\n- Call $110 a $0.65: punto de equilibrio $110.65 (10.65%).\n\nEl call muy fuera del dinero tiene el mayor pago porcentual si la acción salta 15%, y lo pierde todo si la acción sube \"solo\" 8%. El call dentro del dinero se comporta mucho más como la acción misma.\n\nPara el vencimiento, el intercambio es costo frente a decaimiento temporal. Un call ATM a 60 días cuesta más que uno a 30 días (unos $5.15 frente a $3.60 en nuestro ejemplo), pero no el doble, porque el valor extrínseco crece aproximadamente con la raíz cuadrada del tiempo. Las opciones de vencimiento más lejano le dan espacio a tu idea para funcionar y decaen más despacio por día; las más cortas son más baratas y decaen rápido. Una regla práctica muy usada por los *compradores* es darle a la operación más tiempo del que crees que necesita y salir antes de las últimas dos o tres semanas, cuando el decaimiento se acelera. Es una regla práctica, no una ley, y los traders que se especializan en opciones de corto plazo la discutirían."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**Barato no es lo mismo que buen valor.** Un call muy fuera del dinero a $0.30 parece una ganga junto a uno dentro del dinero a $6, pero la mayoría de esas opciones vence sin valor. Dimensiona la posición en dólares y en probabilidad, no en número de contratos. Comprar diez billetes de lotería por $300 es una apuesta de $300 con pocas probabilidades de ganar, no una posición diversificada."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el Laboratorio de opciones en Tesla (el enlace lo hace) y elige el vencimiento más cercano a 30 días.\n\n- Para el call at the money, anota bid y ask y calcula el mid como (bid + ask) ÷ 2. Calcula el spread como porcentaje del mid. Haz lo mismo para un call tres strikes fuera del dinero. ¿Qué contrato es más caro de operar como *porcentaje*?\n- Usa la fórmula aproximada de esta lección (0.4 × spot × IV × √(días ÷ 365)) con el valor de IV del Laboratorio para estimar la prima del call ATM. ¿Qué tan cerca queda del mid de la cadena?\n- Escribe a mano el símbolo de contrato OCC del call ATM (raíz, AAMMDD, C, strike × 1000 como ocho dígitos). Luego compra un contrato al ask y compara tu símbolo con el que aparece en tu tabla de posiciones.\n- Calcula el punto de equilibrio al vencimiento para el call ATM y para el call tres strikes por encima. ¿Qué porcentaje necesita subir Tesla para que cada uno alcance el equilibrio?\n- Abre el gráfico **1day** de Tesla en el panel y cuenta cuántos tramos de 30 barras del último año subieron más que el mayor de esos dos porcentajes. Esa es una idea aproximada, mirando hacia atrás, de con qué frecuencia habría pagado el call más barato.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/TSLA"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "En una cadena de opciones con la disposición estándar, ¿dónde están los puts?",
+              "choices": [
+                "Encima de los calls, ordenados por vencimiento",
+                "A la derecha de la columna de strikes, con los calls a la izquierda",
+                "En una tabla separada que debes abrir",
+                "Mezclados con los calls, ordenados por precio"
+              ],
+              "answer": 1,
+              "explain": "La cadena convencional coloca los calls a la izquierda, los strikes en la columna central y los puts a la derecha, con una fila por strike. El Laboratorio de opciones usa la misma disposición."
+            },
+            {
+              "q": "Un call muestra bid $1.80 y ask $2.20. Compras al ask y la acción no se mueve. Si vendieras de inmediato, ¿cuánto perderías aproximadamente por contrato?",
+              "choices": [
+                "$0.40",
+                "$4",
+                "$40",
+                "$200"
+              ],
+              "answer": 2,
+              "explain": "Comprar a $2.20 y vender al bid de $1.80 pierde $0.40 por acción, y un contrato cubre 100 acciones, así que $40. El spread entre bid y ask es el primer costo de toda operación con opciones."
+            },
+            {
+              "q": "¿Qué describe el símbolo de contrato MSFT250919P00400000?",
+              "choices": [
+                "Un call de Microsoft $400 que vence el 19 de septiembre de 2025",
+                "Un put de Microsoft $400 que vence el 19 de septiembre de 2025",
+                "Un put de Microsoft $40 que vence el 25 de septiembre de 2019",
+                "Un put de Microsoft $4,000 que vence el 19 de septiembre de 2025"
+              ],
+              "answer": 1,
+              "explain": "El formato es raíz, AAMMDD, C o P, y luego strike × 1000 como ocho dígitos. 250919 es el 19 de septiembre de 2025, P significa put y 00400000 ÷ 1000 = $400."
+            },
+            {
+              "q": "Una acción está en $60. Compras el call $65 por $1.20. ¿Cuál es el punto de equilibrio al vencimiento?",
+              "choices": [
+                "$61.20",
+                "$63.80",
+                "$65.00",
+                "$66.20"
+              ],
+              "answer": 3,
+              "explain": "Para un call largo, el punto de equilibrio al vencimiento es strike más prima: 65 + 1.20 = $66.20. La acción debe subir más del 10% para que la posición gane dinero si se mantiene hasta el vencimiento."
+            },
+            {
+              "q": "¿Qué afirmación sobre el interés abierto es la más precisa?",
+              "choices": [
+                "Un interés abierto alto en un strike significa que la acción quedará clavada ahí",
+                "El interés abierto es el número de contratos operados hoy",
+                "El interés abierto es un indicador de liquidez que muestra cuántos contratos están vigentes",
+                "El interés abierto solo cuenta los contratos comprados por traders minoristas"
+              ],
+              "answer": 2,
+              "explain": "El interés abierto cuenta los contratos vigentes en este momento y se actualiza de un día para otro. Es útil como señal de liquidez (spreads más estrechos donde el OI es alto). El volumen es el conteo operado hoy. Tratar el OI como un pronóstico de precio es un error común."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l3",
+      "title": "Las griegas, de forma intuitiva, y la volatilidad implícita",
+      "minutes": 13,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Por qué los precios de las opciones necesitan griegas\n\nUna acción tiene una sola fuente de riesgo: su precio. Una opción tiene varias a la vez. Su valor cambia cuando la acción se mueve, cuando pasa el tiempo, cuando cambia la expectativa del mercado sobre la volatilidad futura y (ligeramente) cuando cambian las tasas de interés. Las **griegas** (Greeks) son simplemente las sensibilidades del precio de una opción a cada uno de esos factores, calculadas con un modelo de valoración. El Laboratorio de opciones usa el modelo de **Black-Scholes-Merton**, el modelo estándar de los libros de texto, para calcularlas en cada contrato de su cadena sintética, y los brokers reales muestran los mismos números en cadenas reales.\n\nNo necesitas las fórmulas. Necesitas poder mirar una posición y responder cuatro preguntas: *¿Qué pasa si la acción se mueve $1? ¿Qué pasa mañana si nada se mueve? ¿Qué pasa si el mercado se pone más o menos nervioso? ¿Y qué tan rápido cambian esas respuestas?* Eso es delta, theta, vega y gamma.\n\nTodos los números de ejemplo de esta lección usan la misma opción de referencia: una **acción de $100, volatilidad implícita del 30%, tasa de interés del 4%, 30 días al vencimiento**. El call $100 at the money vale aproximadamente **$3.59** en ese escenario y el put $100 aproximadamente **$3.26**. (El put es un poco más barato que el call por las tasas de interés; con tasas en cero serían iguales.) Puedes reproducirlos en el Laboratorio fijando la IV en 30% y eligiendo el vencimiento a 30 días en cualquier acción que cotice cerca de $100; el Laboratorio escala los strikes al spot real."
+        },
+        {
+          "type": "text",
+          "md": "### Delta y gamma\n\n**Delta** es cuánto cambia el precio de la opción por un movimiento de $1 en la acción. Los calls tienen delta positivo entre 0 y 1; los puts tienen delta negativo entre 0 y −1. El call $100 de referencia tiene un delta de aproximadamente **0.53**: si la acción sube de $100 a $101, el call sube de unos $3.59 a unos $4.12. El put $100 tiene un delta de aproximadamente **−0.47**: esa misma subida de $1 lo baja a unos $2.79.\n\nEl delta te dice tres cosas a la vez:\n\n- **Exposición direccional.** Un call con delta 0.53 se comporta como tener 53 acciones, mientras el delta se mantenga cerca de 0.53. Un contrato = 100 acciones × delta, así que diez de estos calls se mueven aproximadamente como 530 acciones.\n- **Posición respecto al dinero.** Las opciones muy dentro del dinero se acercan a un delta de 1 (calls) o −1 (puts): se mueven casi dólar por dólar con la acción. Las opciones muy fuera del dinero se acercan a 0. El call $90 de nuestro ejemplo tiene un delta cercano a 0.90; el call $110, cercano a 0.15.\n- **Una probabilidad aproximada.** Muchos traders leen un call con delta 0.31 como que tiene \"alrededor de un 31% de probabilidad de vencer dentro del dinero\". Es una aproximación que el modelo hace razonable por casualidad, no una definición, y pierde precisión con vencimientos más largos y volatilidad más alta. Es suficientemente buena para pensar en la selección de strikes, que es como la usamos en la lección anterior.\n\n**Gamma** es cuánto cambia el propio delta por cada movimiento de $1. Es la aceleración. El call ATM de referencia tiene un gamma de aproximadamente **0.046**, así que tras una subida de $1 su delta pasa a ser más o menos 0.53 + 0.046 = 0.58. El gamma es máximo en las opciones at the money y máximo cuando el vencimiento está cerca: el call ATM a 7 días tiene un gamma cercano a 0.096, el doble de la cifra a 30 días, y una opción ATM a 1 día tiene un gamma por encima de 0.25. Por eso las opciones at the money de corto plazo se sienten salvajes: un movimiento pequeño de la acción las cambia de \"cara o cruz\" a \"casi seguro dentro\" o \"casi seguro fuera\".\n\nPara un comprador, el gamma es la buena noticia: tu posición se vuelve más larga cuando la acción sube y más corta cuando cae, automáticamente. Para un vendedor, el gamma es la mala noticia en la misma frase. Las opciones largas son largas en gamma; las opciones cortas son cortas en gamma."
+        },
+        {
+          "type": "text",
+          "md": "### Theta: el decaimiento temporal\n\n**Theta** es cuánto pierde la opción por día con todo lo demás sin cambios. Casi siempre es negativo para una opción larga. El call ATM a 30 días de referencia tiene un theta de aproximadamente **−$0.06** por día, es decir, alrededor de **$6 por contrato por día**. Manténlo una semana con la acción plana y habrás perdido unos $40 de una prima de $359, cerca del 11%.\n\nTheta no es constante. Como el valor extrínseco crece con la *raíz cuadrada* del tiempo, decae despacio cuando el vencimiento está lejos y rápido cuando está cerca. Compara el mismo call ATM en distintos vencimientos (misma acción, misma IV del 30%):\n\n- 120 días: precio ≈ $7.48, theta ≈ −$0.034/día.\n- 60 días: precio ≈ $5.17, theta ≈ −$0.046/día.\n- 30 días: precio ≈ $3.59, theta ≈ −$0.062/día.\n- 7 días: precio ≈ $1.70, theta ≈ −$0.124/día.\n- 1 día: precio ≈ $0.63, theta ≈ −$0.32/día.\n\nLa opción a 7 días cuesta menos de la mitad que la de 30 días, pero sangra dos veces más rápido por día. Expresada como porcentaje de su propio valor, la opción a 1 día pierde la mitad de lo que vale en un solo día sin movimiento. Esta aceleración en las últimas semanas es la razón detrás de la regla práctica del comprador de la lección anterior (salir antes de las últimas dos o tres semanas) y de la regla espejo del vendedor (vender opciones con unos 30–60 días por delante, donde el decaimiento que cobras es rápido pero el gamma sigue siendo manejable). Ambas son convenciones que los profesionales debaten, no leyes.\n\nTheta también es mayor en las opciones at the money, porque son las que tienen más valor extrínseco que perder. Las opciones muy dentro del dinero y muy fuera del dinero tienen menos valor temporal y, por lo tanto, un theta más pequeño en dólares. Un matiz más: el theta del modelo asume días calendario, así que una opción un viernes \"pierde\" también el sábado y el domingo. En la práctica, los creadores de mercado descuentan los fines de semana por adelantado, así que el decaimiento del viernes por la tarde suele parecer mayor que el del lunes."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Delta** es dirección (equivalente en acciones). **Gamma** es qué tan rápido cambia el delta. **Theta** es el costo diario de esperar, que pagan los compradores y cobran los vendedores. **Vega** es la exposición al nivel de miedo del mercado. Opciones largas: gamma positivo, vega positivo, theta negativo. Opciones cortas: lo contrario. Toda estrategia de varias patas de las Lecciones 4 y 5 es una manera de elegir cuáles de estas quieres tener y cuáles quieres vender."
+        },
+        {
+          "type": "text",
+          "md": "### Vega y la volatilidad implícita\n\nLa **volatilidad** es cuánto tiende a moverse el precio de una acción, normalmente expresada como una desviación estándar anualizada. Una volatilidad del 30% significa que, a lo largo de un año, aproximadamente dos terceras partes del tiempo la acción se mantiene dentro de ±30% de donde empezó (bajo los supuestos del modelo). La **volatilidad histórica** se mide a partir de precios pasados. La **volatilidad implícita (IV)** es distinta: es la volatilidad que tendrías que introducir en el modelo de valoración para obtener el precio actual de mercado de la opción. Es el *pronóstico* del mercado, expresado como un número, y el Laboratorio de opciones te permite fijarla directamente con un deslizador para que veas qué le hace a la cadena.\n\n**Vega** es cuánto cambia el precio de la opción por un cambio de un punto porcentual en la IV. El call ATM a 30 días de referencia tiene un vega de aproximadamente **0.114**, así que si la IV pasa de 30% a 31% el call sube de $3.59 a unos $3.70; si la IV salta a 40%, el call vale unos $4.73 con la acción sin cambios. El vega es mayor en las opciones at the money y en las de vencimiento más lejano (el vega del call a 120 días es de unos 0.226, el doble de la cifra a 30 días).\n\nEl siguiente bloque cubre las tres razones prácticas por las que la IV importa más que cualquier otro factor una vez que has elegido una dirección."
+        },
+        {
+          "type": "text",
+          "md": "### Tres maneras en que la volatilidad implícita muerde\n\nLa IV importa por tres razones prácticas:\n\n- **Movimiento esperado.** Un movimiento esperado de una desviación estándar durante la vida de una opción es aproximadamente precio de la acción × IV × √(días ÷ 365). Para nuestra acción de $100 con IV del 30% a 30 días: 100 × 0.30 × 0.287 ≈ **$8.60**. Los traders lo usan para juzgar si un strike está \"lejos\" o \"cerca\" de una manera que tiene en cuenta la personalidad de la acción. En una acción con IV del 60%, el mismo movimiento a 30 días es de $17.20.\n- **Desplome de la IV** (IV crush). Antes de un evento programado, como un reporte de ganancias, la IV de las opciones cercanas sube porque el mercado espera un salto. Tras el anuncio la incertidumbre desaparece y la IV se desploma, a menudo en minutos. Un trader que compró un call antes de las ganancias puede tener *razón* en la dirección y aun así perder dinero, porque vega devolvió más de lo que delta ganó. El Laboratorio te permite simularlo: valora una posición al 60% de IV, luego arrastra el deslizador al 30% y mira cómo cae el valor.\n- **Valor relativo.** Comparar la IV de hoy con su propio rango histórico (los traders lo llaman IV rank o percentil de IV) te dice si las opciones de esta acción están caras o baratas *para esta acción*. Una IV alta favorece las estrategias que venden prima; una IV baja favorece las que la compran. Es una tendencia, no una garantía: la IV puede mantenerse alta por buenas razones.\n\nPor último, la IV no es un solo número por acción. En una cadena real, los puts fuera del dinero suelen tener una IV más alta que las opciones at the money, y los calls muy fuera del dinero a menudo también. Graficada contra el strike, esto forma una curva llamada **sonrisa de volatilidad** (volatility smile) o **skew**. Existe porque las caídas son más rápidas que las subidas y los inversionistas pagan más por protegerse a la baja. La cadena sintética del Laboratorio reproduce una sonrisa modesta para que los números se vean y se comporten como una cadena real."
+        },
+        {
+          "type": "chart",
+          "symbol": "NVDA",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi",
+            "macd"
+          ],
+          "caption": "Nvidia, diario, con Bandas de Bollinger (una envolvente de 20 días y dos desviaciones estándar, que es una imagen aproximada de la volatilidad realizada reciente), más los paneles de RSI y MACD. Encuentra el tramo más tranquilo, donde las bandas son más estrechas, y el más salvaje, donde son más anchas. Las opciones sobre Nvidia durante el tramo tranquilo se habrían valorado con una volatilidad implícita mucho menor que durante el salvaje, y un trader que hubiera comprado opciones en el tramo tranquilo y las mantuviera hasta la expansión se habría beneficiado del aumento de vega incluso antes de cualquier ganancia direccional. Los datos son simulados."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**El modelo es un mapa, no el territorio.** Black-Scholes asume volatilidad constante, ausencia de saltos, negociación continua y rendimientos lognormales. Las acciones reales abren con gaps por noticias, y la volatilidad real se agrupa y cambia. Las griegas siguen siendo el tablero más útil que tiene un trader, pero describen cómo cree el *modelo* que se comportará la opción, y la primera víctima de una sorpresa suele ser el modelo."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el Laboratorio de opciones en Nvidia (el enlace lo hace). Usarás el deslizador de IV y dos vencimientos.\n\n- Fija la volatilidad implícita en **30%** y elige el vencimiento más cercano a 30 días. Anota el mid, delta, theta y vega del call ATM. Multiplica theta por 100: esos son los dólares que se espera que pierda un contrato mañana si la acción no se mueve.\n- Ahora elige el vencimiento **más corto**. Anota los mismos cuatro números para el call ATM. El precio debería ser mucho menor y el theta (por día) mucho mayor en proporción. Calcula theta ÷ precio para ambos vencimientos: ¿qué porcentaje de su propio valor pierde cada opción por día?\n- Vuelve al vencimiento a 30 días y arrastra la IV de **30% a 60%**. ¿Cuánto cambió el mid del call ATM? Divide el cambio entre 30 (el número de puntos de IV) y compáralo con el vega que la cadena mostraba al 30%. El propio vega cambia cuando cambia la IV, así que espera números cercanos pero no idénticos.\n- Usa la fórmula del movimiento esperado (spot × IV × √(30 ÷ 365)) al 30% y al 60%. ¿Qué strikes de la cadena están aproximadamente a un movimiento esperado por encima y por debajo del spot? Anota el delta del call en el strike superior y del put en el inferior. Aproximadamente deberían estar entre 0.15 y poco más de 0.20.\n- Simula un **desplome de la IV**: carga la estrategia predefinida *Straddle largo* al 60% de IV y anota el valor de la posición en el panel de estrategia. Arrastra la IV al 30%. ¿Cuánto perdió el straddle con la acción sin cambios? Eso es lo que le pasa a quien compra un straddle la mañana después de las ganancias si la acción no se mueve lo suficiente.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/NVDA"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Un call tiene un delta de 0.40 y cuesta $2.00. La acción sube $1. Ignorando otros efectos, ¿cuánto vale ahora aproximadamente el call?",
+              "choices": [
+                "$2.04",
+                "$2.40",
+                "$3.00",
+                "$4.00"
+              ],
+              "answer": 1,
+              "explain": "Delta es el cambio de precio por cada movimiento de $1 en la acción: 0.40 × $1 = $0.40, así que el call pasa a unos $2.40. Gamma elevaría entonces ligeramente el delta para el siguiente dólar."
+            },
+            {
+              "q": "¿Qué opción tiene el gamma más alto?",
+              "choices": [
+                "Un call muy dentro del dinero con 120 días al vencimiento",
+                "Un put muy fuera del dinero con 120 días al vencimiento",
+                "Un call at the money con 5 días al vencimiento",
+                "Un call at the money con 120 días al vencimiento"
+              ],
+              "answer": 2,
+              "explain": "El gamma alcanza su máximo at the money y sube con fuerza a medida que se acerca el vencimiento. Las opciones at the money de corto plazo tienen el gamma más alto, y por eso sus deltas oscilan tan violentamente con movimientos pequeños."
+            },
+            {
+              "q": "El theta de una opción larga es −0.08. ¿Qué significa?",
+              "choices": [
+                "La opción gana $0.08 por día a medida que se acerca el vencimiento",
+                "La opción pierde unos $0.08 por acción, u $8 por contrato, por día si nada más cambia",
+                "La opción pierde el 8% de su valor cada día",
+                "La opción valdrá $0.08 al vencimiento"
+              ],
+              "answer": 1,
+              "explain": "Theta es la estimación del modelo del decaimiento diario del valor extrínseco por acción, con todo lo demás igual. Multiplica por 100 para obtener el monto en dólares por contrato. Es una cifra en dólares, no un porcentaje, y crece a medida que se acerca el vencimiento en las opciones at the money."
+            },
+            {
+              "q": "Un trader compra un call el día antes del reporte de ganancias con una volatilidad implícita del 70%. La acción sube 3% tras el reporte, pero la IV cae al 35%. ¿Qué le ocurrió muy probablemente al valor del call?",
+              "choices": [
+                "Subió exactamente el delta multiplicado por el movimiento",
+                "Puede haber caído, porque la pérdida por vega puede superar la ganancia por delta",
+                "Se duplicó, porque la IV siempre impulsa a los calls",
+                "Nada, porque la IV solo afecta a los puts"
+              ],
+              "answer": 1,
+              "explain": "Esto es el desplome de la IV (IV crush). El precio de la opción incluía una gran prima de volatilidad que desapareció tras el evento. Un call de vencimiento cercano puede perder más por el colapso de la IV (vega) de lo que gana por un movimiento modesto de la acción (delta), así que el trader puede acertar la dirección y aun así perder."
+            },
+            {
+              "q": "Una acción de $50 tiene una volatilidad implícita del 40%. ¿Cuál es aproximadamente el movimiento esperado de una desviación estándar a 30 días?",
+              "choices": [
+                "Unos $1.60",
+                "Unos $5.70",
+                "Unos $20.00",
+                "Unos $0.40"
+              ],
+              "answer": 1,
+              "explain": "Movimiento esperado ≈ precio × IV × √(días ÷ 365) = 50 × 0.40 × √(30 ÷ 365) ≈ 50 × 0.40 × 0.287 ≈ $5.73. La respuesta de $20 es el movimiento de un año completo (50 × 0.40) e ignora el ajuste por tiempo."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l4",
+      "title": "Covered calls, protective puts y spreads verticales",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Cómo leer un diagrama de pagos\n\nDe aquí en adelante, cada estrategia se explica con un **diagrama de pagos** (payoff diagram), el gráfico que el Laboratorio de opciones dibuja en su panel de estrategia. El eje horizontal es el precio de la acción al vencimiento. El eje vertical es tu ganancia o pérdida en dólares. La línea muestra lo que vale la posición completa (acciones más opciones) en cada posible precio de la acción el día del vencimiento, después de restar lo que pagaste o sumar lo que cobraste.\n\nAlgunos rasgos que debes buscar en cualquier línea de pagos:\n\n- Dónde cruza el cero: el o los **puntos de equilibrio** (breakeven).\n- Su tramo plano más alto: la **ganancia máxima**, si la línea se aplana en la parte superior.\n- Su tramo plano más bajo: la **pérdida máxima**, si se aplana en la parte inferior.\n- Donde sigue inclinada sin aplanarse: ganancia o pérdida **ilimitada** en esa dirección.\n- Los quiebres: cada quiebre es un strike. Las patas cambian de comportamiento en sus strikes.\n\nEl panel `analyze` del Laboratorio imprime la ganancia máxima, la pérdida máxima y los puntos de equilibrio de las patas que cargues, y dibuja una línea discontinua en el spot actual para que veas dónde estás respecto a los quiebres. El diagrama muestra solo el vencimiento; antes del vencimiento el valor de la posición es una curva suave por encima o por debajo de la línea quebrada, porque el valor extrínseco sigue vivo. La distancia entre la curva y la línea es exactamente el valor temporal que theta se está comiendo.\n\nPara los ejemplos de esta lección seguimos usando una acción de $100, IV del 30% y unos 30 días al vencimiento, así que las primas son las que ya has visto: el call $100 unos $3.60, el call $105 unos $1.65, el call $110 unos $0.65, el put $95 unos $1.35, el put $90 unos $0.40, el call $95 unos $6.65 y el put $105 unos $6.30."
+        },
+        {
+          "type": "text",
+          "md": "### El covered call\n\nUn **covered call** (call cubierto) son 100 acciones más un call corto vendido contra ellas. Es la primera estrategia con opciones más común entre los inversionistas, porque la obligación (entregar 100 acciones al strike) ya está *cubierta* por las acciones que tienes; no existe un escenario de pérdida ilimitada.\n\nEjemplo. Tienes 100 acciones compradas a $100. Vendes un call $105 a 30 días por $1.65 y cobras $165. Tres resultados al vencimiento:\n\n- **Acción en $110.** El call es asignado. Entregas tus acciones a $105. Ganancia: ($105 − $100) × 100 + $165 = **$665**. Te perdiste los $5 extra por encima de $105; ese es el precio del ingreso.\n- **Acción en $100.** El call vence sin valor. Te quedas con las acciones y con los $165. Tu costo efectivo ahora es $98.35.\n- **Acción en $85.** El call vence sin valor, te quedas con los $165, pero tus acciones perdieron $1,500. Neto −$1,335. El call *amortiguó* la pérdida en $1.65 por acción; no te protegió.\n\nAsí que el covered call renuncia a la subida por encima del strike a cambio de una prima que baja ligeramente tu punto de equilibrio. Su diagrama de pagos sube con la acción y luego se aplana en el strike. La ganancia máxima es (strike − precio de compra + prima) × 100 = $665. La pérdida máxima es todo el precio de la acción menos la prima, si la acción cae a cero. El punto de equilibrio es precio de compra − prima = $98.35.\n\nCuándo ayuda: sobre acciones que ya tienes y que te daría gusto vender al strike, en un mercado plano o que sube con suavidad, cuando la IV es lo bastante alta para que las primas sean significativas. Cuándo perjudica: cuando la acción sube con fuerza (ves ganancias que no obtuviste) o se desploma (la prima es un error de redondeo). El error más común es vender calls sobre una acción que en realidad no estás dispuesto a vender, y luego recomprar el call con pérdida para evitar la asignación cuando la acción sube. Decide antes de vender."
+        },
+        {
+          "type": "text",
+          "md": "### El protective put y el collar\n\nUn **protective put** (put protector) son 100 acciones más un put largo. Es un seguro: por una prima conocida, pones un piso debajo de la posición durante la vida del put.\n\nEjemplo. Tienes 100 acciones a $100 y compras un put $95 a 30 días por $1.35 ($135). Resultados al vencimiento:\n\n- **Acción en $70.** Ejerces (o vendes el put, que ahora vale $25). Tus acciones perdieron $3,000, pero el put ganó $2,500 menos el costo de $135. Pérdida neta **−$635**, en lugar de −$3,000.\n- **Acción en $100.** El put vence sin valor. Pierdes la prima de $135. Ese es el costo del seguro.\n- **Acción en $120.** El put vence sin valor, las acciones ganaron $2,000, neto +$1,865. Tu potencial de subida sigue intacto menos la prima.\n\nLa pérdida máxima es (precio de compra − strike + prima) × 100 = $635. La ganancia máxima es ilimitada. El punto de equilibrio es precio de compra + prima = $101.35. La línea de pagos se parece a la de un call largo, lo cual no es coincidencia: acciones más put se comportan como un call, una relación llamada **paridad put-call**.\n\nEl seguro sale caro si lo compras constantemente. Renovar un put $95 a 30 días cada mes cuesta aproximadamente 1.3% al mes en este ejemplo, cerca del 16% anual, que es más de lo que rinden la mayoría de las acciones. Los protective puts tienen más sentido para un período de riesgo definido (una fecha de ganancias, un período en que no puedes vigilar el mercado) o cuando la IV está inusualmente baja.\n\nUn **collar** resuelve el problema del costo combinando ambas ideas: tienes la acción, compras el put $95 por $1.35 y vendes el call $105 por $1.65. La prima del call paga el put y sobran $0.30. La posición queda encajonada: no puedes perder más de unos $470 ni ganar más de unos $530 en los 30 días. Es un rango diminuto, y ese es justamente el punto; los collars se usan para asegurar una ganancia o atravesar un evento, no para ganar dinero. El Laboratorio incluye el collar como estrategia predefinida para que veas la forma de caja."
+        },
+        {
+          "type": "callout",
+          "tone": "tip",
+          "md": "**Una prueba para cualquier covered call o collar:** anota el precio al que serás asignado y pregúntate, con honestidad, si te sentirías conforme vendiendo a ese precio. Si la respuesta es no, elegiste el strike equivocado o la estrategia equivocada. La prima es la compensación por renunciar a la subida por encima del strike, y no puedes cobrarla sin renunciar de verdad a ella."
+        },
+        {
+          "type": "chart",
+          "symbol": "MSFT",
+          "interval": "1day",
+          "overlays": [
+            "sma50",
+            "ema21",
+            "fib"
+          ],
+          "caption": "Microsoft, diario, con la SMA de 50 días, la EMA de 21 días y los niveles de retroceso de Fibonacci trazados desde el último swing. A quienes venden covered calls les gustan las acciones que tienden suavemente al alza por encima de su promedio de 50 días: lo bastante estables para que la asignación no sea un susto, con suficiente volatilidad para que valga la pena vender las primas. Imagina que vendes un call cada mes a un strike justo por encima del nivel de Fibonacci o del swing reciente más cercano; cuenta en cuántos meses del último año la acción habría terminado por encima. Datos simulados en el feed de demostración."
+        },
+        {
+          "type": "text",
+          "md": "### Spreads verticales: cómo definir tu riesgo\n\nUn **spread vertical** compra una opción y vende otra del mismo tipo y vencimiento a un strike distinto. Vender la segunda pata te devuelve parte de la prima que pagaste, a cambio de limitar tu ganancia. El resultado es una operación con una pérdida máxima conocida, una ganancia máxima conocida y un costo menor que el de la opción individual.\n\n**Bull call spread** (débito). Compra el call $100 por $3.60, vende el call $105 por $1.65. Costo neto: $1.95, o **$195** por spread. Al vencimiento:\n\n- Acción en $100 o por debajo: ambos calls sin valor. Pérdida de **$195** (la máxima).\n- Acción en $105 o por encima: el call $100 vale $5, el call $105 que vendiste te cuesta todo lo que haya por encima de $105. Valor neto $5.00, ganancia $5.00 − $1.95 = **$305** (la máxima).\n- Punto de equilibrio: strike inferior + débito neto = $101.95.\n\nRenunciaste a todas las ganancias por encima de $105 y a cambio pagaste $195 en lugar de $360 por una posición que aún gana con una subida moderada. Ganancia máxima ÷ pérdida máxima es 305 ÷ 195 ≈ 1.56 a 1, y la acción solo necesita subir cerca del 2% para alcanzar el equilibrio, frente al 3.6% del call $100 solo.\n\nEl **bear put spread** (débito) es el espejo: compra el put $100 por unos $3.25, vende el put $95 por $1.35. Costo neto $1.90. Ganancia máxima $5.00 − $1.90 = $3.10 ($310) si la acción está en $95 o por debajo; pérdida máxima $190 si está en $100 o por encima; punto de equilibrio $98.10.\n\nLos **spreads de crédito** invierten las patas. Un **bull put spread** vende el put $95 por $1.35 y compra el put $90 por $0.40, cobrando $0.95 ($95). Te lo quedas todo si la acción se mantiene por encima de $95; tu pérdida máxima es el ancho de $5 entre strikes menos el crédito = $4.05 ($405), si la acción está en $90 o por debajo. Un **bear call spread** hace lo mismo con calls por encima del mercado. Los spreads de crédito ganan con el paso del tiempo y con que la acción *no* alcance un nivel; ganan más a menudo que los spreads de débito con los mismos strikes, pero pierden más cuando pierden. Los dos enfoques (débito frente a crédito) son el mismo pago visto desde lados opuestos, que es otra vez la paridad put-call en acción.\n\nPara todos los verticales: **pérdida máxima + ganancia máxima = ancho entre strikes × 100**. Esa identidad es una comprobación rápida de cualquier cotización de spread."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Para todo spread vertical: ganancia máxima + pérdida máxima = (diferencia entre strikes) × 100.** Un spread de $5 de ancho siempre tiene $500 de pago total para repartir entre los dos lados. Si pagas $195, tu ganancia máxima es $305. Si cobras $95, tu pérdida máxima es $405. Memorízalo y podrás verificar el precio de cualquier spread mentalmente."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el Laboratorio de opciones en Microsoft (el enlace lo hace) con el vencimiento más cercano a 30 días y construye tres posiciones, leyendo el panel de estrategia cada vez.\n\n- Carga la estrategia predefinida **Covered call**. Anota la ganancia máxima, la pérdida máxima y el punto de equilibrio que imprime el panel. Verifica el punto de equilibrio a mano: precio de la acción − prima del call recibida. Luego pregúntate si te daría gusto vender Microsoft al strike del call.\n- Carga la estrategia predefinida **Protective put**. Anota la pérdida máxima y compárala con la prima × 100. Calcula el costo anualizado de renovar este put cada mes (prima ÷ precio de la acción × 12). ¿Es más o menos de lo que esperarías que rinda la acción?\n- Carga la estrategia predefinida **Bull call spread**. Comprueba la identidad: ganancia máxima + pérdida máxima debería ser igual al ancho entre strikes × 100. Luego, en la cadena, cambia la pata corta a un strike más lejano (vende un call más alto). El spread cuesta más, su ganancia máxima sube y su punto de equilibrio se mueve hacia arriba. Anota los tres números nuevos.\n- Opera en papel **un** bull call spread (ambas patas). En la pestaña de Posiciones, fíjate en que aparece como dos posiciones de opciones. Vuelve en unos días y valóralas a mercado: ¿theta ayudó o perjudicó al spread en conjunto? (Pista: un spread de débito con la acción cerca del strike inferior pierde valor temporal; uno con la acción cerca del strike superior lo gana.)",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/MSFT"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Tienes 100 acciones compradas a $48 y vendes un call $50 por $1.20. La acción cierra en $56 al vencimiento. ¿Cuál es tu ganancia?",
+              "choices": [
+                "$120",
+                "$320",
+                "$800",
+                "$920"
+              ],
+              "answer": 1,
+              "explain": "Eres asignado y vendes a $50: ($50 − $48) × 100 = $200, más la prima de $120 = $320. Renunciaste al movimiento por encima de $50 a cambio de la prima; ese es el intercambio del covered call."
+            },
+            {
+              "q": "Tienes 100 acciones a $70 y compras un put $65 por $2.00. ¿Cuál es la pérdida máxima de la posición combinada al vencimiento?",
+              "choices": [
+                "$200",
+                "$500",
+                "$700",
+                "$7,000"
+              ],
+              "answer": 2,
+              "explain": "El put te permite vender a $65 sin importar cuánto caiga la acción, así que la pérdida en la acción queda limitada a $5 por acción. Suma la prima de $2: ($70 − $65 + $2) × 100 = $700."
+            },
+            {
+              "q": "Un bull call spread compra el call $40 por $3.00 y vende el call $45 por $1.20. ¿Cuáles son la pérdida máxima y la ganancia máxima?",
+              "choices": [
+                "Pérdida máxima $180; ganancia máxima $320",
+                "Pérdida máxima $300; ganancia máxima $500",
+                "Pérdida máxima $120; ganancia máxima $380",
+                "Pérdida máxima $180; ganancia máxima ilimitada"
+              ],
+              "answer": 0,
+              "explain": "El débito neto es $3.00 − $1.20 = $1.80, así que la pérdida máxima es $180. El ancho entre strikes es $5 ($500 de pago total), así que la ganancia máxima es $500 − $180 = $320. Pérdida máxima más ganancia máxima siempre es igual al ancho por 100."
+            },
+            {
+              "q": "¿Qué estrategia gana si la acción se mantiene por encima de un nivel elegido y pierde una cantidad limitada si cae por debajo de un nivel inferior?",
+              "choices": [
+                "Put largo",
+                "Bull put spread (crédito)",
+                "Protective put",
+                "Straddle largo"
+              ],
+              "answer": 1,
+              "explain": "Un bull put spread vende un put y compra un put de strike inferior como protección. Conserva todo el crédito si la acción termina por encima del strike corto y pierde como máximo el ancho entre strikes menos el crédito."
+            },
+            {
+              "q": "¿De qué patas se compone un collar sobre 100 acciones?",
+              "choices": [
+                "Acciones largas, call largo, put corto",
+                "Acciones largas, put largo, call corto",
+                "Acciones cortas, call largo, put largo",
+                "Call largo y put largo al mismo strike"
+              ],
+              "answer": 1,
+              "explain": "Un collar protege las acciones que tienes con un put largo y lo paga (total o parcialmente) vendiendo un call por encima del mercado. El resultado es una posición encajonada con un piso y un techo conocidos."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5-l5",
+      "title": "Straddles, strangles, iron condors y riesgo de asignación",
+      "minutes": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "### Apostar al movimiento, no a la dirección\n\nTodo lo visto hasta ahora necesitaba una opinión sobre la dirección. Algunas estrategias solo necesitan una opinión sobre **cuánto** se moverá la acción. Son las operaciones de volatilidad, y es donde la lección de las griegas rinde frutos.\n\nUn **straddle largo** (long straddle) compra un call y un put al mismo strike y vencimiento, normalmente at the money. Con nuestra acción de $100, IV del 30%, 30 días: compra el call $100 por $3.59 y el put $100 por $3.26, total **$6.85** ($685). Al vencimiento una pata no vale nada y la otra vale la distancia desde $100. Ganas si la acción termina a más de $6.85 de $100 en *cualquiera* de las dos direcciones: puntos de equilibrio **$93.15 y $106.85**. La pérdida máxima es los $685 pagados, lo que ocurre solo si la acción cierra exactamente en $100. La ganancia máxima es ilimitada al alza y de hasta $93.15 a la baja.\n\nFíjate en que $6.85 es un poco menos que el movimiento esperado de una desviación estándar de $8.60 de la Lección 3. No es casualidad: el precio de un straddle ATM es aproximadamente 0.8 × el movimiento esperado, así que el propio pronóstico del mercado está incorporado en el precio que pagas. Un straddle solo es una buena compra si crees que la acción se moverá *más* de lo que el mercado de opciones ya espera, lo cual es una vara alta, especialmente antes de las ganancias, cuando la IV ya ha subido.\n\nUn **strangle largo** (long strangle) es el primo barato: compra un call fuera del dinero y un put fuera del dinero. Compra el call $105 por $1.66 y el put $95 por $1.33, total **$2.99** ($299). Los puntos de equilibrio son $95 − $2.99 = **$92.01** y $105 + $2.99 = **$107.99**. Cuesta menos de la mitad que el straddle, pero necesita un movimiento mayor para pagar, y los $299 completos se pierden en cualquier punto entre $95 y $105.\n\nAmbas posiciones tienen vega positivo y un theta negativo grande. Nuestro straddle pierde unos $0.11 por acción por día, aproximadamente **$11 al día**, con la acción plana, y eso se acelera hacia el vencimiento. También están expuestas al desplome de la IV: como viste en el ejercicio de la Lección 3, un straddle comprado al 60% de IV y revalorado al 30% pierde aproximadamente la mitad de su valor antes de que la acción se haya movido en absoluto. Quienes compran straddles ganan cuando una acción se mueve mucho más de lo esperado; el resto del tiempo, theta y vega los van desgastando."
+        },
+        {
+          "type": "text",
+          "md": "### El iron condor\n\nVender un straddle o un strangle cobra ese theta en lugar de pagarlo, pero con riesgo ilimitado por ambos lados. Un **iron condor** es la versión de riesgo definido: un bear call spread por encima del mercado más un bull put spread por debajo, todo en el mismo vencimiento. Cuatro patas, cuatro strikes.\n\nEjemplo con nuestra acción de $100, 30 días, IV del 30%:\n\n- Vende el call $105 por $1.66, compra el call $110 por $0.66 (bear call spread, crédito $1.00).\n- Vende el put $95 por $1.33, compra el put $90 por $0.40 (bull put spread, crédito $0.93).\n- Crédito total: **$1.93**, o **$193** por condor.\n\nAl vencimiento:\n\n- Acción en cualquier punto entre $95 y $105: las cuatro opciones vencen sin valor. Te quedas con **$193**. Esta es la ganancia máxima.\n- Acción en $110 o por encima, o en $90 o por debajo: un spread está en su pérdida completa de $5 y el otro no vale nada. Pérdida = $500 − $193 = **$307**. Esta es la pérdida máxima, y es la misma por cualquiera de los dos lados porque ambas alas tienen $5 de ancho.\n- Puntos de equilibrio: $105 + $1.93 = **$106.93** y $95 − $1.93 = **$93.07**.\n\nEl diagrama de pagos es una forma de meseta: una planicie de ganancia en el centro, que baja a través de los strikes cortos y vuelve a aplanarse en los strikes largos. La estrategia predefinida **Iron condor** del Laboratorio lo dibuja e imprime estos números."
+        },
+        {
+          "type": "text",
+          "md": "### ¿Vender condors es un buen negocio?\n\nEl intercambio es duro. Arriesgas $307 para ganar $193, así que necesitas ganar bastante más del 60% de las veces solo para alcanzar el equilibrio antes de costos. Los deltas de los strikes cortos (unos 0.31 para el call $105 y −0.25 para el put $95) implican aproximadamente un 31% de probabilidad de terminar por encima de $105 y un 25% de terminar por debajo de $95, así que solo cerca de un 44% de probabilidad de terminar dentro de los strikes cortos en este ejemplo, muy por debajo del 61% necesario para el equilibrio; por eso la mayoría de los traders de condors vende strikes más amplios, de menor delta (0.15–0.20), por un crédito menor y una tasa de acierto mayor, y gestiona la operación antes del vencimiento en lugar de mantenerla hasta el final. Si eso es un buen negocio está genuinamente en debate: los condors cobran ganancias pequeñas y frecuentes y sufren pérdidas grandes ocasionales, y un solo movimiento brusco puede borrar muchos meses de créditos. En la cuenta de paper trading son una excelente forma de *sentir* ese intercambio sin dinero en juego.\n\nLos iron condors son cortos en vega y largos en theta. Les va mejor cuando la IV está alta al entrar (créditos más grandes) y luego baja, y cuando la acción no tiene tendencia. Les va peor cuando una acción tranquila rompe repentinamente su rango."
+        },
+        {
+          "type": "callout",
+          "tone": "key",
+          "md": "**Los straddles y strangles compran movimiento y pagan theta. Los iron condors venden movimiento y cobran theta.** Cada uno es el otro lado de la misma apuesta. Antes de entrar en cualquiera de ellos, compara el precio del straddle (lo que el mercado espera) con tu propia visión del movimiento probable. Si no tienes una visión, el precio del mercado probablemente es tan bueno como cualquier otro, y lo único que sabes con certeza es que pagarás el spread entre bid y ask en cada pata."
+        },
+        {
+          "type": "chart",
+          "symbol": "AMZN",
+          "interval": "1day",
+          "overlays": [
+            "bb",
+            "sma20",
+            "rsi"
+          ],
+          "caption": "Amazon, diario, con Bandas de Bollinger y el panel de RSI. Las bandas son una imagen aproximada de un rango de un mes y dos desviaciones estándar, que se acerca al ancho que quien vende un iron condor intenta cercar. Encuentra un tramo largo en el que el precio se mantuvo dentro de las bandas con un ancho de banda bajo: un condor vendido ahí probablemente habría vencido con toda su ganancia. Luego encuentra la primera vela grande que perforó una banda tras un tramo así: ese es el movimiento que le entrega a quien vende condors su pérdida máxima. Cuenta cuántos de cada tipo ves en un año. Datos simulados en el feed de demostración."
+        },
+        {
+          "type": "text",
+          "md": "### Riesgo de asignación: lo que realmente sale mal\n\nLa mayoría de las pérdidas con opciones son ordinarias: la acción fue en la dirección equivocada o se quedó quieta mientras corría theta. Pero una clase específica de sorpresas viene de la **asignación**, y atrapa a quienes solo piensan en el diagrama de pagos.\n\n**Asignación anticipada.** Como las opciones sobre acciones de EE. UU. son de estilo americano, una opción corta puede ser asignada cualquier día, no solo al vencimiento. Es poco común, porque ejercer antes de tiempo desecha valor extrínseco, pero ocurre en dos situaciones predecibles. Primero, un **call** corto sobre una acción que está por pagar un **dividendo**: si el call está dentro del dinero y su valor extrínseco restante es menor que el dividendo, el titular gana ejerciendo el día antes de la fecha ex-dividendo para cobrar el dividendo. Quienes venden covered calls pierden sus acciones y el dividendo. Segundo, un **put muy dentro del dinero** al final de su vida: con poco valor extrínseco restante, el titular puede ejercer para liberar efectivo. Si estás corto en el put, recibes 100 acciones y la factura por ellas.\n\n**Asignación al vencimiento en spreads.** Un iron condor o un spread vertical solo tiene \"riesgo definido\" si ambas patas se manejan juntas. Supón que la acción cierra en $104.90 el viernes de vencimiento con tu call spread $105/$110: ambas patas vencen sin valor, perfecto. Pero si cierra en $105.50, tu call $105 corto es asignado (ahora estás corto en 100 acciones a $105) mientras que tu call $110 largo vence sin valor. Durante el fin de semana tienes una posición corta en acciones sin cobertura. Si la acción abre con un gap al alza el lunes, la pérdida puede superar el \"máximo\" del spread. La solución es simple: **cierra los spreads antes del vencimiento** cuando la acción esté en cualquier punto cercano al strike corto.\n\nEl **pin risk** es la versión extrema: la acción cierra a centavos de tu strike corto y no sabes hasta el sábado si fuiste asignado. Los movimientos fuera de horario pueden incluso meter una opción dentro del dinero después del cierre; los titulares tienen hasta una hora límite (normalmente una hora o algo así después del cierre, según el broker) para enviar instrucciones de ejercicio. Un titular puede, por lo tanto, ejercer una opción que terminó unos centavos *fuera* del dinero a las 4:00 pm porque la acción saltó a las 4:30 pm, y el vendedor se entera solo a la mañana siguiente. Los strikes cortos cercanos al precio de cierre el día del vencimiento son el único lugar en opciones donde puedes hacer todo bien en papel y aun así llevarte una sorpresa."
+        },
+        {
+          "type": "text",
+          "md": "### Efectivo, margen y los límites del simulador\n\n**Efectivo y margen.** Ser asignado en un put corto significa comprar 100 acciones. Si vendiste un put $95, eso son $9,500. Si no tienes el efectivo, tu broker puede usar margen o liquidar. Vender puts solo con el efectivo para comprar las acciones se llama **put asegurado con efectivo** (cash-secured put), y es la única forma en que un principiante debería vender puts. La cuenta de paper trading del Laboratorio verifica el efectivo de la misma manera.\n\n**Llamadas de margen (margin calls) en opciones cortas.** Los calls cortos sin cobertura (naked) y los strangles cortos tienen pérdida teóricamente ilimitada, y los brokers exigen (y aumentan) garantías a medida que las posiciones van en tu contra. Un cierre forzado en el peor momento es la forma en que \"ilimitado\" se vuelve real. El Laboratorio te permite simular las ganancias y pérdidas pero no puede simular una llamada de margen, así que recuerda que el mundo real añade una forma más de perder.\n\nUna ilustración concreta. Un trader con una cuenta de $20,000 vende cinco puts $95 por $1.33 cada uno, cobra $665 y se siente seguro porque la acción está en $100. Si la acción abre con un gap a $80 por malas noticias, los puts valen $15 cada uno: una pérdida de $7,500 en una posición que \"solo\" pagó $665, y una factura de asignación de $47,500 por 500 acciones que la cuenta no puede pagar. Un contrato, asegurado con efectivo, habría sido un compromiso de $9,500 y una pérdida de $1,500: dolorosa, sobrevivible y exactamente el escenario que la cuenta de paper trading te permite ensayar primero."
+        },
+        {
+          "type": "text",
+          "md": "### Una lista de verificación antes de cualquier operación con opciones\n\nLas opciones recompensan a quienes son disciplinados con el proceso, porque la cantidad de formas de llevarse una sorpresa es mayor que con acciones. Aquí tienes una lista corta que cabe en una tarjeta. Repásala en la cuenta de paper trading hasta que sea automática.\n\n- **¿Cuál es mi visión?** Dirección (arriba, abajo, lateral) y magnitud (movimiento grande, movimiento pequeño, sin opinión). Elige la estrategia que coincida con ella, no la que tenga el pago más emocionante.\n- **¿Qué está haciendo la IV?** Alta respecto a su historia favorece vender prima (covered calls, spreads de crédito, condors); baja favorece comprarla (opciones largas, spreads de débito). Revisa si hay un evento programado (ganancias, lanzamiento de producto, reunión de la Fed) dentro del vencimiento.\n- **¿Cuál es la pérdida máxima, en dólares, y puedo permitírmela?** Dimensiona la posición para que la pérdida máxima sea un porcentaje pequeño de la cuenta, la misma regla que usaste para operaciones con acciones en el Módulo 4. Para posiciones de riesgo indefinido, dimensiona como si la acción pudiera abrir con un gap del 20%.\n- **¿Dónde están los puntos de equilibrio respecto al movimiento esperado?** Usa precio × IV × √(días ÷ 365). Un punto de equilibrio más allá de un movimiento esperado es una apuesta de baja probabilidad.\n- **¿Cuál es mi salida?** Un objetivo de ganancia (muchos vendedores de spreads cierran al 50% de la ganancia máxima), un límite de pérdida y una fecha antes del vencimiento en la que cerrarás sin importar qué. Anota las tres antes de entrar.\n- **¿Cuál es el costo del spread?** Suma el spread entre bid y ask de cada pata, ida y vuelta. Si supera aproximadamente el 10% de la ganancia esperada de la posición, elige strikes más líquidos o una estructura más simple.\n- **¿Qué pasa si me asignan?** ¿Tengo el efectivo o las acciones? ¿Hay un dividendo antes del vencimiento? ¿Seguiré teniendo la pata protectora?\n\nNinguno de estos puntos te dice si la operación funcionará. Te dicen si entiendes lo que estás haciendo, que es la única parte que controlas. Las opciones son una herramienta para dar forma al riesgo, y en la cuenta de paper trading puedes darle una mala forma tantas veces como necesites antes de que algo de esto te cueste un dólar."
+        },
+        {
+          "type": "callout",
+          "tone": "warn",
+          "md": "**El riesgo definido solo está definido hasta el día del vencimiento.** La pérdida máxima de un spread asume que ambas patas están abiertas o se cierran juntas. Deja que la pata corta sea asignada mientras la pata larga vence, y el \"máximo\" desaparece. Cierra o renueva cualquier spread cuyo strike corto esté a pocos puntos porcentuales del precio de la acción antes de la última tarde. En la cuenta de paper trading, practica hacerlo a propósito hasta que se sienta rutinario."
+        },
+        {
+          "type": "exercise",
+          "md": "Abre el Laboratorio de opciones en SPY (el enlace lo hace), elige el vencimiento más cercano a 30 días y construye las operaciones de volatilidad.\n\n- Carga la estrategia predefinida **Straddle largo**. Anota el débito total y los dos puntos de equilibrio. Calcula el movimiento esperado (spot × IV × √(30 ÷ 365)) y compáralo con el costo del straddle. ¿El precio del straddle se acerca a 0.8 × el movimiento esperado?\n- Carga la estrategia predefinida **Strangle largo**. Observa cuánto más barato es y cuánto más amplios son los puntos de equilibrio. ¿Cuál preferirías tener de cara a una fecha de ganancias, y por qué?\n- Carga la estrategia predefinida **Iron condor**. Anota la ganancia máxima, la pérdida máxima y ambos puntos de equilibrio. Comprueba que ganancia máxima + pérdida máxima = (ancho entre strikes de un ala) × 100. Luego aleja ambos strikes cortos un paso del spot (vende un call más alto y un put más bajo). Registra el nuevo crédito y la nueva pérdida máxima. El crédito bajó y la zona de ganancia se amplió; ese es todo el intercambio del condor en dos números.\n- Opera en papel el iron condor (las cuatro patas). En la pestaña de Posiciones, confirma que aparecen cuatro posiciones de opciones con los símbolos de contrato correctos, dos largas y dos cortas.\n- Abre el **panel** en SPY con la superposición de Bandas de Bollinger y mira las últimas 30 barras. ¿Se ha mantenido el precio dentro de un rango tan amplio como los strikes cortos de tu condor? Si SPY hubiera cerrado justo por encima del strike del call corto el día del vencimiento, escribe una oración describiendo exactamente con qué posición te habrías despertado el lunes.\n- Por último, escribe tu propia lista de verificación en una tarjeta a partir de esta lección y fíjala al inicio de tu diario de trading.",
+          "action": {
+            "page": "portfolio.html",
+            "hash": "options/SPY"
+          }
+        },
+        {
+          "type": "quiz",
+          "questions": [
+            {
+              "q": "Un straddle largo compra el call $50 por $2.40 y el put $50 por $2.10. ¿Cuáles son los puntos de equilibrio al vencimiento?",
+              "choices": [
+                "$47.60 y $52.40",
+                "$45.50 y $54.50",
+                "$47.90 y $52.10",
+                "Solo $50.00"
+              ],
+              "answer": 1,
+              "explain": "La prima total es $2.40 + $2.10 = $4.50. La acción debe moverse más de $4.50 desde el strike de $50 en cualquier dirección: $45.50 o $54.50. La pérdida máxima ($450) ocurre si la acción cierra exactamente en $50."
+            },
+            {
+              "q": "Un iron condor se construye con alas de $5 de ancho y cobra un crédito de $1.40. ¿Cuál es la pérdida máxima?",
+              "choices": [
+                "$140",
+                "$360",
+                "$500",
+                "$640"
+              ],
+              "answer": 1,
+              "explain": "Solo un ala puede estar dentro del dinero al vencimiento, y su peor caso es el ancho de $5 ($500). Resta el crédito de $140 cobrado por toda la posición: $500 − $140 = $360."
+            },
+            {
+              "q": "¿Qué situación hace más probable la asignación anticipada de un call corto?",
+              "choices": [
+                "El call está muy fuera del dinero con 60 días restantes",
+                "El call está dentro del dinero, la acción queda ex-dividendo mañana y el valor extrínseco restante del call es menor que el dividendo",
+                "La volatilidad implícita sube con fuerza",
+                "La acción está suspendida por noticias"
+              ],
+              "answer": 1,
+              "explain": "Quien tiene un call captura un dividendo solo si posee las acciones antes de la fecha ex-dividendo. Si el valor extrínseco del call es menor que el dividendo, ejercer antes de tiempo es racional, así que los calls cortos dentro del dinero suelen ser asignados el día antes del ex-dividendo."
+            },
+            {
+              "q": "Mantienes un bear call spread $105/$110 hasta el vencimiento. La acción cierra en $106.20. ¿Qué descripción es correcta?",
+              "choices": [
+                "Ambas opciones vencen sin valor y te quedas con el crédito",
+                "Eres asignado en el call $105 corto y el call $110 largo vence sin valor, dejándote corto en 100 acciones durante el fin de semana",
+                "Ambas opciones se ejercen automáticamente una contra la otra, así que tu riesgo no cambia",
+                "El broker convierte el spread a efectivo por el crédito recibido"
+              ],
+              "answer": 1,
+              "explain": "El call $105 corto termina $1.20 dentro del dinero y se ejerce automáticamente en tu contra; el call $110 largo está fuera del dinero y vence. Tu protección de \"riesgo definido\" desapareció y cargas con una posición corta en acciones sin cobertura hasta que puedas operar el lunes. Cierra los spreads cercanos al strike corto antes del vencimiento."
+            },
+            {
+              "q": "¿Qué hace que un put corto esté \"asegurado con efectivo\" (cash-secured)?",
+              "choices": [
+                "El put se recompra el mismo día",
+                "El vendedor tiene suficiente efectivo para comprar 100 acciones al strike si es asignado",
+                "El vendedor también tiene un call al mismo strike",
+                "El put está muy fuera del dinero"
+              ],
+              "answer": 1,
+              "explain": "Un put asegurado con efectivo es un put corto respaldado por suficiente efectivo para recibir las acciones al precio de ejercicio (strike × 100 por contrato). Elimina el riesgo de margen y de liquidación forzada de un put corto sin cobertura y es la única forma en que un principiante debería vender puts."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

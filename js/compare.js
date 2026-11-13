@@ -31,6 +31,8 @@
   'use strict';
   var root = typeof window !== 'undefined' ? window : globalThis;
   var BT = root.BT = root.BT || {};
+  /* i18n: BT.t when js/i18n.js is loaded (js/nav.js loads it before page scripts); plain {var} interpolation otherwise. */
+  function T(s, v) { var tf = (root.BT && root.BT.t); if (tf) return tf(s, v); return v ? s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] == null ? m : String(v[k]); }) : s; }
 
   var MAX_SYMBOLS = 6;
   var BENCHMARK = 'SPY';
@@ -320,21 +322,21 @@
     if (avg == null) return { avg: null, label: 'n/a', text: 'Add at least two symbols with overlapping history to measure diversification.' };
     var label = avg >= 0.7 ? 'low' : avg >= 0.45 ? 'moderate' : avg >= 0.2 ? 'good' : 'high';
     var text = {
-      low: 'Average correlation ' + avg.toFixed(2) + ': these names mostly rise and fall together, so this basket behaves like one concentrated position. Mixing in a different sector, bonds or gold would lower it.',
-      moderate: 'Average correlation ' + avg.toFixed(2) + ': some diversification, but a broad sell-off would still hit most of the basket at once.',
-      good: 'Average correlation ' + avg.toFixed(2) + ': the basket spreads risk reasonably well. Each name adds something the others do not.',
-      high: 'Average correlation ' + avg.toFixed(2) + ': unusually independent moves. Check the period is long enough to trust the numbers.'
+      low: T('Average correlation {avg}: these names mostly rise and fall together, so this basket behaves like one concentrated position. Mixing in a different sector, bonds or gold would lower it.', { avg: avg.toFixed(2) }),
+      moderate: T('Average correlation {avg}: some diversification, but a broad sell-off would still hit most of the basket at once.', { avg: avg.toFixed(2) }),
+      good: T('Average correlation {avg}: the basket spreads risk reasonably well. Each name adds something the others do not.', { avg: avg.toFixed(2) }),
+      high: T('Average correlation {avg}: unusually independent moves. Check the period is long enough to trust the numbers.', { avg: avg.toFixed(2) })
     }[label];
     return { avg: avg, label: label, text: text };
   }
 
   function describeBeta(b) {
-    if (!isNum(b)) return 'Beta needs overlapping history with the benchmark.';
-    if (b > 1.3) return 'High beta: moves roughly ' + b.toFixed(1) + '× as much as SPY on a typical day, in both directions.';
-    if (b > 0.8) return 'Beta near 1: tends to move about as much as the market.';
-    if (b > 0.3) return 'Low beta: a market-wide move shows up here muted.';
-    if (b > -0.3) return 'Beta near 0: day-to-day moves barely track the market.';
-    return 'Negative beta: tends to move against the market. Unusual for a stock; common for inverse funds.';
+    if (!isNum(b)) return T('Beta needs overlapping history with the benchmark.');
+    if (b > 1.3) return T('High beta: moves roughly {beta}× as much as SPY on a typical day, in both directions.', { beta: b.toFixed(1) });
+    if (b > 0.8) return T('Beta near 1: tends to move about as much as the market.');
+    if (b > 0.3) return T('Low beta: a market-wide move shows up here muted.');
+    if (b > -0.3) return T('Beta near 0: day-to-day moves barely track the market.');
+    return T('Negative beta: tends to move against the market. Unusual for a stock; common for inverse funds.');
   }
 
   var NOTES = [
