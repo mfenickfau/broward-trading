@@ -18,6 +18,11 @@
  *                 "20/50" (default) or "fast/slow" to choose the pair
  *   signal_change the composite BUY/SELL/HOLD signal changes state; `value`
  *                 may be 'BUY' or 'SELL' to fire only when it becomes that
+ *   rule          (v0.5) the ENTRY block of a strategy-builder rule becomes true
+ *                 on the latest bar. Payload `{rule}` (BT.rules JSON); `value`
+ *                 holds the rule's name for lists. Evaluated with BT.rules on
+ *                 every check; silent when js/rules.js is not loaded or there
+ *                 is not enough history for the rule's indicators yet.
  *
  * Semantics students should learn: an alert fires when its condition becomes
  * true, i.e. on the transition. A "price above 150" alert set while the stock
@@ -52,9 +57,11 @@
     sma_cross: { label: 'SMA crossover (20/50)', short: 'SMA cross', needsValue: false, unit: '', group: 'trend', defaultValue: '20/50',
       help: 'Fires when the fast SMA crosses the slow one in either direction: up is a "golden cross" (bullish), down a "death cross" (bearish). Type fast/slow such as 9/21 to change the pair.' },
     signal_change: { label: 'Signal changes (BUY/SELL/HOLD)', short: 'Signal', needsValue: false, unit: '', group: 'signal',
-      help: 'Fires when the composite signal on the dashboard flips state. Leave the value empty for any change, or type BUY or SELL to hear only about that one.' }
+      help: 'Fires when the composite signal on the dashboard flips state. Leave the value empty for any change, or type BUY or SELL to hear only about that one.' },
+    rule: { label: 'Strategy rule entry', short: 'Rule', needsValue: false, needsRule: true, unit: '', group: 'rule',
+      help: 'Fires when the entry conditions of a rule you built in the Strategy Builder all line up on the latest bar. It tells you a setup appeared; it is not a prediction, and nothing is ever bought for you.' }
   };
-  var KIND_ORDER = ['price_above', 'price_below', 'rsi_above', 'rsi_below', 'sma_cross', 'signal_change'];
+  var KIND_ORDER = ['price_above', 'price_below', 'rsi_above', 'rsi_below', 'sma_cross', 'signal_change', 'rule'];
 
   /* ------------------------------------------------------------------ *
    * Helpers
@@ -138,6 +145,14 @@
       var want = String(value == null ? '' : value).trim().toUpperCase();
       if (want && want !== 'BUY' && want !== 'SELL' && want !== 'HOLD') return { ok: false, reason: 'Leave the value empty for any change, or type BUY, SELL or HOLD.' };
       value = want || '';
+    } else if (kind === 'rule') {
+      var R = BT.rules;
+      if (!R) return { ok: false, reason: T('Rule alerts need the strategy builder (js/rules.js) on this page.') };
+      if (!spec.rule || typeof spec.rule !== 'object') return { ok: false, reason: T('Build a rule in the Strategy Builder first, then create the alert from it.') };
+      var errs = R.validate(spec.rule);
+      if (errs.length) return { ok: false, reason: errs[0] };
+      var rule = R.normalize(spec.rule); delete rule.id;
+      return { ok: true, alert: { symbol: symbol, kind: kind, value: rule.name, rule: rule, note: String(spec.note || '').slice(0, 120) } };
     }
     return { ok: true, alert: { symbol: symbol, kind: kind, value: value, note: String(spec.note || '').slice(0, 120) } };
   }
@@ -152,6 +167,7 @@
       case 'rsi_below': return T('{symbol} RSI(14) falls below {value}', { symbol: a.symbol, value: fmtNum(a.value, 0) });
       case 'sma_cross': pair = parsePair(a.value) || { fast: 20, slow: 50 }; return T('{symbol} SMA {fast} crosses SMA {slow}', { symbol: a.symbol, fast: pair.fast, slow: pair.slow });
       case 'signal_change': return a.value ? T('{symbol} signal turns {state}', { symbol: a.symbol, state: a.value }) : T('{symbol} signal changes state', { symbol: a.symbol });
+      case 'rule': return T('{symbol} entry rule "{name}" lines up', { symbol: a.symbol, name: a.value || (a.rule && a.rule.name) || T('rule') });
     }
     return a.symbol + ' ' + a.kind;
   }
@@ -164,7 +180,7 @@
     if (!v.ok) return { status: 'rejected', reason: v.reason };
     var list = all();
     if (list.length >= MAX_ALERTS) return { status: 'rejected', reason: T('You can keep up to {max} alerts. Remove a fired one first.', { max: MAX_ALERTS }) };
-    var dup = list.filter(function (a) { return a.symbol === v.alert.symbol && a.kind === v.alert.kind && String(a.value) === String(v.alert.value) && !a.firedAt; })[0];
+    var dup = list.filter(function (a) { return a.symbol === v.alert.symbol && a.kind === v.alert.kind && String(a.value) === String(v.alert.value) && !a.firedAt && (a.kind !== 'rule' || JSON.stringify(a.rule) === JSON.stringify(v.alert.rule)); })[0];
     if (dup) return { status: 'rejected', reason: T('That alert already exists (#{id}).', { id: dup.id }), alert: dup };
     var a = Object.assign({ id: nextId(), createdAt: clock(), enabled: true, firedAt: null, fired: 0, state: false, lastSignal: null, lastValue: null }, v.alert);
     a.status = 'ok';
@@ -272,6 +288,18 @@
         var dir = dNow > 0 ? 'up' : 'down';
         return { cond: crossed, now: dNow, direction: dir,
           detail: crossed ? T(dir === 'up' ? 'Golden cross: SMA {fast} moved above SMA {slow} — the short-term trend turned stronger than the long-term one.' : 'Death cross: SMA {fast} moved below SMA {slow} — short-term weakness is now dragging on the longer trend.', { fast: pair.fast, slow: pair.slow }) : T(dNow > 0 ? 'SMA {fast} is above SMA {slow}' : 'SMA {fast} is below SMA {slow}', { fast: pair.fast, slow: pair.slow }) };
+      }
+      case 'rule': {
+        var R = BT.rules;
+        if (!R || !a.rule) return null;
+        var ev;
+        try { ev = R.evaluate(a.rule, bars); } catch (e) { return null; }
+        if (!ev || !ev.ready) return null;   // indicators still warming up: say nothing yet
+        var side = a.rule.side === 'short' ? 'short' : 'long';
+        var sentence = '';
+        try { sentence = R.describe(a.rule); } catch (e) { sentence = ''; }
+        return { cond: !!ev.entry, now: ev.close, direction: side === 'short' ? 'down' : 'up',
+          detail: (ev.entry ? T('The entry conditions are all true on the latest bar (close {price}).', { price: fmtPrice(ev.close) }) : T('The entry conditions are not all true yet.')) + (sentence ? ' ' + sentence : '') + ' ' + T('Practise the decision on paper; an alert is not a recommendation.') };
       }
       case 'signal_change': {
         var st = signalState(bars, ind);

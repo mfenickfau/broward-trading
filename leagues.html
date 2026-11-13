@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Paper-trading leagues for a class, a club or friends: set the rules (dates, starting cash, commission, slippage, asset classes, day trading, shorting, position limits, teams), share one code, and rank everyone by return, drawdown, Sharpe ratio and consistency. Includes a projector view for the classroom. Free, educational, play money only.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<title>Leagues — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; colours and type come from css/style.css tokens */
+  .lg{max-width:1100px}
+  .lg-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .lg-head h1{margin:0;font-size:var(--fs-xl)}
+  .lg-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 0;max-width:70ch;line-height:1.55}
+  .lg-head .status{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .lg button,.lg select,.lg input:not([type=checkbox]):not([type=radio]),.lg textarea,.lg .btn{min-height:44px}
+  .lg input[type=checkbox]{width:22px;height:22px;margin:0;flex:0 0 auto}
+  .gain{color:var(--up)} .loss{color:var(--down)}
+  .lg .card > h2{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+
+  /* my leagues */
+  .my-list{list-style:none;margin:0;padding:0;display:grid;gap:var(--sp-2)}
+  .my-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2) var(--sp-3);align-items:center;padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
+  .my-item.sel{border-color:var(--accent)}
+  .my-item h3{margin:0;font-size:var(--fs-md);overflow-wrap:anywhere}
+  .my-item .meta{color:var(--muted);font-size:var(--fs-sm);margin:2px 0 0;line-height:1.5}
+  .my-item .figs{text-align:right;font-family:var(--mono)}
+  .my-item .figs b{display:block;font-size:var(--fs-lg)}
+  .my-item .figs span{font-size:var(--fs-xs);color:var(--muted)}
+  .my-item .acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+  .countdown{font-family:var(--mono);font-size:var(--fs-sm)}
+
+  /* create form */
+  .presets{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0 0 var(--sp-3);padding:0;border:0}
+  .presets button[aria-pressed="true"]{background:var(--accent-btn);border-color:var(--accent-btn);color:var(--accent-fg)}
+  .preset-desc{margin:0 0 var(--sp-3);color:var(--muted);font-size:var(--fs-sm);line-height:1.55;min-height:1.55em}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--sp-3)}
+  .form-grid .wide{grid-column:1/-1}
+  .checks{display:flex;flex-wrap:wrap;gap:4px var(--sp-4)}
+  .check{display:inline-flex;gap:8px;align-items:center;min-height:44px;color:var(--fg);font-size:var(--fs);cursor:pointer}
+  .lg fieldset{margin:0}
+  .code-out{margin-top:var(--sp-3);padding:var(--sp-3);border:1px dashed var(--line2);border-radius:var(--r-md);background:var(--panel2)}
+  .code-out .short{font-family:var(--mono);font-size:clamp(28px,8vw,40px);font-weight:600;letter-spacing:.14em;line-height:1.1}
+  .code-out textarea{width:100%;font-family:var(--mono);font-size:var(--fs-sm);min-height:88px;word-break:break-all}
+
+  /* standings */
+  .st-tools{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:end;margin-bottom:var(--sp-3)}
+  .st-tools .field{flex:1 1 220px}
+  .standings{width:100%;min-width:640px;border-collapse:collapse}
+  .standings th,.standings td{padding:10px 10px 10px 0;vertical-align:middle}
+  .standings td.num,.standings th.num{text-align:right;white-space:nowrap}
+  .standings tr.me td{background:var(--accent-soft)}
+  .standings .rank{font-family:var(--mono);font-weight:600;width:3ch}
+  .standings .who b{display:block;font-weight:500;overflow-wrap:anywhere}
+  .standings .who span{font-size:var(--fs-xs);color:var(--muted)}
+  .spark{display:block;width:96px;height:28px}
+  .spark path{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+  .spark.up path{stroke:var(--up)} .spark.down path{stroke:var(--down)} .spark.flat path{stroke:var(--muted)}
+  .st-cards{display:none;list-style:none;margin:0;padding:0}
+  @media (max-width:640px){
+    .st-table{display:none}
+    .st-cards{display:grid;gap:var(--sp-2)}
+    .st-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px var(--sp-3);align-items:center;padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
+    .st-card.me{border-color:var(--accent);background:var(--accent-soft)}
+    .st-card .rank{font-family:var(--mono);font-size:var(--fs-lg);font-weight:600;min-width:2.2ch}
+    .st-card .who b{display:block;overflow-wrap:anywhere}
+    .st-card .who span{font-size:var(--fs-xs);color:var(--muted)}
+    .st-card .ret{font-family:var(--mono);font-size:var(--fs-md);font-weight:600;text-align:right}
+    .st-card dl{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:4px 0 0;font-size:var(--fs-xs)}
+    .st-card dt{color:var(--muted)} .st-card dd{margin:0;font-family:var(--mono);color:var(--fg)}
+    .st-card .spark{grid-column:1/-1;width:100%;height:32px}
+  }
+  .teams-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--sp-2)}
+  .teams-list li{padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2)}
+  .teams-list b{display:block;font-size:var(--fs-md)}
+  .teams-list span{font-family:var(--mono);font-size:var(--fs-sm);color:var(--muted)}
+  .rules-sum{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 var(--sp-3);padding:0;list-style:none}
+  details.how summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--fg);font-weight:500}
+  details.how p,details.how li{color:var(--muted);font-size:var(--fs-sm);line-height:1.6}
+
+  /* projector view: readable from the back of a classroom */
+  .proj{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#05080c;color:#ffffff;padding:clamp(16px,3vw,48px);padding-top:max(clamp(16px,3vw,48px),env(safe-area-inset-top,0px));overflow:hidden}
+  .proj[hidden]{display:none!important}
+  .proj-top{display:flex;align-items:center;gap:clamp(12px,2vw,32px);flex-wrap:wrap}
+  .proj-top h2{margin:0;font-size:clamp(28px,4.4vw,72px);line-height:1.05;font-weight:600;color:#ffffff;text-transform:none;letter-spacing:0;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+  .proj-top .clock{font-family:var(--mono);font-size:clamp(20px,2.6vw,44px);color:#ffd166;white-space:nowrap}
+  .proj-sub{margin:clamp(4px,1vw,12px) 0 clamp(12px,2vw,28px);font-size:clamp(18px,2.2vw,36px);color:#c9d4e3}
+  .proj-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start}
+  .proj-rows{list-style:none;margin:0;padding:0;display:grid;gap:clamp(6px,1vh,14px)}
+  .proj-rows li{display:grid;grid-template-columns:3.2ch minmax(0,1fr) auto;gap:clamp(12px,2vw,36px);align-items:baseline;font-size:clamp(26px,4.2vw,68px);line-height:1.15;padding:clamp(4px,.6vh,10px) 0;border-bottom:2px solid #1f2a38}
+  .proj-rows .r{font-family:var(--mono);font-weight:600;color:#9fb3c8}
+  .proj-rows li:nth-child(1) .r{color:#ffd166}
+  .proj-rows .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .proj-rows .n small{font-size:.5em;font-weight:400;color:#9fb3c8;margin-left:.5ch}
+  .proj-rows .v{font-family:var(--mono);font-weight:600;text-align:right}
+  .proj .up{color:#5ee08a} .proj .down{color:#ff8a8a}
+  .proj-two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,4vw,64px)}
+  .proj-two h3{margin:0 0 clamp(8px,1.4vh,20px);font-size:clamp(24px,3.2vw,52px);color:#c9d4e3}
+  .proj-two .proj-rows li{grid-template-columns:minmax(0,1fr) auto;font-size:clamp(22px,3.4vw,56px)}
+  @media (max-width:700px){.proj-two{grid-template-columns:1fr}}
+  .proj-empty{font-size:clamp(24px,3.6vw,56px);color:#c9d4e3;line-height:1.3;max-width:28ch}
+  .proj-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:clamp(8px,1.6vh,24px);font-size:clamp(14px,1.4vw,22px);color:#9fb3c8}
+  .proj-foot .dots{display:flex;gap:8px;margin-right:auto}
+  .proj-foot .dots i{width:14px;height:14px;border-radius:50%;background:#2a3748;display:block}
+  .proj-foot .dots i.on{background:#ffd166}
+  .proj-foot button{background:#111a26;color:#ffffff;border:2px solid #3a4b61;min-height:48px;min-width:48px;font-size:clamp(14px,1.4vw,20px);padding:6px 14px;border-radius:8px}
+  .proj-foot button:hover,.proj-foot button:focus-visible{border-color:#ffd166;outline:none}
+  .proj-foot button:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+  .proj-bar{height:6px;background:#1f2a38;border-radius:3px;overflow:hidden;margin-top:10px}
+  .proj-bar i{display:block;height:100%;width:0;background:#ffd166}
+  @media (prefers-reduced-motion:no-preference){.proj-bar i.run{transition:width linear}}
+  body.proj-open{overflow:hidden}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page lg" id="lgApp">
+  <header class="lg-head">
+    <div>
+      <h1>Leagues</h1>
+      <p class="sub">Compete with a class, a club or friends using play money. Everyone gets the same rules and a separate paper account, and the standings reward steady, well-managed trading as well as raw return.</p>
+    </div>
+    <div class="status">
+      <span class="pill" id="pillMode">offline: league codes</span>
+    </div>
+  </header>
+
+  <main class="stack">
+    <div class="callout warn compact" role="note">
+      <p><b>Play money only.</b> No real orders, no entry fees and no prizes from Broward Trading. Over a few weeks, the top of a leaderboard is often luck; look at drawdown and consistency before deciding who traded well.</p>
+    </div>
+
+    <!-- ---------------- My leagues ---------------- -->
+    <section class="card" aria-labelledby="myTitle">
+      <h2 id="myTitle">My leagues</h2>
+      <ul class="my-list" id="myList"></ul>
+      <div class="empty" id="myEmpty"><b>You have not joined a league yet.</b>Join one with the code your instructor or organiser shared, or create your own below.</div>
+      <p class="msg" id="myMsg" role="status"></p>
+    </section>
+
+    <div class="grid cols-2 gap-lg">
+      <!-- ---------------- Join ---------------- -->
+      <section class="card" aria-labelledby="joinTitle">
+        <h2 id="joinTitle">Join a league</h2>
+        <form id="joinForm" class="stack tight" novalidate>
+          <div class="field">
+            <label for="joinCode">League code</label>
+            <textarea id="joinCode" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste the code that starts with BTL1. (or a 6-character code for online leagues)"></textarea>
+          </div>
+          <div class="field">
+            <label for="joinName">Display name <span class="muted">(optional)</span></label>
+            <input id="joinName" type="text" maxlength="40" autocomplete="nickname" placeholder="First name or nickname">
+            <span class="help">Shown on the standings. No email or account needed.</span>
+          </div>
+          <div class="field" id="joinTeamField" hidden>
+            <label for="joinTeam">Team</label>
+            <select id="joinTeam"></select>
+          </div>
+          <div id="joinPreview" class="note" aria-live="polite"></div>
+          <div class="row"><button type="submit" class="primary" id="joinBtn">Join league</button></div>
+          <p class="msg" id="joinMsg" role="status"></p>
+        </form>
+      </section>
+
+      <!-- ---------------- Create ---------------- -->
+      <section class="card" aria-labelledby="createTitle">
+        <h2 id="createTitle">Create a league</h2>
+        <form id="createForm" novalidate>
+          <fieldset class="presets" aria-label="Presets" id="presetRow"></fieldset>
+          <p class="preset-desc" id="presetDesc"></p>
+          <div class="form-grid">
+            <div class="field wide"><label for="cName">League name</label><input id="cName" type="text" maxlength="60" placeholder="FIN 1100 Spring Cup" autocomplete="off" required></div>
+            <div class="field"><label for="cStart">Start date</label><input id="cStart" type="date" required></div>
+            <div class="field"><label for="cEnd">End date</label><input id="cEnd" type="date" required></div>
+            <div class="field"><label for="cCash">Starting cash ($)</label><input id="cCash" type="number" inputmode="numeric" min="1000" max="10000000" step="1000"></div>
+            <div class="field"><label for="cComm">Commission per order ($)</label><input id="cComm" type="number" inputmode="decimal" min="0" max="100" step="0.05"></div>
+            <div class="field"><label for="cSlip">Slippage (basis points)</label><input id="cSlip" type="number" inputmode="numeric" min="0" max="500" step="1"><span class="help">10 bps = 0.10 % worse fill on each trade.</span></div>
+            <div class="field"><label for="cMaxPos">Max position (% of equity)</label><input id="cMaxPos" type="number" inputmode="numeric" min="1" max="100" step="1"></div>
+            <fieldset class="wide">
+              <legend>Allowed assets</legend>
+              <div class="checks">
+                <label class="check"><input type="checkbox" name="asset" value="stock"> Stocks</label>
+                <label class="check"><input type="checkbox" name="asset" value="etf"> ETFs</label>
+                <label class="check"><input type="checkbox" name="asset" value="crypto"> Crypto</label>
+                <label class="check"><input type="checkbox" name="asset" value="option"> Options</label>
+              </div>
+            </fieldset>
+            <fieldset class="wide">
+              <legend>Trading rules</legend>
+              <div class="checks">
+                <label class="check"><input type="checkbox" id="cDay"> Day trading allowed</label>
+                <label class="check"><input type="checkbox" id="cShort"> Short selling allowed</label>
+                <label class="check"><input type="checkbox" id="cTeams"> Teams</label>
+              </div>
+            </fieldset>
+            <div class="field wide" id="teamNamesField" hidden><label for="cTeamNames">Team names (comma separated)</label><input id="cTeamNames" type="text" maxlength="300" placeholder="Bulls, Bears, Owls" autocomplete="off"></div>
+            <div class="field wide"><label for="cBy">Organiser name <span class="muted">(optional)</span></label><input id="cBy" type="text" maxlength="40" placeholder="Prof. Rivera" autocomplete="off"></div>
+            <div class="field wide"><label class="check"><input type="checkbox" id="cJoin" checked> Join this league myself</label></div>
+          </div>
+          <div class="row mt-3"><button type="submit" class="primary" id="createBtn">Create league</button></div>
+          <p class="msg" id="createMsg" role="status"></p>
+        </form>
+        <div class="code-out" id="codeOut" hidden>
+          <p class="note" style="margin-top:0">Share this league code with every member. They paste it under <b>Join a league</b>.</p>
+          <div class="short no-i18n" id="codeShort" aria-label="Short league code"></div>
+          <label for="codeLong" class="sr-only">League code to share</label>
+          <textarea id="codeLong" readonly class="no-i18n"></textarea>
+          <div class="row mt-2">
+            <button type="button" class="primary" id="copyCode">Copy league code</button>
+            <button type="button" id="copyInvite">Copy invitation text</button>
+          </div>
+          <p class="msg" id="codeMsg" role="status"></p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ---------------- Standings ---------------- -->
+    <section class="card" aria-labelledby="stTitle" id="standingsCard">
+      <h2 id="stTitle">Standings</h2>
+      <div class="st-tools">
+        <div class="field"><label for="stLeague">League</label><select id="stLeague"><option value="">No leagues yet</option></select></div>
+        <button type="button" id="stRefresh" hidden>Refresh from server</button>
+        <button type="button" class="primary" id="stProjector">Projector view</button>
+      </div>
+      <ul class="rules-sum" id="rulesSum" aria-label="League rules"></ul>
+      <div id="stBody"></div>
+      <div id="teamBlock" hidden>
+        <h3 class="mt-3">Team standings</h3>
+        <ul class="teams-list" id="teamList"></ul>
+      </div>
+      <details class="how mt-3" id="importBox">
+        <summary>Import members' share codes (offline leagues)</summary>
+        <p>Without the classroom server, each member taps <b>Copy my share code</b> on their league card and sends it to you. Paste any number of codes here, one per line or all in one message.</p>
+        <div class="field"><label for="importText">Share codes</label><textarea id="importText" rows="4" spellcheck="false" autocomplete="off" placeholder="BT1.…"></textarea></div>
+        <div class="row mt-2"><button type="button" class="primary" id="importBtn">Import codes</button><button type="button" class="ghost" id="clearImported">Clear imported members</button></div>
+        <p class="msg" id="importMsg" role="status"></p>
+      </details>
+      <details class="how">
+        <summary>How the standings are calculated</summary>
+        <ul>
+          <li><b>Return</b>: equity now versus the league's starting cash. Ties go to the smaller drawdown.</li>
+          <li><b>Max drawdown</b>: the biggest fall from a peak to a later low. Smaller means the account took less pain.</li>
+          <li><b>Sharpe ratio</b>: average return divided by how much it swung, annualised. It needs at least three equity points and rewards steady gains over wild swings.</li>
+          <li><b>Consistency</b> (0 to 100): 60 % from how often the account rose between equity points, 40 % from keeping drawdown small (0 % scores full marks, 20 % or more scores none).</li>
+          <li>Equity points are recorded when you trade or open the dashboard on the league account; at most 60 points are shared.</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+</div>
+
+<!-- ---------------- Projector view ---------------- -->
+<div class="proj" id="proj" role="dialog" aria-modal="true" aria-labelledby="projTitle" hidden>
+  <div class="proj-top">
+    <h2 id="projTitle">Standings</h2>
+    <div class="clock" id="projClock"></div>
+  </div>
+  <p class="proj-sub" id="projSub" aria-live="polite"></p>
+  <div class="proj-body" id="projBody"></div>
+  <div class="proj-foot">
+    <div class="dots" id="projDots" aria-hidden="true"></div>
+    <span>← → to change · Space to pause · Esc to exit</span>
+    <button type="button" id="projPrev" aria-label="Previous slide">←</button>
+    <button type="button" id="projPause" aria-label="Pause auto-advance">Pause</button>
+    <button type="button" id="projNext" aria-label="Next slide">→</button>
+    <button type="button" id="projFull">Full screen</button>
+    <button type="button" id="projExit">Exit</button>
+  </div>
+  <div class="proj-bar" aria-hidden="true"><i id="projBar"></i></div>
+</div>
+
+<div id="footer"></div>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/paper.js"></script>
+<script src="js/classroom.js"></script>
+<script src="js/leagues.js"></script>
+<script src="js/leagues-ui.js"></script>
+</body>
+</html>

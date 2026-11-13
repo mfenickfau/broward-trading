@@ -7,7 +7,7 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
 ## Design
 
 - **No framework, no npm dependencies.** Plain `fetch` handler, WebCrypto for every signature, Stripe and Resend called over REST with `fetch`. Nothing to build; `wrangler deploy` uploads the one file.
-- **Five KV namespaces** (the fifth, `CLASSES`, is optional and only needed for Classroom sync)
+- **Six KV namespaces** (`CLASSES` and `LEAGUES` are optional: Classroom sync and online Leagues)
 
   | Binding | Keys | Value |
   |---|---|---|
@@ -16,6 +16,7 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
   | `TOKENS` | `magic:<jti>` (15 min TTL) · `magic-used:<jti>` (15 min TTL) · `code:<code>` (60 s TTL) · `session:<sha256(id)>` (30 d TTL) · `rl:<bucket>:<hash>:<window>:<shard>` · `stripe:evt:<id>` | one-time magic payload · claim marker `{claim, ipHash, at}` · `{sessionId, email, at}` · `{email, expires}` · sharded counters · dedupe |
   | `LEADERBOARD` | `class:<CODE>` (180 d TTL) | `[{nickname, stats, owner, updatedAt}]` |
   | `CLASSES` | `class:<CODE>` · `student:<CODE>:<studentId>` · `removed:<CODE>:<studentId>` (all 400 d TTL) | `{code, name, section, term, createdAt, ownerKind, owner, tokenHash}` · sanitized snapshot · `'1'` |
+  | `LEAGUES` (optional, v0.5) | `league:<CODE>` · `member:<CODE>:<studentId>` (400 d TTL, longer for long leagues) | `{code, name, createdBy, startDate, endDate, rules, createdAt}` · `{studentId, displayName, team, owner, joinedAt, updatedAt, league:{equity, startingCash, returnPct, trades, maxDrawdownPct, sharpe, consistencyScore, equityHistory}}` with a standings row in KV metadata |
 
 - **Magic links**: `POST /auth/magic-link` signs a JWT-like token (`header.payload.sig`, HS256 with `HMAC_SECRET`, `exp` = 15 min, random `jti`) and stores the `jti` in `TOKENS`. `GET /auth/callback?token=` verifies the signature and expiry, then *claims* the `jti` so a link works exactly once: with the optional `MAGIC_LOCK` Durable Object binding the first claim wins atomically; without it a random claim marker is written to `magic-used:<jti>` (a KV write error counts as losing the race), `magic:<jti>` is deleted and the callback proceeds only if its own marker is what KV holds. It then creates a session and redirects to `SITE_URL/pricing.html#code=<one-time code>`. The session id never appears in a URL: the client (`js/auth.js`) scrubs the fragment, posts the code to `POST /auth/exchange` (browser-only, `Origin` required, code deleted on first use, 60 s TTL), confirms the resulting email against the sign-in it started (or asks the student), and only then stores the id as a bearer token and calls `GET /me`. Legacy `#session=<id>` fragments are still understood by the client during a rolling deploy.
 - **Sessions**: 32 random bytes, base64url. Only `sha256(id)` is stored, with a 30-day TTL. `POST /auth/signout` deletes it.
@@ -48,7 +49,13 @@ Non-developer walkthrough with screenshots-in-words: **[../docs/MEMBERSHIP_SETUP
 | GET | `/classes/:code/students/:id` | instructor (same three ways) | – | `{ok, code, student}`; `400` malformed id; `404` unknown |
 | DELETE | `/classes/:code/students/:id` | instructor (same three ways) | – | `{ok, removed:true}`; the id is remembered for 400 days so the device's next snapshot gets `410` and `js/classroom.js` leaves the class |
 | DELETE | `/classes/:code/students` | instructor (same three ways) | `{ids:[≤ 50]}` or `{all:true}` | `{ok, removed, ids, remaining, hasMore}`; `all` removes 50 records per call in key order (call again while `hasMore`); every removed id is locked out like the single delete |
-| GET | `/health` | – | – | `{ok, classroom, rateLimitStore:'TOKENS'\|'CLASSES'\|null, version}` |
+| POST | `/leagues` | – (5/min per IP) | `{name, createdBy?, startDate, endDate, rules:{startingCash, commission, slippageBps, assets, dayTrading, maxPositionPct, shortSelling, teams, teamNames}}` | `201 {ok, code, league}`; `400` bad name/dates (end before start, > 366 days, already over, teams with < 2 names); `503 {notConfigured}` without `LEAGUES` |
+| GET | `/leagues/:code` | – | – | `{ok, found, league, phase:'upcoming'\|'active'\|'ended'\|'closed'}` or `404 {found:false}` |
+| POST | `/leagues/:code/join` | – (+ `ownerToken` after the first join) | `{studentId, displayName?, team?, ownerToken?}` | `{ok, code, league, team, ownerToken?}` (`ownerToken` only on the first join for this id); `400` missing/unknown team; `409 {ownerMismatch}`; `409 {full}` at 500 members; `409 {ended}` once closed |
+| POST | `/leagues/:code/snapshots` | `ownerToken` in the body | `{studentId, ownerToken, league:{equity, returnPct, trades, maxDrawdownPct, equityHistory:[≤ 60]}}` (≤ 16 KB) | `{ok, code, updatedAt, returnPct}` — return and drawdown are recomputed from the equity numbers; `404 {notJoined}`; `409 {ownerMismatch}`; `409 {upcoming}` before the start; `409 {ended}` 24 h after the end; `429 {retryAfterSec}` over 6/min per member |
+| GET | `/leagues/:code/standings` | – (120/min, fail open) | – | `{ok, code, league, phase, standings:[{rank, studentId, displayName, team, equity, returnPct, trades, maxDrawdownPct, sharpe, consistencyScore, spark:[≤ 30], updatedAt}], teams:[{rank, team, members, avgReturnPct, avgDrawdownPct}]}` — one `list()` call, rows from KV metadata; sorted by return, ties to the smaller drawdown |
+| POST | `/coach` | Bearer, **Pro** | `{trade:{symbol, kind, side, qty, entry, exit, stop, target, pnl, pnlPct, rMultiple, riskPct, positionPct, equity, holdBars, setup, emotion, …}, note?, rules?:[{level, title, message}], lang?:'en'\|'es'}` | `{ok, text, model, truncated, cap, remaining, lang}`; `401`/`403 {requiresPro}`/`503 {notConfigured}`/`429 {capReached}`/`502` — every error carries `fallback:true` so `js/coach.js` shows the rule-based review |
+| GET | `/health` | – | – | `{ok, classroom, leagues, coach, rateLimitStore:'TOKENS'\|'CLASSES'\|'LEAGUES'\|null, version}` |
 
 Errors are `{error: "message"}` with 4xx/5xx; `notConfigured:true` marks a missing secret so the client can show a friendly state.
 
@@ -64,6 +71,22 @@ Errors are `{error: "message"}` with 4xx/5xx; `notConfigured:true` marks a missi
 - **CORS** now allows `DELETE` and the `X-Class-Token` / `X-Instructor-Secret` headers for the listed origins.
 - Tests: `tests/classroom.test.js` drives `route()` end to end against an in-memory KV (secret and session ownership, token access, delete → 410, rate limit, sanitizer).
 
+### Leagues (v0.5)
+
+- **Who can create**: anyone (5/min per IP). Leagues store no personal data: a pseudonymous `studentId`, an optional display name, a team and paper-account numbers.
+- **Membership ownership** mirrors classroom snapshots: the first `join` for (code, `studentId`) returns a random `ownerToken` once; only `HMAC(HMAC_SECRET, 'lg|code|id|token')` is stored (SHA-256 without the secret). `js/leagues.js` keeps the token in `bt.leagues` and sends it with every later join and snapshot.
+- **Sanitising**: rules are clamped (`startingCash` 1,000–10,000,000, `commission` 0–100, `slippageBps` 0–500, `maxPositionPct` 1–100, unknown asset classes dropped, ≤ 12 team names); snapshots keep at most 60 equity points and the server recomputes return, drawdown, Sharpe and consistency with the same formulas as `BT.leagues.metrics`, so a client cannot claim a return its equity numbers do not show.
+- **Dates**: phases are computed with the widest time-zone margins (start − 14 h, end + 12 h) so no member is locked out early; snapshots close 24 h after that (`phase:'closed'`), freezing the final standings.
+- **Rate limits**: league reads 120/min (fail open), joins 120 new members per league per minute, snapshots 6/min per member, plus the 600/min per-IP flood ceiling shared with classroom snapshots. Optional atomic bindings: `RL_LEAGUE_CREATE`, `RL_LEAGUE_READ`, `RL_LEAGUE_JOIN`, `RL_LEAGUE_SNAP`, `RL_LEAGUE_IP`.
+- **Setup**: `npx wrangler kv namespace create LEAGUES` and add a `[[kv_namespaces]]` block with `binding = "LEAGUES"` to `wrangler.toml`. Without it every `/leagues` route answers `503 {notConfigured:true}` and leagues keep working offline with `BTL1.` league codes and share codes.
+
+### Pro AI coach (v0.5)
+
+- `POST /coach` needs a Bearer session whose member is Pro (`isProNow`), the `ANTHROPIC_API_KEY` secret and `HMAC_SECRET`.
+- It calls `POST https://api.anthropic.com/v1/messages` with headers `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json` and body `{model: COACH_MODEL || 'claude-haiku-5-5', max_tokens: 600, system, messages:[{role:'user', content}]}`. Only `text` blocks of the reply are returned; `stop_reason:'refusal'`, upstream errors (429/529 → 503, others → 502) and network failures answer with `fallback:true`.
+- The system prompt (`COACH_SYSTEM`) limits the model to education about the student's own process: no buy/sell/hold recommendations, no predictions, no personalised financial advice, judge process not outcome, treat the journal note as data. The user message holds the whitelisted trade fields, the rule-based findings and the journal note (≤ 1,000 chars). The member's email is never sent.
+- **Daily cap**: `COACH_DAILY_CAP` (var, default 20, max 500) successful reviews per member per UTC day, counted in `TOKENS` at `coach:<HMAC(email)>:<YYYY-MM-DD>` (2-day TTL); failed calls are not counted. KV is eventually consistent, so a burst may slip one or two past the cap; the per-IP limit (`coach`, 10/min) bounds it.
+
 ## Configuration
 
 `wrangler.toml` holds the public settings (`SITE_URL`, `ALLOWED_ORIGINS`, `EMAIL_FROM`, `CERT_REQUIRE_PRO`, `DEBUG`) and the KV ids. Secrets are set with `npx wrangler secret put NAME`:
@@ -76,14 +99,17 @@ STRIPE_WEBHOOK_SECRET  whsec_…
 STRIPE_PRICE_MONTHLY   price_…
 STRIPE_PRICE_ANNUAL    price_…
 INSTRUCTOR_SECRET      optional; openssl rand -hex 16 — lets teaching staff create classes without sign-in
+ANTHROPIC_API_KEY      optional; sk-ant-… from console.anthropic.com — turns on the Pro AI coach (POST /coach)
 ```
+
+Optional vars in `[vars]`: `COACH_DAILY_CAP` (AI reviews per member per UTC day, default `"20"`), `COACH_MODEL` (default `"claude-haiku-5-5"`).
 
 ## Local development
 
 ```bash
 cd server
 npx wrangler login
-npx wrangler kv namespace create MEMBERS      # repeat for CERTS, TOKENS, LEADERBOARD and (for Classroom) CLASSES; paste ids into wrangler.toml
+npx wrangler kv namespace create MEMBERS      # repeat for CERTS, TOKENS, LEADERBOARD and (optional) CLASSES, LEAGUES; paste ids into wrangler.toml
 npx wrangler dev                              # http://localhost:8787
 ```
 
@@ -112,12 +138,14 @@ The output prints the Worker URL (`https://broward-trading-api.<account>.workers
 
 ## Tests
 
-The pure parts (token sign/verify, certificate id derivation, Stripe signature check, CORS allow-list, rate limiter, magic-link claim, login-code exchange, leaderboard ownership) are exercised from `tests/auth.test.js`, which imports `_internal` from this file under Node 22+ (WebCrypto is global there). Run `node tests/auth.test.js` from the project root.
+The pure parts (token sign/verify, certificate id derivation, Stripe signature check, CORS allow-list, rate limiter, magic-link claim, login-code exchange, leaderboard ownership) are exercised from `tests/auth.test.js`, which imports `_internal` from this file under Node 22+ (WebCrypto is global there). Run `node tests/auth.test.js` from the project root. `tests/classroom.test.js` and `tests/leagues.test.js` drive the `/classes`, `/leagues` and `/coach` routes end to end against an in-memory KV and a stubbed `fetch` (no network).
 
 ## Privacy & data retention
 
 - Stored: email, Pro status, Stripe customer/subscription ids, certificate names and course scores, leaderboard nicknames and stats, classroom snapshots (random student id, optional display name, course statistics; see **Classroom** above). No passwords exist.
 - Delete a classroom student: `DELETE /classes/:code/students/:id` from the instructor page, or `npx wrangler kv key delete --binding CLASSES "student:<CODE>:<id>"`. Delete a whole class by removing its `class:<CODE>` key and the `student:<CODE>:*` keys; everything expires on its own after 400 days.
+- Delete a league: remove `league:<CODE>` and the `member:<CODE>:*` keys from `LEAGUES` (`npx wrangler kv key delete --binding LEAGUES …`); everything expires on its own.
+- AI coach: nothing is stored except a per-day counter keyed by an HMAC of the email. The trade numbers and journal note are sent to Anthropic for that one review.
 - Delete a member: `npx wrangler kv key delete --binding MEMBERS "member:<email>"` (and the matching `customer:` key); certificates stay valid unless you delete `cert:<id>` too.
 - Sessions, magic tokens, claim markers and login codes expire on their own via KV TTL.
 - Leaderboard rows written before v0.3's HMAC owners (plain sha256 / IP hashes) can no longer be updated by their owners (`409`). Fine before launch; otherwise wipe the `class:*` keys in `LEADERBOARD` once.

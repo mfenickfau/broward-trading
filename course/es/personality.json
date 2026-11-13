@@ -1,0 +1,199 @@
+{
+  "version": "1",
+  "id": "personality",
+  "title": "¿Qué tipo de trader eres?",
+  "intro": "Diez preguntas rápidas sobre cómo te gusta pensar, decidir y usar tu tiempo. No hay respuestas correctas ni incorrectas, y ningún perfil es mejor que otro. Con cualquier estilo se puede ganar o perder dinero; lo importante es que tus métodos encajen con tu temperamento y que gestiones el riesgo en todos los casos.",
+  "disclaimer": "Este cuestionario es una ayuda para aprender, no un test psicológico ni asesoramiento financiero. Te sugiere por dónde empezar el curso. Puedes repetirlo cuando quieras, y la mayoría de las personas combinan varios estilos.",
+  "profiles": [
+    {
+      "id": "trend",
+      "name": "Seguidor de tendencias",
+      "tagline": "Paciente, basado en reglas, cómodo acompañando un movimiento durante semanas.",
+      "summary": "Prefieres sumarte a un movimiento que ya está en marcha y dejarlo correr, aceptando que rara vez comprarás justo en el mínimo ni venderás justo en el máximo.",
+      "body": "Tus fortalezas son la paciencia y la constancia: te sientes cómodo siguiendo reglas sencillas, como los cruces de medias móviles, y dejando correr las ganancias mientras cortas pronto las pérdidas. Seguir tendencias suele tener una tasa de acierto modesta con algunas ganancias grandes de vez en cuando, así que premia a quien puede aguantar varias pérdidas pequeñas seguidas sin abandonar el plan.",
+      "tip": "Algo a vigilar: en mercados laterales y sin dirección, las señales de tendencia dan falsas alarmas una y otra vez. Aprende a reconocer un rango, dimensiona las posiciones para que una racha perdedora siga siendo pequeña y ten una regla de salida por escrito para no devolver una ganancia abierta grande.",
+      "steps": [
+        "Elige una sola regla de tendencia (por ejemplo, el cruce de las SMA de 20 y 50) y practica solo esa en Market Replay antes de probar otra.",
+        "Escribe tu regla de salida antes de cada entrada: un stop para cuando te equivocas y un trailing stop o una señal para cuando aciertas.",
+        "Anota cada racha perdedora en el diario para ver si seguiste la regla o la abandonaste."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m2-l2", "why": "Tendencia, soporte y resistencia son el vocabulario de todo lo que viene después." },
+        { "type": "lesson", "id": "m3-l1", "why": "Las medias móviles y sus cruces son las herramientas clásicas para seguir tendencias." },
+        { "type": "lesson", "id": "m3-l4", "why": "El ADX te ayuda a distinguir una tendencia real de un rango sin dirección." },
+        { "type": "lesson", "id": "m4-l1", "why": "El tamaño de posición hace que las inevitables rachas perdedoras sean soportables." },
+        { "type": "drill", "id": "ride-the-trend-nvda-2023", "why": "Practica mantener una tendencia fuerte sin salir demasiado pronto." },
+        { "type": "drill", "id": "sma-cross-msft-2024", "why": "Aplica una regla de cruce vela a vela con el futuro oculto." },
+        { "type": "module", "id": "m6-strategy", "why": "Convierte tu regla en una estrategia y haz un backtest honesto." }
+      ]
+    },
+    {
+      "id": "swing",
+      "name": "Swing trader",
+      "tagline": "Activo, atento a los patrones, entra y sale en cuestión de días.",
+      "summary": "Te gusta leer el gráfico con detalle y actuar sobre movimientos más cortos, de unos días a un par de semanas, usando patrones, osciladores y niveles claros.",
+      "body": "Tus fortalezas son la atención al detalle y la capacidad de decidir: disfrutas detectando configuraciones como un rebote en un soporte, un giro del RSI o la ruptura de un rango estrecho, y te sientes cómodo tomando una decisión y pasando a lo siguiente. El swing trading da una respuesta rápida, lo cual es ideal para aprender, pero cada operación tiene costes y existe la tentación de operar en exceso.",
+      "tip": "Algo a vigilar: más operaciones significa más comisiones, más deslizamiento y más decisiones emocionales. Define tu configuración con precisión, mantén pequeño el riesgo por operación y usa el diario para comprobar si tus mejores configuraciones realmente lo son.",
+      "steps": [
+        "Elige como mucho dos configuraciones y escribe una definición de una línea para cada una.",
+        "Planifica entrada, stop y objetivo antes de cada operación y comprueba que la relación beneficio/riesgo sea de al menos 1,5.",
+        "Revisa tu diario cada semana por configuración y por emoción para descubrir qué funciona de verdad para ti."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m2-l4", "why": "Los patrones de velas son las piezas básicas de las configuraciones de corto plazo." },
+        { "type": "lesson", "id": "m3-l2", "why": "El RSI y el estocástico ayudan a elegir el momento de entrada en movimientos y rangos." },
+        { "type": "lesson", "id": "m3-l3", "why": "MACD, Bandas de Bollinger y ATR añaden impulso, volatilidad y distancia del stop." },
+        { "type": "lesson", "id": "m4-l2", "why": "Los stops, la relación beneficio/riesgo y la esperanza matemática deciden si operar activamente compensa." },
+        { "type": "drill", "id": "range-trading-spy-2018", "why": "Practica comprar en las caídas y vender en las subidas dentro de un rango." },
+        { "type": "drill", "id": "hourly-swing-msft-2024", "why": "Una operación swing de dos semanas en el gráfico horario, vela a vela." },
+        { "type": "drill", "id": "breakout-meta-2023", "why": "Practica entrar en rupturas con un stop planificado." }
+      ]
+    },
+    {
+      "id": "value",
+      "name": "Inversor orientado al valor",
+      "tagline": "Horizonte largo, visión de conjunto, cómodo haciendo menos.",
+      "summary": "Piensas en meses y años más que en días, te importa qué es realmente una empresa o un fondo, y prefieres tener pocas cosas que entiendes antes que operar a menudo.",
+      "body": "Tus fortalezas son un horizonte temporal largo y un temperamento tranquilo: es menos probable que reacciones a cada titular, y entiendes que la diversificación y los costes bajos se acumulan en silencio. Este curso se centra en el análisis técnico, así que usa los gráficos como herramienta para el momento de entrada y el riesgo, no como sustituto de entender la empresa o el fondo que tienes.",
+      "tip": "Algo a vigilar: un horizonte largo no elimina el riesgo. Los precios pueden caer mucho y tardar años en recuperarse, así que decide de antemano cuánta caída puedes tolerar, evita concentrar demasiado en una sola posición y revisa tus motivos con regularidad en lugar de mantener por pura esperanza.",
+      "steps": [
+        "Escribe por qué tendrías cada posición y qué te haría cambiar de opinión.",
+        "Compara una acción individual con un ETF amplio en el mismo periodo en la página Comparar.",
+        "Usa Market Replay para vivir un mercado bajista real antes de decidir cuánta caída puedes soportar."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m1-l1", "why": "Empieza por lo que significa de verdad tener una acción de una empresa." },
+        { "type": "lesson", "id": "m1-l5", "why": "Qué mueve los precios y cómo una cuenta simulada te ayuda a aprender sin riesgo." },
+        { "type": "lesson", "id": "m9-l2", "why": "Los ETF, el seguimiento de índices y los gastos anuales son herramientas clave para el inversor a largo plazo." },
+        { "type": "lesson", "id": "m4-l3", "why": "Caídas y psicología: lo más difícil de mantener a largo plazo." },
+        { "type": "lesson", "id": "m4-l1", "why": "El tamaño de posición también vale para inversores: ninguna posición debería hundir el plan." },
+        { "type": "drill", "id": "bear-market-survival-2022", "why": "Siente cómo es una caída de un año entero, con el futuro oculto." },
+        { "type": "drill", "id": "crash-and-recovery-xom-2020", "why": "Practica mantener la disciplina durante una caída fuerte y su recuperación." }
+      ]
+    },
+    {
+      "id": "options",
+      "name": "Estratega de opciones",
+      "tagline": "Analítico, piensa en escenarios, curioso por las probabilidades.",
+      "summary": "Disfrutas pensando en escenarios: qué pasa si el precio sube, baja o no se mueve, y cómo dar forma a una posición alrededor de esos resultados.",
+      "body": "Tus fortalezas son el pensamiento analítico y la soltura con los números: las opciones permiten expresar opiniones sobre la dirección, el tiempo y la volatilidad, y te atrae entender los compromisos más que solo el potencial de ganancia. Las opciones también son los instrumentos más complejos de este curso, y algunas posiciones pueden perder toda la prima rápidamente o asumir un riesgo mucho mayor que la prima cobrada.",
+      "tip": "Algo a vigilar: el apalancamiento funciona en los dos sentidos y la complejidad puede ocultar riesgos. Aprende las griegas y las reglas de asignación antes de operar spreads, prefiere posiciones de riesgo definido mientras aprendes y conoce siempre tu pérdida máxima antes de colocar una orden simulada.",
+      "steps": [
+        "Aprende primero lo básico de las acciones y la gestión del riesgo; las opciones se apoyan en ambas cosas.",
+        "Usa el Laboratorio de opciones de la página Portafolio para dibujar el gráfico de resultados de cada posición antes de abrirla.",
+        "Empieza con estrategias de riesgo definido, como los spreads verticales, y anota la pérdida máxima en tu diario."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m5-l1", "why": "Calls, puts y de qué se compone una prima." },
+        { "type": "lesson", "id": "m5-l2", "why": "Cómo leer una cadena de opciones sin perderte." },
+        { "type": "lesson", "id": "m5-l3", "why": "Las griegas y la volatilidad implícita, de forma intuitiva." },
+        { "type": "lesson", "id": "m5-l4", "why": "Covered calls, puts de protección y spreads verticales: piezas de riesgo definido." },
+        { "type": "lesson", "id": "m4-l4", "why": "Margen y apalancamiento: entiende el riesgo antes de usarlo." },
+        { "type": "lesson", "id": "m4-l1", "why": "El tamaño de posición importa todavía más con instrumentos apalancados." },
+        { "type": "drill", "id": "stop-discipline-tsla-2024", "why": "Practica la disciplina de riesgo en una acción volátil antes de añadir opciones." }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "q": "¿Cuánto tiempo te gustaría mantener una posición típica?",
+      "choices": [
+        { "text": "De unos días a dos semanas.", "points": { "swing": 2 } },
+        { "text": "Varias semanas o meses, mientras el movimiento continúe.", "points": { "trend": 2 } },
+        { "text": "Depende de cómo monte la posición y de cuándo venza.", "points": { "options": 2 } },
+        { "text": "Un año o más si los motivos siguen siendo válidos.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q2",
+      "q": "Cuando miras un gráfico, ¿qué te llama la atención primero?",
+      "choices": [
+        { "text": "La dirección general: ¿está marcando máximos y mínimos cada vez más altos?", "points": { "trend": 2 } },
+        { "text": "Cuánto ha oscilado el precio y si eso es inusual.", "points": { "options": 2 } },
+        { "text": "La imagen a largo plazo de muchos años, más que las últimas semanas.", "points": { "value": 2 } },
+        { "text": "Patrones cerca de un soporte o una resistencia que podrían preparar una operación pronto.", "points": { "swing": 2 } }
+      ]
+    },
+    {
+      "id": "q3",
+      "q": "¿Cuál de estas situaciones te resultaría más satisfactoria?",
+      "choices": [
+        { "text": "Tener algo bueno durante años y verlo crecer.", "points": { "value": 2 } },
+        { "text": "Atrapar un rebote limpio y recoger beneficios en mi objetivo.", "points": { "swing": 2 } },
+        { "text": "Seguir mis reglas y acompañar una tendencia larga hasta el final.", "points": { "trend": 2 } },
+        { "text": "Diseñar una posición que funcione bien en más de un escenario.", "points": { "options": 2 } }
+      ]
+    },
+    {
+      "id": "q4",
+      "q": "¿Cuánto tiempo podrías dedicar a los mercados en una semana normal?",
+      "choices": [
+        { "text": "Unos minutos al día para revisar mis señales.", "points": { "trend": 2 } },
+        { "text": "Tiempo para estudiar escenarios y números con cierta profundidad.", "points": { "options": 2 } },
+        { "text": "Algo de tiempo casi todos los días para revisar gráficos y gestionar operaciones.", "points": { "swing": 2 } },
+        { "text": "Una o dos horas a la semana para leer y repasar.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q5",
+      "q": "Una posición que tienes cae un 8 % en una semana. ¿Qué es lo primero que piensas?",
+      "choices": [
+        { "text": "¿Ha roto el nivel en el que pensaba salir?", "points": { "swing": 2 } },
+        { "text": "¿Ha cambiado algo de los motivos por los que la tengo?", "points": { "value": 2 } },
+        { "text": "¿Cómo cambia esto el valor de mi posición y mi pérdida máxima?", "points": { "options": 2 } },
+        { "text": "¿Sigue intacta la tendencia según mi regla?", "points": { "trend": 2 } }
+      ]
+    },
+    {
+      "id": "q6",
+      "q": "¿Qué herramienta te gustaría dominar más?",
+      "choices": [
+        { "text": "Un gráfico de resultados y las griegas.", "points": { "options": 2 } },
+        { "text": "Las medias móviles y la fuerza de la tendencia.", "points": { "trend": 2 } },
+        { "text": "Los patrones de velas, el RSI y las Bandas de Bollinger.", "points": { "swing": 2 } },
+        { "text": "Comparar fondos, costes y rendimiento a largo plazo.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q7",
+      "q": "¿Qué sientes ante la idea de equivocarte en muchas operaciones?",
+      "choices": [
+        { "text": "Me parece bien si unas pocas ganancias grandes compensan con creces muchas pérdidas pequeñas.", "points": { "trend": 2 } },
+        { "text": "Prefiero tomar menos decisiones y acertar cada una con cuidado.", "points": { "value": 2 } },
+        { "text": "Prefiero acertar a menudo, aunque cada ganancia sea más pequeña.", "points": { "swing": 2 } },
+        { "text": "Prefiero montar las posiciones de forma que las probabilidades y los compromisos estén claros de antemano.", "points": { "options": 2 } }
+      ]
+    },
+    {
+      "id": "q8",
+      "q": "El mercado se mueve de lado durante un mes. ¿Qué haces?",
+      "choices": [
+        { "text": "Opero el rango: compro cerca de la parte baja y vendo cerca de la alta.", "points": { "swing": 2 } },
+        { "text": "Busco posiciones que se beneficien cuando los precios se quedan en un rango.", "points": { "options": 2 } },
+        { "text": "Espero fuera del mercado hasta que aparezca una nueva tendencia.", "points": { "trend": 2 } },
+        { "text": "No mucho; un mes es poco tiempo para mis planes.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q9",
+      "q": "¿En qué pregunta disfrutas más pensando?",
+      "choices": [
+        { "text": "¿Cuánto vale realmente para mí esta empresa o este fondo con el tiempo?", "points": { "value": 2 } },
+        { "text": "¿Qué le pasa a esta posición si sube la volatilidad o pasa el tiempo?", "points": { "options": 2 } },
+        { "text": "¿Dónde exactamente debería entrar y salir de este movimiento?", "points": { "swing": 2 } },
+        { "text": "¿Qué mercados tienen ahora mismo la tendencia más fuerte?", "points": { "trend": 2 } }
+      ]
+    },
+    {
+      "id": "q10",
+      "q": "¿Qué hábito te gustaría desarrollar más?",
+      "choices": [
+        { "text": "Cambiar mis posiciones solo por un motivo que haya escrito.", "points": { "value": 2 } },
+        { "text": "Conocer mi pérdida máxima antes de cada posición.", "points": { "options": 2 } },
+        { "text": "Mantener mis reglas incluso después de una racha perdedora.", "points": { "trend": 2 } },
+        { "text": "Planificar entrada, stop y objetivo antes de cada operación.", "points": { "swing": 2 } }
+      ]
+    }
+  ]
+}

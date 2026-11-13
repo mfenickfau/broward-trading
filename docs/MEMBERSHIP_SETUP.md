@@ -189,11 +189,39 @@ Redeploy (`npx wrangler deploy`). On your pricing page: sign in with your email,
 
 Switch the Stripe dashboard to **live mode** and repeat 7a–7c: a new product with two live prices, the `sk_live_` key, and a new webhook endpoint with its own `whsec_`. Run the four `secret put` commands again with the live values. Test-mode payments never become real money.
 
+## 7g. AI coach for Pro members (optional)
+
+The free coach in the app reviews every trade with fixed rules and needs no server. Pro members can also get a short written review from Anthropic's Claude (model `claude-haiku-5-5`): it explains the student's own process (risk, stop, reward-to-risk, sticking to the plan) and is instructed never to recommend trades or predict prices. Each review costs a fraction of a cent.
+
+1. Go to **console.anthropic.com**, create an account (or sign in), add a payment method under **Billing**, and set a monthly **spend limit** you are comfortable with (for example $10).
+2. **API keys → Create key**, name it `broward-trading-coach`, and copy it (it starts with `sk-ant-`). You only see it once.
+3. In the `server` folder run:
+
+   ```bash
+   npx wrangler secret put ANTHROPIC_API_KEY
+   ```
+
+   and paste the key when asked.
+4. Optional: limit how many AI reviews each member gets per day (default 20) by adding `COACH_DAILY_CAP = "10"` under `[vars]` in `server/wrangler.toml`.
+5. Redeploy (`npx wrangler deploy`). `https://…workers.dev/health` now shows `"coach": true`.
+
+Without the key everything keeps working: the app shows the rule-based review and the Worker answers `/coach` with "not configured". To turn the AI coach off again, run `npx wrangler secret delete ANTHROPIC_API_KEY`. What is sent: the trade's numbers, the rule-based findings and the student's journal note for that trade. The member's email is never sent. Mention Anthropic in your privacy notice (section 10) if you enable it.
+
+## 7h. Leagues on the server (optional)
+
+Leagues work offline with league codes and share codes. To let members join with a short 6-character code and see live standings, create one more database and redeploy:
+
+```bash
+npx wrangler kv namespace create LEAGUES
+```
+
+Add a `[[kv_namespaces]]` block with `binding = "LEAGUES"` and the printed id to `server/wrangler.toml`, then `npx wrangler deploy`. `/health` shows `"leagues": true`.
+
 ## 8. Lock it down
 
 - Remove `http://localhost:8080` from `ALLOWED_ORIGINS` and redeploy.
 - Confirm `DEBUG = "false"`.
-- In Cloudflare dashboard → Workers & Pages → your worker → **Settings → Variables**, check that all six secrets are listed (values are hidden).
+- In Cloudflare dashboard → Workers & Pages → your worker → **Settings → Variables**, check that all six secrets are listed (values are hidden), plus `ANTHROPIC_API_KEY` if you turned on the AI coach.
 - Optional: in the same place add a custom domain such as `api.yourdomain.com`, then update `apiBase` in `js/config.js` and the Stripe webhook URL.
 
 ## 9. What it costs
@@ -202,6 +230,7 @@ Switch the Stripe dashboard to **live mode** and repeat 7a–7c: a new product w
 |---|---|---|
 | Cloudflare Workers | 100,000 requests / day | Paid plan is $5 / month for 10 M requests; a class of 500 students will not come close |
 | Cloudflare KV | 100,000 reads, 1,000 writes / day, 1 GB | each sign-in is ~3 writes, each certificate 2, each leaderboard post 1. 1,000 writes/day is the first limit you might touch on a busy launch day; the $5 plan raises it to 1 M |
+| Anthropic API (only if 7g is on) | – | Claude Haiku 5.5 is about $0.10 per million input tokens and $0.50 per million output tokens; one review is roughly 1,000 tokens in and 300 out, so 1,000 reviews cost well under $1. The daily cap and the console spend limit keep it bounded |
 | Resend | 3,000 emails / month, 100 / day | one email per sign-in; the $20 plan is 50,000 / month |
 | Stripe | no monthly fee | 2.9 % + 30 ¢ per successful card charge in the US (so $8.44 of a $9 payment reaches you) |
 | GitHub Pages | free | – |

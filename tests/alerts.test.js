@@ -25,6 +25,7 @@ global.window = { localStorage: global.localStorage, Notification: FakeNotificat
 global.document = { hidden: false };
 require(path.join(__dirname, '..', 'js', 'indicators.js'));
 require(path.join(__dirname, '..', 'js', 'alerts.js'));
+require(path.join(__dirname, '..', 'js', 'rules.js'));   // for kind 'rule' (v0.5)
 const A = window.BT.alerts;
 
 let passed = 0, failed = 0;
@@ -65,7 +66,7 @@ console.log('BT.alerts tests');
 test('module exposes the contract surface', () => {
   ['add', 'list', 'remove', 'check', 'describe', 'validate', 'rearm', 'clear', 'on', 'off', 'requestPermission', 'notificationState', 'KINDS'].forEach(f => assert.ok(A[f], 'missing ' + f));
   assert.strictEqual(A.STORAGE_KEY, 'bt.alerts');
-  assert.deepStrictEqual(A.kinds, ['price_above', 'price_below', 'rsi_above', 'rsi_below', 'sma_cross', 'signal_change']);
+  assert.deepStrictEqual(A.kinds, ['price_above', 'price_below', 'rsi_above', 'rsi_below', 'sma_cross', 'signal_change', 'rule']);
   A.kinds.forEach(k => { assert.ok(A.KINDS[k].label && A.KINDS[k].help.length > 40, k + ' needs a label and educational help text'); });
 });
 
@@ -412,6 +413,89 @@ test('requestPermission() resolves with the browser\'s answer (and "unsupported"
   window.Notification = N; N.permission = 'default';
   const p2 = A.requestPermission();
   return Promise.all([p1, p2]).then(([u, g]) => { assert.strictEqual(u, 'unsupported'); assert.strictEqual(g, 'granted'); });
+});
+
+/* ---------------- kind 'rule' (v0.5, strategy builder) ---------------- */
+const reclaim10 = { name: 'Reclaim 10', side: 'long',
+  entry: { op: 'and', conditions: [{ left: { ind: 'close', params: {} }, cmp: 'crossesAbove', right: { ind: 'value', params: {}, value: 10 } }] },
+  exit: { op: 'or', conditions: [], stopPct: 5 } };
+const above10 = { name: 'Above 10', side: 'long',
+  entry: { op: 'and', conditions: [{ left: { ind: 'close', params: {} }, cmp: '>', right: { ind: 'value', params: {}, value: 10 } }] },
+  exit: { op: 'or', conditions: [], stopPct: 5 } };
+
+test('rule alerts validate the rule payload and store it with the rule name as value', () => {
+  fresh();
+  assert.strictEqual(A.add({ symbol: 'AAPL', kind: 'rule' }).status, 'rejected');
+  const bad = A.add({ symbol: 'AAPL', kind: 'rule', rule: { entry: { conditions: [] } } });
+  assert.strictEqual(bad.status, 'rejected'); assert.ok(/entry condition/.test(bad.reason));
+  const a = A.add({ symbol: 'msft', kind: 'rule', rule: Object.assign({ id: 'r1' }, reclaim10) });
+  assert.strictEqual(a.status, 'ok');
+  assert.strictEqual(a.value, 'Reclaim 10');
+  assert.strictEqual(a.rule.entry.conditions[0].cmp, 'crossesAbove');
+  assert.strictEqual(a.rule.id, undefined, 'the saved-rule id is not copied: the alert keeps its own snapshot');
+  assert.strictEqual(A.add({ symbol: 'MSFT', kind: 'rule', rule: reclaim10 }).status, 'rejected', 'duplicate');
+  assert.strictEqual(A.add({ symbol: 'MSFT', kind: 'rule', rule: Object.assign({}, above10, { name: 'Reclaim 10' }) }).status, 'ok', 'same name, different rule is allowed');
+  assert.ok(/MSFT entry rule "Reclaim 10" lines up/.test(A.describe(a)));
+  assert.ok(A.KINDS.rule.help.length > 40 && A.KINDS.rule.label);
+  // survives a reload
+  A.load();
+  assert.strictEqual(A.list('MSFT').filter(x => x.kind === 'rule').length, 2);
+});
+
+test('rule alerts are evaluated with BT.rules on each check and fire on the transition', () => {
+  fresh();
+  A.add({ symbol: 'MSFT', kind: 'rule', rule: reclaim10 });
+  assert.deepStrictEqual(A.check('MSFT', mk([10, 9.5])), []);      // no cross yet
+  const fired = A.check('MSFT', mk([10, 9.5, 10.5]));               // 9.5 → 10.5 crosses above 10
+  assert.strictEqual(fired.length, 1);
+  assert.strictEqual(fired[0].kind, 'rule');
+  assert.ok(/entry conditions are all true/.test(fired[0].message), fired[0].message);
+  assert.ok(/Go long when the close crosses above 10/.test(fired[0].message));
+  assert.ok(/not a recommendation/.test(fired[0].message));
+  assert.strictEqual(fired[0].direction, 'up');
+  assert.deepStrictEqual(A.check('MSFT', mk([10, 9.5, 10.5])), [], 'fires once, then it is marked fired');
+});
+
+test('rule alerts are edge-triggered: a level rule fires once, and after rearm only on a new false→true', () => {
+  fresh();
+  const a = A.add({ symbol: 'AAPL', kind: 'rule', rule: above10 });
+  assert.strictEqual(A.check('AAPL', mk([11, 12])).length, 1, 'already true when created → fires on the first check (like price alerts)');
+  A.rearm(a.id);
+  assert.deepStrictEqual(A.check('AAPL', mk([11, 12, 13])), [], 'still true after rearm: learn the baseline, stay quiet');
+  assert.deepStrictEqual(A.check('AAPL', mk([11, 12, 13, 14])), []);
+  assert.deepStrictEqual(A.check('AAPL', mk([11, 12, 13, 9])), [], 'went false: armed');
+  assert.strictEqual(A.check('AAPL', mk([11, 12, 13, 9, 10.2])).length, 1, 'false → true fires again');
+});
+
+test('rule alerts stay silent while indicators warm up or when js/rules.js is missing', () => {
+  fresh();
+  const smaRule = { name: 'Above SMA 50', side: 'long', entry: { conditions: [{ left: { ind: 'close', params: {} }, cmp: '>', right: { ind: 'sma', params: { n: 50 } } }] }, exit: { stopPct: 4 } };
+  const a = A.add({ symbol: 'AAPL', kind: 'rule', rule: smaRule });
+  assert.deepStrictEqual(A.check('AAPL', mk(trend(20, 100, 0.5))), []);
+  assert.strictEqual(A.get(a.id).state, false, 'not enough history: no state learned');
+  assert.strictEqual(A.check('AAPL', mk(trend(80, 100, 0.5))).length, 1, 'uptrend: close above SMA 50');
+  const saved = window.BT.rules;
+  try {
+    delete window.BT.rules;
+    fresh();
+    assert.strictEqual(A.add({ symbol: 'AAPL', kind: 'rule', rule: smaRule }).status, 'rejected');
+    window.BT.rules = saved;
+    A.add({ symbol: 'AAPL', kind: 'rule', rule: smaRule });
+    delete window.BT.rules;
+    assert.deepStrictEqual(A.check('AAPL', mk(trend(80, 100, 0.5))), [], 'no BT.rules on this page → nothing to evaluate');
+  } finally { window.BT.rules = saved; }
+});
+
+test('a short-side rule alert toasts in the warning tone', () => {
+  fresh();
+  const toasts = [];
+  window.BT.app = { toast: (msg, tone) => toasts.push(tone) };
+  const shortRule = { name: 'Lose 10', side: 'short', entry: { conditions: [{ left: { ind: 'close', params: {} }, cmp: 'crossesBelow', right: { ind: 'value', params: {}, value: 10 } }] }, exit: { stopPct: 3 } };
+  A.add({ symbol: 'AAPL', kind: 'rule', rule: shortRule });
+  A.check('AAPL', mk([11, 10.5]));
+  assert.strictEqual(A.check('AAPL', mk([11, 10.5, 9.5])).length, 1);
+  assert.deepStrictEqual(toasts, ['warn']);
+  delete window.BT.app;
 });
 
 /* ---------------- wrap-up (async-aware) ---------------- */

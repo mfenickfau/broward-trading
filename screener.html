@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Free stock screener for students: filter stocks, ETFs and crypto by price, % change, volume, RSI, moving averages, golden crosses, Bollinger squeezes, 52-week highs and candlestick patterns. Educational, with simulated demo data.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0f1319">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.twelvedata.com https://finnhub.io https://www.alphavantage.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Screener — Broward Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* page-local layout only; every colour and font comes from css/style.css tokens */
+  .sc-head{display:flex;flex-wrap:wrap;gap:8px var(--sp-4);align-items:center;padding-block:var(--sp-4) var(--sp-3)}
+  .sc-head h1{margin:0;font-size:var(--fs-xl)}
+  .sc-head .sub{color:var(--muted);font-size:var(--fs-sm);margin:4px 0 0;max-width:70ch}
+  .sc-head .status{margin-left:auto}
+  .sc button,.sc input,.sc select,.sc .btn{min-height:44px}
+  .sc .btn.sm,.sc button.sm{min-height:44px;padding:6px 12px;font-size:var(--fs-sm)}
+  .sc h2{margin-top:0}
+
+  .sc-grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:var(--sp-4);align-items:start}
+  @media (max-width:980px){.sc-grid{grid-template-columns:minmax(0,1fr)}}
+
+  /* scans */
+  .scans{display:grid;gap:8px}
+  .scan,.saved .pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;width:100%;padding:10px 12px;white-space:normal;height:auto;line-height:1.35}
+  .scan .nm,.saved .nm{font-weight:600;color:var(--fg)}
+  .scan .ds,.saved .ds{font-size:var(--fs-xs);color:var(--muted);font-weight:400}
+  .scan.on,.saved .pick.on{border-color:var(--accent);background:var(--accent-soft)}
+  .saved{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .saved li{display:flex;gap:6px;align-items:stretch}
+  .saved .pick{flex:1 1 auto;min-width:0}
+  .rm{min-width:44px;padding:0;flex:0 0 auto;color:var(--muted)}
+  .rm:hover{color:var(--fg)}
+  .sc h3{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:var(--sp-4) 0 var(--sp-2);font-weight:600}
+
+  /* filter builder */
+  .topctl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-3)}
+  @media (max-width:520px){.topctl{grid-template-columns:minmax(0,1fr)}}
+  .frows{list-style:none;margin:var(--sp-3) 0 0;padding:0;display:grid;gap:var(--sp-2)}
+  .frow{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:8px 8px 8px 12px}
+  .fhead{display:flex;align-items:center;gap:8px}
+  .fname{font-weight:600}
+  .fgroup{font-size:var(--fs-xs);color:var(--muted);margin-right:auto}
+  .fparams{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:6px 4px 4px 0}
+  .fparams input,.fparams select{width:100%}
+  fieldset.multi{border:0;padding:0;margin:0;grid-column:1/-1}
+  fieldset.multi legend{font-weight:500;padding:0;margin-bottom:4px}
+  .checks{display:flex;flex-wrap:wrap;gap:6px}
+  .check{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--panel);cursor:pointer;font-size:var(--fs-sm)}
+  .check input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--accent)}
+  .check:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .check:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+  .fhelp{margin:4px 4px 0 0;padding:0;background:transparent;border:0}
+  .fhelp summary{min-height:44px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--muted);cursor:pointer;padding:0}
+  .fhelp p{margin:0 0 6px;font-size:var(--fs-sm);line-height:1.55;color:var(--fg);max-width:70ch}
+  .addrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2);align-items:end;margin-top:var(--sp-3)}
+  .summary{margin:var(--sp-3) 0 0;padding:10px 12px;border-radius:var(--r-md);background:var(--accent-soft);font-size:var(--fs);line-height:1.5}
+  .actions{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3);align-items:center}
+  .saveform{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2);align-items:end;margin-top:var(--sp-3)}
+  .progress{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:var(--sp-3);border:1px solid var(--line)}
+  .progress .fill{height:100%;width:0;background:var(--accent);transition:width var(--dur) linear}
+  #status{margin-top:var(--sp-2);min-height:18px}
+
+  /* results */
+  .reshead{display:flex;flex-wrap:wrap;align-items:center;gap:8px var(--sp-3);margin-bottom:var(--sp-2)}
+  .reshead h2{margin:0}
+  .reshead .count{color:var(--muted);font-size:var(--fs-sm)}
+  .sortbar{display:none;gap:var(--sp-2);align-items:end;margin-bottom:var(--sp-3)}
+  .sortbar .field{flex:1 1 auto}
+  #resTable{min-width:760px}
+  #resTable td.num{white-space:nowrap}
+  #resTable td.acts .acts{flex-direction:column;align-items:stretch}
+  #resTable th.right,#resTable td.right{text-align:right}
+  #resTable td,#resTable th{padding:8px 5px;vertical-align:middle}
+  #resTable .sym{text-align:left;font-weight:400}
+  #resTable .sym .tk{display:block;font-family:var(--mono);font-weight:600}
+  #resTable .sym .why{margin-top:4px;max-width:220px}
+  #resTable .sym .nm{display:block;font-size:var(--fs-xs);color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sortbtn{background:transparent;border:0;padding:0 2px;min-height:36px;color:inherit;font:inherit;font-weight:600;display:inline-flex;align-items:center;gap:4px;text-transform:inherit;letter-spacing:inherit}
+  .sortbtn:hover{color:var(--fg)}
+  .sortbtn .arrow{font-size:9px;min-width:9px}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .why{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px}
+  .why li{font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--r-pill);background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+  .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  td.acts{white-space:nowrap}
+  .sim{font-family:var(--font);font-size:10px;font-weight:500;color:var(--warn-text);border:1px solid var(--warn);border-radius:var(--r-pill);padding:0 5px;vertical-align:middle}
+  .rcards{list-style:none;margin:0;padding:0;display:none;gap:var(--sp-2)}
+  .rcard{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);padding:12px}
+  .rcard .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"tk px" "nm nm";gap:2px 8px;align-items:baseline}
+  .rcard .tk{grid-area:tk;font-family:var(--mono);font-weight:600;font-size:var(--fs-md);color:var(--fg);text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+  .rcard .px{grid-area:px;text-align:right;font-size:var(--fs)}
+  .rcard .nm{grid-area:nm;font-size:var(--fs-xs);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+  .kv3 dt{font-size:var(--fs-xs);color:var(--muted)} .kv3 dd{margin:2px 0 0;font-size:var(--fs)}
+  .rcard .acts{justify-content:stretch;margin-top:10px}
+  .rcard .acts > *{flex:1 1 0;text-align:center;justify-content:center}
+  .simnote{font-size:var(--fs-xs);color:var(--warn-text);margin:8px 0 0}
+  @media (max-width:760px){
+    .tablewrap-desk{display:none!important}
+    .rcards:not([hidden]){display:grid}
+    .sortbar{display:flex}
+  }
+  .notes p,.notes li{line-height:1.6;max-width:72ch}
+  .notes ul{padding-left:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="nav"></div>
+<script src="js/nav.js"></script>
+
+<div class="page sc">
+  <header class="sc-head">
+    <div>
+      <h1>Screener</h1>
+      <p class="sub">Filter the market down to a short list worth studying. Pick a ready-made scan or build your own from price, momentum, trend, volatility and candlestick filters. A screen finds candidates, never trades; check every chart yourself.</p>
+    </div>
+    <div class="status"><span class="pill demo" id="pillSource" title="Where prices come from">demo data</span></div>
+  </header>
+
+  <main class="stack">
+    <div class="callout warn" id="liveNote" hidden><span class="txt"></span></div>
+
+    <div class="sc-grid">
+      <!-- ---------------- Scans ---------------- -->
+      <section class="card" aria-labelledby="scansTitle">
+        <h2 id="scansTitle">Ready-made scans</h2>
+        <div class="scans" id="scanList"></div>
+        <h3 id="savedTitle">Your saved scans</h3>
+        <p class="muted" id="savedEmpty">None yet. Build a scan, give it a name and press Save scan.</p>
+        <ul class="saved" id="savedList" aria-labelledby="savedTitle"></ul>
+      </section>
+
+      <div class="stack">
+        <!-- ---------------- Filters ---------------- -->
+        <section class="card" aria-labelledby="filtersTitle">
+          <h2 id="filtersTitle">Filters</h2>
+          <div class="topctl">
+            <div class="field">
+              <label for="universe">Universe</label>
+              <select id="universe"></select>
+            </div>
+            <div class="field">
+              <label for="match">Match</label>
+              <select id="match">
+                <option value="all">All filters (AND)</option>
+                <option value="any">Any filter (OR)</option>
+              </select>
+            </div>
+          </div>
+          <p class="muted" id="noFilters" hidden>No filters yet: every symbol in the universe will be listed. Add one below.</p>
+          <ul class="frows" id="filterRows" aria-label="Active filters"></ul>
+          <div class="addrow">
+            <div class="field">
+              <label for="addFilter">Add a filter</label>
+              <select id="addFilter"></select>
+            </div>
+            <button type="button" id="addBtn">+ Add filter</button>
+          </div>
+          <p class="summary" id="scanSummary" aria-live="polite"></p>
+          <div class="actions">
+            <button type="button" class="primary" id="runBtn">Run scan</button>
+            <button type="button" id="cancelBtn" hidden>Cancel</button>
+            <button type="button" class="ghost" id="clearBtn">Clear filters</button>
+          </div>
+          <div class="progress" id="progress" role="progressbar" aria-label="Scan progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div class="fill"></div></div>
+          <div class="msg" id="status" role="status"></div>
+          <form class="saveform" id="saveForm" autocomplete="off">
+            <div class="field">
+              <label for="scanName">Save this scan as</label>
+              <input type="text" id="scanName" maxlength="60" placeholder="e.g. My pullback scan">
+            </div>
+            <button type="submit" id="saveBtn">Save scan</button>
+          </form>
+          <div class="msg" id="saveMsg" role="status"></div>
+        </section>
+
+        <!-- ---------------- Results ---------------- -->
+        <section class="card" id="results" aria-labelledby="resTitle">
+          <div class="reshead">
+            <h2 id="resTitle">Results</h2>
+            <span class="count" id="resCount"></span>
+          </div>
+          <div class="sortbar">
+            <div class="field">
+              <label for="sortKey">Sort by</label>
+              <select id="sortKey"></select>
+            </div>
+            <button type="button" id="sortDir">Ascending</button>
+          </div>
+          <div class="callout warn compact" id="resWarn" hidden><span class="txt"></span></div>
+          <div class="empty" id="empty" hidden><p class="txt"></p></div>
+          <div class="table-wrap tablewrap-desk" id="tableWrap" hidden>
+            <table class="dense hover" id="resTable">
+              <caption class="sr-only">Screener results</caption>
+              <thead><tr></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <ul class="rcards" id="resCards" aria-label="Screener results" hidden></ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ---------------- Notes ---------------- -->
+    <section class="card notes" aria-labelledby="notesTitle">
+      <h2 id="notesTitle">How to use a screener (and what it cannot do)</h2>
+      <p>A screener is a filter, not a forecast. It answers "which names look like this today?" so you can spend your time on a short list instead of scrolling through every chart.</p>
+      <ul>
+        <li><b>Start broad, then tighten.</b> Each extra filter removes names. If a scan returns nothing, loosen one threshold rather than stacking more rules.</li>
+        <li><b>Open the chart.</b> A matching number can hide a gap, an earnings surprise or a thin market. Read the price action and volume before you form a view.</li>
+        <li><b>Indicators lag.</b> Moving-average crosses and 52-week highs confirm what already happened. They describe the past; none of them knows what happens next.</li>
+        <li><b>Practise first.</b> Paper-trade or backtest a setup many times, with a stop and a position size, before you trust it. Most simple setups do not beat buying and holding after costs.</li>
+        <li><b>Demo prices are simulated.</b> In demo mode every symbol follows a made-up random walk, so matches are for practice only. With a live data key the scan uses real daily bars, paced to the free plan's rate limits.</li>
+      </ul>
+      <p class="muted">Broward Trading is an educational simulator. Nothing on this page is investment advice or a recommendation to buy or sell any security.</p>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/indicators.js"></script>
+<script src="js/screener.js"></script>
+<script src="js/screener-ui.js"></script>
+</body>
+</html>

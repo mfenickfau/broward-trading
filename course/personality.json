@@ -1,0 +1,199 @@
+{
+  "version": "1",
+  "id": "personality",
+  "title": "What kind of trader are you?",
+  "intro": "Ten quick questions about how you like to think, decide and spend your time. There are no right or wrong answers and no profile is better than another. Every style can make money or lose it; what matters is matching your methods to your temperament and managing risk either way.",
+  "disclaimer": "This quiz is a learning aid, not a psychological test and not financial advice. It suggests where to start in the course. You can retake it any time, and most people are a mix of styles.",
+  "profiles": [
+    {
+      "id": "trend",
+      "name": "Trend Follower",
+      "tagline": "Patient, rule-based, happy to ride a move for weeks.",
+      "summary": "You prefer to join a move that is already under way and let it run, accepting that you will rarely buy the exact bottom or sell the exact top.",
+      "body": "Your strengths are patience and consistency: you are comfortable following simple rules such as moving-average crossovers and letting winners run while losers are cut short. Trend following tends to have a modest win rate with occasional large winners, so it rewards people who can sit through several small losses in a row without abandoning the plan.",
+      "tip": "Something to watch: in sideways, choppy markets trend signals whipsaw back and forth. Learn to recognise a range, size positions so a losing streak stays small, and keep a written exit rule so you do not give back a large open profit.",
+      "steps": [
+        "Pick one trend rule (for example the 20/50 SMA crossover) and practise only that in Market Replay before trying another.",
+        "Write down your exit rule before every entry: a stop for when you are wrong and a trailing stop or signal for when you are right.",
+        "Record every losing streak in the journal so you can see whether you followed the rule or abandoned it."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m2-l2", "why": "Trend, support and resistance are the vocabulary of everything that follows." },
+        { "type": "lesson", "id": "m3-l1", "why": "Moving averages and crossovers are the classic trend-following tools." },
+        { "type": "lesson", "id": "m3-l4", "why": "ADX helps you tell a real trend from a choppy range." },
+        { "type": "lesson", "id": "m4-l1", "why": "Position sizing keeps the inevitable losing streaks survivable." },
+        { "type": "drill", "id": "ride-the-trend-nvda-2023", "why": "Practise holding a strong trend without exiting too early." },
+        { "type": "drill", "id": "sma-cross-msft-2024", "why": "Apply a crossover rule bar by bar with the future hidden." },
+        { "type": "module", "id": "m6-strategy", "why": "Turn your rule into a strategy and backtest it honestly." }
+      ]
+    },
+    {
+      "id": "swing",
+      "name": "Swing Trader",
+      "tagline": "Active, pattern-minded, in and out within days.",
+      "summary": "You like reading the chart closely and acting on shorter swings, from a few days to a couple of weeks, using patterns, oscillators and clear levels.",
+      "body": "Your strengths are attention to detail and decisiveness: you enjoy spotting setups such as a bounce from support, an RSI reversal or a breakout from a tight range, and you are comfortable making a decision and moving on. Swing trading gives quick feedback, which is great for learning, but every trade carries costs and the temptation to overtrade.",
+      "tip": "Something to watch: more trades means more commissions, slippage and emotional decisions. Define your setup precisely, keep risk per trade small, and use the journal to check whether your best setups really are your best setups.",
+      "steps": [
+        "Choose two setups at most and write a one-line definition of each.",
+        "Plan entry, stop and target before every trade and check the reward-to-risk ratio is at least 1.5.",
+        "Review your journal weekly by setup and emotion tag to find what actually works for you."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m2-l4", "why": "Candlestick patterns are the building blocks of short-term setups." },
+        { "type": "lesson", "id": "m3-l2", "why": "RSI and stochastic help time entries in swings and ranges." },
+        { "type": "lesson", "id": "m3-l3", "why": "MACD, Bollinger Bands and ATR add momentum, volatility and stop distance." },
+        { "type": "lesson", "id": "m4-l2", "why": "Stops, reward-to-risk and expectancy decide whether active trading adds up." },
+        { "type": "drill", "id": "range-trading-spy-2018", "why": "Practise buying weakness and selling strength inside a range." },
+        { "type": "drill", "id": "hourly-swing-msft-2024", "why": "A two-week swing on the hourly chart, bar by bar." },
+        { "type": "drill", "id": "breakout-meta-2023", "why": "Practise entering breakouts with a planned stop." }
+      ]
+    },
+    {
+      "id": "value",
+      "name": "Value-minded Investor",
+      "tagline": "Long horizon, big picture, comfortable doing less.",
+      "summary": "You think in months and years rather than days, care about what a company or fund actually is, and would rather own a few things you understand than trade often.",
+      "body": "Your strengths are a long time horizon and a calm temperament: you are less likely to react to every headline, and you understand that diversification and low costs compound quietly. This course focuses on technical analysis, so treat charts as a tool for timing and risk rather than a replacement for understanding the business or fund you own.",
+      "tip": "Something to watch: a long horizon does not remove risk. Prices can fall a long way and stay down for years, so decide in advance how much drawdown you can tolerate, avoid putting too much in one position, and revisit your reasons regularly instead of holding on hope.",
+      "steps": [
+        "Write down why you would own each position and what would make you change your mind.",
+        "Compare a single stock with a broad ETF over the same period on the Compare page.",
+        "Use Market Replay to experience a real bear market before deciding how much drawdown you can stand."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m1-l1", "why": "Start with what owning a share of a company really means." },
+        { "type": "lesson", "id": "m1-l5", "why": "What moves prices, and how a paper account helps you learn safely." },
+        { "type": "lesson", "id": "m9-l2", "why": "ETFs, index tracking and expense ratios are core tools for long-term investors." },
+        { "type": "lesson", "id": "m4-l3", "why": "Drawdowns and psychology: the hardest part of holding for the long run." },
+        { "type": "lesson", "id": "m4-l1", "why": "Position sizing applies to investors too: no single holding should sink the plan." },
+        { "type": "drill", "id": "bear-market-survival-2022", "why": "Feel what a year-long decline is like, with the future hidden." },
+        { "type": "drill", "id": "crash-and-recovery-xom-2020", "why": "Practise staying disciplined through a sharp drop and recovery." }
+      ]
+    },
+    {
+      "id": "options",
+      "name": "Options Strategist",
+      "tagline": "Analytical, scenario-driven, curious about probabilities.",
+      "summary": "You enjoy thinking in scenarios: what happens if the price rises, falls or goes nowhere, and how to shape a position around those outcomes.",
+      "body": "Your strengths are analytical thinking and comfort with numbers: options let you express views about direction, time and volatility, and you are drawn to understanding the trade-offs rather than just the upside. Options are also the most complex instruments in this course, and some positions can lose their whole premium quickly or carry risk far larger than the premium received.",
+      "tip": "Something to watch: leverage cuts both ways and complexity can hide risk. Learn the Greeks and assignment rules before trading spreads, prefer defined-risk positions while learning, and always know your maximum loss before you place a paper order.",
+      "steps": [
+        "Learn the stock basics and risk management first; options build on both.",
+        "Use the Options Lab on the Portfolio page to draw the payoff of every position before you place it.",
+        "Start with defined-risk strategies such as vertical spreads and write the maximum loss in your journal."
+      ],
+      "path": [
+        { "type": "lesson", "id": "m5-l1", "why": "Calls, puts and what a premium is made of." },
+        { "type": "lesson", "id": "m5-l2", "why": "How to read an option chain without getting lost." },
+        { "type": "lesson", "id": "m5-l3", "why": "The Greeks and implied volatility, intuitively." },
+        { "type": "lesson", "id": "m5-l4", "why": "Covered calls, protective puts and vertical spreads: defined-risk building blocks." },
+        { "type": "lesson", "id": "m4-l4", "why": "Margin and leverage: understand the risk before you use it." },
+        { "type": "lesson", "id": "m4-l1", "why": "Position sizing matters even more with leveraged instruments." },
+        { "type": "drill", "id": "stop-discipline-tsla-2024", "why": "Practise risk discipline on a volatile stock before adding options on top." }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "q": "How long would you most like to hold a typical position?",
+      "choices": [
+        { "text": "A few days to two weeks.", "points": { "swing": 2 } },
+        { "text": "Several weeks or months, as long as the move keeps going.", "points": { "trend": 2 } },
+        { "text": "It depends on how I set up the position and when it expires.", "points": { "options": 2 } },
+        { "text": "A year or more if the reasons still hold.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q2",
+      "q": "When you look at a chart, what catches your eye first?",
+      "choices": [
+        { "text": "The overall direction: is it making higher highs and higher lows?", "points": { "trend": 2 } },
+        { "text": "How much the price has been swinging, and whether that is unusual.", "points": { "options": 2 } },
+        { "text": "The long-term picture over many years more than the last few weeks.", "points": { "value": 2 } },
+        { "text": "Patterns near support or resistance that could set up a trade soon.", "points": { "swing": 2 } }
+      ]
+    },
+    {
+      "id": "q3",
+      "q": "Which of these sounds most satisfying?",
+      "choices": [
+        { "text": "Owning something good for years and watching it grow.", "points": { "value": 2 } },
+        { "text": "Catching a clean bounce and taking profit at my target.", "points": { "swing": 2 } },
+        { "text": "Following my rules and riding a long trend to the end.", "points": { "trend": 2 } },
+        { "text": "Designing a position that does well in more than one scenario.", "points": { "options": 2 } }
+      ]
+    },
+    {
+      "id": "q4",
+      "q": "How much time could you spend on markets in a normal week?",
+      "choices": [
+        { "text": "A few minutes a day to check my signals.", "points": { "trend": 2 } },
+        { "text": "Time to study scenarios and numbers in some depth.", "points": { "options": 2 } },
+        { "text": "Some time most days to scan charts and manage trades.", "points": { "swing": 2 } },
+        { "text": "An hour or two a week to read and review.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q5",
+      "q": "A position you hold drops 8 % in a week. What is your first thought?",
+      "choices": [
+        { "text": "Did it break the level I planned to exit at?", "points": { "swing": 2 } },
+        { "text": "Has anything changed about why I own it?", "points": { "value": 2 } },
+        { "text": "How does this change my position's value and my maximum loss?", "points": { "options": 2 } },
+        { "text": "Is the trend still intact according to my rule?", "points": { "trend": 2 } }
+      ]
+    },
+    {
+      "id": "q6",
+      "q": "Which tool would you most like to master?",
+      "choices": [
+        { "text": "A payoff diagram and the Greeks.", "points": { "options": 2 } },
+        { "text": "Moving averages and trend strength.", "points": { "trend": 2 } },
+        { "text": "Candlestick patterns, RSI and Bollinger Bands.", "points": { "swing": 2 } },
+        { "text": "Comparing funds, costs and long-run performance.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q7",
+      "q": "How do you feel about being wrong on a lot of trades?",
+      "choices": [
+        { "text": "Fine, if a few big winners more than pay for many small losses.", "points": { "trend": 2 } },
+        { "text": "I would rather make fewer decisions and get each one carefully right.", "points": { "value": 2 } },
+        { "text": "I would rather be right often, even if each win is smaller.", "points": { "swing": 2 } },
+        { "text": "I would rather set positions up so the odds and the trade-offs are clear in advance.", "points": { "options": 2 } }
+      ]
+    },
+    {
+      "id": "q8",
+      "q": "The market goes sideways for a month. What do you do?",
+      "choices": [
+        { "text": "Trade the range: buy near the bottom, sell near the top.", "points": { "swing": 2 } },
+        { "text": "Look at positions that can benefit when prices stay in a range.", "points": { "options": 2 } },
+        { "text": "Wait on the sidelines until a new trend appears.", "points": { "trend": 2 } },
+        { "text": "Not much; a month is short for my plans.", "points": { "value": 2 } }
+      ]
+    },
+    {
+      "id": "q9",
+      "q": "Which question do you most enjoy thinking about?",
+      "choices": [
+        { "text": "What is this company or fund actually worth to me over time?", "points": { "value": 2 } },
+        { "text": "What happens to this position if volatility rises or time passes?", "points": { "options": 2 } },
+        { "text": "Where exactly should I get in and out of this move?", "points": { "swing": 2 } },
+        { "text": "Which markets are trending strongest right now?", "points": { "trend": 2 } }
+      ]
+    },
+    {
+      "id": "q10",
+      "q": "Which habit would you most like to build?",
+      "choices": [
+        { "text": "Only changing my holdings for a reason I have written down.", "points": { "value": 2 } },
+        { "text": "Knowing my maximum loss before every position.", "points": { "options": 2 } },
+        { "text": "Sticking to my rules even after a losing streak.", "points": { "trend": 2 } },
+        { "text": "Planning entry, stop and target before every trade.", "points": { "swing": 2 } }
+      ]
+    }
+  ]
+}
