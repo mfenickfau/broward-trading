@@ -231,7 +231,7 @@ test('standings sort by return, break ties on drawdown, and teams/movers aggrega
 
 test('share codes carry the league block, round-trip and import (compressed and plain)', async () => {
   reset();
-  const lg = mkLeague({ rules: { startingCash: 50000, commission: 0 } });
+  const lg = mkLeague({ rules: { startingCash: 50000, commission: 0, slippageBps: 0 } });
   L.join(lg, { displayName: 'Mo' });
   P.use(L.accountId(lg.code));
   P.placeOrder({ symbol: 'MSFT', side: 'buy', qty: 20, type: 'market' }, 400);

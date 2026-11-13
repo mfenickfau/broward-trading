@@ -51,7 +51,7 @@ const SHELL = [
   'course/es/index.json', 'course/es/m1-foundations.json', 'course/es/m2-charts.json', 'course/es/m3-indicators.json',
   'course/es/m4-risk.json', 'course/es/m5-options.json', 'course/es/m6-strategy.json', 'course/es/m7-replay.json',
   'course/es/m8-capstone.json', 'course/es/m9-crypto-etf.json', 'course/es/drills.json', 'course/es/glossary.json',
-  'course/es/questionbank.json', 'course/es/personality.json', 'course/es/m10-toolkit.json',
+  'course/es/questionbank.json', 'course/es/firstweek.json', 'course/es/personality.json', 'course/es/m10-toolkit.json',
   'manifest.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'
 ];
 

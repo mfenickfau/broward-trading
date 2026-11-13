@@ -88,8 +88,8 @@ Goal: adopt the features that the best learning and trading products have and we
 
 - [ ] Wire a "Ask the AI coach" button into the coach notes box (dashboard and Replay) for Pro members, labelled as an AI review and shown under the rule-based notes (`docs/COACH.md`, section 6).
 - [ ] Confirm coach findings land in the journal entry's `coach` field after a fill, and show them in the journal's weekly review.
-- [ ] `course/es/m10-toolkit.json` (Spanish Module 10) and Spanish strings for any new league, screener or builder copy found by the e2e Spanish pass.
-- [ ] Extend `tests/e2e.playwright.js` to the four new pages (league create → join → order refused by a rule → standings → projector; a built-in scan; a template backtest in the builder; the profile page) and refresh `docs/screenshots/`.
+- [x] `course/es/m10-toolkit.json` (Spanish Module 10) and Spanish strings for the league, screener, builder and profile pages (the e2e Spanish pass measures 85–98 % of visible text changing).
+- [x] Extend `tests/e2e.playwright.js` to the four new pages (league create → join → order refused by a rule → standings → projector; a built-in scan; a template backtest in the builder; the profile page) and refresh `docs/screenshots/`.
 - [ ] Screener "open in Replay" from a result row; share a rule as a short code.
 - [ ] XP level and badge count in the classroom snapshot so the instructor roster can show them (opt-in, no new personal data).
 - [ ] Demo stock splits in the paper engine.

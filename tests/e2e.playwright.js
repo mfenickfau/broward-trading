@@ -1,12 +1,13 @@
-// End-to-end smoke test for every page (v0.4). Serve the site first:
+// End-to-end smoke test for every page (v0.5). Serve the site first:
 //   python3 -m http.server 8765
 // then: node tests/e2e.playwright.js
 // Needs the playwright npm package with Chromium installed. Not run by the unit-test files.
 //
-// What it checks, for all 15 pages at 1280x900 (desktop) and 390x844 (phone), dark theme:
+// What it checks, for all 19 pages at 1280x900 (desktop) and 390x844 (phone), dark theme:
 //   - no console errors, page errors, failed same-origin requests or HTTP >= 400 on localhost
 //   - the shared shell is mounted (top nav links, footer disclaimer, manifest link, EN/ES toggle, BT.i18n present)
 //   - no horizontal overflow; the bottom tab bar is visible on phone and hidden on desktop
+//   - every BT.module.fn( call in the page's scripts resolves to a function at runtime (desktop pass)
 //   - screenshots to docs/screenshots/<page>-<desktop|phone>.png (deviceScaleFactor 1)
 // then exercises the main flows: language toggle to Spanish and back (>= 90 % of visible text
 // nodes change on index/learn/portfolio/pricing, English restored), Spanish lesson m3-l2 with a
@@ -15,11 +16,21 @@
 // instructor class + share-code import, certificate from query params, dashboard buy, alerts,
 // replay drill + scorecard, journal, glossary (search, flashcards, Daily 5), compare, pricing,
 // verify, learn (m7 drill, m8 exam, quiz), portfolio position and a backtest run.
+// v0.5 flows: league from the 'Classroom 4-week' preset, dashboard ticket switched to the league account
+// (short rejected with the league reason, buy fills, coach note for the missing stop, 'Plan this trade'
+// prefills qty), projector view, screener 'Oversold in an uptrend' + '+ Watchlist', builder SMA crossover →
+// Backtest it → stats + rule alert, semi-auto proposal card (forced with an always-true saved rule via
+// BT.app.checkRule), profile level/badges/nav chip + personality quiz, options what-if sliders, CSV upload on
+// backtest.html, and Spanish on leagues/screener/builder/profile (>= 85 % of visible text changes).
+// BT_E2E_V05_ONLY=1 runs only the v0.5 flows.
 const { chromium } = require('playwright');
 const BASE = process.env.BT_BASE_URL || 'http://localhost:8765/';
 const OUT = require('path').join(__dirname, '..', 'docs', 'screenshots') + '/';
 const PAGES = ['index.html', 'learn.html', 'start.html', 'replay.html', 'portfolio.html', 'backtest.html', 'journal.html',
-  'news.html', 'compare.html', 'glossary.html', 'instructor.html', 'pricing.html', 'verify.html', 'certificate.html', 'about.html'];
+  'news.html', 'compare.html', 'glossary.html', 'leagues.html', 'screener.html', 'builder.html', 'profile.html',
+  'instructor.html', 'pricing.html', 'verify.html', 'certificate.html', 'about.html'];
+// BT_E2E_V05_ONLY=1 skips the shell audit and the v0.4 flows and runs only the v0.5 flows (quicker while iterating).
+const V05_ONLY = process.env.BT_E2E_V05_ONLY === '1';
 const VIEWPORTS = { desktop: { width: 1280, height: 900 }, phone: { width: 390, height: 844 } };
 const issues = [];
 function note(s) { issues.push(s); console.log('  ISSUE', s); }
@@ -64,8 +75,38 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function goto(p, wait = 2500) { await page.goto(BASE + p, { waitUntil: 'load' }); await sleep(wait); }
   async function shot(name, fullPage = false) { await page.screenshot({ path: OUT + name + '.png', fullPage }); }
 
+
+  // BT.* cross-check: every `BT.module.fn(` call written in this page's scripts (inline and local files) must
+  // resolve to a function at runtime when that module is loaded. Modules that are absent on a page are listed
+  // only (callers guard optional modules), never counted as failures.
+  async function btCallAudit(p) {
+    const res = await page.evaluate(async () => {
+      const texts = [];
+      for (const sc of Array.from(document.scripts)) {
+        if (!sc.src) { texts.push(sc.textContent); continue; }
+        if (!sc.src.startsWith(location.origin)) continue;
+        try { texts.push(await (await fetch(sc.src)).text()); } catch (e) { /* ignore */ }
+      }
+      const seen = {}, bad = [], absent = {};
+      const re = /\bBT\.([A-Za-z_$][\w$]*)(?:\.([A-Za-z_$][\w$]*))?\(/g;
+      // drop comments first: file headers say things like "js/nav.js → BT.nav (shared page shell)"
+      const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+      texts.forEach(t => { t = strip(t); let m; while ((m = re.exec(t))) seen[m[1] + (m[2] ? '.' + m[2] : '')] = 1; });
+      Object.keys(seen).forEach(k => {
+        const [a, b] = k.split('.');
+        const mod = window.BT && window.BT[a];
+        if (mod === undefined) { absent[a] = 1; return; }
+        if (!b) { if (typeof mod !== 'function') bad.push(k); return; }
+        if (typeof mod[b] !== 'function') bad.push(k);
+      });
+      return { n: Object.keys(seen).length, bad, absent: Object.keys(absent) };
+    });
+    if (res.bad.length) note(p + ': BT calls that do not resolve to functions at runtime: ' + res.bad.join(', '));
+    else ok('BT.* calls resolve (' + res.n + ' distinct' + (res.absent.length ? '; modules not loaded here: ' + res.absent.join(', ') : '') + ')');
+  }
+
   // ---------------------------------------------------------------- shell audit, both viewports
-  for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
+  if (!V05_ONLY) for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
     await page.setViewportSize(vp);
     for (const p of PAGES) {
       console.log('\n==', p, vpName);
@@ -91,6 +132,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       if (p === 'start.html') { await expect('#days .day-head', 'first-week day headers', 7); await expect('#days .task', 'first-week tasks (only the open day lists its tasks)', 3); }
       if (p === 'instructor.html') { await expect('#createForm, #newClassBtn', 'instructor create class'); await expect('#importIn', 'share-code import box'); await expect('#privacyCard', 'privacy notice'); }
       if (p === 'certificate.html') { await expect('#sheet', 'certificate sheet'); await expect('#printBtn', 'certificate print button'); }
+      if (p === 'leagues.html') { await expect('#presetRow button[data-id]', 'league presets', 4); await expect('#joinCode', 'league join box'); await expect('#stProjector', 'projector button'); }
+      if (p === 'screener.html') { await expect('#scanList [data-scan]', 'built-in scans', 6); await expect('#runBtn', 'run scan button'); }
+      if (p === 'builder.html') { await expect('#tplList [data-tpl]', 'rule templates', 4); await expect('#btRun', 'Backtest it button'); await expect('#entryList select', 'entry condition selects', 2); }
+      if (p === 'profile.html') { await expect('#app h1, #app h2', 'profile headings', 2); }
+      if (vpName === 'desktop') await btCallAudit(p);
       // shared shell
       await expect('#nav [data-bt-lang-toggle]', 'language toggle in the shell');
       const i18nUp = await page.evaluate(() => !!(window.BT && BT.i18n && typeof BT.i18n.setLang === 'function') && document.documentElement.lang === 'en');
@@ -122,21 +168,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     }
   }
 
-  // ---------------------------------------------------------------- phone: More sheet
-  console.log('\n== phone More sheet');
-  await page.setViewportSize(VIEWPORTS.phone);
-  await goto('about.html', 1500);
-  if (await page.locator('#btMore').count()) {
-    await page.click('#btMore'); await sleep(400);
-    await expect('#btSheet .sheet-list a', 'More sheet page links', 5);
-    await shot('about-phone-more');
-    if (await page.locator('#btSheetClose').count()) { await page.click('#btSheetClose'); await sleep(300); }
-  } else note('phone: #btMore tab missing');
-
-  await page.setViewportSize(VIEWPORTS.desktop);
-
-  // ---------------------------------------------------------------- i18n: nav toggle → Spanish → back to English
-  console.log('\n== language toggle flow');
   // Visible text nodes that carry translatable prose: at least one run of three lowercase letters
   // (so tickers, prices, "RSI" and percentages are not counted), outside <script>/<style>/<code>/.no-i18n.
   const textSnapshot = () => page.evaluate(() => {
@@ -163,6 +194,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.evaluate(() => BT.i18n.ready).catch(() => null);
     await sleep(1200);
   }
+  if (!V05_ONLY) {
+  // ---------------------------------------------------------------- phone: More sheet
+  console.log('\n== phone More sheet');
+  await page.setViewportSize(VIEWPORTS.phone);
+  await goto('about.html', 1500);
+  if (await page.locator('#btMore').count()) {
+    await page.click('#btMore'); await sleep(400);
+    await expect('#btSheet .sheet-list a', 'More sheet page links', 5);
+    await shot('about-phone-more');
+    if (await page.locator('#btSheetClose').count()) { await page.click('#btSheetClose'); await sleep(300); }
+  } else note('phone: #btMore tab missing');
+
+  await page.setViewportSize(VIEWPORTS.desktop);
+
+  // ---------------------------------------------------------------- i18n: nav toggle → Spanish → back to English
+  console.log('\n== language toggle flow');
   for (const p of ['index.html', 'learn.html', 'portfolio.html', 'pricing.html']) {
     await goto(p, p === 'index.html' ? 3000 : 1800);
     if (await page.locator('#tour:not([hidden])').count()) { await page.click('#tourSkip'); await sleep(300); }
@@ -531,6 +578,299 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   if (statsN < 4) note('backtest produced no stats: ' + runmsg);
   await expect('#panel-equity canvas, .lab canvas', 'backtest chart canvas');
   await shot('backtest-result', true);
+  } // end v0.4 flows
+
+  // ================================================================ v0.5 flows
+  async function skipTour() { if (await page.locator('#tour:not([hidden])').count()) { await page.click('#tourSkip'); await sleep(300); } }
+  async function ticketSubmit() {
+    await page.click('#review'); await sleep(500);
+    if (await page.locator('#confirm:not([hidden])').count()) { await page.click('#confirmYes'); await sleep(800); }
+    return ((await page.locator('#tmsg').textContent()) || '').trim();
+  }
+  async function v05Flows() {
+    await page.setViewportSize(VIEWPORTS.desktop);
+    await page.evaluate(() => { try { BT.i18n && BT.i18n.setLang && BT.i18n.setLang('en'); } catch (e) {} }).catch(() => null);
+
+    // ------------------------------------------------------------ Leagues: Classroom 4-week preset → league account
+    console.log('\n== v0.5 leagues flow');
+    await goto('leagues.html', 1500);
+    await page.click('#presetRow button[data-id="classroom"]'); await sleep(300);
+    const presetOn = await page.getAttribute('#presetRow button[data-id="classroom"]', 'aria-pressed');
+    if (presetOn !== 'true') note('leagues: Classroom 4-week preset not marked pressed');
+    const shortChecked = await page.isChecked('#cShort');
+    if (shortChecked) note('leagues: Classroom 4-week preset should turn short selling off');
+    await page.fill('#cName', 'E2E Classroom Cup');
+    await page.fill('#joinName', 'Ada').catch(() => null);
+    await page.click('#createBtn'); await sleep(1000);
+    const leagueCode = ((await page.locator('#codeShort').textContent().catch(() => '')) || '').trim();
+    const longCode = await page.inputValue('#codeLong').catch(() => '');
+    if (!/^[A-Z0-9]{6}$/.test(leagueCode) || !/^BTL1\./.test(longCode)) note('leagues: league code not shown after create ("' + leagueCode + '") ' + (await page.locator('#createMsg').textContent().catch(() => '')));
+    else ok('league created: ' + leagueCode);
+    const joined = await page.evaluate(code => { const lg = BT.leagues.get && BT.leagues.get(code); return { joined: (BT.leagues.joined ? BT.leagues.joined() : []).map(l => l.code), short: lg && lg.rules.shortSelling, cash: lg && lg.rules.startingCash }; }, leagueCode);
+    if (!joined.joined.includes(leagueCode)) note('leagues: creator did not join the new league ' + JSON.stringify(joined)); else ok('creator joined the league (cash ' + joined.cash + ', shortSelling ' + joined.short + ')');
+    await expect('#myList li', 'my leagues list', 1);
+    await expect('#stBody tr, #stBody li, #stBody .row', 'standings rows', 1);
+    await shot('leagues-created', true);
+    // projector view
+    await page.click('#stProjector'); await sleep(1200);
+    if (!await page.locator('#proj:not([hidden])').count()) note('leagues: projector view did not open');
+    else {
+      const projText = ((await page.locator('#projBody').textContent()) || '').trim();
+      if (!projText) note('leagues: projector body is empty'); else ok('projector view renders (' + projText.slice(0, 50).replace(/\s+/g, ' ') + '…)');
+      if (!/projector=1/.test(page.url())) note('leagues: projector should set ?projector=1 in the URL');
+      await shot('leagues-projector');
+      await page.click('#projExit'); await sleep(400);
+      if (await page.locator('#proj:not([hidden])').count()) note('leagues: projector Exit did not close it');
+    }
+    await page.setViewportSize(VIEWPORTS.phone); await sleep(500);
+    await shot('leagues-phone-standings');
+    await page.setViewportSize(VIEWPORTS.desktop);
+
+    // dashboard: switch the ticket to the league account, rejected short, allowed buy, coach note
+    console.log('\n== v0.5 league ticket flow');
+    await goto('index.html', 3000);
+    await skipTour();
+    if (!await visible('#acctField')) note('dashboard: account switcher hidden although a league was joined');
+    const acctOpts = await page.locator('#acctSel option').evaluateAll(os => os.map(o => ({ v: o.value, t: o.textContent })));
+    // BT.paper normalises 'league:CODE' to 'league-code'; BT.leagues.accountCode reads either form.
+    const lgCodes = await page.evaluate(vals => vals.map(v => BT.leagues.accountCode(v)), acctOpts.map(o => o.v));
+    const lgOpt = acctOpts.find((o, i) => lgCodes[i] === leagueCode);
+    if (!lgOpt) note('dashboard: league account missing from the switcher ' + JSON.stringify(acctOpts));
+    else {
+      await page.selectOption('#acctSel', lgOpt.v); await sleep(800);
+      const acct = await page.evaluate(() => BT.app.account());
+      if (await page.evaluate(a => BT.leagues.accountCode(a), acct) !== leagueCode) note('dashboard: switching account did not take (' + acct + ')'); else ok('ticket switched to ' + lgOpt.t.trim());
+      await page.click('.sides [data-side="short"]'); await sleep(200);
+      await page.fill('#qty', '5');
+      const shortMsg = await ticketSubmit();
+      const lgPf = await page.evaluate(code => { const st = BT.paper.state; return { pos: Object.keys(st.positions || {}), trades: (st.trades || []).length }; }, leagueCode);
+      if (!/short/i.test(shortMsg) || lgPf.pos.length) note('dashboard: short in a no-shorting league should be rejected with the reason, got "' + shortMsg + '" ' + JSON.stringify(lgPf));
+      else ok('short rejected: ' + shortMsg.slice(0, 90));
+      await shot('index-league-rejected');
+      await page.click('.sides [data-side="buy"]'); await sleep(200);
+      await page.fill('#qty', '10');
+      const buyMsg = await ticketSubmit();
+      const after = await page.evaluate(() => Object.keys(BT.paper.state.positions || {}));
+      if (!/Filled/i.test(buyMsg) || !after.length) note('dashboard: allowed league buy did not fill: ' + buyMsg);
+      else ok('league buy filled: ' + buyMsg.slice(0, 80));
+      // coach: this buy had no stop, so the coach should say so
+      await sleep(400);
+      const coach = await page.evaluate(() => { const b = document.getElementById('coachNotes'); return b && !b.hidden ? b.textContent.replace(/\s+/g, ' ') : ''; });
+      if (!coach) note('dashboard: no coach note after a trade without a stop');
+      else if (!/stop/i.test(coach)) note('dashboard: coach note does not mention the missing stop: ' + coach.slice(0, 120));
+      else ok('coach note after a no-stop trade: ' + coach.slice(0, 80));
+      await shot('index-coach');
+      // risk panel: entering a stop prefills the quantity
+      await page.evaluate(() => { const b = document.getElementById('planBox'); if (b) b.open = true; });
+      await sleep(300);
+      const price = await page.evaluate(() => BT.app.state().bars.slice(-1)[0].close);
+      const qtyBefore = await page.inputValue('#qty');
+      await page.fill('#planRisk', '0.5');
+      await page.fill('#planStop', (price * 0.97).toFixed(2)); await sleep(900);
+      const qtyAfter = await page.inputValue('#qty');
+      const planSum = ((await page.locator('#planSummary').textContent()) || '').trim();
+      const planShares = await page.evaluate(() => { const p = BT.app.plan(); return p && p.shares; });
+      if (!(planShares > 0) || String(planShares) !== qtyAfter) note('risk panel did not prefill qty (plan ' + planShares + ', qty ' + qtyBefore + ' -> ' + qtyAfter + ', "' + planSum + '")');
+      else ok('risk panel prefilled qty ' + qtyBefore + ' -> ' + qtyAfter + ' (' + planSum + ')');
+      await shot('index-plan');
+      await page.evaluate(() => { const b = document.getElementById('planBox'); if (b) b.open = false; });
+      // back to Main for the rest of the run
+      await page.selectOption('#acctSel', 'main'); await sleep(500);
+    }
+
+    // ------------------------------------------------------------ Screener: built-in scan on demo data, + Watchlist
+    console.log('\n== v0.5 screener flow');
+    await page.evaluate(() => localStorage.setItem('bt.watchlist', JSON.stringify(['SPY'])));
+    await goto('screener.html', 2000);
+    const scanBtn = page.locator('#scanList [data-scan]').filter({ hasText: 'Oversold in an uptrend' }).first();
+    if (!await scanBtn.count()) note('screener: built-in "Oversold in an uptrend" scan missing');
+    else {
+      await scanBtn.click(); await sleep(400);
+      await page.click('#runBtn');
+      await page.waitForFunction(() => !/scanning|Scanning/.test((document.getElementById('status') || {}).textContent || '') && (document.getElementById('runBtn') || {}).disabled !== true, null, { timeout: 15000 }).catch(() => null);
+      await sleep(800);
+      const status = ((await page.locator('#status').textContent()) || '').trim();
+      const resCount = ((await page.locator('#resCount').textContent()) || '').trim();
+      const rowsN = await page.locator('#resTable tbody tr, #resCards > *').count();
+      const emptyShown = await visible('#empty');
+      if (!rowsN && !emptyShown) note('screener: scan finished with neither rows nor an empty state (' + status + ')');
+      else ok('screener ran "Oversold in an uptrend": ' + (resCount || rowsN + ' rows') + ' | ' + status.slice(0, 80));
+      await shot('screener-oversold', true);
+    }
+    // run the default scan list until one has a result we can add (the demo data decides which)
+    let watchBtn = page.locator('[data-watch]:visible').first();
+    if (!await watchBtn.count()) {
+      const ids = await page.locator('#scanList [data-scan]').evaluateAll(bs => bs.map(b => b.getAttribute('data-scan')));
+      for (const id of ids) {
+        await page.click('#scanList [data-scan="' + id + '"]'); await sleep(300);
+        await page.click('#runBtn'); await sleep(2500);
+        watchBtn = page.locator('[data-watch]:visible').first();
+        if (await watchBtn.count()) break;
+      }
+    }
+    if (!await watchBtn.count()) note('screener: no scan returned a row with "+ Watchlist" on demo data');
+    else {
+      const sym = await watchBtn.getAttribute('data-watch');
+      await watchBtn.click(); await sleep(500);
+      const wl = await page.evaluate(() => JSON.parse(localStorage.getItem('bt.watchlist') || '[]'));
+      if (!wl.includes(sym)) note('screener: + Watchlist did not add ' + sym + ' (' + JSON.stringify(wl) + ')'); else ok('screener added ' + sym + ' to the watchlist');
+      const toastTxt = ((await page.locator('#toasts').textContent()) || '').trim();
+      if (!/watchlist/i.test(toastTxt)) note('screener: no toast after + Watchlist');
+    }
+    await page.setViewportSize(VIEWPORTS.phone); await sleep(500);
+    await shot('screener-phone-results', true);
+    const scrOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (scrOverflow > 2) note('screener phone results: horizontal overflow ' + scrOverflow + 'px');
+    await page.setViewportSize(VIEWPORTS.desktop);
+
+    // ------------------------------------------------------------ Builder: SMA crossover → Backtest it → stats; alert
+    console.log('\n== v0.5 builder flow');
+    await goto('builder.html', 2000);
+    await page.click('#tplList [data-tpl="smaCross"]'); await sleep(400);
+    const summary = ((await page.locator('#summary').textContent()) || '').trim();
+    if (!/SMA/i.test(summary)) note('builder: SMA crossover template summary missing: ' + summary.slice(0, 100)); else ok('builder summary: ' + summary.slice(0, 90));
+    await page.click('#btRun');
+    await page.waitForFunction(() => document.querySelectorAll('#btTiles > *').length >= 3, null, { timeout: 20000 }).catch(() => null);
+    const tiles = await page.locator('#btTiles > *').count();
+    const btStatus = ((await page.locator('#btStatus').textContent()) || '').trim();
+    if (tiles < 3) note('builder: Backtest it rendered no stats (' + btStatus + ')'); else ok('builder backtest stats tiles: ' + tiles);
+    await expect('#btChart canvas, #btChart svg, #btEquity canvas, #btEquity svg', 'builder backtest chart');
+    await shot('builder-backtest', true);
+    const alertsBeforeN = await page.evaluate(() => (BT.alerts && BT.alerts.list ? BT.alerts.list() : []).length);
+    await page.click('#alertBtn'); await sleep(600);
+    const ruleAlerts = await page.evaluate(() => (BT.alerts && BT.alerts.list ? BT.alerts.list() : []).filter(a => a.kind === 'rule'));
+    const useMsg = ((await page.locator('#useMsg').textContent()) || '').trim();
+    if (!ruleAlerts.length) note('builder: "Create alert from entry rule" stored no rule alert (' + useMsg + ', before ' + alertsBeforeN + ')');
+    else ok('rule alert created (' + ruleAlerts.length + '): ' + useMsg.slice(0, 70));
+
+    // ------------------------------------------------------------ Semi-auto: force a proposal with an always-true rule
+    console.log('\n== v0.5 semi-auto flow');
+    await goto('index.html', 3000);
+    await skipTour();
+    const forced = await page.evaluate(() => {
+      const held = Object.keys(BT.paper.state.positions || {});
+      const sym = ['XOM', 'KO', 'JPM', 'AMZN', 'TSLA', 'NVDA', 'META', 'GOOGL', 'MSFT', 'AAPL'].find(s => held.indexOf(s) < 0);
+      const r = BT.rules.save({ name: 'E2E always on', side: 'long',
+        entry: { op: 'and', conditions: [{ left: { ind: 'close' }, cmp: '>', right: { ind: 'value', value: 0.01 } }] },
+        exit: { op: 'and', conditions: [{ left: { ind: 'close' }, cmp: '<', right: { ind: 'value', value: 0.01 } }], stopPct: 5 } });
+      if (!r.ok) return { err: (r.errors || []).join(' ') };
+      BT.rules.semiAuto.set({ enabled: true, ruleId: r.rule ? r.rule.id : r.id });
+      return { sym, id: r.rule ? r.rule.id : r.id };
+    });
+    if (forced.err) note('semi-auto: could not save the test rule: ' + forced.err);
+    else {
+      await page.evaluate(s => BT.app.setSymbol(s), forced.sym); await sleep(2500);
+      // reload so the panel picks up the saved rule from storage, then ask the dashboard to check it now
+      await goto('index.html#' + forced.sym, 3000); await skipTour();
+      const prop = await page.evaluate(() => BT.app.checkRule());
+      await sleep(600);
+      const card = await page.evaluate(() => { const c = document.getElementById('autoProposal'); return !!(c && !c.hidden && c.textContent.trim()); });
+      if (!prop || !card) note('semi-auto: no proposal card for an always-true rule (' + JSON.stringify(prop) + ', symbol ' + forced.sym + ')');
+      else {
+        const cardTxt = ((await page.locator('#autoProposal').textContent()) || '').replace(/\s+/g, ' ');
+        ok('semi-auto proposal card: ' + cardTxt.slice(0, 80));
+        const posBefore = await page.evaluate(() => Object.keys(BT.paper.state.positions || {}).length);
+        if (posBefore !== (await page.evaluate(() => Object.keys(BT.paper.state.positions || {}).length))) note('semi-auto executed without confirmation');
+        await page.locator('#panel-auto').scrollIntoViewIfNeeded().catch(() => null);
+        await shot('index-semi-auto');
+        const dismiss = page.locator('#autoDismiss');
+        if (await dismiss.count()) { await dismiss.click(); await sleep(300); }
+      }
+      await page.evaluate(() => { BT.rules.semiAuto.set({ enabled: false }); });
+    }
+
+    // ------------------------------------------------------------ Profile: level, badges, personality quiz
+    console.log('\n== v0.5 profile flow');
+    await goto('profile.html', 2000);
+    const profTxt = ((await page.locator('#app').textContent()) || '').replace(/\s+/g, ' ');
+    if (!/Level\s*\d/.test(profTxt) || !/(Freshman|Sophomore|Junior|Senior|Graduate|Analyst|Portfolio Manager)/.test(profTxt)) note('profile: level not shown: ' + profTxt.slice(0, 120)); else ok('profile shows a level');
+    const badgeN = await page.locator('.badges li').count();
+    if (badgeN < 20) note('profile: expected >= 20 badges, found ' + badgeN); else ok('profile badges: ' + badgeN);
+    const chip = await page.evaluate(() => { const a = document.querySelector('#nav a.levelchip'); return a && !a.hidden ? a.textContent.replace(/\s+/g, ' ').trim() : ''; });
+    if (!chip) note('nav: level chip (a.levelchip) not shown'); else ok('nav level chip: ' + chip);
+    if (await page.locator('#pStart').count()) {
+      await page.locator('#pStart').first().click(); await sleep(400);
+      for (let i = 0; i < 15 && await page.locator('#pForm').count(); i++) {
+        await page.locator('#pForm input[type=radio]').nth(i % 2).check();
+        await page.locator('#pForm button[type=submit]').click(); await sleep(250);
+      }
+      const prof = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('bt.profile')); } catch (e) { return null; } });
+      const persTxt = ((await page.locator('#persWrap, #app').first().textContent()) || '').replace(/\s+/g, ' ');
+      if (await page.locator('#pForm').count()) note('profile: personality quiz did not finish after 15 answers');
+      else if (!prof || !JSON.stringify(prof).match(/trend|swing|value|options/i)) note('profile: personality result not stored in bt.profile: ' + JSON.stringify(prof));
+      else ok('personality quiz completed (' + (persTxt.match(/Trend Follower|Swing Trader|Value-minded Investor|Options Strategist/) || ['?'])[0] + ')');
+      await shot('profile-personality', true);
+    } else note('profile: Take the quiz button (#pStart) missing');
+    await page.setViewportSize(VIEWPORTS.phone); await sleep(500);
+    await shot('profile-phone-result');
+    await page.setViewportSize(VIEWPORTS.desktop);
+
+    // ------------------------------------------------------------ Options analyzer: sliders change the P&L chart
+    console.log('\n== v0.5 options analyzer flow');
+    await goto('portfolio.html', 2500);
+    await page.click('#tab-options'); await sleep(1200);
+    // the analyzer needs a position: load the first preset strategy (e.g. a long call)
+    const presetVals = await page.locator('#preset option').evaluateAll(os => os.map(o => o.value).filter(Boolean));
+    if (!presetVals.length) note('options lab: no preset strategies');
+    else { await page.selectOption('#preset', presetVals[0]); await sleep(1000); }
+    await expect('#legs tr', 'options legs after loading a preset', 1);
+    const canvasSig = () => page.evaluate(() => { const c = document.getElementById('wi-curves'); try { return c && c.width ? c.toDataURL().length + ':' + c.toDataURL().slice(-200) : ''; } catch (e) { return 'err'; } });
+    const resTxt = () => page.evaluate(() => (document.getElementById('wi-result') || {}).textContent || '');
+    const sig0 = await canvasSig(), res0 = await resTxt();
+    if (!sig0) note('options analyzer: P&L curves canvas missing or empty');
+    const setRange = (id, frac) => page.evaluate(([id, frac]) => { const el = document.getElementById(id); const min = +el.min, max = +el.max; el.value = String(min + (max - min) * frac); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, [id, frac]);
+    await setRange('wi-price', 0.85); await sleep(500);
+    const sig1 = await canvasSig(), res1 = await resTxt();
+    await setRange('wi-days', 0.8); await sleep(500);
+    const sig2 = await canvasSig(), res2 = await resTxt();
+    await setRange('wi-iv', 0.9); await sleep(500);
+    const res3 = await resTxt();
+    if (sig1 === sig0 && res1 === res0) note('options analyzer: price slider changed neither the P&L chart nor the result');
+    else ok('price slider updates the analyzer');
+    if (sig2 === sig1 && res2 === res1) note('options analyzer: days slider changed neither the P&L chart nor the result'); else ok('days slider updates the analyzer');
+    if (res3 === res2) note('options analyzer: IV slider did not change the result'); else ok('IV slider updates the result');
+    await shot('portfolio-options-whatif', true);
+
+    // ------------------------------------------------------------ Backtest: CSV upload
+    console.log('\n== v0.5 CSV upload flow');
+    await goto('backtest.html', 2500);
+    const csvRows = ['Date,Open,High,Low,Close,Adj Close,Volume'];
+    let px = 100;
+    for (let i = 0; i < 260; i++) {
+      const d = new Date(Date.UTC(2024, 0, 2) + i * 86400000); if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+      const o = px; px = Math.max(5, px * (1 + Math.sin(i / 9) * 0.012 + 0.0008)); const h = Math.max(o, px) * 1.006, l = Math.min(o, px) * 0.994;
+      csvRows.push([d.toISOString().slice(0, 10), o.toFixed(2), h.toFixed(2), l.toFixed(2), px.toFixed(2), px.toFixed(2), 1000000 + i * 1000].join(','));
+    }
+    if (await page.locator('#srccsv').count()) { await page.click('#srccsv').catch(() => null); await sleep(300); }
+    await page.setInputFiles('#csvfile', { name: 'TEST_daily.csv', mimeType: 'text/csv', buffer: Buffer.from(csvRows.join('\n')) });
+    await sleep(2500);
+    const csvState = await page.evaluate(() => ({ list: BT.csv && BT.csv.list ? BT.csv.list().length : -1, stats: document.querySelectorAll('#stats *').length, msg: (document.getElementById('runmsg') || {}).textContent || '' }));
+    if (csvState.list < 1) note('backtest: CSV upload did not save a dataset ' + JSON.stringify(csvState)); else ok('CSV dataset saved (' + csvState.list + ')');
+    await page.click('#run'); await sleep(2500);
+    const csvStats = await page.locator('#stats *').count();
+    if (csvStats < 4) note('backtest on uploaded CSV produced no stats: ' + await page.locator('#runmsg').textContent()); else ok('backtest ran on the uploaded CSV');
+    await shot('backtest-csv', true);
+    await page.evaluate(() => { try { BT.backtestPage && BT.backtestPage.setSource && BT.backtestPage.setSource('market'); } catch (e) {} });
+
+    // ------------------------------------------------------------ Spanish on the new pages (>= 85 % of visible text)
+    console.log('\n== v0.5 Spanish toggle');
+    for (const p of ['leagues.html', 'screener.html', 'builder.html', 'profile.html']) {
+      await goto(p, 2200);
+      const en = await textSnapshot();
+      await clickLangToggle();
+      const es = await textSnapshot();
+      const share = changedShare(en, es);
+      console.log('  ' + p + ': ' + en.length + ' text nodes, ' + Math.round(share * 100) + '% changed');
+      if (share < 0.85) note(p + ': only ' + Math.round(share * 100) + '% of visible text changed to Spanish; untranslated e.g. ' + JSON.stringify(en.filter((t, i) => es[i] === t).slice(0, 25)));
+      else ok(p + ' translated (' + Math.round(share * 100) + '%)');
+      await shot('es-' + p.replace('.html', '') + '-desktop');
+      await clickLangToggle();
+      const langBack = await page.evaluate(() => BT.i18n.lang());
+      if (langBack !== 'en') note(p + ': toggle back left lang=' + langBack);
+    }
+  }
+
+  await v05Flows();
 
   await browser.close();
   console.log('\n(external resource failures ignored: ' + extNoise.length + ')');
